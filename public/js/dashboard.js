@@ -77,12 +77,49 @@ async function loadRulesPage() {
   const role = localStorage.getItem('role');
   const userId = localStorage.getItem('userId');
 
-  let html = `
+  content.innerHTML = `
     <h2>إدارة القواعد</h2>
+    <div id="rulesContent">
+      <p>جاري تحميل البوتات...</p>
+    </div>
+  `;
+
+  const rulesContent = document.getElementById('rulesContent');
+  const token = localStorage.getItem('token');
+  const userRole = localStorage.getItem('role');
+
+  // جلب البوتات لملء القايمة المنسدلة
+  let bots = [];
+  try {
+    const response = await fetch('/api/bots', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!response.ok) {
+      throw new Error(`فشل في جلب البوتات: ${response.status} ${response.statusText}`);
+    }
+    bots = await response.json();
+  } catch (err) {
+    console.error('خطأ في جلب البوتات:', err);
+    rulesContent.innerHTML = `
+      <p style="color: red;">تعذر جلب البوتات، حاول مرة أخرى لاحقًا.</p>
+    `;
+    return; // نوقف التنفيذ لو حصل خطأ
+  }
+
+  let html = `
     <div>
       <label for="botId">اختر البوت:</label>
       <select id="botId" name="botId" required>
         <option value="">اختر بوت</option>
+  `;
+
+  // للمستخدم العادي، نعرض فقط البوتات الخاصة به
+  const userBots = userRole === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
+  userBots.forEach(bot => {
+    html += `<option value="${bot._id}">${bot.name}</option>`;
+  });
+
+  html += `
       </select>
     </div>
     <form id="ruleForm">
@@ -102,11 +139,8 @@ async function loadRulesPage() {
     <ul id="rulesList"></ul>
   `;
 
-  content.innerHTML = html;
+  rulesContent.innerHTML = html;
 
-  // المنطق بتاع إدارة القواعد
-  const token = localStorage.getItem('token');
-  const userRole = localStorage.getItem('role');
   const botIdSelect = document.getElementById('botId');
   const typeSelect = document.getElementById('type');
   const contentFields = document.getElementById('contentFields');
@@ -119,29 +153,6 @@ async function loadRulesPage() {
     globalOption.value = 'global';
     globalOption.textContent = 'موحدة (لكل البوتات)';
     typeSelect.appendChild(globalOption);
-  }
-
-  // جلب البوتات لملء القايمة المنسدلة
-  try {
-    const response = await fetch('/api/bots', {
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    if (!response.ok) {
-      throw new Error('فشل في جلب البوتات');
-    }
-    const bots = await response.json();
-    botIdSelect.innerHTML = '<option value="">اختر بوت</option>'; // إعادة تعيين القايمة
-    // للمستخدم العادي، نعرض فقط البوتات الخاصة به
-    const userBots = userRole === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
-    userBots.forEach(bot => {
-      const option = document.createElement('option');
-      option.value = bot._id;
-      option.textContent = bot.name;
-      botIdSelect.appendChild(option);
-    });
-  } catch (err) {
-    console.error('خطأ في جلب البوتات:', err);
-    alert('خطأ في جلب البوتات');
   }
 
   // تغيير الحقول بناءً على نوع القاعدة
@@ -182,21 +193,23 @@ async function loadRulesPage() {
         throw new Error('فشل في جلب القواعد');
       }
       const rules = await response.json();
-      rulesList.innerHTML = '';
-      rules.forEach(rule => {
-        const li = document.createElement('li');
-        // المستخدم العادي يقدر يعدل ويحذف القواعد الخاصة بيه فقط
-        li.innerHTML = `
-          نوع القاعدة: ${rule.type} | المحتوى: ${JSON.stringify(rule.content)}
-          <button onclick="editRule('${rule._id}')">تعديل</button>
-          <button onclick="deleteRule('${rule._id}')">حذف</button>
-        `;
-        // إذا كانت القاعدة موحدة، المستخدم العادي مش هيشوفها (ده شغال بالفعل في الـ Backend)
-        rulesList.appendChild(li);
-      });
+      rulesList.innerHTML = ''; // تنظيف القائمة قبل العرض
+      if (rules.length === 0) {
+        rulesList.innerHTML = '<li>لا توجد قواعد لهذا البوت.</li>';
+      } else {
+        rules.forEach(rule => {
+          const li = document.createElement('li');
+          li.innerHTML = `
+            نوع القاعدة: ${rule.type} | المحتوى: ${JSON.stringify(rule.content)}
+            <button onclick="editRule('${rule._id}')">تعديل</button>
+            <button onclick="deleteRule('${rule._id}')">حذف</button>
+          `;
+          rulesList.appendChild(li);
+        });
+      }
     } catch (err) {
       console.error('خطأ في جلب القواعد:', err);
-      alert('خطأ في جلب القواعد');
+      rulesList.innerHTML = '<li style="color: red;">تعذر جلب القواعد، حاول مرة أخرى لاحقًا.</li>';
     }
   };
 
@@ -238,7 +251,7 @@ async function loadRulesPage() {
       });
       if (response.ok) {
         alert('تم إضافة القاعدة بنجاح');
-        loadRules(botId);
+        loadRules(botId); // إعادة جلب القواعد بعد الحفظ
       } else {
         alert('خطأ في إضافة القاعدة');
       }
