@@ -8,17 +8,17 @@ document.addEventListener('DOMContentLoaded', () => {
   // إعداد الأزرار
   document.getElementById('botsBtn').addEventListener('click', () => {
     window.location.hash = 'bots';
-    loadBotsPage();
+    loadPageBasedOnHash();
   });
 
   document.getElementById('rulesBtn').addEventListener('click', () => {
     window.location.hash = 'rules';
-    loadRulesPage();
+    loadPageBasedOnHash();
   });
 
   document.getElementById('whatsappBtn').addEventListener('click', () => {
     window.location.hash = 'whatsapp';
-    loadWhatsAppPage();
+    loadPageBasedOnHash();
   });
 
   document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -51,12 +51,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // تحميل الصفحة بناءً على الـ Hash
-  const loadPageBasedOnHash = () => {
+  const loadPageBasedOnHash = async () => {
     const hash = window.location.hash || '#bots'; // افتراضيًا البوتات
     if (hash === '#bots') {
-      loadBotsPage();
+      await loadBotsPage();
     } else if (hash === '#rules') {
-      loadRulesPage();
+      await loadRulesPage();
     } else if (hash === '#whatsapp') {
       loadWhatsAppPage();
     }
@@ -66,11 +66,13 @@ document.addEventListener('DOMContentLoaded', () => {
   loadPageBasedOnHash();
 
   // تحديث الصفحة إذا تغير الـ Hash
-  window.addEventListener('hashchange', loadPageBasedOnHash);
+  window.addEventListener('hashchange', () => {
+    loadPageBasedOnHash();
+  });
 });
 
 // دالة لتحميل صفحة القواعد ديناميكيًا
-function loadRulesPage() {
+async function loadRulesPage() {
   const content = document.getElementById('content');
   content.innerHTML = `
     <h2>إدارة القواعد</h2>
