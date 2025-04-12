@@ -171,7 +171,11 @@ async function loadRulesPage() {
         <label for="price">السعر:</label>
         <input type="number" id="price" name="price" required>
         <label for="currency">العملة:</label>
-        <input type="text" id="currency" name="currency" required>
+        <select id="currency" name="currency" required>
+          <option value="">اختر العملة</option>
+          <option value="جنيه">جنيه</option>
+          <option value="دولار">دولار</option>
+        </select>
       `;
     } else if (type === 'qa') {
       contentFields.innerHTML = `
@@ -199,8 +203,16 @@ async function loadRulesPage() {
       } else {
         rules.forEach(rule => {
           const li = document.createElement('li');
+          let contentDisplay = '';
+          if (rule.type === 'general' || rule.type === 'global') {
+            contentDisplay = `المحتوى: ${rule.content}`;
+          } else if (rule.type === 'products') {
+            contentDisplay = `المنتج: ${rule.content.product} | السعر: ${rule.content.price} ${rule.content.currency}`;
+          } else if (rule.type === 'qa') {
+            contentDisplay = `السؤال: ${rule.content.question} | الإجابة: ${rule.content.answer}`;
+          }
           li.innerHTML = `
-            نوع القاعدة: ${rule.type} | المحتوى: ${JSON.stringify(rule.content)}
+            نوع القاعدة: ${rule.type} | ${contentDisplay}
             <button onclick="editRule('${rule._id}')">تعديل</button>
             <button onclick="deleteRule('${rule._id}')">حذف</button>
           `;
@@ -249,12 +261,12 @@ async function loadRulesPage() {
         },
         body: JSON.stringify({ botId, type, content }),
       });
-      if (response.ok) {
-        alert('تم إضافة القاعدة بنجاح');
-        loadRules(botId); // إعادة جلب القواعد بعد الحفظ
-      } else {
-        alert('خطأ في إضافة القاعدة');
+      if (!response.ok) {
+        throw new Error('فشل في إضافة القاعدة');
       }
+      const data = await response.json();
+      alert('تم إضافة القاعدة بنجاح');
+      loadRules(botId); // إعادة جلب القواعد بعد الحفظ
     } catch (err) {
       console.error('خطأ في إضافة القاعدة:', err);
       alert('خطأ في إضافة القاعدة');
@@ -263,17 +275,42 @@ async function loadRulesPage() {
 
   // دالة تعديل القاعدة
   window.editRule = async (ruleId) => {
-    const response = await fetch(`/api/rules/${ruleId}`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    const rule = await response.json();
-    if (rule.type === 'global' && userRole !== 'superadmin') {
-      alert('غير مسموح لك بتعديل القواعد الموحدة');
-      return;
-    }
-    const newContent = prompt('أدخل المحتوى الجديد:', JSON.stringify(rule.content));
-    if (newContent) {
-      try {
+    try {
+      const response = await fetch(`/api/rules/${ruleId}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        throw new Error('فشل في جلب القاعدة');
+      }
+      const rule = await response.json();
+      if (rule.type === 'global' && userRole !== 'superadmin') {
+        alert('غير مسموح لك بتعديل القواعد الموحدة');
+        return;
+      }
+      let newContent;
+      if (rule.type === 'general' || rule.type === 'global') {
+        newContent = prompt('أدخل المحتوى الجديد:', rule.content);
+      } else if (rule.type === 'products') {
+        const product = prompt('أدخل اسم المنتج الجديد:', rule.content.product);
+        const price = prompt('أدخل السعر الجديد:', rule.content.price);
+        const currency = prompt('أدخل العملة الجديدة (جنيه أو دولار):', rule.content.currency);
+        if (product && price && (currency === 'جنيه' || currency === 'دولار')) {
+          newContent = JSON.stringify({ product, price, currency });
+        } else {
+          alert('يرجى إدخال بيانات صحيحة (العملة يجب أن تكون جنيه أو دولار)');
+          return;
+        }
+      } else if (rule.type === 'qa') {
+        const question = prompt('أدخل السؤال الجديد:', rule.content.question);
+        const answer = prompt('أدخل الإجابة الجديدة:', rule.content.answer);
+        if (question && answer) {
+          newContent = JSON.stringify({ question, answer });
+        } else {
+          alert('يرجى إدخال سؤال وإجابة');
+          return;
+        }
+      }
+      if (newContent) {
         const updateResponse = await fetch(`/api/rules/${ruleId}`, {
           method: 'PUT',
           headers: {
@@ -282,41 +319,46 @@ async function loadRulesPage() {
           },
           body: JSON.stringify({ type: rule.type, content: JSON.parse(newContent) }),
         });
-        if (updateResponse.ok) {
-          alert('تم تعديل القاعدة بنجاح');
-          loadRules(botIdSelect.value);
+        if (!updateResponse.ok) {
+          throw new Error('فشل في تعديل القاعدة');
         }
-      } catch (err) {
-        console.error('خطأ في تعديل القاعدة:', err);
-        alert('خطأ في تعديل القاعدة');
+        alert('تم تعديل القاعدة بنجاح');
+        loadRules(botIdSelect.value);
       }
+    } catch (err) {
+      console.error('خطأ في تعديل القاعدة:', err);
+      alert('خطأ في تعديل القاعدة، حاول مرة أخرى لاحقًا');
     }
   };
 
   // دالة حذف القاعدة
   window.deleteRule = async (ruleId) => {
-    const response = await fetch(`/api/rules/${ruleId}`, {
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    const rule = await response.json();
-    if (rule.type === 'global' && userRole !== 'superadmin') {
-      alert('غير مسموح لك بحذف القواعد الموحدة');
-      return;
-    }
-    if (confirm('هل أنت متأكد من حذف هذه القاعدة؟')) {
-      try {
+    try {
+      const response = await fetch(`/api/rules/${ruleId}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        throw new Error('فشل في جلب القاعدة');
+      }
+      const rule = await response.json();
+      if (rule.type === 'global' && userRole !== 'superadmin') {
+        alert('غير مسموح لك بحذف القواعد الموحدة');
+        return;
+      }
+      if (confirm('هل أنت متأكد من حذف هذه القاعدة؟')) {
         const deleteResponse = await fetch(`/api/rules/${ruleId}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` },
         });
-        if (deleteResponse.ok) {
-          alert('تم حذف القاعدة بنجاح');
-          loadRules(botIdSelect.value);
+        if (!deleteResponse.ok) {
+          throw new Error('فشل في حذف القاعدة');
         }
-      } catch (err) {
-        console.error('خطأ في حذف القاعدة:', err);
-        alert('خطأ في حذف القاعدة');
+        alert('تم حذف القاعدة بنجاح');
+        loadRules(botIdSelect.value);
       }
+    } catch (err) {
+      console.error('خطأ في حذف القاعدة:', err);
+      alert('خطأ في حذف القاعدة، حاول مرة أخرى لاحقًا');
     }
   };
 }
