@@ -3,7 +3,6 @@ const Bot = require('../models/Bot');
 const { processMessage } = require('../botEngine');
 const Conversation = require('../models/Conversation');
 
-// دالة لمعالجة الرسايل من فيسبوك
 const handleMessage = async (req, res) => {
   try {
     console.log('📩 Webhook POST request received:', JSON.stringify(req.body, null, 2));
@@ -22,14 +21,13 @@ const handleMessage = async (req, res) => {
       }
 
       const webhookEvent = entry.messaging[0];
-      const senderPsid = webhookEvent.sender?.id; // معرف المرسل
+      const senderPsid = webhookEvent.sender?.id;
 
       if (!senderPsid) {
         console.log('❌ Sender PSID not found in webhook event:', webhookEvent);
         continue;
       }
 
-      // جلب البوت بناءً على pageId
       const pageId = entry.id;
       const bot = await Bot.findOne({ facebookPageId: pageId });
 
@@ -38,7 +36,6 @@ const handleMessage = async (req, res) => {
         continue;
       }
 
-      // التحقق من وجود المحادثة
       let conversation = await Conversation.findOne({
         botId: bot._id,
         userId: senderPsid,
@@ -52,11 +49,9 @@ const handleMessage = async (req, res) => {
         });
       }
 
-      // معالجة الرسالة
       if (webhookEvent.message) {
         const message = webhookEvent.message;
 
-        // حفظ الرسالة في المحادثة
         conversation.messages.push({
           role: 'user',
           content: message.text || 'رسالة غير نصية',
@@ -64,7 +59,6 @@ const handleMessage = async (req, res) => {
 
         let responseText = '';
 
-        // التحقق من نوع الرسالة
         if (message.text) {
           console.log(`📝 Text message received from ${senderPsid}: ${message.text}`);
           responseText = await processMessage(bot._id, senderPsid, message.text);
@@ -85,7 +79,6 @@ const handleMessage = async (req, res) => {
           responseText = 'عذرًا، لا أستطيع فهم هذه الرسالة.';
         }
 
-        // حفظ رد البوت في المحادثة
         conversation.messages.push({
           role: 'assistant',
           content: responseText,
@@ -93,7 +86,6 @@ const handleMessage = async (req, res) => {
 
         await conversation.save();
 
-        // إرسال الرد للمستخدم باستخدام facebookApiKey من قاعدة البيانات
         await sendMessage(senderPsid, responseText, bot.facebookApiKey);
       } else {
         console.log('❌ No message found in webhook event:', webhookEvent);
@@ -107,7 +99,6 @@ const handleMessage = async (req, res) => {
   }
 };
 
-// دالة لإرسال رسالة إلى المستخدم عبر فيسبوك
 const sendMessage = (senderPsid, responseText, facebookApiKey) => {
   return new Promise((resolve, reject) => {
     const requestBody = {
