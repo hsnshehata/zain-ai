@@ -1,7 +1,7 @@
 const OpenAI = require('openai');
 const mongoose = require('mongoose');
 const axios = require('axios');
-const FormData = require('form-data'); // للتعامل مع multipart/form-data
+const FormData = require('form-data');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -9,7 +9,7 @@ const openai = new OpenAI({
 
 const conversationSchema = new mongoose.Schema({
   botId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bot', required: true },
-  userId: { type: String, required: true }, // Facebook/WhatsApp user ID
+  userId: { type: String, required: true },
   messages: [
     {
       role: { type: String, enum: ['user', 'assistant'], required: true },
@@ -23,10 +23,9 @@ const Conversation = mongoose.model('Conversation', conversationSchema);
 
 const Rule = require('./models/Rule');
 
-// دالة لتحويل الصوت إلى نص باستخدام LemonFox
 async function transcribeAudio(audioUrl) {
   const body = new FormData();
-  body.append('file', audioUrl); // بنبعت رابط الصوت مباشرة
+  body.append('file', audioUrl);
   body.append('language', 'arabic');
   body.append('response_format', 'json');
   try {
@@ -56,7 +55,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
   try {
     console.log('🤖 Processing message for bot:', botId, 'user:', userId, 'message:', message);
 
-    // Fetch bot rules
     const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
     console.log('📜 Rules found:', rules);
 
@@ -76,7 +74,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     }
     console.log('📝 System prompt:', systemPrompt);
 
-    // Fetch or create conversation
     let conversation = await Conversation.findOne({ botId, userId });
     if (!conversation) {
       console.log('📋 Creating new conversation for bot:', botId, 'user:', userId);
@@ -85,11 +82,9 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       console.log('📋 Found existing conversation:', conversation._id);
     }
 
-    // معالجة الرسالة بناءً على نوعها
     let userMessageContent = message;
 
     if (isVoice) {
-      // تحويل الصوت إلى نص باستخدام LemonFox
       userMessageContent = await transcribeAudio(message);
       if (!userMessageContent) {
         throw new Error('Failed to transcribe audio: No text returned');
@@ -97,12 +92,10 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       console.log('💬 Transcribed audio message:', userMessageContent);
     }
 
-    // Add user message to conversation
     conversation.messages.push({ role: 'user', content: userMessageContent });
     await conversation.save();
     console.log('💬 User message added to conversation:', userMessageContent);
 
-    // Prepare messages for OpenAI
     const messages = [
       { role: 'system', content: systemPrompt },
       ...conversation.messages.map((msg) => ({ role: msg.role, content: msg.content })),
@@ -119,7 +112,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       console.log('🖼️ Processing image message');
     }
 
-    // Call OpenAI
     console.log('📡 Calling OpenAI API...');
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -130,12 +122,10 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     const reply = response.choices[0].message.content;
     console.log('✅ OpenAI reply:', reply);
 
-    // Add assistant reply to conversation
     conversation.messages.push({ role: 'assistant', content: reply });
     await conversation.save();
     console.log('💬 Assistant reply added to conversation:', reply);
 
-    // بنرجع الرد النصي مباشرة (سواء الرسالة صوتية أو نصية أو صورة)
     return reply;
   } catch (err) {
     console.error('❌ Error processing message:', err.message, err.stack);
