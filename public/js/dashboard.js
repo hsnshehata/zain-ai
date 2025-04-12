@@ -74,15 +74,18 @@ document.addEventListener('DOMContentLoaded', () => {
 // دالة لتحميل صفحة القواعد ديناميكيًا
 async function loadRulesPage() {
   const content = document.getElementById('content');
-  content.innerHTML = `
+  const role = localStorage.getItem('role');
+  const userId = localStorage.getItem('userId');
+
+  let html = `
     <h2>إدارة القواعد</h2>
+    <div>
+      <label for="botId">اختر البوت:</label>
+      <select id="botId" name="botId" required>
+        <option value="">اختر بوت</option>
+      </select>
+    </div>
     <form id="ruleForm">
-      <div>
-        <label for="botId">اختر البوت:</label>
-        <select id="botId" name="botId" required>
-          <option value="">اختر بوت</option>
-        </select>
-      </div>
       <div>
         <label for="type">نوع القاعدة:</label>
         <select id="type" name="type" required>
@@ -99,6 +102,8 @@ async function loadRulesPage() {
     <ul id="rulesList"></ul>
   `;
 
+  content.innerHTML = html;
+
   // المنطق بتاع إدارة القواعد
   const token = localStorage.getItem('token');
   const userRole = localStorage.getItem('role');
@@ -108,7 +113,7 @@ async function loadRulesPage() {
   const ruleForm = document.getElementById('ruleForm');
   const rulesList = document.getElementById('rulesList');
 
-  // إضافة خيار القواعد الموحدة للسوبر أدمن
+  // إضافة خيار القواعد الموحدة للسوبر أدمن فقط
   if (userRole === 'superadmin') {
     const globalOption = document.createElement('option');
     globalOption.value = 'global';
@@ -126,7 +131,9 @@ async function loadRulesPage() {
     }
     const bots = await response.json();
     botIdSelect.innerHTML = '<option value="">اختر بوت</option>'; // إعادة تعيين القايمة
-    bots.forEach(bot => {
+    // للمستخدم العادي، نعرض فقط البوتات الخاصة به
+    const userBots = userRole === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
+    userBots.forEach(bot => {
       const option = document.createElement('option');
       option.value = bot._id;
       option.textContent = bot.name;
@@ -178,14 +185,13 @@ async function loadRulesPage() {
       rulesList.innerHTML = '';
       rules.forEach(rule => {
         const li = document.createElement('li');
+        // المستخدم العادي يقدر يعدل ويحذف القواعد الخاصة بيه فقط
         li.innerHTML = `
           نوع القاعدة: ${rule.type} | المحتوى: ${JSON.stringify(rule.content)}
           <button onclick="editRule('${rule._id}')">تعديل</button>
           <button onclick="deleteRule('${rule._id}')">حذف</button>
         `;
-        if (rule.type === 'global' && userRole !== 'superadmin') {
-          li.innerHTML = `نوع القاعدة: ${rule.type} | المحتوى: ${JSON.stringify(rule.content)} (غير مسموح بالتعديل)`;
-        }
+        // إذا كانت القاعدة موحدة، المستخدم العادي مش هيشوفها (ده شغال بالفعل في الـ Backend)
         rulesList.appendChild(li);
       });
     } catch (err) {
@@ -199,6 +205,7 @@ async function loadRulesPage() {
     if (selectedBotId) loadRules(selectedBotId);
   });
 
+  // إضافة قاعدة جديدة
   ruleForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const botId = botIdSelect.value;
