@@ -5,18 +5,19 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  // إعداد الأزرار
   document.getElementById('botsBtn').addEventListener('click', () => {
-    window.location.href = '#bots';
+    window.location.hash = 'bots';
     loadBotsPage();
   });
 
   document.getElementById('rulesBtn').addEventListener('click', () => {
-    window.location.href = '#rules';
+    window.location.hash = 'rules';
     loadRulesPage();
   });
 
   document.getElementById('whatsappBtn').addEventListener('click', () => {
-    window.location.href = '#whatsapp';
+    window.location.hash = 'whatsapp';
     loadWhatsAppPage();
   });
 
@@ -49,8 +50,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // تحميل صفحة البوتات افتراضيًا
-  loadBotsPage();
+  // تحميل الصفحة بناءً على الـ Hash
+  const loadPageBasedOnHash = () => {
+    const hash = window.location.hash || '#bots'; // افتراضيًا البوتات
+    if (hash === '#bots') {
+      loadBotsPage();
+    } else if (hash === '#rules') {
+      loadRulesPage();
+    } else if (hash === '#whatsapp') {
+      loadWhatsAppPage();
+    }
+  };
+
+  // تحميل الصفحة بناءً على الـ Hash عند تحميل الصفحة
+  loadPageBasedOnHash();
+
+  // تحديث الصفحة إذا تغير الـ Hash
+  window.addEventListener('hashchange', loadPageBasedOnHash);
 });
 
 // دالة لتحميل صفحة القواعد ديناميكيًا
@@ -107,6 +123,7 @@ function loadRulesPage() {
       throw new Error('فشل في جلب البوتات');
     }
     const bots = await response.json();
+    botIdSelect.innerHTML = '<option value="">اختر بوت</option>'; // إعادة تعيين القايمة
     bots.forEach(bot => {
       const option = document.createElement('option');
       option.value = bot._id;
@@ -115,6 +132,7 @@ function loadRulesPage() {
     });
   } catch (err) {
     console.error('خطأ في جلب البوتات:', err);
+    alert('خطأ في جلب البوتات');
   }
 
   // تغيير الحقول بناءً على نوع القاعدة
@@ -170,6 +188,7 @@ function loadRulesPage() {
       });
     } catch (err) {
       console.error('خطأ في جلب القواعد:', err);
+      alert('خطأ في جلب القواعد');
     }
   };
 
@@ -216,6 +235,7 @@ function loadRulesPage() {
       }
     } catch (err) {
       console.error('خطأ في إضافة القاعدة:', err);
+      alert('خطأ في إضافة القاعدة');
     }
   });
 
@@ -246,6 +266,7 @@ function loadRulesPage() {
         }
       } catch (err) {
         console.error('خطأ في تعديل القاعدة:', err);
+        alert('خطأ في تعديل القاعدة');
       }
     }
   };
@@ -272,6 +293,7 @@ function loadRulesPage() {
         }
       } catch (err) {
         console.error('خطأ في حذف القاعدة:', err);
+        alert('خطأ في حذف القاعدة');
       }
     }
   };
