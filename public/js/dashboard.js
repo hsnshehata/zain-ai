@@ -141,6 +141,7 @@ async function loadRulesPage() {
 
   rulesContent.innerHTML = html;
 
+  // التأكد إن العناصر موجودة قبل استخدامها
   const botIdSelect = document.getElementById('botId');
   const typeSelect = document.getElementById('type');
   const contentFields = document.getElementById('contentFields');
@@ -227,67 +228,79 @@ async function loadRulesPage() {
     }
   };
 
-  botIdSelect.addEventListener('change', () => {
-    const selectedBotId = botIdSelect.value;
-    if (selectedBotId) loadRules(selectedBotId);
-  });
+  // التأكد إن botIdSelect موجود قبل إضافة الـ Event Listener
+  if (botIdSelect) {
+    botIdSelect.addEventListener('change', () => {
+      const selectedBotId = botIdSelect.value;
+      if (selectedBotId) loadRules(selectedBotId);
+    });
+  } else {
+    console.error('العنصر botIdSelect غير موجود في الـ DOM');
+  }
 
   // إضافة قاعدة جديدة
-  ruleForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const botId = botIdSelect.value;
-    const type = typeSelect.value;
-    let content;
+  if (ruleForm) {
+    ruleForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const botId = botIdSelect?.value;
+      const type = typeSelect?.value;
+      let content;
 
-    if (type === 'general' || type === 'global') {
-      content = document.getElementById('content')?.value;
-      if (!content) {
-        alert('يرجى إدخال المحتوى');
+      if (!botId || !type) {
+        alert('يرجى اختيار بوت ونوع القاعدة');
         return;
       }
-    } else if (type === 'products') {
-      const product = document.getElementById('product')?.value;
-      const price = document.getElementById('price')?.value;
-      const currency = document.getElementById('currency')?.value;
-      if (!product || !price || !currency) {
-        alert('يرجى إدخال جميع الحقول (المنتج، السعر، العملة)');
-        return;
-      }
-      content = { product, price, currency };
-    } else if (type === 'qa') {
-      const question = document.getElementById('question')?.value;
-      const answer = document.getElementById('answer')?.value;
-      if (!question || !answer) {
-        alert('يرجى إدخال السؤال والإجابة');
-        return;
-      }
-      content = { question, answer };
-    } else {
-      alert('يرجى اختيار نوع القاعدة');
-      return;
-    }
 
-    try {
-      const response = await fetch('/api/rules', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ botId, type, content }),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'فشل في إضافة القاعدة');
+      if (type === 'general' || type === 'global') {
+        content = document.getElementById('content')?.value;
+        if (!content) {
+          alert('يرجى إدخال المحتوى');
+          return;
+        }
+      } else if (type === 'products') {
+        const product = document.getElementById('product')?.value;
+        const price = document.getElementById('price')?.value;
+        const currency = document.getElementById('currency')?.value;
+        if (!product || !price || !currency) {
+          alert('يرجى إدخال جميع الحقول (المنتج، السعر، العملة)');
+          return;
+        }
+        content = { product, price, currency };
+      } else if (type === 'qa') {
+        const question = document.getElementById('question')?.value;
+        const answer = document.getElementById('answer')?.value;
+        if (!question || !answer) {
+          alert('يرجى إدخال السؤال والإجابة');
+          return;
+        }
+        content = { question, answer };
+      } else {
+        alert('يرجى اختيار نوع القاعدة');
+        return;
       }
-      const data = await response.json();
-      alert('تم إضافة القاعدة بنجاح');
-      loadRules(botId); // إعادة جلب القواعد بعد الحفظ
-    } catch (err) {
-      console.error('خطأ في إضافة القاعدة:', err);
-      alert(`خطأ في إضافة القاعدة: ${err.message}`);
-    }
-  });
+
+      try {
+        const response = await fetch('/api/rules', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ botId, type, content }),
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'فشل في إضافة القاعدة');
+        }
+        const data = await response.json();
+        alert('تم إضافة القاعدة بنجاح');
+        loadRules(botId); // إعادة جلب القواعد بعد الحفظ
+      } catch (err) {
+        console.error('خطأ في إضافة القاعدة:', err);
+        alert(`خطأ في إضافة القاعدة: ${err.message}`);
+      }
+    });
+  }
 
   // دالة تعديل القاعدة
   window.editRule = async (ruleId) => {
