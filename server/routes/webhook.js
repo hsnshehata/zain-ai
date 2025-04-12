@@ -2,9 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { handleMessage } = require('../controllers/facebookController');
 
-// Webhook Verification
 router.get('/facebook', (req, res) => {
-  const VERIFY_TOKEN = 'hassanshehata'; // رمز التحقق
+  const VERIFY_TOKEN = 'hassanshehata';
 
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
@@ -23,7 +22,6 @@ router.get('/facebook', (req, res) => {
   }
 });
 
-// Webhook لاستقبال الرسائل من فيسبوك
 router.post('/facebook', handleMessage);
 
 module.exports = router;
