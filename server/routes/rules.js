@@ -3,15 +3,13 @@ const router = express.Router();
 const Rule = require('../models/Rule');
 const authenticate = require('../middleware/authenticate');
 
-// جلب كل القواعد
 router.get('/', authenticate, async (req, res) => {
   try {
     const botId = req.query.botId;
     let query = { $or: [{ botId }, { type: 'global' }] };
 
-    // إذا كان المستخدم عادي، لا يرى القواعد الموحدة إلا إذا كانت مرتبطة ببوته
     if (req.user.role !== 'superadmin') {
-      query = { botId }; // يرى القواعد الخاصة ببوته فقط + القواعد الموحدة عند الاستخدام
+      query = { botId };
     }
 
     const rules = await Rule.find(query);
@@ -22,7 +20,6 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-// إنشاء قاعدة جديدة
 router.post('/', authenticate, async (req, res) => {
   const { botId, type, content } = req.body;
 
@@ -30,7 +27,6 @@ router.post('/', authenticate, async (req, res) => {
     return res.status(400).json({ message: 'جميع الحقول مطلوبة' });
   }
 
-  // فقط السوبر أدمن يمكنه إنشاء قواعد موحدة (Global)
   if (type === 'global' && req.user.role !== 'superadmin') {
     return res.status(403).json({ message: 'غير مصرح لك بإنشاء قواعد موحدة' });
   }
@@ -45,7 +41,6 @@ router.post('/', authenticate, async (req, res) => {
   }
 });
 
-// تعديل قاعدة
 router.put('/:id', authenticate, async (req, res) => {
   const { type, content } = req.body;
 
@@ -55,7 +50,6 @@ router.put('/:id', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'القاعدة غير موجودة' });
     }
 
-    // فقط السوبر أدمن يمكنه تعديل القواعد الموحدة
     if (rule.type === 'global' && req.user.role !== 'superadmin') {
       return res.status(403).json({ message: 'غير مصرح لك بتعديل القواعد الموحدة' });
     }
@@ -71,7 +65,6 @@ router.put('/:id', authenticate, async (req, res) => {
   }
 });
 
-// حذف قاعدة
 router.delete('/:id', authenticate, async (req, res) => {
   try {
     const rule = await Rule.findById(req.params.id);
@@ -79,7 +72,6 @@ router.delete('/:id', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'القاعدة غير موجودة' });
     }
 
-    // فقط السوبر أدمن يمكنه حذف القواعد الموحدة
     if (rule.type === 'global' && req.user.role !== 'superadmin') {
       return res.status(403).json({ message: 'غير مصرح لك بحذف القواعد الموحدة' });
     }
