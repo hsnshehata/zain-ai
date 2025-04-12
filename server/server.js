@@ -9,7 +9,7 @@ const usersRoutes = require('./routes/users');
 const rulesRoutes = require('./routes/rules');
 const botRoutes = require('./routes/bot');
 const indexRoutes = require('./routes/index');
-const connectDB = require('./db'); // استدعاء connectDB من db.js
+const connectDB = require('./db');
 
 const app = express();
 
@@ -29,8 +29,13 @@ app.use('/api/rules', rulesRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/', indexRoutes);
 
+// Route for /dashboard
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/dashboard.html'));
+});
+
 // Connect to MongoDB
-connectDB(); // استدعاء دالة connectDB للاتصال بـ MongoDB
+connectDB();
 
 // Global Error Handler
 app.use((err, req, res, next) => {
