@@ -1,6 +1,7 @@
 const request = require('request');
 const Bot = require('../models/Bot');
 const { processMessage } = require('../botEngine');
+const Conversation = require('../models/Conversation');
 
 // دالة لمعالجة الرسايل من فيسبوك
 exports.handleMessage = async (req, res) => {
@@ -22,103 +23,119 @@ exports.handleMessage = async (req, res) => {
 
       const webhookEvent = entry.messaging[0];
       const senderPsid = webhookEvent.sender?.id; // معرف المرسل
-      const pageId = entry.id; // معرف الصفحة
-
-      console.log('💬 Event received:', { senderPsid, pageId });
 
       if (!senderPsid) {
-        console.log('❌ Missing sender PSID in webhook event');
+        console.log('❌ Sender PSID not found in webhook event:', webhookEvent);
         continue;
       }
 
-      // جلب الـ bot بناءً على الـ facebookPageId
+      // جلب البوت بناءً على pageId
+      const pageId = entry.id;
       const bot = await Bot.findOne({ facebookPageId: pageId });
+
       if (!bot) {
-        console.log('❌ Bot not found for facebookPageId:', pageId);
+        console.log(`❌ No bot found for page ID: ${pageId}`);
         continue;
       }
 
-      const botId = bot._id;
-      const facebookApiKey = bot.facebookApiKey;
+      // التحقق من وجود المحادثة
+      let conversation = await Conversation.findOne({
+        botId: bot._id,
+        userId: senderPsid,
+      });
 
-      console.log('🤖 Bot found:', { botId: botId.toString(), facebookApiKey });
-
-      if (!facebookApiKey) {
-        console.log('❌ No facebookApiKey found for botId:', botId);
-        continue;
+      if (!conversation) {
+        conversation = new Conversation({
+          botId: bot._id,
+          userId: senderPsid,
+          messages: [],
+        });
       }
 
-      let reply;
+      // معالجة الرسالة
+      if (webhookEvent.message) {
+        const message = webhookEvent.message;
 
-      // التحقق من نوع الرسالة (نص، صورة، صوت)
-      if (webhookEvent.message?.text) {
-        // رسالة نصية
-        const message = webhookEvent.message.text;
-        console.log('💬 Text message received:', message);
-        reply = await processMessage(botId, senderPsid, message, false, false);
-      } else if (webhookEvent.message?.attachments?.[0]?.type === 'image') {
-        // رسالة صورة
-        const imageUrl = webhookEvent.message.attachments[0].payload.url;
-        console.log('🖼️ Image message received:', imageUrl);
-        reply = await processMessage(botId, senderPsid, imageUrl, true, false);
-      } else if (webhookEvent.message?.attachments?.[0]?.type === 'audio') {
-        // رسالة صوتية
-        const audioUrl = webhookEvent.message.attachments[0].payload.url;
-        console.log('🎙️ Audio message received:', audioUrl);
-        reply = await processMessage(botId, senderPsid, audioUrl, false, true);
+        // حفظ الرسالة في المحادثة
+        conversation.messages.push({
+          role: 'user',
+          content: message.text || 'رسالة غير نصية',
+        });
+
+        let responseText = '';
+
+        // التحقق من نوع الرسالة
+        if (message.text) {
+          console.log(`📝 Text message received from ${senderPsid}: ${message.text}`);
+          responseText = await processMessage(message.text, bot._id);
+        } else if (message.attachments) {
+          const attachment = message.attachments[0];
+          if (attachment.type === 'image') {
+            console.log(`🖼️ Image received from ${senderPsid}: ${attachment.payload.url}`);
+            responseText = 'شكرًا على إرسال الصورة! كيف يمكنني مساعدتك؟';
+          } else if (attachment.type === 'audio') {
+            console.log(`🎙️ Audio received from ${senderPsid}: ${attachment.payload.url}`);
+            responseText = 'شكرًا على إرسال الصوت! كيف يمكنني مساعدتك؟';
+          } else {
+            console.log(`📎 Unsupported attachment type from ${senderPsid}: ${attachment.type}`);
+            responseText = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
+          }
+        } else {
+          console.log(`❓ Unknown message type from ${senderPsid}`);
+          responseText = 'عذرًا، لا أستطيع فهم هذه الرسالة.';
+        }
+
+        // حفظ رد البوت في المحادثة
+        conversation.messages.push({
+          role: 'assistant',
+          content: responseText,
+        });
+
+        await conversation.save();
+
+        // إرسال الرد للمستخدم
+        await exports.sendMessage(senderPsid, responseText, bot.facebookApiKey);
       } else {
-        console.log('❌ Unsupported message type');
-        reply = 'عذرًا، لا أستطيع التعامل مع هذا النوع من الرسائل حاليًا.';
+        console.log('❌ No message found in webhook event:', webhookEvent);
       }
-
-      console.log('✅ Generated reply:', reply);
-
-      // إرسال الرد للمستخدم
-      await sendMessage(senderPsid, reply, facebookApiKey);
     }
 
-    res.status(200).json({ message: 'EVENT_RECEIVED' });
+    res.status(200).send('EVENT_RECEIVED');
   } catch (err) {
-    console.error('❌ خطأ في معالجة رسالة فيسبوك:', err.message, err.stack);
+    console.error('❌ Error in handleMessage:', err.message, err.stack);
     res.sendStatus(500);
   }
 };
 
-// دالة لإرسال رسالة عبر فيسبوك
-async function sendMessage(senderPsid, message, facebookApiKey) {
-  const requestBody = {
-    recipient: {
-      id: senderPsid,
-    },
-    message: {
-      text: message,
-    },
-  };
-
-  console.log('📤 Sending message to PSID:', senderPsid, 'Message:', message);
-
+// دالة لإرسال رسالة إلى المستخدم عبر فيسبوك
+exports.sendMessage = (senderPsid, responseText, facebookApiKey) => {
   return new Promise((resolve, reject) => {
+    const requestBody = {
+      recipient: { id: senderPsid },
+      message: { text: responseText },
+    };
+
     request(
       {
-        url: 'https://graph.facebook.com/v2.6/me/messages',
+        uri: 'https://graph.facebook.com/v2.6/me/messages',
         qs: { access_token: facebookApiKey },
         method: 'POST',
         json: requestBody,
       },
-      (err, response, body) => {
+      (err, res, body) => {
         if (err) {
-          console.error('❌ خطأ في إرسال الرسالة:', err);
-          reject(err);
-        } else if (response.body.error) {
-          console.error('❌ خطأ من فيسبوك:', response.body.error);
-          reject(response.body.error);
-        } else {
-          console.log('✅ تم إرسال الرسالة بنجاح:', body);
-          resolve(body);
+          console.error('❌ Error sending message to Facebook:', err.message, err.stack);
+          return reject(err);
         }
+        if (res.statusCode !== 200) {
+          console.error('❌ Failed to send message to Facebook:', body);
+          return reject(new Error('Failed to send message to Facebook'));
+        }
+        console.log(`✅ Message sent to ${senderPsid}: ${responseText}`);
+        resolve(body);
       }
     );
   });
-}
+};
 
-module.exports = { handleMessage };
+module.exports = { handleMessage, sendMessage };
