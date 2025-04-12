@@ -12,4 +12,5 @@ const conversationSchema = new mongoose.Schema({
   ],
 });
 
-module.exports = mongoose.model('Conversation', conversationSchema);
+// التأكد إن المودل ما يتعرفش أكتر من مرة
+module.exports = mongoose.models.Conversation || mongoose.model('Conversation', conversationSchema);
