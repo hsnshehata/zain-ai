@@ -3,55 +3,36 @@ body {
   background-color: #f4f4f4;
   margin: 0;
   padding: 0;
-  direction: rtl;
 }
 
 .container {
-  max-width: 800px;
-  margin: 0 auto;
+  width: 80%;
+  margin: auto;
+  overflow: hidden;
   padding: 20px;
-  background: #fff;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  margin-top: 20px;
 }
 
-h1, h2, h3 {
+h1 {
   color: #333;
-  text-align: center;
 }
 
-form div {
-  margin-bottom: 15px;
+nav ul {
+  list-style: none;
+  padding: 0;
 }
 
-label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
+nav ul li {
+  display: inline;
+  margin-right: 10px;
 }
 
-input, select, textarea {
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  box-sizing: border-box;
+nav ul li a {
+  text-decoration: none;
+  color: #007bff;
 }
 
-button {
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 4px;
-  cursor: pointer;
-  margin: 5px;
-}
-
-button:hover {
-  background-color: #0056b3;
+nav ul li a:hover {
+  text-decoration: underline;
 }
 
 table {
@@ -60,35 +41,51 @@ table {
   margin-top: 20px;
 }
 
+table, th, td {
+  border: 1px solid #ddd;
+}
+
 th, td {
   padding: 10px;
-  border: 1px solid #ddd;
-  text-align: center;
+  text-align: left;
 }
 
 th {
   background-color: #007bff;
-  color: #fff;
+  color: white;
 }
 
-td button {
-  background-color: #dc3545;
-  margin: 0 5px;
+button {
+  padding: 5px 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
 }
 
-td button:hover {
-  background-color: #c82333;
+button:hover {
+  background-color: #0056b3;
 }
 
-.logout-btn {
-  background-color: #dc3545;
+form {
+  margin-top: 20px;
 }
 
-.logout-btn:hover {
-  background-color: #c82333;
+form label {
+  display: block;
+  margin: 10px 0 5px;
 }
 
-.selected-bot {
-  background-color: #e0e0e0;
-  font-weight: bold;
+form input, form select {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 10px;
+}
+
+form button {
+  background-color: #28a745;
+}
+
+form button:hover {
+  background-color: #218838;
 }
