@@ -4,7 +4,7 @@ const { processMessage } = require('../botEngine');
 const Conversation = require('../models/Conversation');
 
 // دالة لمعالجة الرسايل من فيسبوك
-exports.handleMessage = async (req, res) => {
+const handleMessage = async (req, res) => {
   try {
     console.log('📩 Webhook POST request received:', JSON.stringify(req.body, null, 2));
 
@@ -94,7 +94,7 @@ exports.handleMessage = async (req, res) => {
         await conversation.save();
 
         // إرسال الرد للمستخدم
-        await exports.sendMessage(senderPsid, responseText, bot.facebookApiKey);
+        await sendMessage(senderPsid, responseText, bot.facebookApiKey);
       } else {
         console.log('❌ No message found in webhook event:', webhookEvent);
       }
@@ -108,7 +108,7 @@ exports.handleMessage = async (req, res) => {
 };
 
 // دالة لإرسال رسالة إلى المستخدم عبر فيسبوك
-exports.sendMessage = (senderPsid, responseText, facebookApiKey) => {
+const sendMessage = (senderPsid, responseText, facebookApiKey) => {
   return new Promise((resolve, reject) => {
     const requestBody = {
       recipient: { id: senderPsid },
