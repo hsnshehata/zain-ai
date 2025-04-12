@@ -49,6 +49,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Load bots page by default
+  // تحميل صفحة البوتات افتراضيًا
   loadBotsPage();
 });
+
+// دالة لتحميل صفحة القواعد ديناميكيًا
+function loadRulesPage() {
+  const content = document.getElementById('content');
+  content.innerHTML = `
+    <h2>إدارة القواعد</h2>
+    <form id="ruleForm">
+      <div>
+        <label for="botId">اختر البوت:</label>
+        <select id="botId" name="botId" required>
+          <option value="">اختر بوت</option>
+        </select>
+      </div>
+      <div>
+        <label for="type">نوع القاعدة:</label>
+        <select id="type" name="type" required>
+          <option value="">اختر نوع القاعدة</option>
+          <option value="general">عامة</option>
+          <option value="products">منتجات</option>
+          <option value="qa">سؤال وجواب</option>
+        </select>
+      </div>
+      <div id="contentFields"></div>
+      <button type="submit">إضافة القاعدة</button>
+    </form>
+    <h3>القواعد الحالية</h3>
+    <ul id="rulesList"></ul>
+  `;
+}
