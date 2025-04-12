@@ -1,106 +1,109 @@
-async function loadRulesPage() {
-  const content = document.getElementById('content');
-  const botId = getSelectedBotId();
+document.addEventListener('DOMContentLoaded', async () => {
+  const token = localStorage.getItem('token');
+  const userRole = localStorage.getItem('role');
+  const botIdSelect = document.getElementById('botId');
+  const typeSelect = document.getElementById('type');
+  const contentFields = document.getElementById('contentFields');
+  const ruleForm = document.getElementById('ruleForm');
+  const rulesList = document.getElementById('rulesList');
 
-  if (!botId) {
-    content.innerHTML = '<p>يرجى اختيار بوت أولاً من صفحة البوتات</p>';
-    return;
+  // إذا كان المستخدم سوبر أدمن، أضف خيار Global
+  if (userRole === 'superadmin') {
+    const globalOption = document.createElement('option');
+    globalOption.value = 'global';
+    globalOption.textContent = 'موحدة (لكل البوتات)';
+    typeSelect.appendChild(globalOption);
   }
 
-  content.innerHTML = `
-    <h2>إدارة القواعد</h2>
-    <button onclick="showCreateRuleForm()">إنشاء قاعدة جديدة</button>
-    <div id="formContainer"></div>
-    <table>
-      <thead>
-        <tr>
-          <th>نوع القاعدة</th>
-          <th>المحتوى</th>
-          <th>الإجراءات</th>
-        </tr>
-      </thead>
-      <tbody id="rulesTable"></tbody>
-    </table>
-  `;
-
-  await fetchRules(botId);
-}
-
-async function fetchRules(botId) {
+  // جلب قايمة البوتات
   try {
-    const res = await fetch(`/api/rules?botId=${botId}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+    const response = await fetch('/api/bots', {
+      headers: { 'Authorization': `Bearer ${token}` },
     });
-    if (!res.ok) {
-      throw new Error('فشل في جلب القواعد');
-    }
-    const rules = await res.json();
-
-    const tbody = document.getElementById('rulesTable');
-    tbody.innerHTML = '';
-
-    rules.forEach((rule) => {
-      let contentDisplay = '';
-      if (rule.type === 'global' || rule.type === 'general') {
-        contentDisplay = rule.content;
-      } else if (rule.type === 'products') {
-        contentDisplay = `المنتج: ${rule.content.product}, السعر: ${rule.content.price} ${rule.content.currency}`;
-      } else if (rule.type === 'qa') {
-        contentDisplay = `السؤال: ${rule.content.question}, الإجابة: ${rule.content.answer}`;
-      }
-
-      const row = `
-        <tr>
-          <td>${rule.type === 'global' ? 'عام' : rule.type === 'general' ? 'عام' : rule.type === 'products' ? 'منتجات' : 'سؤال وجواب'}</td>
-          <td>${contentDisplay}</td>
-          <td>
-            <button onclick="editRule('${rule._id}', '${rule.type}', '${JSON.stringify(rule.content).replace(/"/g, '&quot;')}')">تعديل</button>
-            <button onclick="deleteRule('${rule._id}')">حذف</button>
-          </td>
-        </tr>
-      `;
-      tbody.innerHTML += row;
+    const bots = await response.json();
+    bots.forEach(bot => {
+      const option = document.createElement('option');
+      option.value = bot._id;
+      option.textContent = bot.name;
+      botIdSelect.appendChild(option);
     });
   } catch (err) {
-    console.error('خطأ في جلب القواعد:', err);
-    alert('خطأ في جلب القواعد');
+    console.error('خطأ في جلب البوتات:', err);
   }
-}
 
-function showCreateRuleForm() {
-  const formContainer = document.getElementById('formContainer');
-  formContainer.innerHTML = `
-    <h3>إنشاء قاعدة جديدة</h3>
-    <form id="createRuleForm">
-      <div>
-        <label for="ruleType">نوع القاعدة:</label>
-        <select id="ruleType" onchange="updateRuleForm(this.value)" required>
-          <option value="">اختر نوع القاعدة</option>
-          <option value="general">عام</option>
-          <option value="products">منتجات</option>
-          <option value="qa">سؤال وجواب</option>
-        </select>
-      </div>
-      <div id="ruleContent"></div>
-      <button type="submit">إنشاء</button>
-    </form>
-    <p id="ruleError" style="color: red;"></p>
-  `;
+  // تغيير الحقول بناءً على نوع القاعدة
+  typeSelect.addEventListener('change', () => {
+    contentFields.innerHTML = '';
+    const type = typeSelect.value;
+    if (type === 'general' || type === 'global') {
+      contentFields.innerHTML = `
+        <label for="content">المحتوى:</label>
+        <textarea id="content" name="content" required></textarea>
+      `;
+    } else if (type === 'products') {
+      contentFields.innerHTML = `
+        <label for="product">المنتج:</label>
+        <input type="text" id="product" name="product" required>
+        <label for="price">السعر:</label>
+        <input type="number" id="price" name="price" required>
+        <label for="currency">العملة:</label>
+        <input type="text" id="currency" name="currency" required>
+      `;
+    } else if (type === 'qa') {
+      contentFields.innerHTML = `
+        <label for="question">السؤال:</label>
+        <input type="text" id="question" name="question" required>
+        <label for="answer">الإجابة:</label>
+        <textarea id="answer" name="answer" required></textarea>
+      `;
+    }
+  });
 
-  document.getElementById('createRuleForm').addEventListener('submit', async (e) => {
+  // جلب القواعد
+  const loadRules = async (botId) => {
+    try {
+      const response = await fetch(`/api/rules?botId=${botId}`, {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      const rules = await response.json();
+      rulesList.innerHTML = '';
+      rules.forEach(rule => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          نوع القاعدة: ${rule.type} | المحتوى: ${JSON.stringify(rule.content)}
+          <button onclick="editRule('${rule._id}')">تعديل</button>
+          <button onclick="deleteRule('${rule._id}')">حذف</button>
+        `;
+        // إذا كانت القاعدة موحدة (Global) ومستخدم عادي، يمنع التعديل والحذف
+        if (rule.type === 'global' && userRole !== 'superadmin') {
+          li.innerHTML = `نوع القاعدة: ${rule.type} | المحتوى: ${JSON.stringify(rule.content)} (غير مسموح بالتعديل)`;
+        }
+        rulesList.appendChild(li);
+      });
+    } catch (err) {
+      console.error('خطأ في جلب القواعد:', err);
+    }
+  };
+
+  botIdSelect.addEventListener('change', () => {
+    const selectedBotId = botIdSelect.value;
+    if (selectedBotId) loadRules(selectedBotId);
+  });
+
+  // إضافة قاعدة جديدة
+  ruleForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    const botId = getSelectedBotId();
-    const type = document.getElementById('ruleType').value;
+    const botId = botIdSelect.value;
+    const type = typeSelect.value;
     let content = {};
 
-    if (type === 'general') {
-      content = document.getElementById('generalContent').value;
+    if (type === 'general' || type === 'global') {
+      content = document.getElementById('content').value;
     } else if (type === 'products') {
       content = {
-        product: document.getElementById('productName').value,
-        price: document.getElementById('productPrice').value,
-        currency: document.getElementById('productCurrency').value,
+        product: document.getElementById('product').value,
+        price: document.getElementById('price').value,
+        currency: document.getElementById('currency').value,
       };
     } else if (type === 'qa') {
       content = {
@@ -109,131 +112,81 @@ function showCreateRuleForm() {
       };
     }
 
-    const errorEl = document.getElementById('ruleError');
-
     try {
-      const res = await fetch('/api/rules', {
+      const response = await fetch('/api/rules', {
         method: 'POST',
         headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify({ botId, type, content }),
       });
-
-      const data = await res.json();
-      if (res.ok) {
-        formContainer.innerHTML = '<p>تم إنشاء القاعدة بنجاح!</p>';
-        await fetchRules(botId);
+      if (response.ok) {
+        alert('تم إضافة القاعدة بنجاح');
+        loadRules(botId);
       } else {
-        errorEl.textContent = data.message || 'فشل في إنشاء القاعدة';
+        alert('خطأ في إضافة القاعدة');
       }
     } catch (err) {
-      console.error('خطأ في إنشاء القاعدة:', err);
-      errorEl.textContent = 'خطأ في السيرفر';
+      console.error('خطأ في إضافة القاعدة:', err);
     }
   });
-}
 
-function updateRuleForm(type) {
-  const ruleContent = document.getElementById('ruleContent');
-  if (type === 'general') {
-    ruleContent.innerHTML = `
-      <div>
-        <label for="generalContent">المحتوى:</label>
-        <textarea id="generalContent" required></textarea>
-      </div>
-    `;
-  } else if (type === 'products') {
-    ruleContent.innerHTML = `
-      <div>
-        <label for="productName">اسم المنتج:</label>
-        <input type="text" id="productName" required>
-      </div>
-      <div>
-        <label for="productPrice">السعر:</label>
-        <input type="number" id="productPrice" required>
-      </div>
-      <div>
-        <label for="productCurrency">العملة:</label>
-        <input type="text" id="productCurrency" required>
-      </div>
-    `;
-  } else if (type === 'qa') {
-    ruleContent.innerHTML = `
-      <div>
-        <label for="question">السؤال:</label>
-        <input type="text" id="question" required>
-      </div>
-      <div>
-        <label for="answer">الإجابة:</label>
-        <textarea id="answer" required></textarea>
-      </div>
-    `;
-  } else {
-    ruleContent.innerHTML = '';
-  }
-}
-
-async function editRule(id, type, contentJson) {
-  const content = JSON.parse(contentJson);
-  const newType = prompt('أدخل نوع القاعدة (general, products, qa):', type);
-  let newContent = {};
-
-  if (newType === 'general') {
-    newContent = prompt('أدخل المحتوى:', content);
-  } else if (newType === 'products') {
-    newContent.product = prompt('أدخل اسم المنتج:', content.product);
-    newContent.price = prompt('أدخل السعر:', content.price);
-    newContent.currency = prompt('أدخل العملة:', content.currency);
-  } else if (newType === 'qa') {
-    newContent.question = prompt('أدخل السؤال:', content.question);
-    newContent.answer = prompt('أدخل الإجابة:', content.answer);
-  }
-
-  if (newType && Object.keys(newContent).length > 0) {
-    try {
-      const res = await fetch(`/api/rules/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({ type: newType, content: newContent }),
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        alert('تم تعديل القاعدة بنجاح');
-        await fetchRules(getSelectedBotId());
-      } else {
-        alert(data.message || 'فشل في تعديل القاعدة');
-      }
-    } catch (err) {
-      console.error('خطأ في تعديل القاعدة:', err);
-      alert('خطأ في السيرفر');
+  // تعديل قاعدة
+  window.editRule = async (ruleId) => {
+    const response = await fetch(`/api/rules/${ruleId}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    const rule = await response.json();
+    if (rule.type === 'global' && userRole !== 'superadmin') {
+      alert('غير مسموح لك بتعديل القواعد الموحدة');
+      return;
     }
-  }
-}
-
-async function deleteRule(id) {
-  if (confirm('هل أنت متأكد من حذف هذه القاعدة؟')) {
-    try {
-      const res = await fetch(`/api/rules/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-
-      const data = await res.json();
-      if (res.ok) {
-        alert('تم حذف القاعدة بنجاح');
-        await fetchRules(getSelectedBotId());
-      } else {
-        alert(data.message || 'فشل في حذف القاعدة');
+    // هنا ممكن تعمل نموذج تعديل بطريقة مشابهة للإضافة
+    const newContent = prompt('أدخل المحتوى الجديد:', JSON.stringify(rule.content));
+    if (newContent) {
+      try {
+        const updateResponse = await fetch(`/api/rules/${ruleId}`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ type: rule.type, content: JSON.parse(newContent) }),
+        });
+        if (updateResponse.ok) {
+          alert('تم تعديل القاعدة بنجاح');
+          loadRules(botIdSelect.value);
+        }
+      } catch (err) {
+        console.error('خطأ في تعديل القاعدة:', err);
       }
-    } catch (err) {
-      console.error('خطأ في حذف القاعدة:', err);
-      alert('خطأ في السيرفر');
     }
-  }
-}
+  };
+
+  // حذف قاعدة
+  window.deleteRule = async (ruleId) => {
+    const response = await fetch(`/api/rules/${ruleId}`, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    const rule = await response.json();
+    if (rule.type === 'global' && userRole !== 'superadmin') {
+      alert('غير مسموح لك بحذف القواعد الموحدة');
+      return;
+    }
+    if (confirm('هل أنت متأكد من حذف هذه القاعدة؟')) {
+      try {
+        const deleteResponse = await fetch(`/api/rules/${ruleId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (deleteResponse.ok) {
+          alert('تم حذف القاعدة بنجاح');
+          loadRules(botIdSelect.value);
+        }
+      } catch (err) {
+        console.error('خطأ في حذف القاعدة:', err);
+      }
+    }
+  };
+});
