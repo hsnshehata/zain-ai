@@ -67,15 +67,15 @@ const handleMessage = async (req, res) => {
         // التحقق من نوع الرسالة
         if (message.text) {
           console.log(`📝 Text message received from ${senderPsid}: ${message.text}`);
-          responseText = await processMessage(message.text, bot._id);
+          responseText = await processMessage(bot._id, senderPsid, message.text);
         } else if (message.attachments) {
           const attachment = message.attachments[0];
           if (attachment.type === 'image') {
             console.log(`🖼️ Image received from ${senderPsid}: ${attachment.payload.url}`);
-            responseText = 'شكرًا على إرسال الصورة! كيف يمكنني مساعدتك؟';
+            responseText = await processMessage(bot._id, senderPsid, attachment.payload.url, true);
           } else if (attachment.type === 'audio') {
             console.log(`🎙️ Audio received from ${senderPsid}: ${attachment.payload.url}`);
-            responseText = 'شكرًا على إرسال الصوت! كيف يمكنني مساعدتك؟';
+            responseText = await processMessage(bot._id, senderPsid, attachment.payload.url, false, true);
           } else {
             console.log(`📎 Unsupported attachment type from ${senderPsid}: ${attachment.type}`);
             responseText = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
@@ -93,7 +93,7 @@ const handleMessage = async (req, res) => {
 
         await conversation.save();
 
-        // إرسال الرد للمستخدم
+        // إرسال الرد للمستخدم باستخدام facebookApiKey من قاعدة البيانات
         await sendMessage(senderPsid, responseText, bot.facebookApiKey);
       } else {
         console.log('❌ No message found in webhook event:', webhookEvent);
