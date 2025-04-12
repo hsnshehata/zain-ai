@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   const ruleForm = document.getElementById('ruleForm');
   const rulesList = document.getElementById('rulesList');
 
-  // إذا كان المستخدم سوبر أدمن، أضف خيار Global
   if (userRole === 'superadmin') {
     const globalOption = document.createElement('option');
     globalOption.value = 'global';
@@ -15,7 +14,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     typeSelect.appendChild(globalOption);
   }
 
-  // جلب قايمة البوتات
   try {
     const response = await fetch('/api/bots', {
       headers: { 'Authorization': `Bearer ${token}` },
@@ -31,7 +29,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.error('خطأ في جلب البوتات:', err);
   }
 
-  // تغيير الحقول بناءً على نوع القاعدة
   typeSelect.addEventListener('change', () => {
     contentFields.innerHTML = '';
     const type = typeSelect.value;
@@ -59,7 +56,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // جلب القواعد
   const loadRules = async (botId) => {
     try {
       const response = await fetch(`/api/rules?botId=${botId}`, {
@@ -74,7 +70,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           <button onclick="editRule('${rule._id}')">تعديل</button>
           <button onclick="deleteRule('${rule._id}')">حذف</button>
         `;
-        // إذا كانت القاعدة موحدة (Global) ومستخدم عادي، يمنع التعديل والحذف
         if (rule.type === 'global' && userRole !== 'superadmin') {
           li.innerHTML = `نوع القاعدة: ${rule.type} | المحتوى: ${JSON.stringify(rule.content)} (غير مسموح بالتعديل)`;
         }
@@ -90,7 +85,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (selectedBotId) loadRules(selectedBotId);
   });
 
-  // إضافة قاعدة جديدة
   ruleForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const botId = botIdSelect.value;
@@ -132,7 +126,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // تعديل قاعدة
   window.editRule = async (ruleId) => {
     const response = await fetch(`/api/rules/${ruleId}`, {
       headers: { 'Authorization': `Bearer ${token}` },
@@ -142,7 +135,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       alert('غير مسموح لك بتعديل القواعد الموحدة');
       return;
     }
-    // هنا ممكن تعمل نموذج تعديل بطريقة مشابهة للإضافة
     const newContent = prompt('أدخل المحتوى الجديد:', JSON.stringify(rule.content));
     if (newContent) {
       try {
@@ -164,7 +156,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  // حذف قاعدة
   window.deleteRule = async (ruleId) => {
     const response = await fetch(`/api/rules/${ruleId}`, {
       headers: { 'Authorization': `Bearer ${token}` },
