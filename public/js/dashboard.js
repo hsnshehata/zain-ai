@@ -148,7 +148,7 @@ async function loadRulesPage() {
   const rulesList = document.getElementById('rulesList');
 
   // إضافة خيار القواعد الموحدة للسوبر أدمن فقط
-  if (userRole === 'superadmin') {
+  if (userRole === 'superadmin' && typeSelect) {
     const globalOption = document.createElement('option');
     globalOption.value = 'global';
     globalOption.textContent = 'موحدة (لكل البوتات)';
@@ -156,36 +156,38 @@ async function loadRulesPage() {
   }
 
   // تغيير الحقول بناءً على نوع القاعدة
-  typeSelect.addEventListener('change', () => {
-    contentFields.innerHTML = '';
-    const type = typeSelect.value;
-    if (type === 'general' || type === 'global') {
-      contentFields.innerHTML = `
-        <label for="content">المحتوى:</label>
-        <textarea id="content" name="content" required></textarea>
-      `;
-    } else if (type === 'products') {
-      contentFields.innerHTML = `
-        <label for="product">المنتج:</label>
-        <input type="text" id="product" name="product" required>
-        <label for="price">السعر:</label>
-        <input type="number" id="price" name="price" required>
-        <label for="currency">العملة:</label>
-        <select id="currency" name="currency" required>
-          <option value="">اختر العملة</option>
-          <option value="جنيه">جنيه</option>
-          <option value="دولار">دولار</option>
-        </select>
-      `;
-    } else if (type === 'qa') {
-      contentFields.innerHTML = `
-        <label for="question">السؤال:</label>
-        <input type="text" id="question" name="question" required>
-        <label for="answer">الإجابة:</label>
-        <textarea id="answer" name="answer" required></textarea>
-      `;
-    }
-  });
+  if (typeSelect) {
+    typeSelect.addEventListener('change', () => {
+      contentFields.innerHTML = '';
+      const type = typeSelect.value;
+      if (type === 'general' || type === 'global') {
+        contentFields.innerHTML = `
+          <label for="content">المحتوى:</label>
+          <textarea id="content" name="content" required></textarea>
+        `;
+      } else if (type === 'products') {
+        contentFields.innerHTML = `
+          <label for="product">المنتج:</label>
+          <input type="text" id="product" name="product" required>
+          <label for="price">السعر:</label>
+          <input type="number" id="price" name="price" required>
+          <label for="currency">العملة:</label>
+          <select id="currency" name="currency" required>
+            <option value="">اختر العملة</option>
+            <option value="جنيه">جنيه</option>
+            <option value="دولار">دولار</option>
+          </select>
+        `;
+      } else if (type === 'qa') {
+        contentFields.innerHTML = `
+          <label for="question">السؤال:</label>
+          <input type="text" id="question" name="question" required>
+          <label for="answer">الإجابة:</label>
+          <textarea id="answer" name="answer" required></textarea>
+        `;
+      }
+    });
+  }
 
   // دالة لجلب القواعد
   const loadRules = async (botId) => {
@@ -235,21 +237,34 @@ async function loadRulesPage() {
     e.preventDefault();
     const botId = botIdSelect.value;
     const type = typeSelect.value;
-    let content = {};
+    let content;
 
     if (type === 'general' || type === 'global') {
-      content = document.getElementById('content').value;
+      content = document.getElementById('content')?.value;
+      if (!content) {
+        alert('يرجى إدخال المحتوى');
+        return;
+      }
     } else if (type === 'products') {
-      content = {
-        product: document.getElementById('product').value,
-        price: document.getElementById('price').value,
-        currency: document.getElementById('currency').value,
-      };
+      const product = document.getElementById('product')?.value;
+      const price = document.getElementById('price')?.value;
+      const currency = document.getElementById('currency')?.value;
+      if (!product || !price || !currency) {
+        alert('يرجى إدخال جميع الحقول (المنتج، السعر، العملة)');
+        return;
+      }
+      content = { product, price, currency };
     } else if (type === 'qa') {
-      content = {
-        question: document.getElementById('question').value,
-        answer: document.getElementById('answer').value,
-      };
+      const question = document.getElementById('question')?.value;
+      const answer = document.getElementById('answer')?.value;
+      if (!question || !answer) {
+        alert('يرجى إدخال السؤال والإجابة');
+        return;
+      }
+      content = { question, answer };
+    } else {
+      alert('يرجى اختيار نوع القاعدة');
+      return;
     }
 
     try {
@@ -262,14 +277,15 @@ async function loadRulesPage() {
         body: JSON.stringify({ botId, type, content }),
       });
       if (!response.ok) {
-        throw new Error('فشل في إضافة القاعدة');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'فشل في إضافة القاعدة');
       }
       const data = await response.json();
       alert('تم إضافة القاعدة بنجاح');
       loadRules(botId); // إعادة جلب القواعد بعد الحفظ
     } catch (err) {
       console.error('خطأ في إضافة القاعدة:', err);
-      alert('خطأ في إضافة القاعدة');
+      alert(`خطأ في إضافة القاعدة: ${err.message}`);
     }
   });
 
