@@ -3,6 +3,7 @@ let selectedBotId = null;
 async function loadBotsPage() {
   const content = document.getElementById('content');
   const role = localStorage.getItem('role');
+  const userId = localStorage.getItem('userId');
 
   let html = `
     <h2>إدارة البوتات</h2>
@@ -12,6 +13,7 @@ async function loadBotsPage() {
     </div>
   `;
 
+  // إظهار أزرار "إنشاء مستخدم جديد" و"إنشاء بوت جديد" للسوبر أدمن فقط
   if (role === 'superadmin') {
     html += `
       <button onclick="showCreateUserForm()">إنشاء مستخدم جديد</button>
@@ -45,6 +47,7 @@ async function loadBotsPage() {
 async function populateBotSelect() {
   const botSelect = document.getElementById('botSelect');
   const role = localStorage.getItem('role');
+  const userId = localStorage.getItem('userId');
   try {
     const res = await fetch('/api/bots', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
@@ -55,7 +58,8 @@ async function populateBotSelect() {
     const bots = await res.json();
 
     botSelect.innerHTML = '';
-    const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === localStorage.getItem('userId'));
+    // للمستخدم العادي، نعرض فقط البوتات الخاصة به
+    const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
     userBots.forEach((bot) => {
       botSelect.innerHTML += `<option value="${bot._id}">${bot.name}</option>`;
     });
@@ -77,6 +81,8 @@ function selectBot(botId) {
 }
 
 async function fetchUsers() {
+  const role = localStorage.getItem('role');
+  const userId = localStorage.getItem('userId');
   try {
     const res = await fetch('/api/users', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
@@ -84,17 +90,29 @@ async function fetchUsers() {
     if (!res.ok) {
       throw new Error('فشل في جلب المستخدمين');
     }
-    const users = await res.json();
+    let users = await res.json();
 
     const tbody = document.getElementById('usersTable');
     tbody.innerHTML = '';
 
+    // للمستخدم العادي، نعرض فقط بياناته هو
+    if (role !== 'superadmin') {
+      users = users.filter(user => user._id === userId);
+    }
+
     users.forEach((user) => {
-      const botsList = user.bots.map((bot) => `
-        ${bot.name}
-        <button onclick="editBot('${bot._id}', '${bot.name}', '${bot.facebookApiKey || ''}', '${bot.facebookPageId || ''}')">تعديل</button>
-        <button onclick="deleteBot('${bot._id}')">حذف</button>
-      `).join('<br>');
+      const botsList = user.bots.map((bot) => {
+        // للمستخدم العادي، نعرض اسم البوت فقط بدون أزرار تعديل أو حذف
+        if (role === 'superadmin') {
+          return `
+            ${bot.name}
+            <button onclick="editBot('${bot._id}', '${bot.name}', '${bot.facebookApiKey || ''}', '${bot.facebookPageId || ''}')">تعديل</button>
+            <button onclick="deleteBot('${bot._id}')">حذف</button>
+          `;
+        } else {
+          return `${bot.name}`;
+        }
+      }).join('<br>');
 
       const row = `
         <tr>
@@ -102,8 +120,10 @@ async function fetchUsers() {
           <td>${user.role === 'superadmin' ? 'سوبر أدمن' : 'مستخدم عادي'}</td>
           <td>${botsList || 'لا توجد بوتات'}</td>
           <td>
-            <button onclick="editUser('${user._id}', '${user.username}', '${user.role}')">تعديل</button>
-            <button onclick="deleteUser('${user._id}')">حذف</button>
+            ${role === 'superadmin' ? `
+              <button onclick="editUser('${user._id}', '${user.username}', '${user.role}')">تعديل</button>
+              <button onclick="deleteUser('${user._id}')">حذف</button>
+            ` : ''}
           </td>
         </tr>
       `;
