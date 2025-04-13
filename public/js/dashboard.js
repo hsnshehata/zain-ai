@@ -5,11 +5,22 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // إعداد الأزرار
-  document.getElementById('botsBtn').addEventListener('click', () => {
-    window.location.hash = 'bots';
-    loadPageBasedOnHash();
-  });
+  // إعداد الأزرار مع التحقق من دور المستخدم
+  const botsBtn = document.getElementById('botsBtn');
+  if (role !== 'superadmin') {
+    // إخفاء زر البوتات للمستخدم العادي
+    if (botsBtn) {
+      botsBtn.style.display = 'none';
+    }
+  } else {
+    // إظهار زر البوتات للسوبر أدمن وإضافة المستمع
+    if (botsBtn) {
+      botsBtn.addEventListener('click', () => {
+        window.location.hash = 'bots';
+        loadPageBasedOnHash();
+      });
+    }
+  }
 
   document.getElementById('rulesBtn').addEventListener('click', () => {
     window.location.hash = 'rules';
@@ -52,13 +63,34 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // تحميل الصفحة بناءً على الـ Hash
   const loadPageBasedOnHash = async () => {
-    const hash = window.location.hash || '#bots'; // افتراضيًا البوتات
-    if (hash === '#bots') {
-      await loadBotsPage();
+    const hash = window.location.hash;
+    const userRole = localStorage.getItem('role');
+
+    // إذا كان المستخدم عاديًا ولم يحدد صفحة، وجّهه إلى صفحة القواعد
+    if (userRole !== 'superadmin' && !hash) {
+      window.location.hash = 'rules';
+      await loadRulesPage();
+    } else if (hash === '#bots') {
+      if (userRole === 'superadmin') {
+        await loadBotsPage();
+      } else {
+        // إذا حاول المستخدم العادي الوصول إلى صفحة البوتات، وجّهه إلى القواعد
+        window.location.hash = 'rules';
+        await loadRulesPage();
+      }
     } else if (hash === '#rules') {
       await loadRulesPage();
     } else if (hash === '#whatsapp') {
       loadWhatsAppPage();
+    } else {
+      // الافتراضي للسوبر أدمن هو البوتات، وللمستخدم العادي هو القواعد
+      if (userRole === 'superadmin') {
+        window.location.hash = 'bots';
+        await loadBotsPage();
+      } else {
+        window.location.hash = 'rules';
+        await loadRulesPage();
+      }
     }
   };
 
@@ -154,6 +186,14 @@ async function loadRulesPage() {
   const ruleFormContainer = document.getElementById('ruleFormContainer');
   const ruleForm = document.getElementById('ruleForm');
   const rulesList = document.getElementById('rulesList');
+
+  // اختيار أول بوت تلقائيًا إذا كان هناك بوتات متاحة
+  if (botIdSelect && userBots.length > 0) {
+    botIdSelect.value = userBots[0]._id; // اختيار أول بوت
+    const changeEvent = new Event('change');
+    botIdSelect.dispatchEvent(changeEvent); // إطلاق حدث change لتحميل القواعد
+    console.log(`✅ تم اختيار البوت الأول تلقائيًا: ${userBots[0].name}`);
+  }
 
   // دالة لتحميل حقول الإدخال بناءً على نوع القاعدة
   const loadContentFields = (type) => {
