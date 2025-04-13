@@ -46,17 +46,55 @@ router.get('/:id', authenticate, async (req, res) => {
 router.post('/', authenticate, async (req, res) => {
   const { botId, type, content } = req.body;
 
+  // التحقق من الحقول الأساسية
   if (!botId || !type || !content) {
     return res.status(400).json({ message: 'جميع الحقول مطلوبة (botId, type, content)' });
   }
 
+  // التحقق من صلاحيات السوبر أدمن للقواعد الموحدة
   if (type === 'global' && req.user.role !== 'superadmin') {
     return res.status(403).json({ message: 'غير مصرح لك بإنشاء قواعد موحدة' });
   }
 
+  // التحقق من نوع القاعدة
+  const validTypes = ['general', 'products', 'qa', 'global', 'api'];
+  if (!validTypes.includes(type)) {
+    return res.status(400).json({ message: 'نوع القاعدة غير صالح' });
+  }
+
+  // التحقق من هيكلية content بناءً على نوع القاعدة
+  if (type === 'general' || type === 'global') {
+    if (typeof content !== 'string' || content.trim() === '') {
+      return res.status(400).json({ message: 'المحتوى يجب أن يكون سلسلة نصية غير فارغة' });
+    }
+  } else if (type === 'products') {
+    if (!content.product || !content.price || !content.currency) {
+      return res.status(400).json({ message: 'حقول المنتج والسعر والعملة مطلوبة' });
+    }
+    if (typeof content.price !== 'number' || content.price <= 0) {
+      return res.status(400).json({ message: 'السعر يجب أن يكون رقمًا موجبًا' });
+    }
+    if (!['جنيه', 'دولار'].includes(content.currency)) {
+      return res.status(400).json({ message: 'العملة يجب أن تكون جنيه أو دولار' });
+    }
+  } else if (type === 'qa') {
+    if (!content.question || !content.answer) {
+      return res.status(400).json({ message: 'حقول السؤال والإجابة مطلوبة' });
+    }
+    if (typeof content.question !== 'string' || typeof content.answer !== 'string') {
+      return res.status(400).json({ message: 'السؤال والإجابة يجب أن يكونا سلسلتين نصيتين' });
+    }
+  } else if (type === 'api') {
+    if (!content.apiKey || typeof content.apiKey !== 'string' || content.apiKey.trim() === '') {
+      return res.status(400).json({ message: 'مفتاح API يجب أن يكون سلسلة نصية غير فارغة' });
+    }
+  }
+
   try {
+    console.log('📥 البيانات المرسلة إلى MongoDB:', { botId, type, content });
     const rule = new Rule({ botId, type, content });
     await rule.save();
+    console.log('✅ تم حفظ القاعدة بنجاح:', rule);
     res.status(201).json(rule);
   } catch (err) {
     console.error('❌ خطأ في إنشاء القاعدة:', err.message, err.stack);
@@ -76,6 +114,44 @@ router.put('/:id', authenticate, async (req, res) => {
 
     if (rule.type === 'global' && req.user.role !== 'superadmin') {
       return res.status(403).json({ message: 'غير مصرح لك بتعديل القواعد الموحدة' });
+    }
+
+    // التحقق من نوع القاعدة إذا تم إرساله
+    if (type) {
+      const validTypes = ['general', 'products', 'qa', 'global', 'api'];
+      if (!validTypes.includes(type)) {
+        return res.status(400).json({ message: 'نوع القاعدة غير صالح' });
+      }
+    }
+
+    // التحقق من هيكلية content إذا تم إرساله
+    if (content) {
+      if (type === 'general' || type === 'global') {
+        if (typeof content !== 'string' || content.trim() === '') {
+          return res.status(400).json({ message: 'المحتوى يجب أن يكون سلسلة نصية غير فارغة' });
+        }
+      } else if (type === 'products') {
+        if (!content.product || !content.price || !content.currency) {
+          return res.status(400).json({ message: 'حقول المنتج والسعر والعملة مطلوبة' });
+        }
+        if (typeof content.price !== 'number' || content.price <= 0) {
+          return res.status(400).json({ message: 'السعر يجب أن يكون رقمًا موجبًا' });
+        }
+        if (!['جنيه', 'دولار'].includes(content.currency)) {
+          return res.status(400).json({ message: 'العملة يجب أن تكون جنيه أو دولار' });
+        }
+      } else if (type === 'qa') {
+        if (!content.question || !content.answer) {
+          return res.status(400).json({ message: 'حقول السؤال والإجابة مطلوبة' });
+        }
+        if (typeof content.question !== 'string' || typeof content.answer !== 'string') {
+          return res.status(400).json({ message: 'السؤال والإجابة يجب أن يكونا سلسلتين نصيتين' });
+        }
+      } else if (type === 'api') {
+        if (!content.apiKey || typeof content.apiKey !== 'string' || content.apiKey.trim() === '') {
+          return res.status(400).json({ message: 'مفتاح API يجب أن يكون سلسلة نصية غير فارغة' });
+        }
+      }
     }
 
     rule.type = type || rule.type;
