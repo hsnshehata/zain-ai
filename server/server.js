@@ -9,6 +9,7 @@ const usersRoutes = require('./routes/users');
 const rulesRoutes = require('./routes/rules');
 const botRoutes = require('./routes/bot');
 const indexRoutes = require('./routes/index');
+const whatsappRoutes = require('./routes/whatsapp'); // إضافة مسار واتساب
 const connectDB = require('./db');
 
 const app = express();
@@ -27,6 +28,7 @@ app.use('/api/bots', botsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/rules', rulesRoutes);
 app.use('/api/bot', botRoutes);
+app.use('/api/whatsapp', whatsappRoutes); // إضافة مسار واتساب
 app.use('/', indexRoutes);
 
 // Route for /dashboard
