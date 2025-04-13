@@ -187,12 +187,11 @@ async function loadRulesPage() {
   const ruleForm = document.getElementById('ruleForm');
   const rulesList = document.getElementById('rulesList');
 
-  // اختيار أول بوت تلقائيًا إذا كان هناك بوتات متاحة
+  // اختيار أول بوت تلقائيًا وتحميل القواعد مباشرة
   if (botIdSelect && userBots.length > 0) {
     botIdSelect.value = userBots[0]._id; // اختيار أول بوت
-    const changeEvent = new Event('change');
-    botIdSelect.dispatchEvent(changeEvent); // إطلاق حدث change لتحميل القواعد
-    console.log(`✅ تم اختيار البوت الأول تلقائيًا: ${userBots[0].name}`);
+    loadRules(userBots[0]._id); // تحميل القواعد مباشرة
+    console.log(`✅ تم اختيار البوت الأول تلقائيًا وتحميل القواعد: ${userBots[0].name}`);
   }
 
   // دالة لتحميل حقول الإدخال بناءً على نوع القاعدة
@@ -294,7 +293,7 @@ async function loadRulesPage() {
     }
   };
 
-  // تحميل القواعد عند اختيار بوت
+  // تحميل القواعد عند اختيار بوت (للتغييرات اليدوية)
   if (botIdSelect) {
     botIdSelect.addEventListener('change', () => {
       const selectedBotId = botIdSelect.value;
