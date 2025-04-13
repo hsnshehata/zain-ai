@@ -8,12 +8,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // إعداد الأزرار مع التحقق من دور المستخدم
   const botsBtn = document.getElementById('botsBtn');
   if (role !== 'superadmin') {
-    // إخفاء زر البوتات للمستخدم العادي
     if (botsBtn) {
       botsBtn.style.display = 'none';
     }
   } else {
-    // إظهار زر البوتات للسوبر أدمن وإضافة المستمع
     if (botsBtn) {
       botsBtn.addEventListener('click', () => {
         window.location.hash = 'bots';
@@ -61,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // دالة جلب القواعد (نقلت إلى هنا لتكون مُعرّفة قبل الاستخدام)
+  // دالة جلب القواعد
   const loadRules = async (botId, rulesList, token) => {
     try {
       const response = await fetch(`/api/rules?botId=${botId}`, {
@@ -108,7 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const hash = window.location.hash;
     const userRole = localStorage.getItem('role');
 
-    // إذا كان المستخدم عاديًا ولم يحدد صفحة، وجّهه إلى صفحة القواعد
     if (userRole !== 'superadmin' && !hash) {
       window.location.hash = 'rules';
       await loadRulesPage();
@@ -116,16 +113,14 @@ document.addEventListener('DOMContentLoaded', () => {
       if (userRole === 'superadmin') {
         await loadBotsPage();
       } else {
-        // إذا حاول المستخدم العادي الوصول إلى صفحة البوتات، وجّهه إلى القواعد
         window.location.hash = 'rules';
         await loadRulesPage();
       }
     } else if (hash === '#rules') {
       await loadRulesPage();
     } else if (hash === '#whatsapp') {
-      loadWhatsAppPage();
+      await loadWhatsAppPage();
     } else {
-      // الافتراضي للسوبر أدمن هو البوتات، وللمستخدم العادي هو القواعد
       if (userRole === 'superadmin') {
         window.location.hash = 'bots';
         await loadBotsPage();
@@ -161,7 +156,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('token');
     const userRole = localStorage.getItem('role');
 
-    // جلب البوتات
     let bots = [];
     try {
       const response = await fetch('/api/bots', {
@@ -201,7 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <button class="rule-type-btn" data-type="api">ربط API للمتجر</button>
     `;
 
-    // إضافة زر القواعد الموحدة للسوبر أدمن فقط
     if (userRole === 'superadmin') {
       html += `<button class="rule-type-btn" data-type="global">قواعد موحدة</button>`;
     }
@@ -220,7 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     rulesContent.innerHTML = html;
 
-    // إضافة منطق الأزرار
     const botIdSelect = document.getElementById('botId');
     const ruleTypeButtons = document.querySelectorAll('.rule-type-btn');
     const contentFields = document.getElementById('contentFields');
@@ -228,14 +220,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const ruleForm = document.getElementById('ruleForm');
     const rulesList = document.getElementById('rulesList');
 
-    // اختيار أول بوت تلقائيًا وتحميل القواعد مباشرة
     if (botIdSelect && userBots.length > 0) {
-      botIdSelect.value = userBots[0]._id; // اختيار أول بوت
-      loadRules(userBots[0]._id, rulesList, token); // تحميل القواعد مباشرة
+      botIdSelect.value = userBots[0]._id;
+      loadRules(userBots[0]._id, rulesList, token);
       console.log(`✅ تم اختيار البوت الأول تلقائيًا وتحميل القواعد: ${userBots[0].name}`);
     }
 
-    // دالة لتحميل حقول الإدخال بناءً على نوع القاعدة
     const loadContentFields = (type) => {
       contentFields.innerHTML = '';
       ruleFormContainer.style.display = 'block';
@@ -280,19 +270,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
-    // إضافة مستمع للأزرار
     ruleTypeButtons.forEach(button => {
       button.addEventListener('click', () => {
-        // إزالة الـ active من جميع الأزرار
         ruleTypeButtons.forEach(btn => btn.classList.remove('active'));
-        // إضافة الـ active للزر المنقر
         button.classList.add('active');
         const type = button.getAttribute('data-type');
         loadContentFields(type);
       });
     });
 
-    // تحميل القواعد عند اختيار بوت (للتغييرات اليدوية)
     if (botIdSelect) {
       botIdSelect.addEventListener('change', () => {
         const selectedBotId = botIdSelect.value;
@@ -302,7 +288,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('العنصر botIdSelect غير موجود في الـ DOM');
     }
 
-    // إضافة قاعدة جديدة
     if (ruleForm) {
       ruleForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -390,7 +375,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
     }
 
-    // دالة تعديل القاعدة
     window.editRule = async (ruleId) => {
       try {
         const response = await fetch(`/api/rules/${ruleId}`, {
@@ -465,7 +449,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
-    // دالة حذف القاعدة
     window.deleteRule = async (ruleId) => {
       try {
         const response = await fetch(`/api/rules/${ruleId}`, {
@@ -493,6 +476,256 @@ document.addEventListener('DOMContentLoaded', () => {
       } catch (err) {
         console.error('خطأ في حذف القاعدة:', err);
         alert('خطأ في حذف القاعدة، حاول مرة أخرى لاحقًا');
+      }
+    };
+  }
+
+  // دالة لتحميل صفحة واتساب
+  async function loadWhatsAppPage() {
+    const content = document.getElementById('content');
+    const role = localStorage.getItem('role');
+    const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('token');
+
+    content.innerHTML = `
+      <h2>إعداد بوت واتساب</h2>
+      <div id="whatsappContent">
+        <p>جاري تحميل البوتات...</p>
+      </div>
+    `;
+
+    const whatsappContent = document.getElementById('whatsappContent');
+
+    // جلب البوتات
+    let bots = [];
+    try {
+      const response = await fetch('/api/bots', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        throw new Error(`فشل في جلب البوتات: ${response.status} ${response.statusText}`);
+      }
+      bots = await response.json();
+    } catch (err) {
+      console.error('خطأ في جلب البوتات:', err);
+      whatsappContent.innerHTML = `
+        <p style="color: red;">تعذر جلب البوتات، حاول مرة أخرى لاحقًا.</p>
+      `;
+      return;
+    }
+
+    let html = `
+      <div>
+        <label for="botId">اختر البوت:</label>
+        <select id="botId" name="botId" required>
+          <option value="">اختر بوت</option>
+    `;
+
+    const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
+    userBots.forEach(bot => {
+      html += `<option value="${bot._id}">${bot.name}</option>`;
+    });
+
+    html += `
+        </select>
+      </div>
+      <div id="connectionStatus" style="margin-top: 10px;">
+        <p>حالة الاتصال: <span id="connectionState">غير متصل</span></p>
+        <p id="connectionDuration" style="display: none;">مدة الاتصال: <span id="durationTime">0</span></p>
+        <button id="endSessionBtn" style="display: none;">إنهاء الجلسة</button>
+      </div>
+      <div id="connectionMethods">
+        <h3>اختر طريقة الاتصال:</h3>
+        <button id="connectWithNumber" class="connection-btn">الاتصال باستخدام الرقم</button>
+        <button id="connectWithAPI" class="connection-btn">الاتصال باستخدام API</button>
+        <button id="connectWithQR" class="connection-btn">الاتصال باستخدام كود QR</button>
+      </div>
+      <div id="connectionDetails" style="display: none;">
+        <h3>تفاصيل الاتصال:</h3>
+        <div id="qrCodeContainer"></div>
+        <div id="connectionForm">
+          <label for="whatsappNumber">رقم واتساب:</label>
+          <input type="text" id="whatsappNumber" name="whatsappNumber" placeholder="أدخل رقم واتساب (مثال: +201234567890)" required>
+          <button id="startConnection">بدء الاتصال</button>
+        </div>
+      </div>
+      <h3>القواعد الحالية للبوت</h3>
+      <ul id="whatsappRulesList"></ul>
+    `;
+
+    whatsappContent.innerHTML = html;
+
+    const botIdSelect = document.getElementById('botId');
+    const connectionState = document.getElementById('connectionState');
+    const connectionDuration = document.getElementById('connectionDuration');
+    const durationTime = document.getElementById('durationTime');
+    const endSessionBtn = document.getElementById('endSessionBtn');
+    const connectWithNumber = document.getElementById('connectWithNumber');
+    const connectWithAPI = document.getElementById('connectWithAPI');
+    const connectWithQR = document.getElementById('connectWithQR');
+    const connectionDetails = document.getElementById('connectionDetails');
+    const qrCodeContainer = document.getElementById('qrCodeContainer');
+    const connectionForm = document.getElementById('connectionForm');
+    const whatsappNumber = document.getElementById('whatsappNumber');
+    const startConnection = document.getElementById('startConnection');
+    const whatsappRulesList = document.getElementById('whatsappRulesList');
+
+    let selectedBotId = null;
+    let connectionStartTime = null;
+    let durationInterval = null;
+
+    // دالة لتحديث حالة الاتصال ومدة الجلسة
+    const updateConnectionStatus = async (botId) => {
+      try {
+        const response = await fetch(`/api/whatsapp/session?botId=${botId}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!response.ok) {
+          throw new Error('فشل في جلب حالة الاتصال');
+        }
+        const session = await response.json();
+        if (session && session.connected) {
+          connectionState.textContent = 'متصل';
+          connectionState.style.color = 'green';
+          connectionDuration.style.display = 'block';
+          endSessionBtn.style.display = 'block';
+          connectionStartTime = new Date(session.startTime);
+          if (durationInterval) clearInterval(durationInterval);
+          durationInterval = setInterval(() => {
+            const now = new Date();
+            const diff = Math.floor((now - connectionStartTime) / 1000);
+            const hours = Math.floor(diff / 3600);
+            const minutes = Math.floor((diff % 3600) / 60);
+            const seconds = diff % 60;
+            durationTime.textContent = `${hours} ساعة، ${minutes} دقيقة، ${seconds} ثانية`;
+          }, 1000);
+        } else {
+          connectionState.textContent = 'غير متصل';
+          connectionState.style.color = 'red';
+          connectionDuration.style.display = 'none';
+          endSessionBtn.style.display = 'none';
+          if (durationInterval) clearInterval(durationInterval);
+        }
+      } catch (err) {
+        console.error('خطأ في جلب حالة الاتصال:', err);
+        connectionState.textContent = 'غير متصل';
+        connectionState.style.color = 'red';
+        connectionDuration.style.display = 'none';
+        endSessionBtn.style.display = 'none';
+        if (durationInterval) clearInterval(durationInterval);
+      }
+    };
+
+    // اختيار أول بوت تلقائيًا وتحميل القواعد وحالة الاتصال
+    if (botIdSelect && userBots.length > 0) {
+      botIdSelect.value = userBots[0]._id;
+      selectedBotId = userBots[0]._id;
+      loadRules(selectedBotId, whatsappRulesList, token);
+      updateConnectionStatus(selectedBotId);
+      console.log(`✅ تم اختيار البوت الأول تلقائيًا: ${userBots[0].name}`);
+    }
+
+    // تحميل القواعد عند تغيير البوت
+    botIdSelect.addEventListener('change', () => {
+      selectedBotId = botIdSelect.value;
+      if (selectedBotId) {
+        loadRules(selectedBotId, whatsappRulesList, token);
+        updateConnectionStatus(selectedBotId);
+        connectionDetails.style.display = 'none';
+        qrCodeContainer.innerHTML = '';
+      }
+    });
+
+    // إظهار نموذج الاتصال عند اختيار طريقة
+    connectWithNumber.addEventListener('click', () => {
+      connectionDetails.style.display = 'block';
+      connectionForm.style.display = 'block';
+      qrCodeContainer.style.display = 'none';
+      qrCodeContainer.innerHTML = '';
+    });
+
+    connectWithAPI.addEventListener('click', () => {
+      connectionDetails.style.display = 'block';
+      connectionForm.style.display = 'block';
+      qrCodeContainer.style.display = 'none';
+      qrCodeContainer.innerHTML = '';
+    });
+
+    connectWithQR.addEventListener('click', () => {
+      connectionDetails.style.display = 'block';
+      connectionForm.style.display = 'none';
+      qrCodeContainer.style.display = 'block';
+      qrCodeContainer.innerHTML = '<p>جاري إنشاء كود QR...</p>';
+      startQRConnection();
+    });
+
+    // بدء الاتصال
+    startConnection.addEventListener('click', async () => {
+      const number = whatsappNumber.value;
+      if (!number || !number.startsWith('+') || number.length < 10) {
+        alert('يرجى إدخال رقم واتساب صالح (مثال: +201234567890)');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/whatsapp/connect', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ botId: selectedBotId, whatsappNumber: number }),
+        });
+        if (!response.ok) {
+          throw new Error('فشل في بدء الاتصال');
+        }
+        alert('تم بدء الاتصال بنجاح! يرجى الانتظار بضع ثوانٍ.');
+        updateConnectionStatus(selectedBotId);
+      } catch (err) {
+        console.error('خطأ في بدء الاتصال:', err);
+        alert('حدث خطأ أثناء بدء الاتصال، حاول مرة أخرى.');
+      }
+    });
+
+    // إنهاء الجلسة
+    endSessionBtn.addEventListener('click', async () => {
+      if (confirm('هل أنت متأكد أنك تريد إنهاء الجلسة الحالية؟')) {
+        try {
+          const response = await fetch(`/api/whatsapp/disconnect?botId=${selectedBotId}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+          if (!response.ok) {
+            throw new Error('فشل في إنهاء الجلسة');
+          }
+          alert('تم إنهاء الجلسة بنجاح');
+          updateConnectionStatus(selectedBotId);
+          connectionDetails.style.display = 'none';
+          qrCodeContainer.innerHTML = '';
+        } catch (err) {
+          console.error('خطأ في إنهاء الجلسة:', err);
+          alert('حدث خطأ أثناء إنهاء الجلسة، حاول مرة أخرى.');
+        }
+      }
+    });
+
+    // دالة لبدء الاتصال باستخدام كود QR
+    const startQRConnection = async () => {
+      try {
+        const response = await fetch(`/api/whatsapp/connect-qr?botId=${selectedBotId}`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!response.ok) {
+          throw new Error('فشل في إنشاء كود QR');
+        }
+        const { qrCode } = await response.json();
+        qrCodeContainer.innerHTML = `<img src="${qrCode}" alt="كود QR" />`;
+        alert('يرجى مسح كود QR باستخدام تطبيق واتساب لربط البوت.');
+        updateConnectionStatus(selectedBotId);
+      } catch (err) {
+        console.error('خطأ في إنشاء كود QR:', err);
+        qrCodeContainer.innerHTML = '<p style="color: red;">فشل في إنشاء كود QR، حاول مرة أخرى.</p>';
       }
     };
   }
