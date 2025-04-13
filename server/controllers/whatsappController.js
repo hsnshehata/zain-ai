@@ -1,8 +1,52 @@
-const { Client, RemoteAuth, MongoStore } = require('whatsapp-web.js'); // إضافة MongoStore
+const { Client, RemoteAuth } = require('whatsapp-web.js');
 const mongoose = require('mongoose');
 const WhatsAppSession = require('../models/WhatsAppSession');
 const Rule = require('../models/Rule');
 const QRCode = require('qrcode');
+
+// متجر مخصص لتخزين الجلسات في MongoDB
+class CustomMongoStore {
+  constructor({ clientId }) {
+    this.clientId = clientId;
+  }
+
+  async save(data) {
+    try {
+      await WhatsAppSession.findOneAndUpdate(
+        { botId: this.clientId },
+        { sessionData: data },
+        { upsert: true }
+      );
+      console.log(`✅ تم حفظ بيانات الجلسة للبوت ${this.clientId}`);
+    } catch (err) {
+      console.error(`❌ خطأ في حفظ بيانات الجلسة للبوت ${this.clientId}:`, err);
+      throw err;
+    }
+  }
+
+  async load() {
+    try {
+      const session = await WhatsAppSession.findOne({ botId: this.clientId });
+      return session && session.sessionData ? session.sessionData : null;
+    } catch (err) {
+      console.error(`❌ خطأ في استرجاع بيانات الجلسة للبوت ${this.clientId}:`, err);
+      return null;
+    }
+  }
+
+  async remove() {
+    try {
+      await WhatsAppSession.findOneAndUpdate(
+        { botId: this.clientId },
+        { sessionData: null, connected: false }
+      );
+      console.log(`✅ تم إزالة بيانات الجلسة للبوت ${this.clientId}`);
+    } catch (err) {
+      console.error(`❌ خطأ في إزالة بيانات الجلسة للبوت ${this.clientId}:`, err);
+      throw err;
+    }
+  }
+}
 
 let clients = new Map();
 
@@ -10,7 +54,7 @@ const createClient = async (botId) => {
   const session = await WhatsAppSession.findOne({ botId });
   const client = new Client({
     authStrategy: new RemoteAuth({
-      store: new MongoStore({ mongoose }), // الآن MongoStore مُعرف
+      store: new CustomMongoStore({ clientId: botId }),
       backupSyncIntervalMs: 300000,
       clientId: botId.toString(),
     }),
