@@ -76,7 +76,7 @@ form label {
   margin: 10px 0 5px;
 }
 
-form input, form select {
+form input, form select, form textarea {
   width: 100%;
   padding: 8px;
   margin-bottom: 10px;
@@ -88,4 +88,48 @@ form button {
 
 form button:hover {
   background-color: #218838;
+}
+
+.rule-type-btn {
+  margin: 5px;
+  padding: 10px 15px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.rule-type-btn:hover {
+  background-color: #0056b3;
+}
+
+.rule-type-btn.active {
+  background-color: #28a745;
+}
+
+#ruleFormContainer {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+#rulesList {
+  list-style: none;
+  padding: 0;
+}
+
+#rulesList li {
+  padding: 10px;
+  background-color: #fff;
+  margin-bottom: 5px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+#rulesList li button {
+  margin-left: 10px;
 }
