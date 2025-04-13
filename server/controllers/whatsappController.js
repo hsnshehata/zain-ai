@@ -1,22 +1,21 @@
-const { Client, RemoteAuth } = require('whatsapp-web.js');
+const { Client, RemoteAuth, MongoStore } = require('whatsapp-web.js'); // إضافة MongoStore
 const mongoose = require('mongoose');
 const WhatsAppSession = require('../models/WhatsAppSession');
 const Rule = require('../models/Rule');
 const QRCode = require('qrcode');
 
-let clients = new Map(); // لتخزين جلسات واتساب لكل botId
+let clients = new Map();
 
-// دالة لإنشاء عميل واتساب
 const createClient = async (botId) => {
   const session = await WhatsAppSession.findOne({ botId });
   const client = new Client({
     authStrategy: new RemoteAuth({
-      store: new MongoStore({ mongoose }),
+      store: new MongoStore({ mongoose }), // الآن MongoStore مُعرف
       backupSyncIntervalMs: 300000,
       clientId: botId.toString(),
     }),
     puppeteer: {
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
+      headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     },
   });
@@ -45,7 +44,7 @@ const createClient = async (botId) => {
 
     for (const rule of rules) {
       if (rule.type === 'general' || rule.type === 'global') {
-        if (!response) response = rule.content; // أول قاعدة عامة أو موحدة
+        if (!response) response = rule.content;
       } else if (rule.type === 'qa') {
         if (message.body.toLowerCase().includes(rule.content.question.toLowerCase())) {
           response = rule.content.answer;
@@ -71,7 +70,6 @@ const createClient = async (botId) => {
   return client;
 };
 
-// جلب حالة الجلسة
 exports.getSession = async (req, res) => {
   const botId = req.query.botId;
   if (!botId) {
@@ -87,7 +85,6 @@ exports.getSession = async (req, res) => {
   }
 };
 
-// بدء الاتصال باستخدام الرقم
 exports.connect = async (req, res) => {
   const { botId, whatsappNumber } = req.body;
 
@@ -107,7 +104,6 @@ exports.connect = async (req, res) => {
   }
 };
 
-// بدء الاتصال باستخدام كود QR
 exports.connectWithQR = async (req, res) => {
   const botId = req.query.botId;
 
@@ -131,7 +127,6 @@ exports.connectWithQR = async (req, res) => {
   }
 };
 
-// إنهاء الجلسة
 exports.disconnect = async (req, res) => {
   const botId = req.query.botId;
 
