@@ -5,7 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // إعداد الأزرار مع التحقق من دور المستخدم
   const botsBtn = document.getElementById('botsBtn');
   if (role !== 'superadmin') {
     if (botsBtn) {
@@ -59,7 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // دالة جلب القواعد
   const loadRules = async (botId, rulesList, token) => {
     try {
       const response = await fetch(`/api/rules?botId=${botId}`, {
@@ -101,7 +99,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // تحميل الصفحة بناءً على الـ Hash
   const loadPageBasedOnHash = async () => {
     const hash = window.location.hash;
     const userRole = localStorage.getItem('role');
@@ -131,15 +128,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // تحميل الصفحة بناءً على الـ Hash عند تحميل الصفحة
   loadPageBasedOnHash();
 
-  // تحديث الصفحة إذا تغير الـ Hash
   window.addEventListener('hashchange', () => {
     loadPageBasedOnHash();
   });
 
-  // دالة لتحميل صفحة القواعد ديناميكيًا
   async function loadRulesPage() {
     const content = document.getElementById('content');
     const role = localStorage.getItem('role');
@@ -480,7 +474,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
   }
 
-  // دالة لتحميل صفحة واتساب
   async function loadWhatsAppPage() {
     const content = document.getElementById('content');
     const role = localStorage.getItem('role');
@@ -496,7 +489,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const whatsappContent = document.getElementById('whatsappContent');
 
-    // جلب البوتات
     let bots = [];
     try {
       const response = await fetch('/api/bots', {
@@ -555,6 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     whatsappContent.innerHTML = html;
 
+    // التأكد من وجود العناصر قبل الوصول إليها
     const botIdSelect = document.getElementById('botId');
     const connectionState = document.getElementById('connectionState');
     const connectionDuration = document.getElementById('connectionDuration');
@@ -574,7 +567,16 @@ document.addEventListener('DOMContentLoaded', () => {
     let connectionStartTime = null;
     let durationInterval = null;
 
-    // دالة لتحديث حالة الاتصال ومدة الجلسة
+    if (!botIdSelect || !connectionState || !connectionDuration || !durationTime || !endSessionBtn ||
+        !connectWithNumber || !connectWithAPI || !connectWithQR || !connectionDetails ||
+        !qrCodeContainer || !connectionForm || !whatsappNumber || !startConnection || !whatsappRulesList) {
+      console.error('خطأ: أحد عناصر الـ DOM غير موجود');
+      whatsappContent.innerHTML += `
+        <p style="color: red;">خطأ في تحميل الواجهة، يرجى تحديث الصفحة أو الاتصال بالدعم.</p>
+      `;
+      return;
+    }
+
     const updateConnectionStatus = async (botId) => {
       try {
         const response = await fetch(`/api/whatsapp/session?botId=${botId}`, {
@@ -616,7 +618,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     };
 
-    // اختيار أول بوت تلقائيًا وتحميل القواعد وحالة الاتصال
     if (botIdSelect && userBots.length > 0) {
       botIdSelect.value = userBots[0]._id;
       selectedBotId = userBots[0]._id;
@@ -625,7 +626,6 @@ document.addEventListener('DOMContentLoaded', () => {
       console.log(`✅ تم اختيار البوت الأول تلقائيًا: ${userBots[0].name}`);
     }
 
-    // تحميل القواعد عند تغيير البوت
     botIdSelect.addEventListener('change', () => {
       selectedBotId = botIdSelect.value;
       if (selectedBotId) {
@@ -636,7 +636,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // إظهار نموذج الاتصال عند اختيار طريقة
     connectWithNumber.addEventListener('click', () => {
       connectionDetails.style.display = 'block';
       connectionForm.style.display = 'block';
@@ -659,7 +658,6 @@ document.addEventListener('DOMContentLoaded', () => {
       startQRConnection();
     });
 
-    // بدء الاتصال
     startConnection.addEventListener('click', async () => {
       const number = whatsappNumber.value;
       if (!number || !number.startsWith('+') || number.length < 10) {
@@ -687,7 +685,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // إنهاء الجلسة
     endSessionBtn.addEventListener('click', async () => {
       if (confirm('هل أنت متأكد أنك تريد إنهاء الجلسة الحالية؟')) {
         try {
@@ -709,7 +706,6 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // دالة لبدء الاتصال باستخدام كود QR
     const startQRConnection = async () => {
       try {
         const response = await fetch(`/api/whatsapp/connect-qr?botId=${selectedBotId}`, {
