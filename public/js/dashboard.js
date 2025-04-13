@@ -128,7 +128,7 @@ async function loadRulesPage() {
       <button class="rule-type-btn" data-type="api">ربط API للمتجر</button>
   `;
 
-  // إضافة زر القواعد الموحدة للسوبر أدمن
+  // إضافة زر القواعد الموحدة للسوبر أدمن فقط
   if (userRole === 'superadmin') {
     html += `<button class="rule-type-btn" data-type="global">قواعد موحدة</button>`;
   }
@@ -160,11 +160,18 @@ async function loadRulesPage() {
     contentFields.innerHTML = '';
     ruleFormContainer.style.display = 'block';
 
-    if (type === 'general' || type === 'global') {
+    if (type === 'general') {
       contentFields.innerHTML = `
-        <label for="content">المحتوى:</label>
-        <textarea id="content" name="content" required placeholder="أدخل المحتوى هنا"></textarea>
+        <label for="generalContent">المحتوى (خاص بالبوت المحدد):</label>
+        <textarea id="generalContent" name="generalContent" required placeholder="أدخل المحتوى العام لهذا البوت"></textarea>
       `;
+      console.log(`📋 تم تحميل حقل المحتوى العام لنوع general`);
+    } else if (type === 'global') {
+      contentFields.innerHTML = `
+        <label for="globalContent">المحتوى (موحد لكل البوتات):</label>
+        <textarea id="globalContent" name="globalContent" required placeholder="أدخل المحتوى الموحد لكل البوتات"></textarea>
+      `;
+      console.log(`📋 تم تحميل حقل المحتوى الموحد لنوع global`);
     } else if (type === 'products') {
       contentFields.innerHTML = `
         <label for="product">المنتج:</label>
@@ -222,8 +229,10 @@ async function loadRulesPage() {
         rules.forEach(rule => {
           const li = document.createElement('li');
           let contentDisplay = '';
-          if (rule.type === 'general' || rule.type === 'global') {
-            contentDisplay = `المحتوى: ${rule.content}`;
+          if (rule.type === 'general') {
+            contentDisplay = `المحتوى العام: ${rule.content}`;
+          } else if (rule.type === 'global') {
+            contentDisplay = `المحتوى الموحد: ${rule.content}`;
           } else if (rule.type === 'products') {
             contentDisplay = `المنتج: ${rule.content.product} | السعر: ${rule.content.price} ${rule.content.currency}`;
           } else if (rule.type === 'qa') {
@@ -268,12 +277,32 @@ async function loadRulesPage() {
         return;
       }
 
-      if (type === 'general' || type === 'global') {
-        content = document.getElementById('content')?.value;
-        if (!content || content.trim() === '') {
-          alert('يرجى إدخال المحتوى');
+      if (type === 'general') {
+        const generalContentElement = document.getElementById('generalContent');
+        if (!generalContentElement) {
+          alert('خطأ: حقل المحتوى العام غير موجود، حاول مرة أخرى');
+          console.error('❌ حقل generalContent غير موجود في الـ DOM');
           return;
         }
+        content = generalContentElement.value;
+        if (!content || content.trim() === '') {
+          alert('يرجى إدخال المحتوى العام');
+          return;
+        }
+        console.log(`📝 المحتوى العام المُدخل: ${content}`);
+      } else if (type === 'global') {
+        const globalContentElement = document.getElementById('globalContent');
+        if (!globalContentElement) {
+          alert('خطأ: حقل المحتوى الموحد غير موجود، حاول مرة أخرى');
+          console.error('❌ حقل globalContent غير موجود في الـ DOM');
+          return;
+        }
+        content = globalContentElement.value;
+        if (!content || content.trim() === '') {
+          alert('يرجى إدخال المحتوى الموحد');
+          return;
+        }
+        console.log(`📝 المحتوى الموحد المُدخل: ${content}`);
       } else if (type === 'products') {
         const product = document.getElementById('product')?.value;
         const price = parseFloat(document.getElementById('price')?.value);
@@ -339,10 +368,16 @@ async function loadRulesPage() {
       }
 
       let newContent;
-      if (rule.type === 'general' || rule.type === 'global') {
-        newContent = prompt('أدخل المحتوى الجديد:', rule.content);
+      if (rule.type === 'general') {
+        newContent = prompt('أدخل المحتوى العام الجديد:', rule.content);
         if (!newContent || newContent.trim() === '') {
-          alert('يرجى إدخال محتوى صالح');
+          alert('يرجى إدخال محتوى عام صالح');
+          return;
+        }
+      } else if (rule.type === 'global') {
+        newContent = prompt('أدخل المحتوى الموحد الجديد:', rule.content);
+        if (!newContent || newContent.trim() === '') {
+          alert('يرجى إدخال محتوى موحد صالح');
           return;
         }
       } else if (rule.type === 'products') {
