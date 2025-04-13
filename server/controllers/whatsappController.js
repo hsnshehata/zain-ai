@@ -4,13 +4,11 @@ const WhatsAppSession = require('../models/WhatsAppSession');
 const Rule = require('../models/Rule');
 const QRCode = require('qrcode');
 
-// متجر مخصص لتخزين الجلسات في MongoDB
 class CustomMongoStore {
   constructor({ clientId }) {
     this.clientId = clientId;
   }
 
-  // التحقق من وجود الجلسة
   async sessionExists() {
     try {
       const session = await WhatsAppSession.findOne({ botId: this.clientId });
@@ -21,7 +19,6 @@ class CustomMongoStore {
     }
   }
 
-  // حفظ بيانات الجلسة
   async save(data) {
     try {
       await WhatsAppSession.findOneAndUpdate(
@@ -36,7 +33,6 @@ class CustomMongoStore {
     }
   }
 
-  // استرجاع بيانات الجلسة
   async load() {
     try {
       const session = await WhatsAppSession.findOne({ botId: this.clientId });
@@ -47,7 +43,6 @@ class CustomMongoStore {
     }
   }
 
-  // إزالة بيانات الجلسة
   async remove() {
     try {
       await WhatsAppSession.findOneAndUpdate(
