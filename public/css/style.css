@@ -133,3 +133,82 @@ form button:hover {
 #rulesList li button {
   margin-left: 10px;
 }
+
+#whatsappContent {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+#whatsappContent div {
+  margin-bottom: 15px;
+}
+
+.connection-btn {
+  margin: 5px;
+  padding: 10px 15px;
+  background-color: #25D366; /* لون واتساب الأخضر */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.connection-btn:hover {
+  background-color: #20b358;
+}
+
+#connectionDetails {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+#qrCodeContainer img {
+  max-width: 200px;
+  margin-top: 10px;
+}
+
+#connectionForm button {
+  background-color: #25D366;
+}
+
+#connectionForm button:hover {
+  background-color: #20b358;
+}
+
+#connectionStatus {
+  padding: 10px;
+  background-color: #f0f0f0;
+  border-radius: 5px;
+}
+
+#endSessionBtn {
+  background-color: #dc3545;
+}
+
+#endSessionBtn:hover {
+  background-color: #c82333;
+}
+
+#whatsappRulesList {
+  list-style: none;
+  padding: 0;
+}
+
+#whatsappRulesList li {
+  padding: 10px;
+  background-color: #fff;
+  margin-bottom: 5px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+#whatsappRulesList li button {
+  margin-left: 10px;
+}
