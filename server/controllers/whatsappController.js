@@ -10,6 +10,18 @@ class CustomMongoStore {
     this.clientId = clientId;
   }
 
+  // التحقق من وجود الجلسة
+  async sessionExists() {
+    try {
+      const session = await WhatsAppSession.findOne({ botId: this.clientId });
+      return session && session.sessionData ? true : false;
+    } catch (err) {
+      console.error(`❌ خطأ في التحقق من وجود الجلسة للبوت ${this.clientId}:`, err);
+      return false;
+    }
+  }
+
+  // حفظ بيانات الجلسة
   async save(data) {
     try {
       await WhatsAppSession.findOneAndUpdate(
@@ -24,6 +36,7 @@ class CustomMongoStore {
     }
   }
 
+  // استرجاع بيانات الجلسة
   async load() {
     try {
       const session = await WhatsAppSession.findOne({ botId: this.clientId });
@@ -34,6 +47,7 @@ class CustomMongoStore {
     }
   }
 
+  // إزالة بيانات الجلسة
   async remove() {
     try {
       await WhatsAppSession.findOneAndUpdate(
