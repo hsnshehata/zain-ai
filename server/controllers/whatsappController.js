@@ -1,46 +1,63 @@
 const mongoose = require('mongoose');
 const WhatsAppSession = require('../models/WhatsAppSession');
 const Rule = require('../models/Rule');
-const { create, Client } = require('@open-wa/wa-automate');
+const { makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
 const QRCode = require('qrcode');
+const path = require('path');
+const pino = require('pino');
 
 let clients = new Map();
 
 const createClient = async (botId) => {
-  const sessionName = `bot_${botId}`;
+  // إعداد التخزين باستخدام MongoDB
+  const authState = await useMongoDBAuthState(botId);
 
-  const client = await create({
-    sessionId: sessionName,
-    headless: true, // لا حاجة لمتصفح
-    qrTimeout: 0, // لا تنتهي مهلة رمز QR تلقائيًا
-    authTimeout: 0, // لا تنتهي مهلة المصادقة تلقائيًا
-    disableSpins: true, // تعطيل رسائل التحميل في وحدة التحكم
-    multiDevice: true, // دعم الأجهزة المتعددة
+  // إعداد تسجيل الأخطاء باستخدام pino
+  const logger = pino({ level: 'silent' }); // تعطيل التسجيل الافتراضي لتجنب الرسائل غير الضرورية
+
+  const sock = makeWASocket({
+    auth: authState.state,
+    logger,
+    printQRInTerminal: false,
+    syncFullHistory: false, // تقليل استهلاك الموارد
+    connectTimeoutMs: 30000, // مهلة الاتصال 30 ثانية
+    keepAliveIntervalMs: 30000, // الحفاظ على الاتصال
   });
 
-  client.onStateChanged(async (state) => {
-    if (state === 'CONNECTED') {
+  sock.ev.on('connection.update', async (update) => {
+    const { connection, lastDisconnect, qr } = update;
+
+    if (connection === 'close') {
+      const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
+      console.log(`❌ تم قطع الاتصال للبوت ${botId}:`, lastDisconnect?.error?.message);
+
+      await WhatsAppSession.findOneAndUpdate(
+        { botId },
+        { connected: false }
+      );
+      clients.delete(botId);
+
+      if (shouldReconnect) {
+        createClient(botId);
+      }
+    } else if (connection === 'open') {
       console.log(`✅ تم الاتصال بنجاح للبوت ${botId}`);
       await WhatsAppSession.findOneAndUpdate(
         { botId },
         { connected: true, startTime: new Date() },
         { upsert: true }
       );
-    } else if (state === 'DISCONNECTED' || state === 'UNPAIRED') {
-      console.log(`❌ تم قطع الاتصال للبوت ${botId}`);
-      await WhatsAppSession.findOneAndUpdate(
-        { botId },
-        { connected: false }
-      );
-      clients.delete(botId);
+    } else if (qr) {
+      console.log(`🔗 تم إنشاء رمز QR للبوت ${botId}`);
     }
   });
 
-  client.onMessage(async (message) => {
-    if (!message.body) return;
+  sock.ev.on('messages.upsert', async ({ messages }) => {
+    const message = messages[0];
+    if (!message.message) return;
 
-    const from = message.from;
-    const text = message.body;
+    const from = message.key.remoteJid;
+    const text = message.message.conversation || message.message.extendedTextMessage?.text;
 
     const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
     let response = '';
@@ -62,14 +79,50 @@ const createClient = async (botId) => {
     }
 
     if (response) {
-      await client.sendText(from, response);
+      await sock.sendMessage(from, { text: response });
     } else {
-      await client.sendText(from, 'آسف، لا أعرف كيف أرد على هذا السؤال.');
+      await sock.sendMessage(from, { text: 'آسف، لا أعرف كيف أرد على هذا السؤال.' });
     }
   });
 
-  clients.set(botId, client);
-  return client;
+  clients.set(botId, { sock, authState });
+  return { sock, authState };
+};
+
+// دالة مخصصة لحفظ الجلسات في MongoDB
+const useMongoDBAuthState = async (botId) => {
+  const session = await WhatsAppSession.findOne({ botId });
+  let creds = {};
+  let keys = {};
+
+  if (session && session.sessionData) {
+    creds = session.sessionData.creds || {};
+    keys = session.sessionData.keys || {};
+  }
+
+  const state = { creds, keys };
+
+  return {
+    state,
+    saveCreds: async () => {
+      try {
+        const sessionData = {
+          creds: state.creds || {},
+          keys: state.keys || {},
+        };
+
+        await WhatsAppSession.findOneAndUpdate(
+          { botId },
+          { sessionData },
+          { upsert: true }
+        );
+        console.log(`✅ تم حفظ بيانات الجلسة للبوت ${botId}`);
+      } catch (err) {
+        console.error(`❌ خطأ في حفظ بيانات الجلسة للبوت ${botId}:`, err);
+        throw err;
+      }
+    },
+  };
 };
 
 exports.getSession = async (req, res) => {
@@ -100,7 +153,10 @@ exports.connect = async (req, res) => {
       client = await createClient(botId);
     }
 
-    await client.sendText(`${whatsappNumber}@s.whatsapp.net`, 'مرحبًا! تم ربط البوت بنجاح.');
+    await client.sock.sendMessage(`${whatsappNumber}@s.whatsapp.net`, {
+      text: 'مرحبًا! تم ربط البوت بنجاح.',
+    });
+
     res.status(200).json({ message: 'تم بدء الاتصال بنجاح، تم إرسال رسالة ترحيبية!' });
   } catch (err) {
     console.error('❌ خطأ في بدء الاتصال:', err.message, err.stack);
@@ -128,10 +184,13 @@ exports.connectWithQR = async (req, res) => {
       }
     }, 30000);
 
-    client.on('qr', async (qr) => {
-      clearTimeout(qrTimeout);
-      qrCode = await QRCode.toDataURL(qr);
-      res.status(200).json({ qrCode });
+    client.sock.ev.on('connection.update', async (update) => {
+      const { qr } = update;
+      if (qr) {
+        clearTimeout(qrTimeout);
+        qrCode = await QRCode.toDataURL(qr);
+        res.status(200).json({ qrCode });
+      }
     });
   } catch (err) {
     console.error('❌ خطأ في إنشاء كود QR:', err.message, err.stack);
@@ -149,7 +208,7 @@ exports.disconnect = async (req, res) => {
   try {
     const client = clients.get(botId);
     if (client) {
-      await client.kill();
+      await client.sock.logout();
       clients.delete(botId);
     }
     await WhatsAppSession.findOneAndUpdate(
