@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const WhatsAppSession = require('../models/WhatsAppSession');
 const Rule = require('../models/Rule');
 const QRCode = require('qrcode');
+const path = require('path');
 
 class CustomMongoStore {
   constructor({ clientId }) {
@@ -69,7 +70,7 @@ const createClient = async (botId) => {
     }),
     puppeteer: {
       headless: true,
-      executablePath: '/usr/bin/chromium', // تحديد مسار Chromium المثبت يدويًا
+      executablePath: path.join(__dirname, '../../chromium/chrome'), // مسار Chromium المرفوع يدويًا
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     },
   });
