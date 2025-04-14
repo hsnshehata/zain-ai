@@ -20,8 +20,8 @@
     "request": "^2.88.2",
     "whatsapp-web.js": "^1.27.0",
     "qrcode-terminal": "^0.12.0",
-    "puppeteer": "^23.4.1",
-    "qrcode": "^1.5.3" 
+    "puppeteer": "^19.11.1",
+    "qrcode": "^1.5.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.7"
