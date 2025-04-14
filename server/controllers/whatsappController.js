@@ -9,7 +9,6 @@ const path = require('path');
 let clients = new Map();
 
 const createClient = async (botId) => {
-  // إعداد التخزين باستخدام MongoDB
   const authState = await useMongoDBAuthState(botId);
 
   const sock = makeWASocket({
@@ -17,7 +16,6 @@ const createClient = async (botId) => {
     printQRInTerminal: false, // لا نطبع رمز QR في وحدة التحكم
   });
 
-  // حفظ الجلسة عند الاتصال
   sock.ev.on('connection.update', async (update) => {
     const { connection, lastDisconnect, qr } = update;
 
@@ -32,7 +30,7 @@ const createClient = async (botId) => {
       clients.delete(botId);
 
       if (shouldReconnect) {
-        createClient(botId); // إعادة الاتصال تلقائيًا
+        createClient(botId);
       }
     } else if (connection === 'open') {
       console.log(`✅ تم الاتصال بنجاح للبوت ${botId}`);
@@ -42,12 +40,10 @@ const createClient = async (botId) => {
         { upsert: true }
       );
     } else if (qr) {
-      // إذا تم إنشاء رمز QR، سيتم التعامل معه في connectWithQR
       console.log(`🔗 تم إنشاء رمز QR للبوت ${botId}`);
     }
   });
 
-  // التعامل مع الرسائل الواردة
   sock.ev.on('messages.upsert', async ({ messages }) => {
     const message = messages[0];
     if (!message.message) return;
@@ -87,24 +83,31 @@ const createClient = async (botId) => {
 
 // دالة مخصصة لحفظ الجلسات في MongoDB
 const useMongoDBAuthState = async (botId) => {
-  const state = {
-    creds: {},
-    keys: {},
-  };
-
+  // استرجاع بيانات الجلسة من MongoDB
   const session = await WhatsAppSession.findOne({ botId });
+  let creds = {};
+  let keys = {};
+
   if (session && session.sessionData) {
-    state.creds = session.sessionData.creds || {};
-    state.keys = session.sessionData.keys || {};
+    creds = session.sessionData.creds || {};
+    keys = session.sessionData.keys || {};
   }
+
+  const state = { creds, keys };
 
   return {
     state,
     saveCreds: async () => {
       try {
+        // التأكد من أن البيانات التي نحفظها سليمة
+        const sessionData = {
+          creds: state.creds || {},
+          keys: state.keys || {},
+        };
+
         await WhatsAppSession.findOneAndUpdate(
           { botId },
-          { sessionData: { creds: state.creds, keys: state.keys } },
+          { sessionData },
           { upsert: true }
         );
         console.log(`✅ تم حفظ بيانات الجلسة للبوت ${botId}`);
@@ -144,7 +147,6 @@ exports.connect = async (req, res) => {
       client = await createClient(botId);
     }
 
-    // إرسال رسالة ترحيبية
     await client.sock.sendMessage(`${whatsappNumber}@s.whatsapp.net`, {
       text: 'مرحبًا! تم ربط البوت بنجاح.',
     });
@@ -169,10 +171,19 @@ exports.connectWithQR = async (req, res) => {
       client = await createClient(botId);
     }
 
+    // الانتظار لرابط QR
+    let qrCode = null;
+    const qrTimeout = setTimeout(() => {
+      if (!qrCode) {
+        res.status(500).json({ message: 'تعذر إنشاء رمز QR، حاول مرة أخرى.' });
+      }
+    }, 30000); // مهلة 30 ثانية
+
     client.sock.ev.on('connection.update', async (update) => {
       const { qr } = update;
       if (qr) {
-        const qrCode = await QRCode.toDataURL(qr);
+        clearTimeout(qrTimeout);
+        qrCode = await QRCode.toDataURL(qr);
         res.status(200).json({ qrCode });
       }
     });
