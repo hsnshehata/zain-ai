@@ -18,7 +18,8 @@
     "mongoose": "^8.6.0",
     "openai": "^4.67.1",
     "request": "^2.88.2",
-    "qrcode": "^1.5.3"
+    "qrcode": "^1.5.3",
+    "@open-wa/wa-automate": "^4.67.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.7"
