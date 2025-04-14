@@ -69,6 +69,7 @@ const createClient = async (botId) => {
     }),
     puppeteer: {
       headless: true,
+      executablePath: '/usr/bin/chromium', // تحديد مسار Chromium المثبت يدويًا
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     },
   });
