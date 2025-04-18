@@ -9,6 +9,7 @@ const usersRoutes = require('./routes/users');
 const rulesRoutes = require('./routes/rules');
 const botRoutes = require('./routes/bot');
 const analyticsRoutes = require('./routes/analytics');
+const chatPageRoutes = require('./routes/chat-page');
 const indexRoutes = require('./routes/index');
 const connectDB = require('./db');
 
@@ -29,6 +30,7 @@ app.use('/api/users', usersRoutes);
 app.use('/api/rules', rulesRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/chat-page', chatPageRoutes);
 app.use('/', indexRoutes);
 
 // Route for /dashboard
