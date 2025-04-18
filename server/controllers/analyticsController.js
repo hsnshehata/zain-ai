@@ -9,19 +9,32 @@ exports.getAnalytics = async (req, res) => {
       return res.status(400).json({ message: 'Bot ID is required' });
     }
 
-    // Count total messages for the bot
+    // Get all conversations for the bot
     const conversations = await Conversation.find({ botId });
-    let messagesCount = 0;
-    conversations.forEach(conversation => {
-      messagesCount += conversation.messages.length;
-    });
 
-    // Calculate success rate (assuming assistant messages are successful responses)
-    let assistantMessages = 0;
+    // Use a Set to avoid counting duplicate messages
+    const uniqueMessages = new Set();
     conversations.forEach(conversation => {
-      assistantMessages += conversation.messages.filter(msg => msg.role === 'assistant').length;
+      conversation.messages.forEach(msg => {
+        // Use messageId if available, otherwise fall back to content-timestamp-role
+        const messageKey = msg.messageId || `${msg.content}-${msg.timestamp}-${msg.role}`;
+        uniqueMessages.add(messageKey);
+      });
     });
-    const successRate = messagesCount > 0 ? Math.round((assistantMessages / messagesCount) * 100) : 0;
+    const messagesCount = uniqueMessages.size;
+
+    // Count successful assistant messages (non-empty responses)
+    let successfulMessages = 0;
+    conversations.forEach(conversation => {
+      conversation.messages.forEach(msg => {
+        const messageKey = msg.messageId || `${msg.content}-${msg.timestamp}-${msg.role}`;
+        if (msg.role === 'assistant' && msg.content && msg.content.trim() !== '' && !uniqueMessages.has(messageKey)) {
+          uniqueMessages.add(messageKey);
+          successfulMessages++;
+        }
+      });
+    });
+    const successRate = messagesCount > 0 ? Math.round((successfulMessages / messagesCount) * 100) : 0;
 
     // Count active rules for the bot
     const activeRules = await Rule.countDocuments({ botId });
