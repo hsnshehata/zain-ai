@@ -5,6 +5,7 @@ const chatPageSchema = new mongoose.Schema({
   botId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bot', required: true },
   linkId: { type: String, required: true, unique: true },
   title: { type: String, default: 'صفحة دردشة' },
+  titleColor: { type: String, default: '#ffffff' }, // New field for title color
   colors: {
     header: { type: String, default: '#007bff' },
     background: { type: String, default: '#f8f9fa' },
