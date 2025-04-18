@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     customStyles.textContent = `
       .chat-container { background-color: ${settings.colors?.background || '#f8f9fa'}; color: ${settings.colors?.text || '#333333'}; }
       #chatHeader { background-color: ${settings.colors?.header || '#007bff'}; }
+      #chatTitle { color: ${settings.titleColor || '#ffffff'}; }
       #sendMessageBtn, .suggested-question { background-color: ${settings.colors?.button || '#007bff'}; }
       ${settings.darkModeEnabled ? 'body { background-color: #333; color: #fff; }' : ''}
     `;
