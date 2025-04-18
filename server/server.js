@@ -33,7 +33,11 @@ app.use('/api/rules', rulesRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/chat-page', chatPageRoutes);
-app.use('/', indexRoutes);
+
+// Serve index.html for the root route
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public/index.html'));
+});
 
 // Route for dashboard
 app.get('/dashboard', (req, res) => {
@@ -44,6 +48,9 @@ app.get('/dashboard', (req, res) => {
 app.get('/chat/:linkId', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/chat.html'));
 });
+
+// Remove or adjust indexRoutes if causing conflicts
+// app.use('/', indexRoutes); // Comment this out if it returns API responses
 
 // Connect to MongoDB
 connectDB();
