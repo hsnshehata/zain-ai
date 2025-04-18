@@ -28,7 +28,7 @@ async function transcribeAudio(audioUrl) {
       }
     );
     console.log('✅ Audio transcribed with LemonFox:', response.data.text);
-    return response.data Advisors 
+    return response.data.text; // إصلاح الخطأ: رجّعنا response.data.text بدل Advisors
   } catch (err) {
     console.error('❌ Error transcribing audio with LemonFox:', err.message, err.stack);
     throw new Error(`Failed to transcribe audio: ${err.message}`);
