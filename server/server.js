@@ -1,7 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs'); // Add fs module to check file existence
 const fileUpload = require('express-fileupload');
 const facebookRoutes = require('./routes/facebook');
 const webhookRoutes = require('./routes/webhook');
@@ -12,6 +11,8 @@ const rulesRoutes = require('./routes/rules');
 const botRoutes = require('./routes/bot');
 const analyticsRoutes = require('./routes/analytics');
 const chatPageRoutes = require('./routes/chat-page');
+const indexRoutes = require('./routes/index');
+const whatsappRoutes = require('./routes/whatsapp');
 const connectDB = require('./db');
 
 const app = express();
@@ -21,7 +22,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload());
-app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from public/
+app.use(express.static(path.join(__dirname, '../public'))); // Serve static files from ../public like old system
 
 // Routes
 app.use('/api/facebook', facebookRoutes);
@@ -33,39 +34,41 @@ app.use('/api/rules', rulesRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/chat-page', chatPageRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
+app.use('/', indexRoutes); // Use indexRoutes for root like old system
 
-// Serve index.html for the root route
-app.get('/', (req, res) => {
+// Route for dashboard
+app.get('/dashboard', (req, res) => {
   try {
-    const filePath = path.join(__dirname, 'public', 'index.html');
-    console.log('Attempting to serve index.html from:', filePath);
-
-    // Check if file exists
-    if (!fs.existsSync(filePath)) {
-      console.error('index.html not found at:', filePath);
-      return res.status(404).json({ message: 'Login page not found' });
-    }
-
+    const filePath = path.join(__dirname, '../public/dashboard.html');
+    console.log('Serving dashboard.html from:', filePath);
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error('Error serving index.html:', err);
-        res.status(500).json({ message: 'Failed to load login page' });
+        console.error('Error serving dashboard.html:', err);
+        res.status(500).json({ message: 'Failed to load dashboard page' });
       }
     });
   } catch (err) {
-    console.error('Error in root route:', err);
+    console.error('Error in dashboard route:', err);
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
 
-// Route for dashboard
-app.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/dashboard.html'));
-});
-
 // Route for chat page
 app.get('/chat/:linkId', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/chat.html'));
+  try {
+    const filePath = path.join(__dirname, '../public/chat.html');
+    console.log('Serving chat.html from:', filePath);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error serving chat.html:', err);
+        res.status(500).json({ message: 'Failed to load chat page' });
+      }
+    });
+  } catch (err) {
+    console.error('Error in chat route:', err);
+    res.status(500).json({ message: 'Something went wrong!' });
+  }
 });
 
 // Connect to MongoDB
