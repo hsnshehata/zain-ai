@@ -137,18 +137,80 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function loadChatPage() {
     const content = document.getElementById('content');
+    const role = localStorage.getItem('role');
+    const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('token');
+
     content.innerHTML = `
       <h2>تخصيص صفحة الدردشة</h2>
-      <button id="createChatPageBtn">إنشاء صفحة دردشة</button>
+      <div id="chatPageContent">
+        <p>جاري تحميل البوتات...</p>
+      </div>
     `;
 
-    document.getElementById('createChatPageBtn').addEventListener('click', async () => {
-      content.innerHTML = `
-        <h2>تخصيص صفحة الدردشة</h2>
-        <p>تم إنشاء صفحة الدردشة! جاري تحميل خيارات التخصيص...</p>
+    const chatPageContent = document.getElementById('chatPageContent');
+
+    let bots = [];
+    try {
+      const response = await fetch('/api/bots', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (!response.ok) {
+        throw new Error(`فشل في جلب البوتات: ${response.status} ${response.statusText}`);
+      }
+      bots = await response.json();
+    } catch (err) {
+      console.error('خطأ في جلب البوتات:', err);
+      chatPageContent.innerHTML = `
+        <p style="color: red;">تعذر جلب البوتات، حاول مرة أخرى لاحقًا.</p>
       `;
-      // الخيارات زي الرابط وتعديل الألوان هتتحط هنا في المراحل الجاية
+      return;
+    }
+
+    let html = `
+      <div>
+        <label for="botId">اختر البوت:</label>
+        <select id="botId" name="botId" required>
+          <option value="">اختر بوت</option>
+    `;
+
+    const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
+    userBots.forEach(bot => {
+      html += `<option value="${bot._id}">${bot.name}</option>`;
     });
+
+    html += `
+        </select>
+      </div>
+      <button id="createChatPageBtn" disabled>إنشاء صفحة دردشة</button>
+    `;
+
+    chatPageContent.innerHTML = html;
+
+    const botIdSelect = document.getElementById('botId');
+    const createChatPageBtn = document.getElementById('createChatPageBtn');
+
+    if (botIdSelect) {
+      botIdSelect.addEventListener('change', () => {
+        const selectedBotId = botIdSelect.value;
+        createChatPageBtn.disabled = !selectedBotId; // تفعيل الزرار بس لما يختار بوت
+      });
+    }
+
+    if (createChatPageBtn) {
+      createChatPageBtn.addEventListener('click', async () => {
+        const selectedBotId = botIdSelect.value;
+        if (!selectedBotId) {
+          alert('يرجى اختيار بوت أولاً');
+          return;
+        }
+        content.innerHTML = `
+          <h2>تخصيص صفحة الدردشة</h2>
+          <p>تم إنشاء صفحة الدردشة للبوت المحدد! جاري تحميل خيارات التخصيص...</p>
+        `;
+        // الخيارات زي الرابط وتعديل الألوان هتتحط هنا في المراحل الجاية
+      });
+    }
   }
 
   loadPageBasedOnHash();
