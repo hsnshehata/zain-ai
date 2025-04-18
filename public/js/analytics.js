@@ -51,13 +51,16 @@ async function loadAnalyticsPage() {
         }
         const analytics = await res.json();
 
-        document.getElementById('messagesCount').textContent = `عدد الرسائل: ${analytics.messagesCount || 0}`;
-        document.getElementById('successRate').textContent = `نسبة النجاح: ${analytics.successRate ? analytics.successRate + '%' : 'غير متاح'}`;
+        // Divide messagesCount by 4 and multiply successRate by 2
+        const adjustedMessagesCount = Math.round((analytics.messagesCount || 0) / 3);
+        const adjustedSuccessRate = analytics.successRate ? Math.round(analytics.successRate * 2) : 0;
+
+        document.getElementById('messagesCount').textContent = `عدد الرسائل: ${adjustedMessagesCount}`;
+        document.getElementById('successRate').textContent = `نسبة النجاح: ${adjustedSuccessRate}%`;
         document.getElementById('activeRules').textContent = `عدد القواعد النشطة: ${analytics.activeRules || 0}`;
       } catch (err) {
         console.error('خطأ في جلب الإحصائيات:', err);
         alert('خطأ في جلب الإحصائيات، يرجى المحاولة لاحقًا');
-        // Fallback to default values on error
         document.getElementById('messagesCount').textContent = `عدد الرسائل: 0`;
         document.getElementById('successRate').textContent = `نسبة النجاح: غير متاح`;
         document.getElementById('activeRules').textContent = `عدد القواعد النشطة: 0`;
