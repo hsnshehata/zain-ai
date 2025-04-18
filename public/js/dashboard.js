@@ -237,6 +237,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <label for="logo">شعار الصفحة (PNG):</label>
                     <input type="file" id="logo" name="logo" accept="image/png">
                     <p style="font-size: 0.8em;">الشعار الحالي: ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />` : 'لا يوجد'}</p>
+                    <img id="logoPreview" style="max-width: 100px; display: none;" alt="Logo Preview" />
                   </div>
                   <div>
                     <label>
@@ -266,6 +267,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 </form>
                 <p style="font-size: 0.8em;">جميع الحقوق محفوظة © ghazal bost</p>
               `;
+
+              // Add logo preview on file selection
+              const logoInput = document.getElementById('logo');
+              const logoPreview = document.getElementById('logoPreview');
+              logoInput.addEventListener('change', () => {
+                const file = logoInput.files[0];
+                if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (e) => {
+                    logoPreview.src = e.target.result;
+                    logoPreview.style.display = 'block';
+                  };
+                  reader.readAsDataURL(file);
+                } else {
+                  logoPreview.style.display = 'none';
+                }
+              });
 
               document.getElementById('copyLinkBtn').addEventListener('click', async () => {
                 const linkInput = document.getElementById('chatLink');
@@ -361,6 +379,8 @@ document.addEventListener('DOMContentLoaded', () => {
                   // Update logo preview if a new logo was uploaded
                   if (result.logoUrl) {
                     document.querySelector('p[style="font-size: 0.8em;"]').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />`;
+                    logoPreview.src = result.logoUrl;
+                    logoPreview.style.display = 'block';
                   }
                   alert('تم حفظ الإعدادات بنجاح!');
                 } catch (err) {
@@ -435,6 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <label for="logo">شعار الصفحة (PNG):</label>
                 <input type="file" id="logo" name="logo" accept="image/png">
                 <p style="font-size: 0.8em;">يفضل شعار بدون خلفية أو بنفس خلفية الهيدر</p>
+                <img id="logoPreview" style="max-width: 100px; display: none;" alt="Logo Preview" />
               </div>
               <div>
                 <label>
@@ -464,6 +485,23 @@ document.addEventListener('DOMContentLoaded', () => {
             </form>
             <p style="font-size: 0.8em;">جميع الحقوق محفوظة © ghazal bost</p>
           `;
+
+          // Add logo preview on file selection
+          const logoInput = document.getElementById('logo');
+          const logoPreview = document.getElementById('logoPreview');
+          logoInput.addEventListener('change', () => {
+            const file = logoInput.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                logoPreview.src = e.target.result;
+                logoPreview.style.display = 'block';
+              };
+              reader.readAsDataURL(file);
+            } else {
+              logoPreview.style.display = 'none';
+            }
+          });
 
           document.getElementById('copyLinkBtn').addEventListener('click', async () => {
             const linkInput = document.getElementById('chatLink');
@@ -557,6 +595,8 @@ document.addEventListener('DOMContentLoaded', () => {
               // Update logo preview if a new logo was uploaded
               if (result.logoUrl) {
                 document.querySelector('p[style="font-size: 0.8em;"]').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />`;
+                logoPreview.src = result.logoUrl;
+                logoPreview.style.display = 'block';
               }
               alert('تم حفظ الإعدادات بنجاح!');
             } catch (err) {
@@ -861,7 +901,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
           }
           newContent = { question, answer };
-        } else if (type === 'api') {
+        } else if (rule.type === 'api') {
           const apiKey = prompt('أدخل مفتاح API الجديد:', rule.content.apiKey);
           if (!apiKey || apiKey.trim() === '') {
             alert('يرجى إدخال مفتاح API صالح');
