@@ -40,28 +40,21 @@ exports.createChatPage = async (req, res) => {
 exports.updateChatPage = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      title,
-      colors,
-      suggestedQuestionsEnabled,
-      suggestedQuestions,
-      imageUploadEnabled,
-      darkModeEnabled,
-    } = req.body;
-
     const chatPage = await ChatPage.findById(id);
     if (!chatPage) {
       return res.status(404).json({ message: 'Chat page not found' });
     }
 
-    chatPage.title = title || chatPage.title;
-    chatPage.colors = colors || chatPage.colors;
-    chatPage.suggestedQuestionsEnabled = suggestedQuestionsEnabled !== undefined ? suggestedQuestionsEnabled : chatPage.suggestedQuestionsEnabled;
-    chatPage.suggestedQuestions = suggestedQuestions || chatPage.suggestedQuestions;
-    chatPage.imageUploadEnabled = imageUploadEnabled !== undefined ? imageUploadEnabled : chatPage.imageUploadEnabled;
-    chatPage.darkModeEnabled = darkModeEnabled !== undefined ? darkModeEnabled : chatPage.darkModeEnabled;
+    // Parse FormData fields
+    const title = req.body.title || chatPage.title;
+    const colors = req.body.colors ? JSON.parse(req.body.colors) : chatPage.colors;
+    const suggestedQuestionsEnabled = req.body.suggestedQuestionsEnabled === 'true' || chatPage.suggestedQuestionsEnabled;
+    const suggestedQuestions = req.body.suggestedQuestions ? JSON.parse(req.body.suggestedQuestions) : chatPage.suggestedQuestions;
+    const imageUploadEnabled = req.body.imageUploadEnabled === 'true' || chatPage.imageUploadEnabled;
+    const darkModeEnabled = req.body.darkModeEnabled === 'true' || chatPage.darkModeEnabled;
 
     // Handle logo upload
+    let logoUrl = chatPage.logoUrl;
     if (req.files && req.files.logo) {
       const logo = req.files.logo;
       const uploadDir = path.join(__dirname, '../../public/uploads');
@@ -75,8 +68,17 @@ exports.updateChatPage = async (req, res) => {
 
       // Move the uploaded file to the uploads directory
       await logo.mv(logoPath);
-      chatPage.logoUrl = `/uploads/${logoName}`;
+      logoUrl = `/uploads/${logoName}`;
     }
+
+    // Update chat page
+    chatPage.title = title;
+    chatPage.colors = colors;
+    chatPage.logoUrl = logoUrl;
+    chatPage.suggestedQuestionsEnabled = suggestedQuestionsEnabled;
+    chatPage.suggestedQuestions = suggestedQuestions;
+    chatPage.imageUploadEnabled = imageUploadEnabled;
+    chatPage.darkModeEnabled = darkModeEnabled;
 
     await chatPage.save();
 
