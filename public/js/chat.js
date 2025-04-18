@@ -70,7 +70,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const response = await fetch('/api/bot', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          // Add Authorization header if required
+          // 'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
         body: JSON.stringify({
           botId,
           message: isImage ? 'صورة مرفقة' : message,
@@ -115,8 +119,4 @@ document.addEventListener('DOMContentLoaded', async () => {
   imageInput.addEventListener('change', () => {
     const file = imageInput.files[0];
     if (file) {
-      sendMessage(null, true);
-      imageInput.value = '';
-    }
-  });
-});
+      sendMessage(null
