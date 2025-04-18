@@ -1,27 +1,11 @@
 const OpenAI = require('openai');
-const mongoose = require('mongoose');
 const axios = require('axios');
 const FormData = require('form-data');
+const Rule = require('../models/Rule');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-const conversationSchema = new mongoose.Schema({
-  botId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bot', required: true },
-  userId: { type: String, required: true },
-  messages: [
-    {
-      role: { type: String, enum: ['user', 'assistant'], required: true },
-      content: { type: String, required: true },
-      timestamp: { type: Date, default: Date.now },
-    },
-  ],
-});
-
-const Conversation = mongoose.model('Conversation', conversationSchema);
-
-const Rule = require('./models/Rule');
 
 async function transcribeAudio(audioUrl) {
   const body = new FormData();
@@ -74,14 +58,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     }
     console.log('📝 System prompt:', systemPrompt);
 
-    let conversation = await Conversation.findOne({ botId, userId });
-    if (!conversation) {
-      console.log('📋 Creating new conversation for bot:', botId, 'user:', userId);
-      conversation = await Conversation.create({ botId, userId, messages: [] });
-    } else {
-      console.log('📋 Found existing conversation:', conversation._id);
-    }
-
     let userMessageContent = message;
 
     if (isVoice) {
@@ -92,13 +68,9 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       console.log('💬 Transcribed audio message:', userMessageContent);
     }
 
-    conversation.messages.push({ role: 'user', content: userMessageContent });
-    await conversation.save();
-    console.log('💬 User message added to conversation:', userMessageContent);
-
     const messages = [
       { role: 'system', content: systemPrompt },
-      ...conversation.messages.map((msg) => ({ role: msg.role, content: msg.content })),
+      { role: 'user', content: userMessageContent },
     ];
 
     if (isImage) {
@@ -121,10 +93,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     const reply = response.choices[0].message.content;
     console.log('✅ OpenAI reply:', reply);
-
-    conversation.messages.push({ role: 'assistant', content: reply });
-    await conversation.save();
-    console.log('💬 Assistant reply added to conversation:', reply);
 
     return reply;
   } catch (err) {
