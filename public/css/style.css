@@ -1,4 +1,71 @@
-/* General Dashboard Styles */
+/* General Styles */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f1f1f1;
+  margin: 0;
+  padding: 0;
+}
+
+/* Login Page Styles (index.html) */
+.container {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.container h1 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+#loginForm {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+#loginForm label {
+  font-weight: bold;
+  color: #333;
+}
+
+#loginForm input {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1em;
+}
+
+#loginForm input:focus {
+  border-color: #007bff;
+  outline: none;
+}
+
+#loginForm button {
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background-color: #007bff;
+  color: white;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+#loginForm button:hover {
+  background-color: #0056b3;
+}
+
+#error {
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* Dashboard Styles */
 .dashboard-container {
   max-width: 800px;
   margin: 20px auto;
@@ -392,62 +459,9 @@
   background-color: #c82333;
 }
 
-/* Login Page Styles */
-.login-container {
-  max-width: 400px;
-  margin: 50px auto;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.login-container h1 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #333;
-}
-
-#loginForm label {
-  display: block;
-  font-weight: bold;
-  margin-bottom: 8px;
-  color: #333;
-}
-
-#loginForm input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1em;
-}
-
-#loginForm input:focus {
-  border-color: #007bff;
-  outline: none;
-}
-
-#loginForm button {
-  width: 100%;
-  padding: 12px;
-  border: none;
-  border-radius: 8px;
-  background-color: #007bff;
-  color: white;
-  font-size: 1.1em;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-#loginForm button:hover {
-  background-color: #0056b3;
-}
-
 /* Responsive Design */
 @media (max-width: 600px) {
-  .dashboard-container, .login-container {
+  .container, .dashboard-container {
     margin: 10px;
     padding: 15px;
   }
