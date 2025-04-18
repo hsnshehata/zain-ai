@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   <input type="text" id="chatLink" value="${data.link}" readonly>
                   <button id="copyLinkBtn">نسخ الرابط</button>
                 </div>
-                <form id="customizationForm">
+                <form id="customizationForm" enctype="multipart/form-data">
                   <div>
                     <label for="title">عنوان الصفحة:</label>
                     <input type="text" id="title" name="title" value="${data.title}" required>
@@ -236,7 +236,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   <div>
                     <label for="logo">شعار الصفحة (PNG):</label>
                     <input type="file" id="logo" name="logo" accept="image/png">
-                    <p style="font-size: 0.8em;">الشعار الحالي: ${data.logoUrl || 'لا يوجد'}</p>
+                    <p style="font-size: 0.8em;">الشعار الحالي: ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />` : 'لا يوجد'}</p>
                   </div>
                   <div>
                     <label>
@@ -332,41 +332,36 @@ document.addEventListener('DOMContentLoaded', () => {
               document.getElementById('customizationForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                const settings = {
-                  title: formData.get('title'),
-                  colors: {
-                    header: formData.get('headerColor'),
-                    background: formData.get('backgroundColor'),
-                    text: formData.get('textColor'),
-                    button: formData.get('buttonColor'),
-                  },
-                  suggestedQuestionsEnabled: formData.get('suggestedQuestionsEnabled') === 'on',
-                  suggestedQuestions: questions,
-                  imageUploadEnabled: formData.get('imageUploadEnabled') === 'on',
-                  darkModeEnabled: formData.get('darkModeEnabled') === 'on',
-                };
-
-                const logoFile = formData.get('logo');
-                let logoUrl = data.logoUrl || '';
-                if (logoFile && logoFile.size > 0) {
-                  console.log('Logo file selected, upload logic TBD');
-                  logoUrl = 'placeholder_logo_url';
-                }
+                formData.append('title', formData.get('title'));
+                formData.append('colors', JSON.stringify({
+                  header: formData.get('headerColor'),
+                  background: formData.get('backgroundColor'),
+                  text: formData.get('textColor'),
+                  button: formData.get('buttonColor'),
+                }));
+                formData.append('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on');
+                formData.append('suggestedQuestions', JSON.stringify(questions));
+                formData.append('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on');
+                formData.append('darkModeEnabled', formData.get('darkModeEnabled') === 'on');
 
                 try {
                   const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
                     method: 'PUT',
                     headers: {
                       'Authorization': `Bearer ${token}`,
-                      'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ ...settings, logoUrl }),
+                    body: formData,
                   });
 
                   if (!response.ok) {
                     throw new Error(`فشل في حفظ الإعدادات: ${response.status} ${response.statusText}`);
                   }
 
+                  const result = await response.json();
+                  // Update logo preview if a new logo was uploaded
+                  if (result.logoUrl) {
+                    document.querySelector('p[style="font-size: 0.8em;"]').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />`;
+                  }
                   alert('تم حفظ الإعدادات بنجاح!');
                 } catch (err) {
                   console.error('خطأ في حفظ الإعدادات:', err);
@@ -420,7 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <input type="text" id="chatLink" value="${data.link}" readonly>
               <button id="copyLinkBtn">نسخ الرابط</button>
             </div>
-            <form id="customizationForm">
+            <form id="customizationForm" enctype="multipart/form-data">
               <div>
                 <label for="title">عنوان الصفحة:</label>
                 <input type="text" id="title" name="title" value="صفحة دردشة" required>
@@ -533,41 +528,36 @@ document.addEventListener('DOMContentLoaded', () => {
           document.getElementById('customizationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
-            const settings = {
-              title: formData.get('title'),
-              colors: {
-                header: formData.get('headerColor'),
-                background: formData.get('backgroundColor'),
-                text: formData.get('textColor'),
-                button: formData.get('buttonColor'),
-              },
-              suggestedQuestionsEnabled: formData.get('suggestedQuestionsEnabled') === 'on',
-              suggestedQuestions: questions,
-              imageUploadEnabled: formData.get('imageUploadEnabled') === 'on',
-              darkModeEnabled: formData.get('darkModeEnabled') === 'on',
-            };
-
-            const logoFile = formData.get('logo');
-            let logoUrl = '';
-            if (logoFile && logoFile.size > 0) {
-              console.log('Logo file selected, upload logic TBD');
-              logoUrl = 'placeholder_logo_url';
-            }
+            formData.append('title', formData.get('title'));
+            formData.append('colors', JSON.stringify({
+              header: formData.get('headerColor'),
+              background: formData.get('backgroundColor'),
+              text: formData.get('textColor'),
+              button: formData.get('buttonColor'),
+            }));
+            formData.append('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on');
+            formData.append('suggestedQuestions', JSON.stringify(questions));
+            formData.append('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on');
+            formData.append('darkModeEnabled', formData.get('darkModeEnabled') === 'on');
 
             try {
               const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
                 method: 'PUT',
                 headers: {
                   'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ ...settings, logoUrl }),
+                body: formData,
               });
 
               if (!response.ok) {
                 throw new Error(`فشل في حفظ الإعدادات: ${response.status} ${response.statusText}`);
               }
 
+              const result = await response.json();
+              // Update logo preview if a new logo was uploaded
+              if (result.logoUrl) {
+                document.querySelector('p[style="font-size: 0.8em;"]').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />`;
+              }
               alert('تم حفظ الإعدادات بنجاح!');
             } catch (err) {
               console.error('خطأ في حفظ الإعدادات:', err);
