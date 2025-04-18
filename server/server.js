@@ -11,7 +11,6 @@ const rulesRoutes = require('./routes/rules');
 const botRoutes = require('./routes/bot');
 const analyticsRoutes = require('./routes/analytics');
 const chatPageRoutes = require('./routes/chat-page');
-const indexRoutes = require('./routes/index');
 const connectDB = require('./db');
 
 const app = express();
@@ -36,7 +35,19 @@ app.use('/api/chat-page', chatPageRoutes);
 
 // Serve index.html for the root route
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/index.html'));
+  try {
+    const filePath = path.join(__dirname, 'public', 'index.html');
+    console.log('Serving index.html from:', filePath); // Log for debugging
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error serving index.html:', err);
+        res.status(500).json({ message: 'Failed to load login page' });
+      }
+    });
+  } catch (err) {
+    console.error('Error in root route:', err);
+    res.status(500).json({ message: 'Something went wrong!' });
+  }
 });
 
 // Route for dashboard
@@ -48,9 +59,6 @@ app.get('/dashboard', (req, res) => {
 app.get('/chat/:linkId', (req, res) => {
   res.sendFile(path.join(__dirname, 'public/chat.html'));
 });
-
-// Remove or adjust indexRoutes if causing conflicts
-// app.use('/', indexRoutes); // Comment this out if it returns API responses
 
 // Connect to MongoDB
 connectDB();
