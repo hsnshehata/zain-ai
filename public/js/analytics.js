@@ -1,0 +1,65 @@
+async function loadAnalyticsPage() {
+  const content = document.getElementById('content');
+  const role = localStorage.getItem('role');
+  const token = localStorage.getItem('token');
+
+  content.innerHTML = `
+    <h2>إحصائيات البوتات</h2>
+    <div>
+      <label for="botSelect">اختر بوت:</label>
+      <select id="botSelect"></select>
+    </div>
+    <div id="analyticsData">
+      <h3>تفاصيل الأداء</h3>
+      <p id="messagesCount">عدد الرسائل: جاري التحميل...</p>
+      <p id="successRate">نسبة النجاح: جاري التحميل...</p>
+      <p id="activeRules">عدد القواعد النشطة: جاري التحميل...</p>
+    </div>
+  `;
+
+  const botSelect = document.getElementById('botSelect');
+  try {
+    const res = await fetch('/api/bots', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) {
+      throw new Error('فشل في جلب البوتات');
+    }
+    const bots = await res.json();
+    botSelect.innerHTML = '';
+    const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === localStorage.getItem('userId'));
+    userBots.forEach((bot) => {
+      botSelect.innerHTML += `<option value="${bot._id}">${bot.name}</option>`;
+    });
+  } catch (err) {
+    console.error('خطأ في جلب البوتات:', err);
+    alert('خطأ في جلب البوتات');
+  }
+
+  botSelect.addEventListener('change', async () => {
+    const botId = botSelect.value;
+    if (botId) {
+      try {
+        const res = await fetch(`/api/analytics?botId=${botId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          throw new Error('فشل في جلب الإحصائيات');
+        }
+        const analytics = await res.json();
+        document.getElementById('messagesCount').textContent = `عدد الرسائل: ${analytics.messagesCount || 0}`;
+        document.getElementById('successRate').textContent = `نسبة النجاح: ${analytics.successRate ? analytics.successRate + '%' : 'غير متاح'}`;
+        document.getElementById('activeRules').textContent = `عدد القواعد النشطة: ${analytics.activeRules || 0}`;
+      } catch (err) {
+        console.error('خطأ في جلب الإحصائيات:', err);
+        alert('خطأ في جلب الإحصائيات');
+      }
+    }
+  });
+
+  // Load analytics for the first bot by default
+  if (botSelect.options.length > 0) {
+    botSelect.value = botSelect.options[0].value;
+    botSelect.dispatchEvent(new Event('change'));
+  }
+}
