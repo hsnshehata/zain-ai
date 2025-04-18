@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   } else {
     if (botsBtn) {
-      botsBtn.addEventListener('click', () secret: {
+      botsBtn.addEventListener('click', () => {
         window.location.hash = 'bots';
         loadPageBasedOnHash();
       });
@@ -413,7 +413,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
           }
           newContent = { question, answer };
-        } else if (rule.type === 'api') {
+        } else if (type === 'api') {
           const apiKey = prompt('أدخل مفتاح API الجديد:', rule.content.apiKey);
           if (!apiKey || apiKey.trim() === '') {
             alert('يرجى إدخال مفتاح API صالح');
