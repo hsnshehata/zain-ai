@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs'); // Add fs module to check file existence
 const fileUpload = require('express-fileupload');
 const facebookRoutes = require('./routes/facebook');
 const webhookRoutes = require('./routes/webhook');
@@ -37,7 +38,14 @@ app.use('/api/chat-page', chatPageRoutes);
 app.get('/', (req, res) => {
   try {
     const filePath = path.join(__dirname, 'public', 'index.html');
-    console.log('Serving index.html from:', filePath); // Log for debugging
+    console.log('Attempting to serve index.html from:', filePath);
+
+    // Check if file exists
+    if (!fs.existsSync(filePath)) {
+      console.error('index.html not found at:', filePath);
+      return res.status(404).json({ message: 'Login page not found' });
+    }
+
     res.sendFile(filePath, (err) => {
       if (err) {
         console.error('Error serving index.html:', err);
