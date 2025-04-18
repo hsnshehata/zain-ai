@@ -12,7 +12,6 @@ async function loadAnalyticsPage() {
     <div id="analyticsData">
       <h3>تفاصيل الأداء</h3>
       <p id="messagesCount">عدد الرسائل: جاري التحميل...</p>
-      <p id="successRate">نسبة النجاح: جاري التحميل...</p>
       <p id="activeRules">عدد القواعد النشطة: جاري التحميل...</p>
     </div>
   `;
@@ -53,16 +52,13 @@ async function loadAnalyticsPage() {
 
         // Divide messagesCount by 4 and multiply successRate by 2
         const adjustedMessagesCount = Math.round((analytics.messagesCount || 0) / 3);
-        const adjustedSuccessRate = analytics.successRate ? Math.round(analytics.successRate * 2) : 0;
 
         document.getElementById('messagesCount').textContent = `عدد الرسائل: ${adjustedMessagesCount}`;
-        document.getElementById('successRate').textContent = `نسبة النجاح: ${adjustedSuccessRate}%`;
         document.getElementById('activeRules').textContent = `عدد القواعد النشطة: ${analytics.activeRules || 0}`;
       } catch (err) {
         console.error('خطأ في جلب الإحصائيات:', err);
         alert('خطأ في جلب الإحصائيات، يرجى المحاولة لاحقًا');
         document.getElementById('messagesCount').textContent = `عدد الرسائل: 0`;
-        document.getElementById('successRate').textContent = `نسبة النجاح: غير متاح`;
         document.getElementById('activeRules').textContent = `عدد القواعد النشطة: 0`;
       }
     }
