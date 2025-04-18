@@ -350,17 +350,17 @@ document.addEventListener('DOMContentLoaded', () => {
               document.getElementById('customizationForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                formData.append('title', formData.get('title'));
-                formData.append('colors', JSON.stringify({
+                formData.set('title', formData.get('title'));
+                formData.set('colors', JSON.stringify({
                   header: formData.get('headerColor'),
                   background: formData.get('backgroundColor'),
                   text: formData.get('textColor'),
                   button: formData.get('buttonColor'),
                 }));
-                formData.append('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on');
-                formData.append('suggestedQuestions', JSON.stringify(questions));
-                formData.append('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on');
-                formData.append('darkModeEnabled', formData.get('darkModeEnabled') === 'on');
+                formData.set('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on' ? 'true' : 'false');
+                formData.set('suggestedQuestions', JSON.stringify(questions));
+                formData.set('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on' ? 'true' : 'false');
+                formData.set('darkModeEnabled', formData.get('darkModeEnabled') === 'on' ? 'true' : 'false');
 
                 try {
                   const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
@@ -566,17 +566,17 @@ document.addEventListener('DOMContentLoaded', () => {
           document.getElementById('customizationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
-            formData.append('title', formData.get('title'));
-            formData.append('colors', JSON.stringify({
+            formData.set('title', formData.get('title'));
+            formData.set('colors', JSON.stringify({
               header: formData.get('headerColor'),
               background: formData.get('backgroundColor'),
               text: formData.get('textColor'),
               button: formData.get('buttonColor'),
             }));
-            formData.append('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on');
-            formData.append('suggestedQuestions', JSON.stringify(questions));
-            formData.append('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on');
-            formData.append('darkModeEnabled', formData.get('darkModeEnabled') === 'on');
+            formData.set('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on' ? 'true' : 'false');
+            formData.set('suggestedQuestions', JSON.stringify(questions));
+            formData.set('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on' ? 'true' : 'false');
+            formData.set('darkModeEnabled', formData.get('darkModeEnabled') === 'on' ? 'true' : 'false');
 
             try {
               const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
@@ -901,7 +901,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
           }
           newContent = { question, answer };
-        } else if (rule.type === 'api') {
+        } else if (type === 'api') {
           const apiKey = prompt('أدخل مفتاح API الجديد:', rule.content.apiKey);
           if (!apiKey || apiKey.trim() === '') {
             alert('يرجى إدخال مفتاح API صالح');
