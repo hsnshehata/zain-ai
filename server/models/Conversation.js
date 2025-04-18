@@ -7,6 +7,7 @@ const conversationSchema = new mongoose.Schema({
     {
       role: { type: String, enum: ['user', 'assistant'], required: true },
       content: { type: String, required: true },
+      messageId: { type: String }, // Unique message ID from webhook
       timestamp: { type: Date, default: Date.now },
     },
   ],
