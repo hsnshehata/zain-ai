@@ -12,7 +12,6 @@ const botRoutes = require('./routes/bot');
 const analyticsRoutes = require('./routes/analytics');
 const chatPageRoutes = require('./routes/chat-page');
 const indexRoutes = require('./routes/index');
-const whatsappRoutes = require('./routes/whatsapp');
 const connectDB = require('./db');
 
 const app = express();
@@ -34,7 +33,6 @@ app.use('/api/rules', rulesRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/chat-page', chatPageRoutes);
-app.use('/api/whatsapp', whatsappRoutes);
 app.use('/', indexRoutes); // Use indexRoutes for root like old system
 
 // Route for dashboard
