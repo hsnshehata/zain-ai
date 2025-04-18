@@ -29,10 +29,15 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPageBasedOnHash();
   });
 
-  document.getElementById('chatPageBtn').addEventListener('click', () => {
-    window.location.hash = 'chat-page';
-    loadPageBasedOnHash();
-  });
+  const chatPageBtn = document.getElementById('chatPageBtn');
+  if (chatPageBtn) {
+    chatPageBtn.addEventListener('click', () => {
+      window.location.hash = 'chat-page';
+      loadPageBasedOnHash();
+    });
+  } else {
+    console.error('Chat Page button not found in DOM');
+  }
 
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     try {
@@ -174,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <option value="">اختر بوت</option>
     `;
 
-    const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
+    const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId && bot.userId._id === userId);
     userBots.forEach(bot => {
       html += `<option value="${bot._id}">${bot.name}</option>`;
     });
@@ -194,7 +199,10 @@ document.addEventListener('DOMContentLoaded', () => {
       botIdSelect.addEventListener('change', () => {
         const selectedBotId = botIdSelect.value;
         createChatPageBtn.disabled = !selectedBotId; // تفعيل الزرار بس لما يختار بوت
+        console.log(`Selected bot ID: ${selectedBotId}`);
       });
+    } else {
+      console.error('botId select element not found in DOM');
     }
 
     if (createChatPageBtn) {
@@ -208,8 +216,10 @@ document.addEventListener('DOMContentLoaded', () => {
           <h2>تخصيص صفحة الدردشة</h2>
           <p>تم إنشاء صفحة الدردشة للبوت المحدد! جاري تحميل خيارات التخصيص...</p>
         `;
-        // الخيارات زي الرابط وتعديل الألوان هتتحط هنا في المراحل الجاية
+        console.log(`Chat page creation initiated for bot ID: ${selectedBotId}`);
       });
+    } else {
+      console.error('createChatPageBtn not found in DOM');
     }
   }
 
