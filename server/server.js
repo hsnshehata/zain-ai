@@ -21,7 +21,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload());
-app.use(express.static(path.join(__dirname, '../public')));
+app.use(express.static(path.join(__dirname, 'public'))); // Ensure static files are served
 
 // Routes
 app.use('/api/facebook', facebookRoutes);
@@ -37,22 +37,12 @@ app.use('/', indexRoutes);
 
 // Route for dashboard
 app.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/dashboard.html'));
-});
-
-// Route for rules page
-app.get('/rules', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/rules.html'));
-});
-
-// Route for chat page customization
-app.get('/chat-page', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/chat-page.html'));
+  res.sendFile(path.join(__dirname, 'public/dashboard.html'));
 });
 
 // Route for chat page
 app.get('/chat/:linkId', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/chat.html'));
+  res.sendFile(path.join(__dirname, 'public/chat.html'));
 });
 
 // Connect to MongoDB
