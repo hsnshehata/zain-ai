@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fileUpload = require('express-fileupload');
 const facebookRoutes = require('./routes/facebook');
 const webhookRoutes = require('./routes/webhook');
 const authRoutes = require('./routes/auth');
@@ -19,6 +20,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(fileUpload());
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Routes
