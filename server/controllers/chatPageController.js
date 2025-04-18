@@ -1,5 +1,7 @@
 const { v4: uuidv4 } = require('uuid');
 const ChatPage = require('../models/ChatPage');
+const path = require('path');
+const fs = require('fs');
 
 // Create a new chat page
 exports.createChatPage = async (req, res) => {
@@ -41,7 +43,6 @@ exports.updateChatPage = async (req, res) => {
     const {
       title,
       colors,
-      logoUrl,
       suggestedQuestionsEnabled,
       suggestedQuestions,
       imageUploadEnabled,
@@ -55,15 +56,31 @@ exports.updateChatPage = async (req, res) => {
 
     chatPage.title = title || chatPage.title;
     chatPage.colors = colors || chatPage.colors;
-    chatPage.logoUrl = logoUrl || chatPage.logoUrl;
     chatPage.suggestedQuestionsEnabled = suggestedQuestionsEnabled !== undefined ? suggestedQuestionsEnabled : chatPage.suggestedQuestionsEnabled;
     chatPage.suggestedQuestions = suggestedQuestions || chatPage.suggestedQuestions;
     chatPage.imageUploadEnabled = imageUploadEnabled !== undefined ? imageUploadEnabled : chatPage.imageUploadEnabled;
     chatPage.darkModeEnabled = darkModeEnabled !== undefined ? darkModeEnabled : chatPage.darkModeEnabled;
 
+    // Handle logo upload
+    if (req.files && req.files.logo) {
+      const logo = req.files.logo;
+      const uploadDir = path.join(__dirname, '../../public/uploads');
+      const logoName = `${Date.now()}-${logo.name}`;
+      const logoPath = path.join(uploadDir, logoName);
+
+      // Ensure uploads directory exists
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      // Move the uploaded file to the uploads directory
+      await logo.mv(logoPath);
+      chatPage.logoUrl = `/uploads/${logoName}`;
+    }
+
     await chatPage.save();
 
-    res.status(200).json({ message: 'Chat page settings updated successfully' });
+    res.status(200).json({ message: 'Chat page settings updated successfully', logoUrl: chatPage.logoUrl });
   } catch (err) {
     console.error('Error updating chat page:', err);
     res.status(500).json({ message: 'Server error while updating chat page' });
