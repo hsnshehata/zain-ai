@@ -29,6 +29,11 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPageBasedOnHash();
   });
 
+  document.getElementById('chatPageBtn').addEventListener('click', () => {
+    window.location.hash = 'chat-page';
+    loadPageBasedOnHash();
+  });
+
   document.getElementById('logoutBtn').addEventListener('click', async () => {
     try {
       console.log('📤 Sending logout request for username:', localStorage.getItem('username'));
@@ -117,6 +122,8 @@ document.addEventListener('DOMContentLoaded', () => {
       await loadRulesPage();
     } else if (hash === '#analytics') {
       await loadAnalyticsPage();
+    } else if (hash === '#chat-page') {
+      await loadChatPage();
     } else {
       if (userRole === 'superadmin') {
         window.location.hash = 'bots';
@@ -127,6 +134,22 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
   };
+
+  async function loadChatPage() {
+    const content = document.getElementById('content');
+    content.innerHTML = `
+      <h2>تخصيص صفحة الدردشة</h2>
+      <button id="createChatPageBtn">إنشاء صفحة دردشة</button>
+    `;
+
+    document.getElementById('createChatPageBtn').addEventListener('click', async () => {
+      content.innerHTML = `
+        <h2>تخصيص صفحة الدردشة</h2>
+        <p>تم إنشاء صفحة الدردشة! جاري تحميل خيارات التخصيص...</p>
+      `;
+      // الخيارات زي الرابط وتعديل الألوان هتتحط هنا في المراحل الجاية
+    });
+  }
 
   loadPageBasedOnHash();
 
@@ -413,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
           }
           newContent = { question, answer };
-        } else if (type === 'api') {
+        } else if (rule.type === 'api') {
           const apiKey = prompt('أدخل مفتاح API الجديد:', rule.content.apiKey);
           if (!apiKey || apiKey.trim() === '') {
             alert('يرجى إدخال مفتاح API صالح');
