@@ -38,6 +38,11 @@ app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/dashboard.html'));
 });
 
+// Route for chat page
+app.get('/chat/:linkId', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/chat.html'));
+});
+
 // Connect to MongoDB
 connectDB();
 
