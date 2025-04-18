@@ -22,7 +22,6 @@ const handleMessage = async (req, res) => {
 
       const webhookEvent = entry.messaging[0];
       const senderPsid = webhookEvent.sender?.id;
-      const messageId = webhookEvent.message?.mid; // Unique message ID from Facebook
 
       if (!senderPsid) {
         console.log('❌ Sender PSID not found in webhook event:', webhookEvent);
@@ -53,16 +52,9 @@ const handleMessage = async (req, res) => {
       if (webhookEvent.message) {
         const message = webhookEvent.message;
 
-        // Check if message already exists to prevent duplicates
-        if (messageId && conversation.messages.some(msg => msg.messageId === messageId)) {
-          console.log(`⚠️ Duplicate message detected with messageId: ${messageId}`);
-          continue;
-        }
-
         conversation.messages.push({
           role: 'user',
           content: message.text || 'رسالة غير نصية',
-          messageId: messageId || undefined,
         });
 
         let responseText = '';
@@ -87,13 +79,9 @@ const handleMessage = async (req, res) => {
           responseText = 'عذرًا، لا أستطيع فهم هذه الرسالة.';
         }
 
-        // Generate a unique messageId for assistant response if needed
-        const assistantMessageId = messageId ? `${messageId}-assistant` : undefined;
-
         conversation.messages.push({
           role: 'assistant',
           content: responseText,
-          messageId: assistantMessageId,
         });
 
         await conversation.save();
