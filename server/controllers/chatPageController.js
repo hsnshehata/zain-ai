@@ -45,13 +45,29 @@ exports.updateChatPage = async (req, res) => {
       return res.status(404).json({ message: 'Chat page not found' });
     }
 
-    // Parse FormData fields
+    // Parse FormData fields safely
     const title = req.body.title || chatPage.title;
-    const colors = req.body.colors ? JSON.parse(req.body.colors) : chatPage.colors;
-    const suggestedQuestionsEnabled = req.body.suggestedQuestionsEnabled === 'true' || chatPage.suggestedQuestionsEnabled;
-    const suggestedQuestions = req.body.suggestedQuestions ? JSON.parse(req.body.suggestedQuestions) : chatPage.suggestedQuestions;
-    const imageUploadEnabled = req.body.imageUploadEnabled === 'true' || chatPage.imageUploadEnabled;
-    const darkModeEnabled = req.body.darkModeEnabled === 'true' || chatPage.darkModeEnabled;
+    let colors = chatPage.colors;
+    if (req.body.colors) {
+      try {
+        colors = JSON.parse(req.body.colors);
+      } catch (e) {
+        console.error('Error parsing colors:', e);
+        return res.status(400).json({ message: 'Invalid colors format' });
+      }
+    }
+    const suggestedQuestionsEnabled = req.body.suggestedQuestionsEnabled === 'true' ? true : req.body.suggestedQuestionsEnabled === 'false' ? false : chatPage.suggestedQuestionsEnabled;
+    let suggestedQuestions = chatPage.suggestedQuestions;
+    if (req.body.suggestedQuestions) {
+      try {
+        suggestedQuestions = JSON.parse(req.body.suggestedQuestions);
+      } catch (e) {
+        console.error('Error parsing suggestedQuestions:', e);
+        return res.status(400).json({ message: 'Invalid suggestedQuestions format' });
+      }
+    }
+    const imageUploadEnabled = req.body.imageUploadEnabled === 'true' ? true : req.body.imageUploadEnabled === 'false' ? false : chatPage.imageUploadEnabled;
+    const darkModeEnabled = req.body.darkModeEnabled === 'true' ? true : req.body.darkModeEnabled === 'false' ? false : chatPage.darkModeEnabled;
 
     // Handle logo upload
     let logoUrl = chatPage.logoUrl;
