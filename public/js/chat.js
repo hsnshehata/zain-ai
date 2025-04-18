@@ -23,20 +23,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     botId = settings.botId;
 
     // Apply custom settings
-    chatTitle.textContent = settings.title;
+    chatTitle.textContent = settings.title || 'صفحة الدردشة';
     if (settings.logoUrl) {
       chatLogo.src = settings.logoUrl;
       chatLogo.style.display = 'block';
+    } else {
+      chatLogo.style.display = 'none';
     }
     customStyles.textContent = `
-      .chat-container { background-color: ${settings.colors.background}; color: ${settings.colors.text}; }
-      #chatHeader { background-color: ${settings.colors.header}; }
-      #sendMessageBtn, .suggested-question { background-color: ${settings.colors.button}; }
+      .chat-container { background-color: ${settings.colors?.background || '#f8f9fa'}; color: ${settings.colors?.text || '#333333'}; }
+      #chatHeader { background-color: ${settings.colors?.header || '#007bff'}; }
+      #sendMessageBtn, .suggested-question { background-color: ${settings.colors?.button || '#007bff'}; }
       ${settings.darkModeEnabled ? 'body { background-color: #333; color: #fff; }' : ''}
     `;
 
     // Show suggested questions if enabled
-    if (settings.suggestedQuestionsEnabled && settings.suggestedQuestions.length > 0) {
+    if (settings.suggestedQuestionsEnabled && settings.suggestedQuestions?.length > 0) {
       suggestedQuestions.style.display = 'block';
       settings.suggestedQuestions.forEach(question => {
         const button = document.createElement('button');
@@ -45,11 +47,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         button.addEventListener('click', () => sendMessage(question));
         suggestedQuestions.appendChild(button);
       });
+    } else {
+      suggestedQuestions.style.display = 'none';
     }
 
     // Show image upload if enabled
     if (settings.imageUploadEnabled) {
       imageInput.style.display = 'block';
+    } else {
+      imageInput.style.display = 'none';
     }
   } catch (err) {
     console.error('خطأ في جلب إعدادات الصفحة:', err);
@@ -72,8 +78,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Add Authorization header if required
-          // 'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
         body: JSON.stringify({
           botId,
@@ -89,7 +93,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const data = await response.json();
       const botMessageDiv = document.createElement('div');
       botMessageDiv.className = 'message bot-message';
-      botMessageDiv.textContent = data.reply;
+      botMessageDiv.textContent = data.reply || 'رد البوت';
       chatMessages.appendChild(botMessageDiv);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     } catch (err) {
@@ -119,4 +123,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   imageInput.addEventListener('change', () => {
     const file = imageInput.files[0];
     if (file) {
-      sendMessage(null
+      sendMessage(null, true);
+      imageInput.value = '';
+    }
+  });
+});
