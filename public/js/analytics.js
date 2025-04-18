@@ -43,15 +43,6 @@ async function loadAnalyticsPage() {
     const botId = botSelect.value;
     if (botId) {
       try {
-        // Mock data as a fallback since /api/analytics is not available
-        const analytics = {
-          messagesCount: 150,
-          successRate: 85,
-          activeRules: 10
-        };
-
-        // Uncomment the following block when the API is available
-        /*
         const res = await fetch(`/api/analytics?botId=${botId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -59,18 +50,17 @@ async function loadAnalyticsPage() {
           throw new Error('فشل في جلب الإحصائيات');
         }
         const analytics = await res.json();
-        */
 
         document.getElementById('messagesCount').textContent = `عدد الرسائل: ${analytics.messagesCount || 0}`;
         document.getElementById('successRate').textContent = `نسبة النجاح: ${analytics.successRate ? analytics.successRate + '%' : 'غير متاح'}`;
         document.getElementById('activeRules').textContent = `عدد القواعد النشطة: ${analytics.activeRules || 0}`;
       } catch (err) {
         console.error('خطأ في جلب الإحصائيات:', err);
-        alert('البيانات غير متاحة حاليًا، يتم عرض بيانات وهمية');
-        // Fallback to mock data on error
-        document.getElementById('messagesCount').textContent = `عدد الرسائل: 150`;
-        document.getElementById('successRate').textContent = `نسبة النجاح: 85%`;
-        document.getElementById('activeRules').textContent = `عدد القواعد النشطة: 10`;
+        alert('خطأ في جلب الإحصائيات، يرجى المحاولة لاحقًا');
+        // Fallback to default values on error
+        document.getElementById('messagesCount').textContent = `عدد الرسائل: 0`;
+        document.getElementById('successRate').textContent = `نسبة النجاح: غير متاح`;
+        document.getElementById('activeRules').textContent = `عدد القواعد النشطة: 0`;
       }
     }
   });
