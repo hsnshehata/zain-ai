@@ -21,7 +21,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(fileUpload());
-app.use(express.static(path.join(__dirname, 'public'))); // Ensure static files are served
+app.use(express.static(path.join(__dirname, 'public'))); // Serve static files from public/
 
 // Routes
 app.use('/api/facebook', facebookRoutes);
