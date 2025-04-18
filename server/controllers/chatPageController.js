@@ -9,6 +9,13 @@ exports.createChatPage = async (req, res) => {
       return res.status(400).json({ message: 'User ID and Bot ID are required' });
     }
 
+    // Check if a chat page already exists for this bot
+    const existingPage = await ChatPage.findOne({ botId });
+    if (existingPage) {
+      const chatLink = `${process.env.APP_URL || 'https://zain-ai-a06a.onrender.com'}/chat/${existingPage.linkId}`;
+      return res.status(200).json({ link: chatLink, chatPageId: existingPage._id, exists: true });
+    }
+
     const linkId = uuidv4();
     const chatPage = new ChatPage({
       userId,
@@ -20,7 +27,7 @@ exports.createChatPage = async (req, res) => {
 
     const chatLink = `${process.env.APP_URL || 'https://zain-ai-a06a.onrender.com'}/chat/${linkId}`;
 
-    res.status(201).json({ link: chatLink, chatPageId: chatPage._id });
+    res.status(201).json({ link: chatLink, chatPageId: chatPage._id, exists: false });
   } catch (err) {
     console.error('Error creating chat page:', err);
     res.status(500).json({ message: 'Server error while creating chat page' });
@@ -83,6 +90,32 @@ exports.getChatPageByLinkId = async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching chat page:', err);
+    res.status(500).json({ message: 'Server error while fetching chat page' });
+  }
+};
+
+// Get chat page settings by botId
+exports.getChatPageByBotId = async (req, res) => {
+  try {
+    const { botId } = req.params;
+    const chatPage = await ChatPage.findOne({ botId });
+    if (!chatPage) {
+      return res.status(404).json({ message: 'No chat page found for this bot' });
+    }
+    const chatLink = `${process.env.APP_URL || 'https://zain-ai-a06a.onrender.com'}/chat/${chatPage.linkId}`;
+    res.status(200).json({
+      link: chatLink,
+      chatPageId: chatPage._id,
+      title: chatPage.title,
+      colors: chatPage.colors,
+      logoUrl: chatPage.logoUrl,
+      suggestedQuestionsEnabled: chatPage.suggestedQuestionsEnabled,
+      suggestedQuestions: chatPage.suggestedQuestions,
+      imageUploadEnabled: chatPage.imageUploadEnabled,
+      darkModeEnabled: chatPage.darkModeEnabled,
+    });
+  } catch (err) {
+    console.error('Error fetching chat page by botId:', err);
     res.status(500).json({ message: 'Server error while fetching chat page' });
   }
 };
