@@ -198,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (botIdSelect) {
       botIdSelect.addEventListener('change', () => {
         const selectedBotId = botIdSelect.value;
-        createChatPageBtn.disabled = !selectedBotId; // تفعيل الزرار بس لما يختار بوت
+        createChatPageBtn.disabled = !selectedBotId;
         console.log(`Selected bot ID: ${selectedBotId}`);
       });
     } else {
@@ -212,11 +212,48 @@ document.addEventListener('DOMContentLoaded', () => {
           alert('يرجى اختيار بوت أولاً');
           return;
         }
-        content.innerHTML = `
-          <h2>تخصيص صفحة الدردشة</h2>
-          <p>تم إنشاء صفحة الدردشة للبوت المحدد! جاري تحميل خيارات التخصيص...</p>
-        `;
-        console.log(`Chat page creation initiated for bot ID: ${selectedBotId}`);
+
+        try {
+          const response = await fetch('/api/chat-page', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              userId: localStorage.getItem('userId'),
+              botId: selectedBotId,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`فشل في إنشاء صفحة الدردشة: ${response.status} ${response.statusText}`);
+          }
+
+          const data = await response.json();
+          content.innerHTML = `
+            <h2>تخصيص صفحة الدردشة</h2>
+            <div>
+              <label for="chatLink">رابط صفحة الدردشة:</label>
+              <input type="text" id="chatLink" value="${data.link}" readonly>
+              <button id="copyLinkBtn">نسخ الرابط</button>
+            </div>
+            <p>تم إنشاء صفحة الدردشة! استخدم الرابط أعلاه للوصول إليها.</p>
+          `;
+
+          document.getElementById('copyLinkBtn').addEventListener('click', () => {
+            const linkInput = document.getElementById('chatLink');
+            linkInput.select();
+            document.execCommand('copy');
+            alert('تم نسخ الرابط بنجاح!');
+            console.log(`Link copied: ${data.link}`);
+          });
+        } catch (err) {
+          console.error('خطأ في إنشاء صفحة الدردشة:', err);
+          content.innerHTML = `
+            <p style="color: red;">تعذر إنشاء صفحة الدردشة، حاول مرة أخرى لاحقًا.</p>
+          `;
+        }
       });
     } else {
       console.error('createChatPageBtn not found in DOM');
