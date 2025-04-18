@@ -35,9 +35,19 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/chat-page', chatPageRoutes);
 app.use('/', indexRoutes);
 
-// Route for /dashboard
+// Route for dashboard
 app.get('/dashboard', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/dashboard.html'));
+});
+
+// Route for rules page
+app.get('/rules', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/rules.html'));
+});
+
+// Route for chat page customization
+app.get('/chat-page', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/chat-page.html'));
 });
 
 // Route for chat page
