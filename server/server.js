@@ -8,8 +8,8 @@ const botsRoutes = require('./routes/bots');
 const usersRoutes = require('./routes/users');
 const rulesRoutes = require('./routes/rules');
 const botRoutes = require('./routes/bot');
+const analyticsRoutes = require('./routes/analytics');
 const indexRoutes = require('./routes/index');
-const whatsappRoutes = require('./routes/whatsapp');
 const connectDB = require('./db');
 
 const app = express();
@@ -28,7 +28,7 @@ app.use('/api/bots', botsRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/rules', rulesRoutes);
 app.use('/api/bot', botRoutes);
-app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/analytics', analyticsRoutes);
 app.use('/', indexRoutes);
 
 // Route for /dashboard
