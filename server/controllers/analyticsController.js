@@ -23,12 +23,18 @@ exports.getAnalytics = async (req, res) => {
     });
     const messagesCount = uniqueMessages.size;
 
-    // Count successful assistant messages (non-empty responses)
+    // Count successful assistant messages (non-empty and not error messages)
     let successfulMessages = 0;
     conversations.forEach(conversation => {
       conversation.messages.forEach(msg => {
         const messageKey = msg.messageId || `${msg.content}-${msg.timestamp}-${msg.role}`;
-        if (msg.role === 'assistant' && msg.content && msg.content.trim() !== '' && !uniqueMessages.has(messageKey)) {
+        if (
+          msg.role === 'assistant' &&
+          msg.content &&
+          msg.content.trim() !== '' &&
+          !msg.content.includes('عذرًا، حدث خطأ') &&
+          !uniqueMessages.has(messageKey)
+        ) {
           uniqueMessages.add(messageKey);
           successfulMessages++;
         }
