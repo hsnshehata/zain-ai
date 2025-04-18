@@ -1,7 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const ChatPage = require('../models/ChatPage');
 
-// Create a new chat page
 exports.createChatPage = async (req, res) => {
   try {
     const { userId, botId } = req.body;
@@ -9,7 +8,7 @@ exports.createChatPage = async (req, res) => {
       return res.status(400).json({ message: 'User ID and Bot ID are required' });
     }
 
-    const linkId = uuidv4(); // Generate unique link ID
+    const linkId = uuidv4();
     const chatPage = new ChatPage({
       userId,
       botId,
@@ -18,8 +17,7 @@ exports.createChatPage = async (req, res) => {
 
     await chatPage.save();
 
-    // Generate the full link (e.g., http://YOUR_RENDER_URL/chat/YOUR_LINK_ID)
-    const chatLink = `${process.env.APP_URL || 'http://localhost:5000'}/chat/${linkId}`;
+    const chatLink = `${process.env.APP_URL || 'https://zain-ai-a06a.onrender.com'}/chat/${linkId}`;
 
     res.status(201).json({ link: chatLink, chatPageId: chatPage._id });
   } catch (err) {
