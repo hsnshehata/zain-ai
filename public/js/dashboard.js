@@ -196,10 +196,192 @@ document.addEventListener('DOMContentLoaded', () => {
     const createChatPageBtn = document.getElementById('createChatPageBtn');
 
     if (botIdSelect) {
-      botIdSelect.addEventListener('change', () => {
+      botIdSelect.addEventListener('change', async () => {
         const selectedBotId = botIdSelect.value;
         createChatPageBtn.disabled = !selectedBotId;
         console.log(`Selected bot ID: ${selectedBotId}`);
+
+        if (selectedBotId) {
+          try {
+            const response = await fetch(`/api/chat-page/bot/${selectedBotId}`, {
+              headers: { 'Authorization': `Bearer ${token}` },
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              // Display existing chat page settings
+              content.innerHTML = `
+                <h2>تخصيص صفحة الدردشة</h2>
+                <div>
+                  <label for="chatLink">رابط صفحة الدردشة:</label>
+                  <input type="text" id="chatLink" value="${data.link}" readonly>
+                  <button id="copyLinkBtn">نسخ الرابط</button>
+                </div>
+                <form id="customizationForm">
+                  <div>
+                    <label for="title">عنوان الصفحة:</label>
+                    <input type="text" id="title" name="title" value="${data.title}" required>
+                  </div>
+                  <div>
+                    <h3>إعدادات الألوان:</h3>
+                    <label for="headerColor">لون الهيدر:</label>
+                    <input type="color" id="headerColor" name="headerColor" value="${data.colors.header}">
+                    <label for="backgroundColor">لون الخلفية:</label>
+                    <input type="color" id="backgroundColor" name="backgroundColor" value="${data.colors.background}">
+                    <label for="textColor">لون النص:</label>
+                    <input type="color" id="textColor" name="textColor" value="${data.colors.text}">
+                    <label for="buttonColor">لون الأزرار:</label>
+                    <input type="color" id="buttonColor" name="buttonColor" value="${data.colors.button}">
+                  </div>
+                  <div>
+                    <label for="logo">شعار الصفحة (PNG):</label>
+                    <input type="file" id="logo" name="logo" accept="image/png">
+                    <p style="font-size: 0.8em;">الشعار الحالي: ${data.logoUrl || 'لا يوجد'}</p>
+                  </div>
+                  <div>
+                    <label>
+                      <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled" ${data.suggestedQuestionsEnabled ? 'checked' : ''}>
+                      تفعيل الأسئلة المقترحة
+                    </label>
+                    <div id="suggestedQuestionsContainer" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
+                      <h3>إدارة الأسئلة المقترحة</h3>
+                      <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
+                      <button type="button" id="addQuestionBtn">إضافة سؤال</button>
+                      <ul id="questionsList"></ul>
+                    </div>
+                  </div>
+                  <div>
+                    <label>
+                      <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled" ${data.imageUploadEnabled ? 'checked' : ''}>
+                      تفعيل إرفاق الصور
+                    </label>
+                  </div>
+                  <div>
+                    <label>
+                      <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled" ${data.darkModeEnabled ? 'checked' : ''}>
+                      تفعيل الوضع الليلي
+                    </label>
+                  </div>
+                  <button type="submit">حفظ الإعدادات</button>
+                </form>
+                <p style="font-size: 0.8em;">جميع الحقوق محفوظة © ghazal bost</p>
+              `;
+
+              document.getElementById('copyLinkBtn').addEventListener('click', async () => {
+                const linkInput = document.getElementById('chatLink');
+                try {
+                  await navigator.clipboard.writeText(linkInput.value);
+                  alert('تم نسخ الرابط بنجاح!');
+                  console.log(`Link copied: ${linkInput.value}`);
+                } catch (err) {
+                  console.error('خطأ في نسخ الرابط:', err);
+                  alert('فشل في نسخ الرابط، حاول مرة أخرى');
+                }
+              });
+
+              const suggestedQuestionsEnabledCheckbox = document.getElementById('suggestedQuestionsEnabled');
+              const suggestedQuestionsContainer = document.getElementById('suggestedQuestionsContainer');
+              suggestedQuestionsEnabledCheckbox.addEventListener('change', () => {
+                suggestedQuestionsContainer.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
+              });
+
+              let questions = data.suggestedQuestions || [];
+              document.getElementById('addQuestionBtn').addEventListener('click', () => {
+                const newQuestionInput = document.getElementById('newQuestion');
+                const question = newQuestionInput.value.trim();
+                if (question) {
+                  questions.push(question);
+                  newQuestionInput.value = '';
+                  updateQuestionsList();
+                } else {
+                  alert('يرجى إدخال سؤال صالح');
+                }
+              });
+
+              function updateQuestionsList() {
+                const questionsList = document.getElementById('questionsList');
+                questionsList.innerHTML = '';
+                questions.forEach((question, index) => {
+                  const li = document.createElement('li');
+                  li.innerHTML = `
+                    ${question}
+                    <button type="button" onclick="editQuestion(${index})">تعديل</button>
+                    <button type="button" onclick="deleteQuestion(${index})">حذف</button>
+                  `;
+                  questionsList.appendChild(li);
+                });
+              }
+
+              window.editQuestion = (index) => {
+                const newQuestion = prompt('أدخل السؤال الجديد:', questions[index]);
+                if (newQuestion && newQuestion.trim()) {
+                  questions[index] = newQuestion.trim();
+                  updateQuestionsList();
+                }
+              };
+
+              window.deleteQuestion = (index) => {
+                if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
+                  questions.splice(index, 1);
+                  updateQuestionsList();
+                }
+              };
+
+              updateQuestionsList();
+
+              document.getElementById('customizationForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const settings = {
+                  title: formData.get('title'),
+                  colors: {
+                    header: formData.get('headerColor'),
+                    background: formData.get('backgroundColor'),
+                    text: formData.get('textColor'),
+                    button: formData.get('buttonColor'),
+                  },
+                  suggestedQuestionsEnabled: formData.get('suggestedQuestionsEnabled') === 'on',
+                  suggestedQuestions: questions,
+                  imageUploadEnabled: formData.get('imageUploadEnabled') === 'on',
+                  darkModeEnabled: formData.get('darkModeEnabled') === 'on',
+                };
+
+                const logoFile = formData.get('logo');
+                let logoUrl = data.logoUrl || '';
+                if (logoFile && logoFile.size > 0) {
+                  console.log('Logo file selected, upload logic TBD');
+                  logoUrl = 'placeholder_logo_url';
+                }
+
+                try {
+                  const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
+                    method: 'PUT',
+                    headers: {
+                      'Authorization': `Bearer ${token}`,
+                      'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ...settings, logoUrl }),
+                  });
+
+                  if (!response.ok) {
+                    throw new Error(`فشل في حفظ الإعدادات: ${response.status} ${response.statusText}`);
+                  }
+
+                  alert('تم حفظ الإعدادات بنجاح!');
+                } catch (err) {
+                  console.error('خطأ في حفظ الإعدادات:', err);
+                  alert('فشل في حفظ الإعدادات، حاول مرة أخرى');
+                }
+              });
+            } else {
+              // No chat page exists, allow creation
+              createChatPageBtn.style.display = 'block';
+            }
+          } catch (err) {
+            console.error('خطأ في جلب صفحة الدردشة:', err);
+            createChatPageBtn.style.display = 'block';
+          }
+        }
       });
     } else {
       console.error('botId select element not found in DOM');
@@ -365,13 +547,10 @@ document.addEventListener('DOMContentLoaded', () => {
               darkModeEnabled: formData.get('darkModeEnabled') === 'on',
             };
 
-            // Handle logo upload (simplified for now)
             const logoFile = formData.get('logo');
             let logoUrl = '';
             if (logoFile && logoFile.size > 0) {
-              // Placeholder for logo upload logic (we'll implement this later)
               console.log('Logo file selected, upload logic TBD');
-              // For now, we'll skip actual upload and use a placeholder
               logoUrl = 'placeholder_logo_url';
             }
 
@@ -692,7 +871,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
           }
           newContent = { question, answer };
-        } else if (rule.type === 'api') {
+        } else if (type === 'api') {
           const apiKey = prompt('أدخل مفتاح API الجديد:', rule.content.apiKey);
           if (!apiKey || apiKey.trim() === '') {
             alert('يرجى إدخال مفتاح API صالح');
