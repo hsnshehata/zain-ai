@@ -62,3 +62,27 @@ exports.updateChatPage = async (req, res) => {
     res.status(500).json({ message: 'Server error while updating chat page' });
   }
 };
+
+// Get chat page settings by linkId
+exports.getChatPageByLinkId = async (req, res) => {
+  try {
+    const { linkId } = req.params;
+    const chatPage = await ChatPage.findOne({ linkId }).populate('botId');
+    if (!chatPage) {
+      return res.status(404).json({ message: 'Chat page not found' });
+    }
+    res.status(200).json({
+      title: chatPage.title,
+      colors: chatPage.colors,
+      logoUrl: chatPage.logoUrl,
+      suggestedQuestionsEnabled: chatPage.suggestedQuestionsEnabled,
+      suggestedQuestions: chatPage.suggestedQuestions,
+      imageUploadEnabled: chatPage.imageUploadEnabled,
+      darkModeEnabled: chatPage.darkModeEnabled,
+      botId: chatPage.botId._id,
+    });
+  } catch (err) {
+    console.error('Error fetching chat page:', err);
+    res.status(500).json({ message: 'Server error while fetching chat page' });
+  }
+};
