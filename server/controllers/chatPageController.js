@@ -47,6 +47,7 @@ exports.updateChatPage = async (req, res) => {
 
     // Parse FormData fields safely
     const title = req.body.title || chatPage.title;
+    const titleColor = req.body.titleColor || chatPage.titleColor;
     let colors = chatPage.colors;
     if (req.body.colors) {
       try {
@@ -89,6 +90,7 @@ exports.updateChatPage = async (req, res) => {
 
     // Update chat page
     chatPage.title = title;
+    chatPage.titleColor = titleColor;
     chatPage.colors = colors;
     chatPage.logoUrl = logoUrl;
     chatPage.suggestedQuestionsEnabled = suggestedQuestionsEnabled;
@@ -115,6 +117,7 @@ exports.getChatPageByLinkId = async (req, res) => {
     }
     res.status(200).json({
       title: chatPage.title,
+      titleColor: chatPage.titleColor,
       colors: chatPage.colors,
       logoUrl: chatPage.logoUrl,
       suggestedQuestionsEnabled: chatPage.suggestedQuestionsEnabled,
@@ -142,6 +145,7 @@ exports.getChatPageByBotId = async (req, res) => {
       link: chatLink,
       chatPageId: chatPage._id,
       title: chatPage.title,
+      titleColor: chatPage.titleColor,
       colors: chatPage.colors,
       logoUrl: chatPage.logoUrl,
       suggestedQuestionsEnabled: chatPage.suggestedQuestionsEnabled,
