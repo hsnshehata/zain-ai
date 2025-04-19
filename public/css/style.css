@@ -32,6 +32,7 @@ body.light {
   max-width: 1200px;
   margin: 20px auto;
   padding: 20px;
+  padding-bottom: 80px; /* Space for Bottom Navigation */
   background: var(--card-bg);
   backdrop-filter: blur(10px);
   border-radius: 16px;
@@ -161,7 +162,9 @@ body.light .form-group label {
 .form-group input:not([type="checkbox"]):focus + label,
 .form-group input:not([type="checkbox"]):not(:placeholder-shown) + label,
 .form-group textarea:focus + label,
-.form-group textarea:not(:placeholder-shown) + label {
+.form-group textarea:not(:placeholder-shown) + label,
+.form-group select:focus + label,
+.form-group select:not(:placeholder-shown) + label {
   top: -20px;
   font-size: 0.8em;
   color: var(--accent);
@@ -180,7 +183,7 @@ input, textarea, select {
 body.light input, body.light textarea, body.light select {
   background: #fff;
   border: 1px solid #ddd;
-  color: var(--text-light);
+  color: #000; /* Force black text for dropdowns */
 }
 
 input:focus, textarea:focus, select:focus {
@@ -188,9 +191,46 @@ input:focus, textarea:focus, select:focus {
   box-shadow: 0 0 5px var(--accent);
 }
 
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: url('data:image/svg+xml;utf8,<svg fill="%23ffffff" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 10px center;
+  background-size: 20px;
+  padding-right: 30px;
+}
+
+body.light select {
+  background: url('data:image/svg+xml;utf8,<svg fill="%23000000" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 10px center;
+}
+
+select option {
+  color: #000; /* Force black text for dropdown options */
+}
+
 .form-group input[type="checkbox"] {
   margin-right: 10px;
   width: auto;
+}
+
+/* Color Picker Buttons */
+.color-picker-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.color-picker-btn:hover {
+  transform: scale(1.1);
+}
+
+.form-group .color-picker-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 /* Buttons */
