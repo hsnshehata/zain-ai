@@ -49,9 +49,11 @@ async function populateBotSelect() {
   const role = localStorage.getItem('role');
   const userId = localStorage.getItem('userId');
   try {
+    document.getElementById('globalLoader').style.display = 'block';
     const res = await fetch('/api/bots', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
+    document.getElementById('globalLoader').style.display = 'none';
     if (!res.ok) {
       throw new Error('فشل في جلب البوتات');
     }
@@ -64,6 +66,7 @@ async function populateBotSelect() {
       botSelect.innerHTML += `<option value="${bot._id}">${bot.name}</option>`;
     });
   } catch (err) {
+    document.getElementById('globalLoader').style.display = 'none';
     console.error('خطأ في جلب البوتات:', err);
     alert('خطأ في جلب البوتات');
   }
@@ -84,9 +87,11 @@ async function fetchUsers() {
   const role = localStorage.getItem('role');
   const userId = localStorage.getItem('userId');
   try {
+    document.getElementById('globalLoader').style.display = 'block';
     const res = await fetch('/api/users', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
+    document.getElementById('globalLoader').style.display = 'none';
     if (!res.ok) {
       throw new Error('فشل في جلب المستخدمين');
     }
@@ -130,6 +135,7 @@ async function fetchUsers() {
       tbody.innerHTML += row;
     });
   } catch (err) {
+    document.getElementById('globalLoader').style.display = 'none';
     console.error('خطأ في جلب المستخدمين:', err);
     alert('خطأ في جلب المستخدمين');
   }
@@ -172,10 +178,14 @@ function showCreateBotForm() {
   const userSelect = document.getElementById('userId');
   let allUsers = [];
 
+  document.getElementById('globalLoader').style.display = 'block';
   fetch('/api/users', {
     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
   })
-    .then((res) => res.json())
+    .then((res) => {
+      document.getElementById('globalLoader').style.display = 'none';
+      return res.json();
+    })
     .then((users) => {
       allUsers = users;
       users.forEach((user) => {
@@ -183,6 +193,7 @@ function showCreateBotForm() {
       });
     })
     .catch((err) => {
+      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في جلب المستخدمين:', err);
       document.getElementById('botError').textContent = 'خطأ في جلب المستخدمين';
     });
@@ -207,6 +218,7 @@ function showCreateBotForm() {
     const errorEl = document.getElementById('botError');
 
     try {
+      document.getElementById('globalLoader').style.display = 'block';
       const res = await fetch('/api/bots', {
         method: 'POST',
         headers: {
@@ -215,6 +227,7 @@ function showCreateBotForm() {
         },
         body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId }),
       });
+      document.getElementById('globalLoader').style.display = 'none';
 
       const data = await res.json();
       if (res.ok) {
@@ -228,6 +241,7 @@ function showCreateBotForm() {
         errorEl.textContent = data.message || 'فشل في إنشاء البوت';
       }
     } catch (err) {
+      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في إنشاء البوت:', err);
       errorEl.textContent = 'خطأ في السيرفر';
     }
@@ -243,6 +257,7 @@ async function editBot(id, name, facebookApiKey, facebookPageId) {
   }
   if (newName) {
     try {
+      document.getElementById('globalLoader').style.display = 'block';
       const res = await fetch(`/api/bots/${id}`, {
         method: 'PUT',
         headers: {
@@ -251,6 +266,7 @@ async function editBot(id, name, facebookApiKey, facebookPageId) {
         },
         body: JSON.stringify({ name: newName, facebookApiKey: newFacebookApiKey, facebookPageId: newFacebookPageId }),
       });
+      document.getElementById('globalLoader').style.display = 'none';
 
       const data = await res.json();
       if (res.ok) {
@@ -261,6 +277,7 @@ async function editBot(id, name, facebookApiKey, facebookPageId) {
         alert(data.message || 'فشل في تعديل البوت');
       }
     } catch (err) {
+      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في تعديل البوت:', err);
       alert('خطأ في السيرفر');
     }
@@ -270,10 +287,12 @@ async function editBot(id, name, facebookApiKey, facebookPageId) {
 async function deleteBot(id) {
   if (confirm('هل أنت متأكد من حذف هذا البوت؟')) {
     try {
+      document.getElementById('globalLoader').style.display = 'block';
       const res = await fetch(`/api/bots/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
+      document.getElementById('globalLoader').style.display = 'none';
 
       const data = await res.json();
       if (res.ok) {
@@ -289,6 +308,7 @@ async function deleteBot(id) {
         alert(data.message || 'فشل في حذف البوت');
       }
     } catch (err) {
+      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في حذف البوت:', err);
       alert('خطأ في السيرفر');
     }
