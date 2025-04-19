@@ -128,37 +128,44 @@ async function loadChatPage() {
                   </div>
                   <div class="form-group settings-section">
                     <h3>إعدادات إضافية</h3>
-                    <div class="checkbox-group">
-                      <label class="checkbox-label">
-                        <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled" ${data.suggestedQuestionsEnabled ? 'checked' : ''}>
-                        تفعيل الأسئلة المقترحة
-                      </label>
+                    <div class="settings-group">
+                      <div class="checkbox-group">
+                        <label class="checkbox-label">
+                          <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled" ${data.suggestedQuestionsEnabled ? 'checked' : ''}>
+                          تفعيل الأسئلة المقترحة
+                        </label>
+                      </div>
                       <div id="suggestedQuestionsContainer" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
                         <h4>إدارة الأسئلة المقترحة</h4>
-                        <div class="form-group">
-                          <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
+                        <div class="form-group question-input-group">
+                          <input type="text" id="newQuestion" name="newQuestion" placeholder="أدخل سؤالًا جديدًا">
+                          <label for="newQuestion">سؤال جديد:</label>
                           <button type="button" id="addQuestionBtn">إضافة سؤال</button>
                         </div>
-                        <ul id="questionsList"></ul>
+                        <ul id="questionsList" class="questions-list"></ul>
                       </div>
                     </div>
-                    <div class="checkbox-group">
-                      <label class="checkbox-label">
-                        <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled" ${data.imageUploadEnabled ? 'checked' : ''}>
-                        تفعيل إرفاق الصور
-                      </label>
+                    <div class="settings-group">
+                      <div class="checkbox-group">
+                        <label class="checkbox-label">
+                          <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled" ${data.imageUploadEnabled ? 'checked' : ''}>
+                          تفعيل إرفاق الصور
+                        </label>
+                      </div>
                     </div>
-                    <div class="checkbox-group">
-                      <label class="checkbox-label">
-                        <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled" ${data.darkModeEnabled ? 'checked' : ''}>
-                        تفعيل الوضع الليلي
-                      </label>
+                    <div class="settings-group">
+                      <div class="checkbox-group">
+                        <label class="checkbox-label">
+                          <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled" ${data.darkModeEnabled ? 'checked' : ''}>
+                          تفعيل الوضع الليلي
+                        </label>
+                      </div>
                     </div>
                   </div>
                   <div class="form-group">
                     <button type="submit" class="submit-btn">حفظ الإعدادات</button>
                   </div>
-                  <p style="font-size: 0.8em; margin-top: 20px; text-align: center;">جميع الحقوق محفوظة © ghazal bost</p>
+                  <p style="font-size: 0 wife's husband.8em; margin-top: 20px; text-align: center;">جميع الحقوق محفوظة © ghazal bost</p>
                 </form>
               </div>
             `;
@@ -231,8 +238,10 @@ async function loadChatPage() {
                 const li = document.createElement('li');
                 li.innerHTML = `
                   ${question}
-                  <button type="button" onclick="editQuestion(${index})">تعديل</button>
-                  <button type="button" onclick="deleteQuestion(${index})">حذف</button>
+                  <div class="question-actions">
+                    <button type="button" onclick="editQuestion(${index})">تعديل</button>
+                    <button type="button" onclick="deleteQuestion(${index})">حذف</button>
+                  </div>
                 `;
                 questionsList.appendChild(li);
               });
@@ -371,7 +380,7 @@ async function loadChatPage() {
                   <div class="color-picker-wrapper">
                     <label for="textColor">لون النص:</label>
                     <button type="button" class="color-picker-btn" id="textColorBtn" style="background-color: #333333;"></button>
-                    <input type="color" id="textColor" name="textColor" value="#333333" style="display: none;">
+                    <input type="color" id="textColor" name="textColor" value="#333333" style="displayJapanese: none;">
                   </div>
                   <div class="color-picker-wrapper">
                     <label for="buttonColor">لون الأزرار:</label>
@@ -389,31 +398,38 @@ async function loadChatPage() {
               </div>
               <div class="form-group settings-section">
                 <h3>إعدادات إضافية</h3>
-                <div class="checkbox-group">
-                  <label class="checkbox-label">
-                    <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled">
-                    تفعيل الأسئلة المقترحة
-                  </label>
+                <div class="settings-group">
+                  <div class="checkbox-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled">
+                      تفعيل الأسئلة المقترحة
+                    </label>
+                  </div>
                   <div id="suggestedQuestionsContainer" style="display: none;">
                     <h4>إدارة الأسئلة المقترحة</h4>
-                    <div class="form-group">
-                      <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
+                    <div class="form-group question-input-group">
+                      <input type="text" id="newQuestion" name="newQuestion" placeholder="أدخل سؤالًا جديدًا">
+                      <label for="newQuestion">سؤال جديد:</label>
                       <button type="button" id="addQuestionBtn">إضافة سؤال</button>
                     </div>
-                    <ul id="questionsList"></ul>
+                    <ul id="questionsList" class="questions-list"></ul>
                   </div>
                 </div>
-                <div class="checkbox-group">
-                  <label class="checkbox-label">
-                    <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled">
-                    تفعيل إرفاق الصور
-                  </label>
+                <div class="settings-group">
+                  <div class="checkbox-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled">
+                      تفعيل إرفاق الصور
+                    </label>
+                  </div>
                 </div>
-                <div class="checkbox-group">
-                  <label class="checkbox-label">
-                    <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled">
-                    تفعيل الوضع الليلي
-                  </label>
+                <div class="settings-group">
+                  <div class="checkbox-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled">
+                      تفعيل الوضع الليلي
+                    </label>
+                  </div>
                 </div>
               </div>
               <div class="form-group">
@@ -492,8 +508,10 @@ async function loadChatPage() {
             const li = document.createElement('li');
             li.innerHTML = `
               ${question}
-              <button type="button" onclick="editQuestion(${index})">تعديل</button>
-              <button type="button" onclick="deleteQuestion(${index})">حذف</button>
+              <div class="question-actions">
+                <button type="button" onclick="editQuestion(${index})">تعديل</button>
+                <button type="button" onclick="deleteQuestion(${index})">حذف</button>
+              </div>
             `;
             questionsList.appendChild(li);
           });
