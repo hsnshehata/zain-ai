@@ -253,9 +253,6 @@ body.light .color-picker-wrapper label {
 
 /* Checkbox Styling */
 .checkbox-group {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
   margin-bottom: 15px;
 }
 
@@ -287,6 +284,77 @@ body.light .logo-section, body.light .settings-section {
 
 .logo-section h3, .settings-section h3, .settings-section h4 {
   margin-top: 0;
+}
+
+/* Settings Group */
+.settings-group {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+/* Suggested Questions Section */
+#suggestedQuestionsContainer {
+  padding: 15px;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  margin-top: 10px;
+}
+
+body.light #suggestedQuestionsContainer {
+  background: #fff;
+  border: 1px solid #ddd;
+}
+
+.question-input-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.question-input-group input {
+  flex: 1;
+  min-width: 200px;
+}
+
+.question-input-group button {
+  padding: 8px 16px;
+}
+
+.questions-list {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0 0;
+}
+
+.questions-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.light .questions-list li {
+  border-bottom: 1px solid #ddd;
+}
+
+.questions-list li:last-child {
+  border-bottom: none;
+}
+
+.question-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.question-actions button {
+  padding: 5px 10px;
+  font-size: 0.9em;
 }
 
 /* Buttons */
@@ -461,7 +529,7 @@ body.light #analyticsData {
   gap: 20px;
 }
 
-.chat-page-settings, #suggestedQuestionsContainer {
+.chat-page-settings {
   padding: 15px;
   background: var(--card-bg);
   backdrop-filter: blur(10px);
@@ -469,7 +537,7 @@ body.light #analyticsData {
   box-shadow: var(--shadow);
 }
 
-body.light .chat-page-settings, body.light #suggestedQuestionsContainer {
+body.light .chat-page-settings {
   background: #fff;
   border: 1px solid #ddd;
 }
@@ -571,5 +639,12 @@ body.light .chat-page-settings, body.light #suggestedQuestionsContainer {
   }
   .color-picker-wrapper label {
     margin-bottom: 5px;
+  }
+  .question-input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .question-input-group input {
+    min-width: 100%;
   }
 }
