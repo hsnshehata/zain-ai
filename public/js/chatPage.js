@@ -90,31 +90,31 @@ async function loadChatPage() {
                     <label for="title">عنوان الصفحة:</label>
                   </div>
                   <div class="form-group color-picker-wrapper">
+                    <label for="titleColor">لون نص العنوان:</label>
                     <button type="button" class="color-picker-btn" id="titleColorBtn" style="background-color: ${data.titleColor || '#ffffff'};"></button>
                     <input type="color" id="titleColor" name="titleColor" value="${data.titleColor || '#ffffff'}" style="display: none;">
-                    <label for="titleColor">لون نص العنوان:</label>
                   </div>
                   <div class="form-group">
                     <h3>إعدادات الألوان:</h3>
                     <div class="color-picker-wrapper">
+                      <label for="headerColor">لون الهيدر:</label>
                       <button type="button" class="color-picker-btn" id="headerColorBtn" style="background-color: ${data.colors.header};"></button>
                       <input type="color" id="headerColor" name="headerColor" value="${data.colors.header}" style="display: none;">
-                      <label for="headerColor">لون الهيدر:</label>
                     </div>
                     <div class="color-picker-wrapper">
+                      <label for="backgroundColor">لون الخلفية:</label>
                       <button type="button" class="color-picker-btn" id="backgroundColorBtn" style="background-color: ${data.colors.background};"></button>
                       <input type="color" id="backgroundColor" name="backgroundColor" value="${data.colors.background}" style="display: none;">
-                      <label for="backgroundColor">لون الخلفية:</label>
                     </div>
                     <div class="color-picker-wrapper">
+                      <label for="textColor">لون النص:</label>
                       <button type="button" class="color-picker-btn" id="textColorBtn" style="background-color: ${data.colors.text};"></button>
                       <input type="color" id="textColor" name="textColor" value="${data.colors.text}" style="display: none;">
-                      <label for="textColor">لون النص:</label>
                     </div>
                     <div class="color-picker-wrapper">
+                      <label for="buttonColor">لون الأزرار:</label>
                       <button type="button" class="color-picker-btn" id="buttonColorBtn" style="background-color: ${data.colors.button};"></button>
                       <input type="color" id="buttonColor" name="buttonColor" value="${data.colors.button}" style="display: none;">
-                      <label for="buttonColor">لون الأزرار:</label>
                     </div>
                   </div>
                   <div class="form-group">
@@ -341,31 +341,31 @@ async function loadChatPage() {
                 <label for="title">عنوان الصفحة:</label>
               </div>
               <div class="form-group color-picker-wrapper">
+                <label for="titleColor">لون نص العنوان:</label>
                 <button type="button" class="color-picker-btn" id="titleColorBtn" style="background-color: #ffffff;"></button>
                 <input type="color" id="titleColor" name="titleColor" value="#ffffff" style="display: none;">
-                <label for="titleColor">لون نص العنوان:</label>
               </div>
               <div class="form-group">
                 <h3>إعدادات الألوان:</h3>
                 <div class="color-picker-wrapper">
+                  <label for="headerColor">لون الهيدر:</label>
                   <button type="button" class="color-picker-btn" id="headerColorBtn" style="background-color: #007bff;"></button>
                   <input type="color" id="headerColor" name="headerColor" value="#007bff" style="display: none;">
-                  <label for="headerColor">لون الهيدر:</label>
                 </div>
                 <div class="color-picker-wrapper">
+                  <label for="backgroundColor">لون الخلفية:</label>
                   <button type="button" class="color-picker-btn" id="backgroundColorBtn" style="background-color: #f8f9fa;"></button>
                   <input type="color" id="backgroundColor" name="backgroundColor" value="#f8f9fa" style="display: none;">
-                  <label for="backgroundColor">لون الخلفية:</label>
                 </div>
                 <div class="color-picker-wrapper">
+                  <label for="textColor">لون النص:</label>
                   <button type="button" class="color-picker-btn" id="textColorBtn" style="background-color: #333333;"></button>
                   <input type="color" id="textColor" name="textColor" value="#333333" style="display: none;">
-                  <label for="textColor">لون النص:</label>
                 </div>
                 <div class="color-picker-wrapper">
+                  <label for="buttonColor">لون الأزرار:</label>
                   <button type="button" class="color-picker-btn" id="buttonColorBtn" style="background-color: #007bff;"></button>
                   <input type="color" id="buttonColor" name="buttonColor" value="#007bff" style="display: none;">
-                  <label for="buttonColor">لون الأزرار:</label>
                 </div>
               </div>
               <div class="form-group">
