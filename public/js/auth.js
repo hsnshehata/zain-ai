@@ -16,6 +16,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       try {
+        // Show spinner
+        errorEl.innerHTML = '<div class="spinner" style="display: flex;"><div class="loader"></div></div>';
         console.log('📤 Sending login request:', { username, password });
         const res = await fetch('/api/auth/login', {
           method: 'POST',
@@ -31,7 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
           localStorage.setItem('token', data.token);
           localStorage.setItem('role', data.role);
           localStorage.setItem('userId', data.userId);
-          localStorage.setItem('username', data.username); // إضافة تخزين الـ username
+          localStorage.setItem('username', data.username);
           console.log('✅ Login successful, stored in localStorage:', {
             token: data.token,
             role: data.role,
