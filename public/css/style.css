@@ -264,6 +264,43 @@ body.light .rule-card {
   flex: 1;
 }
 
+/* Bots Page */
+.bots-container {
+  display: grid;
+  gap: 20px;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.user-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  transition: transform 0.3s;
+}
+
+body.light .user-card {
+  background: #fff;
+  border: 1px solid #ddd;
+}
+
+.user-card:hover {
+  transform: translateY(-5px);
+}
+
 /* Chat Page (Unchanged) */
 .chat-page-settings, #suggestedQuestionsContainer {
   padding: 15px;
@@ -359,7 +396,13 @@ body.light .rule-card {
 
 /* Responsive Design */
 @media (max-width: 600px) {
-  .rules-grid {
+  .rules-grid, .users-grid {
     grid-template-columns: 1fr;
+  }
+  .admin-actions {
+    flex-direction: column;
+  }
+  .admin-actions button {
+    width: 100%;
   }
 }
