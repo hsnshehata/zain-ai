@@ -659,3 +659,46 @@ body.light .chat-page-settings {
     min-width: 100%;
   }
 }
+
+/* Form Elements */
+.form-group label {
+  position: absolute;
+  top: 12px;
+  right: 15px;
+  color: var(--text-dark);
+  transition: all 0.2s;
+  pointer-events: none;
+}
+
+/* Override absolute positioning for labels inside checkbox-group */
+.checkbox-group label {
+  position: static; /* Prevent absolute positioning inside checkbox-group */
+  pointer-events: auto; /* Allow interaction with the label */
+}
+
+/* Ensure proper spacing for checkbox labels */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-dark);
+  padding: 5px 0; /* Add padding for better spacing */
+}
+
+body.light .checkbox-label {
+  color: var(--text-light);
+}
+
+/* Logo Preview Container */
+.logo-preview-container {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.logo-preview-img {
+  max-width: 100px;
+  height: auto;
+  display: block;
+}
