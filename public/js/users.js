@@ -37,6 +37,7 @@ function showCreateUserForm() {
     const errorEl = document.getElementById('userError');
 
     try {
+      document.getElementById('globalLoader').style.display = 'block';
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: {
@@ -45,6 +46,7 @@ function showCreateUserForm() {
         },
         body: JSON.stringify({ username, password, confirmPassword, role }),
       });
+      document.getElementById('globalLoader').style.display = 'none';
 
       const data = await res.json();
       if (res.ok) {
@@ -54,6 +56,7 @@ function showCreateUserForm() {
         errorEl.textContent = data.message || 'فشل في إنشاء المستخدم';
       }
     } catch (err) {
+      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في إنشاء المستخدم:', err);
       errorEl.textContent = 'خطأ في السيرفر';
     }
@@ -65,6 +68,7 @@ async function editUser(id, username, role) {
   const newRole = prompt('أدخل نوع المستخدم (user أو superadmin):', role);
   if (newUsername && newRole) {
     try {
+      document.getElementById('globalLoader').style.display = 'block';
       const res = await fetch(`/api/users/${id}`, {
         method: 'PUT',
         headers: {
@@ -73,6 +77,7 @@ async function editUser(id, username, role) {
         },
         body: JSON.stringify({ username: newUsername, role: newRole }),
       });
+      document.getElementById('globalLoader').style.display = 'none';
 
       const data = await res.json();
       if (res.ok) {
@@ -82,6 +87,7 @@ async function editUser(id, username, role) {
         alert(data.message || 'فشل في تعديل المستخدم');
       }
     } catch (err) {
+      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في تعديل المستخدم:', err);
       alert('خطأ في السيرفر');
     }
@@ -91,10 +97,12 @@ async function editUser(id, username, role) {
 async function deleteUser(id) {
   if (confirm('هل أنت متأكد من حذف هذا المستخدم؟')) {
     try {
+      document.getElementById('globalLoader').style.display = 'block';
       const res = await fetch(`/api/users/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
+      document.getElementById('globalLoader').style.display = 'none';
 
       const data = await res.json();
       if (res.ok) {
@@ -104,6 +112,7 @@ async function deleteUser(id) {
         alert(data.message || 'فشل في حذف المستخدم');
       }
     } catch (err) {
+      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في حذف المستخدم:', err);
       alert('خطأ في السيرفر');
     }
