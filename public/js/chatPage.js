@@ -79,12 +79,12 @@ async function loadChatPage() {
             content.innerHTML = `
               <h2>تخصيص صفحة الدردشة</h2>
               <div class="chat-page-settings">
-                <div class="form-group">
-                  <input type="text" id="chatLink" value="${data.link}" readonly>
-                  <label for="chatLink">رابط صفحة الدردشة:</label>
-                  <button id="copyLinkBtn">نسخ الرابط</button>
-                </div>
                 <form id="customizationForm" enctype="multipart/form-data">
+                  <div class="form-group">
+                    <input type="text" id="chatLink" value="${data.link}" readonly>
+                    <label for="chatLink">رابط صفحة الدردشة:</label>
+                    <button id="copyLinkBtn" type="button">نسخ الرابط</button>
+                  </div>
                   <div class="form-group">
                     <input type="text" id="title" name="title" value="${data.title}" required placeholder=" ">
                     <label for="title">عنوان الصفحة:</label>
@@ -96,25 +96,27 @@ async function loadChatPage() {
                   </div>
                   <div class="form-group">
                     <h3>إعدادات الألوان:</h3>
-                    <div class="color-picker-wrapper">
-                      <label for="headerColor">لون الهيدر:</label>
-                      <button type="button" class="color-picker-btn" id="headerColorBtn" style="background-color: ${data.colors.header};"></button>
-                      <input type="color" id="headerColor" name="headerColor" value="${data.colors.header}" style="display: none;">
-                    </div>
-                    <div class="color-picker-wrapper">
-                      <label for="backgroundColor">لون الخلفية:</label>
-                      <button type="button" class="color-picker-btn" id="backgroundColorBtn" style="background-color: ${data.colors.background};"></button>
-                      <input type="color" id="backgroundColor" name="backgroundColor" value="${data.colors.background}" style="display: none;">
-                    </div>
-                    <div class="color-picker-wrapper">
-                      <label for="textColor">لون النص:</label>
-                      <button type="button" class="color-picker-btn" id="textColorBtn" style="background-color: ${data.colors.text};"></button>
-                      <input type="color" id="textColor" name="textColor" value="${data.colors.text}" style="display: none;">
-                    </div>
-                    <div class="color-picker-wrapper">
-                      <label for="buttonColor">لون الأزرار:</label>
-                      <button type="button" class="color-picker-btn" id="buttonColorBtn" style="background-color: ${data.colors.button};"></button>
-                      <input type="color" id="buttonColor" name="buttonColor" value="${data.colors.button}" style="display: none;">
+                    <div class="color-picker-section">
+                      <div class="color-picker-wrapper">
+                        <label for="headerColor">لون الهيدر:</label>
+                        <button type="button" class="color-picker-btn" id="headerColorBtn" style="background-color: ${data.colors.header};"></button>
+                        <input type="color" id="headerColor" name="headerColor" value="${data.colors.header}" style="display: none;">
+                      </div>
+                      <div class="color-picker-wrapper">
+                        <label for="backgroundColor">لون الخلفية:</label>
+                        <button type="button" class="color-picker-btn" id="backgroundColorBtn" style="background-color: ${data.colors.background};"></button>
+                        <input type="color" id="backgroundColor" name="backgroundColor" value="${data.colors.background}" style="display: none;">
+                      </div>
+                      <div class="color-picker-wrapper">
+                        <label for="textColor">لون النص:</label>
+                        <button type="button" class="color-picker-btn" id="textColorBtn" style="background-color: ${data.colors.text};"></button>
+                        <input type="color" id="textColor" name="textColor" value="${data.colors.text}" style="display: none;">
+                      </div>
+                      <div class="color-picker-wrapper">
+                        <label for="buttonColor">لون الأزرار:</label>
+                        <button type="button" class="color-picker-btn" id="buttonColorBtn" style="background-color: ${data.colors.button};"></button>
+                        <input type="color" id="buttonColor" name="buttonColor" value="${data.colors.button}" style="display: none;">
+                      </div>
                     </div>
                   </div>
                   <div class="form-group">
@@ -124,31 +126,35 @@ async function loadChatPage() {
                     <img id="logoPreview" style="max-width: 100px; display: none;" alt="Logo Preview" />
                   </div>
                   <div class="form-group">
-                    <label>
+                    <label class="checkbox-label">
                       <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled" ${data.suggestedQuestionsEnabled ? 'checked' : ''}>
                       تفعيل الأسئلة المقترحة
                     </label>
                     <div id="suggestedQuestionsContainer" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
                       <h3>إدارة الأسئلة المقترحة</h3>
-                      <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
-                      <button type="button" id="addQuestionBtn">إضافة سؤال</button>
+                      <div class="form-group">
+                        <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
+                        <button type="button" id="addQuestionBtn">إضافة سؤال</button>
+                      </div>
                       <ul id="questionsList"></ul>
                     </div>
                   </div>
                   <div class="form-group">
-                    <label>
+                    <label class="checkbox-label">
                       <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled" ${data.imageUploadEnabled ? 'checked' : ''}>
                       تفعيل إرفاق الصور
                     </label>
                   </div>
                   <div class="form-group">
-                    <label>
+                    <label class="checkbox-label">
                       <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled" ${data.darkModeEnabled ? 'checked' : ''}>
                       تفعيل الوضع الليلي
                     </label>
                   </div>
-                  <button type="submit" class="submit-btn">حفظ الإعدادات</button>
-                  <p style="font-size: 0.8em; margin-top: 20px;">جميع الحقوق محفوظة © ghazal bost</p>
+                  <div class="form-group">
+                    <button type="submit" class="submit-btn">حفظ الإعدادات</button>
+                  </div>
+                  <p style="font-size: 0.8em; margin-top: 20px; text-align: center;">جميع الحقوق محفوظة © ghazal bost</p>
                 </form>
               </div>
             `;
@@ -277,7 +283,7 @@ async function loadChatPage() {
                 const result = await response.json();
                 // Update logo preview if a new logo was uploaded
                 if (result.logoUrl) {
-                  document.querySelector('p[style="font-size: 0.8em; margin-top: 20px;"]').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />`;
+                  document.querySelector('p[style="font-size: 0.8em; margin-top: 20px; text-align: center;"]').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />`;
                   logoPreview.src = result.logoUrl;
                   logoPreview.style.display = 'block';
                 }
@@ -330,12 +336,12 @@ async function loadChatPage() {
         content.innerHTML = `
           <h2>تخصيص صفحة الدردشة</h2>
           <div class="chat-page-settings">
-            <div class="form-group">
-              <input type="text" id="chatLink" value="${data.link}" readonly>
-              <label for="chatLink">رابط صفحة الدردشة:</label>
-              <button id="copyLinkBtn">نسخ الرابط</button>
-            </div>
             <form id="customizationForm" enctype="multipart/form-data">
+              <div class="form-group">
+                <input type="text" id="chatLink" value="${data.link}" readonly>
+                <label for="chatLink">رابط صفحة الدردشة:</label>
+                <button id="copyLinkBtn" type="button">نسخ الرابط</button>
+              </div>
               <div class="form-group">
                 <input type="text" id="title" name="title" value="صفحة دردشة" required placeholder=" ">
                 <label for="title">عنوان الصفحة:</label>
@@ -347,25 +353,27 @@ async function loadChatPage() {
               </div>
               <div class="form-group">
                 <h3>إعدادات الألوان:</h3>
-                <div class="color-picker-wrapper">
-                  <label for="headerColor">لون الهيدر:</label>
-                  <button type="button" class="color-picker-btn" id="headerColorBtn" style="background-color: #007bff;"></button>
-                  <input type="color" id="headerColor" name="headerColor" value="#007bff" style="display: none;">
-                </div>
-                <div class="color-picker-wrapper">
-                  <label for="backgroundColor">لون الخلفية:</label>
-                  <button type="button" class="color-picker-btn" id="backgroundColorBtn" style="background-color: #f8f9fa;"></button>
-                  <input type="color" id="backgroundColor" name="backgroundColor" value="#f8f9fa" style="display: none;">
-                </div>
-                <div class="color-picker-wrapper">
-                  <label for="textColor">لون النص:</label>
-                  <button type="button" class="color-picker-btn" id="textColorBtn" style="background-color: #333333;"></button>
-                  <input type="color" id="textColor" name="textColor" value="#333333" style="display: none;">
-                </div>
-                <div class="color-picker-wrapper">
-                  <label for="buttonColor">لون الأزرار:</label>
-                  <button type="button" class="color-picker-btn" id="buttonColorBtn" style="background-color: #007bff;"></button>
-                  <input type="color" id="buttonColor" name="buttonColor" value="#007bff" style="display: none;">
+                <div class="color-picker-section">
+                  <div class="color-picker-wrapper">
+                    <label for="headerColor">لون الهيدر:</label>
+                    <button type="button" class="color-picker-btn" id="headerColorBtn" style="background-color: #007bff;"></button>
+                    <input type="color" id="headerColor" name="headerColor" value="#007bff" style="display: none;">
+                  </div>
+                  <div class="color-picker-wrapper">
+                    <label for="backgroundColor">لون الخلفية:</label>
+                    <button type="button" class="color-picker-btn" id="backgroundColorBtn" style="background-color: #f8f9fa;"></button>
+                    <input type="color" id="backgroundColor" name="backgroundColor" value="#f8f9fa" style="display: none;">
+                  </div>
+                  <div class="color-picker-wrapper">
+                    <label for="textColor">لون النص:</label>
+                    <button type="button" class="color-picker-btn" id="textColorBtn" style="background-color: #333333;"></button>
+                    <input type="color" id="textColor" name="textColor" value="#333333" style="display: none;">
+                  </div>
+                  <div class="color-picker-wrapper">
+                    <label for="buttonColor">لون الأزرار:</label>
+                    <button type="button" class="color-picker-btn" id="buttonColorBtn" style="background-color: #007bff;"></button>
+                    <input type="color" id="buttonColor" name="buttonColor" value="#007bff" style="display: none;">
+                  </div>
                 </div>
               </div>
               <div class="form-group">
@@ -375,31 +383,35 @@ async function loadChatPage() {
                 <img id="logoPreview" style="max-width: 100px; display: none;" alt="Logo Preview" />
               </div>
               <div class="form-group">
-                <label>
+                <label class="checkbox-label">
                   <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled">
                   تفعيل الأسئلة المقترحة
                 </label>
                 <div id="suggestedQuestionsContainer" style="display: none;">
                   <h3>إدارة الأسئلة المقترحة</h3>
-                  <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
-                  <button type="button" id="addQuestionBtn">إضافة سؤال</button>
+                  <div class="form-group">
+                    <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
+                    <button type="button" id="addQuestionBtn">إضافة سؤال</button>
+                  </div>
                   <ul id="questionsList"></ul>
                 </div>
               </div>
               <div class="form-group">
-                <label>
+                <label class="checkbox-label">
                   <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled">
                   تفعيل إرفاق الصور
                 </label>
               </div>
               <div class="form-group">
-                <label>
+                <label class="checkbox-label">
                   <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled">
                   تفعيل الوضع الليلي
                 </label>
               </div>
-              <button type="submit" class="submit-btn">حفظ الإعدادات</button>
-              <p style="font-size: 0.8em; margin-top: 20px;">جميع الحقوق محفوظة © ghazal bost</p>
+              <div class="form-group">
+                <button type="submit" class="submit-btn">حفظ الإعدادات</button>
+              </div>
+              <p style="font-size: 0.8em; margin-top: 20px; text-align: center;">جميع الحقوق محفوظة © ghazal bost</p>
             </form>
           </div>
         `;
@@ -526,7 +538,7 @@ async function loadChatPage() {
             const result = await response.json();
             // Update logo preview if a new logo was uploaded
             if (result.logoUrl) {
-              document.querySelector('p[style="font-size: 0.8em; margin-top: 20px;"]').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />`;
+              document.querySelector('p[style="font-size: 0.8em; margin-top: 20px; text-align: center;"]').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />`;
               logoPreview.src = result.logoUrl;
               logoPreview.style.display = 'block';
             }
