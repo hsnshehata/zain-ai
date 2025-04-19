@@ -119,37 +119,41 @@ async function loadChatPage() {
                       </div>
                     </div>
                   </div>
-                  <div class="form-group">
+                  <div class="form-group logo-section">
+                    <h3>إعدادات الشعار</h3>
                     <input type="file" id="logo" name="logo" accept="image/png">
                     <label for="logo">شعار الصفحة (PNG):</label>
                     <p style="font-size: 0.8em;">الشعار الحالي: ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />` : 'لا يوجد'}</p>
                     <img id="logoPreview" style="max-width: 100px; display: none;" alt="Logo Preview" />
                   </div>
-                  <div class="form-group">
-                    <label class="checkbox-label">
-                      <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled" ${data.suggestedQuestionsEnabled ? 'checked' : ''}>
-                      تفعيل الأسئلة المقترحة
-                    </label>
-                    <div id="suggestedQuestionsContainer" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
-                      <h3>إدارة الأسئلة المقترحة</h3>
-                      <div class="form-group">
-                        <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
-                        <button type="button" id="addQuestionBtn">إضافة سؤال</button>
+                  <div class="form-group settings-section">
+                    <h3>إعدادات إضافية</h3>
+                    <div class="checkbox-group">
+                      <label class="checkbox-label">
+                        <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled" ${data.suggestedQuestionsEnabled ? 'checked' : ''}>
+                        تفعيل الأسئلة المقترحة
+                      </label>
+                      <div id="suggestedQuestionsContainer" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
+                        <h4>إدارة الأسئلة المقترحة</h4>
+                        <div class="form-group">
+                          <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
+                          <button type="button" id="addQuestionBtn">إضافة سؤال</button>
+                        </div>
+                        <ul id="questionsList"></ul>
                       </div>
-                      <ul id="questionsList"></ul>
                     </div>
-                  </div>
-                  <div class="form-group">
-                    <label class="checkbox-label">
-                      <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled" ${data.imageUploadEnabled ? 'checked' : ''}>
-                      تفعيل إرفاق الصور
-                    </label>
-                  </div>
-                  <div class="form-group">
-                    <label class="checkbox-label">
-                      <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled" ${data.darkModeEnabled ? 'checked' : ''}>
-                      تفعيل الوضع الليلي
-                    </label>
+                    <div class="checkbox-group">
+                      <label class="checkbox-label">
+                        <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled" ${data.imageUploadEnabled ? 'checked' : ''}>
+                        تفعيل إرفاق الصور
+                      </label>
+                    </div>
+                    <div class="checkbox-group">
+                      <label class="checkbox-label">
+                        <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled" ${data.darkModeEnabled ? 'checked' : ''}>
+                        تفعيل الوضع الليلي
+                      </label>
+                    </div>
                   </div>
                   <div class="form-group">
                     <button type="submit" class="submit-btn">حفظ الإعدادات</button>
@@ -376,37 +380,41 @@ async function loadChatPage() {
                   </div>
                 </div>
               </div>
-              <div class="form-group">
+              <div class="form-group logo-section">
+                <h3>إعدادات الشعار</h3>
                 <input type="file" id="logo" name="logo" accept="image/png">
                 <label for="logo">شعار الصفحة (PNG):</label>
                 <p style="font-size: 0.8em;">يفضل شعار بدون خلفية أو بنفس خلفية الهيدر</p>
                 <img id="logoPreview" style="max-width: 100px; display: none;" alt="Logo Preview" />
               </div>
-              <div class="form-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled">
-                  تفعيل الأسئلة المقترحة
-                </label>
-                <div id="suggestedQuestionsContainer" style="display: none;">
-                  <h3>إدارة الأسئلة المقترحة</h3>
-                  <div class="form-group">
-                    <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
-                    <button type="button" id="addQuestionBtn">إضافة سؤال</button>
+              <div class="form-group settings-section">
+                <h3>إعدادات إضافية</h3>
+                <div class="checkbox-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled">
+                    تفعيل الأسئلة المقترحة
+                  </label>
+                  <div id="suggestedQuestionsContainer" style="display: none;">
+                    <h4>إدارة الأسئلة المقترحة</h4>
+                    <div class="form-group">
+                      <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
+                      <button type="button" id="addQuestionBtn">إضافة سؤال</button>
+                    </div>
+                    <ul id="questionsList"></ul>
                   </div>
-                  <ul id="questionsList"></ul>
                 </div>
-              </div>
-              <div class="form-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled">
-                  تفعيل إرفاق الصور
-                </label>
-              </div>
-              <div class="form-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled">
-                  تفعيل الوضع الليلي
-                </label>
+                <div class="checkbox-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled">
+                    تفعيل إرفاق الصور
+                  </label>
+                </div>
+                <div class="checkbox-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled">
+                    تفعيل الوضع الليلي
+                  </label>
+                </div>
               </div>
               <div class="form-group">
                 <button type="submit" class="submit-btn">حفظ الإعدادات</button>
