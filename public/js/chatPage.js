@@ -67,19 +67,20 @@ async function loadChatPage() {
 
           if (response.ok) {
             const data = await response.json();
-            // Display existing chat page settings
             content.innerHTML = `
               <h2>تخصيص صفحة الدردشة</h2>
               <div class="chat-page-settings">
                 <div class="form-group">
                   <label for="chatLink">رابط صفحة الدردشة:</label>
-                  <input type="text" id="chatLink" value="${data.link}" readonly>
-                  <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
+                  <div class="input-group">
+                    <input type="text" id="chatLink" value="${data.link}" readonly>
+                    <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
+                  </div>
                 </div>
                 <form id="customizationForm" class="settings-group" enctype="multipart/form-data">
                   <div class="form-group">
                     <label for="title">عنوان الصفحة:</label>
-                    <input type="text" id="title" name="title" value="${data.title}" required>
+                    <input type="text" id="title" name="title" value="${data.title}" required placeholder="أدخل عنوان الصفحة">
                   </div>
                   <div class="form-group color-picker-section">
                     <label for="titleColor">لون نص العنوان:</label>
@@ -147,19 +148,14 @@ async function loadChatPage() {
               </div>
             `;
 
-            // Apply dark/light mode based on initial state
             const darkModeEnabledCheckbox = document.getElementById('darkModeEnabled');
             if (darkModeEnabledCheckbox) {
-              // Set initial mode based on saved data
               document.body.classList.toggle('light', !data.darkModeEnabled);
-
-              // Add event listener to toggle dark/light mode
               darkModeEnabledCheckbox.addEventListener('change', () => {
                 document.body.classList.toggle('light', !darkModeEnabledCheckbox.checked);
               });
             }
 
-            // Add logo preview on file selection
             const logoInput = document.getElementById('logo');
             const logoPreview = document.getElementById('logoPreview');
             logoInput.addEventListener('change', () => {
@@ -270,7 +266,6 @@ async function loadChatPage() {
                 }
 
                 const result = await response.json();
-                // Update logo preview if a new logo was uploaded
                 if (result.logoUrl) {
                   document.querySelector('.logo-preview-container p').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" class="logo-preview-img" />`;
                   logoPreview.src = result.logoUrl;
@@ -283,7 +278,6 @@ async function loadChatPage() {
               }
             });
           } else {
-            // No chat page exists, allow creation
             createChatPageBtn.style.display = 'block';
           }
         } catch (err) {
@@ -327,13 +321,15 @@ async function loadChatPage() {
           <div class="chat-page-settings">
             <div class="form-group">
               <label for="chatLink">رابط صفحة الدردشة:</label>
-              <input type="text" id="chatLink" value="${data.link}" readonly>
-              <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
+              <div class="input-group">
+                <input type="text" id="chatLink" value="${data.link}" readonly>
+                <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
+              </div>
             </div>
             <form id="customizationForm" class="settings-group" enctype="multipart/form-data">
               <div class="form-group">
                 <label for="title">عنوان الصفحة:</label>
-                <input type="text" id="title" name="title" value="صفحة دردشة" required>
+                <input type="text" id="title" name="title" value="صفحة دردشة" required placeholder="أدخل عنوان الصفحة">
               </div>
               <div class="form-group color-picker-section">
                 <label for="titleColor">لون نص العنوان:</label>
@@ -400,19 +396,14 @@ async function loadChatPage() {
           </div>
         `;
 
-        // Apply dark/light mode based on initial state
         const darkModeEnabledCheckbox = document.getElementById('darkModeEnabled');
         if (darkModeEnabledCheckbox) {
-          // Set initial mode (default to dark mode since it's a new page)
           document.body.classList.toggle('light', !darkModeEnabledCheckbox.checked);
-
-          // Add event listener to toggle dark/light mode
           darkModeEnabledCheckbox.addEventListener('change', () => {
             document.body.classList.toggle('light', !darkModeEnabledCheckbox.checked);
           });
         }
 
-        // Add logo preview on file selection
         const logoInput = document.getElementById('logo');
         const logoPreview = document.getElementById('logoPreview');
         logoInput.addEventListener('change', () => {
@@ -521,7 +512,6 @@ async function loadChatPage() {
             }
 
             const result = await response.json();
-            // Update logo preview if a new logo was uploaded
             if (result.logoUrl) {
               document.querySelector('.logo-preview-container p').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" class="logo-preview-img" />`;
               logoPreview.src = result.logoUrl;
