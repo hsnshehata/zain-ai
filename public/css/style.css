@@ -214,11 +214,28 @@ select option {
 }
 
 /* Color Picker Buttons */
+.color-picker-section {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
 .color-picker-wrapper {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 10px;
+  margin-bottom: 0;
+}
+
+.color-picker-wrapper label {
+  position: static;
+  color: var(--text-dark);
+  font-size: 1em;
+  margin-right: 10px;
+}
+
+body.light .color-picker-wrapper label {
+  color: var(--text-light);
 }
 
 .color-picker-btn {
@@ -232,6 +249,18 @@ select option {
 
 .color-picker-btn:hover {
   transform: scale(1.1);
+}
+
+/* Checkbox Styling */
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-dark);
+}
+
+body.light .checkbox-label {
+  color: var(--text-light);
 }
 
 /* Buttons */
@@ -509,5 +538,12 @@ body.light .chat-page-settings, body.light #suggestedQuestionsContainer {
   }
   .bottom-nav {
     height: 60px; /* Fixed height */
+  }
+  .color-picker-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .color-picker-wrapper label {
+    margin-bottom: 5px;
   }
 }
