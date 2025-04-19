@@ -35,6 +35,8 @@ body.light {
   backdrop-filter: blur(10px);
   border-radius: 16px;
   box-shadow: var(--shadow);
+  overflow-y: auto; /* Enable vertical scrolling */
+  min-height: calc(100vh - 140px); /* Adjust height for Bottom Navigation */
 }
 
 .container {
@@ -45,6 +47,15 @@ body.light {
   .container, .dashboard-container {
     margin: 10px;
     padding: 15px;
+    padding-bottom: 80px; /* Space for Bottom Navigation */
+    min-height: calc(100vh - 80px);
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-container {
+    margin-left: 270px; /* Offset for Sidebar */
+    padding-bottom: 20px; /* No Bottom Navigation on Desktop */
   }
 }
 
@@ -85,7 +96,7 @@ body.light {
 
 @media (min-width: 1024px) {
   .bottom-nav {
-    display: none;
+    display: none !important; /* Ensure Bottom Navigation is hidden on desktop */
   }
   .sidebar {
     position: fixed;
@@ -97,6 +108,7 @@ body.light {
     backdrop-filter: blur(10px);
     padding: 20px;
     box-shadow: var(--shadow);
+    z-index: 1000;
   }
   .sidebar .nav-item {
     display: block;
@@ -268,6 +280,8 @@ body.light .rule-card {
 .bots-container {
   display: grid;
   gap: 20px;
+  overflow-y: auto; /* Enable scrolling for Bots page */
+  height: 100%; /* Ensure it takes full height */
 }
 
 .admin-actions {
@@ -275,6 +289,13 @@ body.light .rule-card {
   gap: 10px;
   flex-wrap: wrap;
   margin-bottom: 20px;
+  position: sticky;
+  top: 0;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  padding: 10px;
+  z-index: 100;
+  border-radius: 8px;
 }
 
 .users-grid {
@@ -420,6 +441,7 @@ body.light #analyticsData {
   }
   .admin-actions {
     flex-direction: column;
+    position: static; /* Remove sticky on mobile */
   }
   .admin-actions button {
     width: 100%;
