@@ -6,7 +6,7 @@ async function loadChatPage() {
 
   content.innerHTML = `
     <h2>تخصيص صفحة الدردشة</h2>
-    <div id="chatPageContent">
+    <div id="chatPageContent" class="chat-page-settings">
       <p>جاري تحميل البوتات...</p>
     </div>
   `;
@@ -45,7 +45,7 @@ async function loadChatPage() {
   html += `
       </select>
     </div>
-    <button id="createChatPageBtn" disabled>إنشاء صفحة دردشة</button>
+    <button id="createChatPageBtn" class="submit-btn" disabled>إنشاء صفحة دردشة</button>
   `;
 
   chatPageContent.innerHTML = html;
@@ -74,54 +74,66 @@ async function loadChatPage() {
                 <div class="form-group">
                   <label for="chatLink">رابط صفحة الدردشة:</label>
                   <input type="text" id="chatLink" value="${data.link}" readonly>
-                  <button id="copyLinkBtn">نسخ الرابط</button>
+                  <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
                 </div>
-                <form id="customizationForm" enctype="multipart/form-data">
+                <form id="customizationForm" class="settings-group" enctype="multipart/form-data">
                   <div class="form-group">
                     <label for="title">عنوان الصفحة:</label>
                     <input type="text" id="title" name="title" value="${data.title}" required>
                   </div>
-                  <div class="form-group">
+                  <div class="form-group color-picker-section">
                     <label for="titleColor">لون نص العنوان:</label>
-                    <input type="color" id="titleColor" name="titleColor" value="${data.titleColor || '#ffffff'}">
+                    <div class="color-picker-wrapper">
+                      <input type="color" id="titleColor" name="titleColor" value="${data.titleColor || '#ffffff'}">
+                    </div>
                   </div>
-                  <div class="form-group">
+                  <div class="form-group color-picker-section">
                     <h3>إعدادات الألوان:</h3>
-                    <label for="headerColor">لون الهيدر:</label>
-                    <input type="color" id="headerColor" name="headerColor" value="${data.colors.header}">
-                    <label for="backgroundColor">لون الخلفية:</label>
-                    <input type="color" id="backgroundColor" name="backgroundColor" value="${data.colors.background}">
-                    <label for="textColor">لون النص:</label>
-                    <input type="color" id="textColor" name="textColor" value="${data.colors.text}">
-                    <label for="buttonColor">لون الأزرار:</label>
-                    <input type="color" id="buttonColor" name="buttonColor" value="${data.colors.button}">
+                    <div class="color-picker-wrapper">
+                      <label for="headerColor">لون الهيدر:</label>
+                      <input type="color" id="headerColor" name="headerColor" value="${data.colors.header}">
+                    </div>
+                    <div class="color-picker-wrapper">
+                      <label for="backgroundColor">لون الخلفية:</label>
+                      <input type="color" id="backgroundColor" name="backgroundColor" value="${data.colors.background}">
+                    </div>
+                    <div class="color-picker-wrapper">
+                      <label for="textColor">لون النص:</label>
+                      <input type="color" id="textColor" name="textColor" value="${data.colors.text}">
+                    </div>
+                    <div class="color-picker-wrapper">
+                      <label for="buttonColor">لون الأزرار:</label>
+                      <input type="color" id="buttonColor" name="buttonColor" value="${data.colors.button}">
+                    </div>
                   </div>
-                  <div class="form-group">
+                  <div class="form-group logo-section">
                     <label for="logo">شعار الصفحة (PNG):</label>
                     <input type="file" id="logo" name="logo" accept="image/png">
                     <p style="font-size: 0.8em;">الشعار الحالي: ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />` : 'لا يوجد'}</p>
                     <img id="logoPreview" style="max-width: 100px; display: none;" alt="Logo Preview" />
                   </div>
-                  <div class="form-group">
-                    <label>
+                  <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
                       <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled" ${data.suggestedQuestionsEnabled ? 'checked' : ''}>
                       تفعيل الأسئلة المقترحة
                     </label>
-                    <div id="suggestedQuestionsContainer" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
+                    <div id="suggestedQuestionsContainer" class="suggested-questions-container" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
                       <h3>إدارة الأسئلة المقترحة</h3>
-                      <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
-                      <button type="button" id="addQuestionBtn">إضافة سؤال</button>
-                      <ul id="questionsList"></ul>
+                      <div class="question-input-group">
+                        <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
+                        <button type="button" id="addQuestionBtn" class="submit-btn">إضافة سؤال</button>
+                      </div>
+                      <ul id="questionsList" class="questions-list"></ul>
                     </div>
                   </div>
-                  <div class="form-group">
-                    <label>
+                  <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
                       <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled" ${data.imageUploadEnabled ? 'checked' : ''}>
                       تفعيل إرفاق الصور
                     </label>
                   </div>
-                  <div class="form-group">
-                    <label>
+                  <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
                       <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled" ${data.darkModeEnabled ? 'checked' : ''}>
                       تفعيل الوضع الليلي
                     </label>
@@ -187,8 +199,10 @@ async function loadChatPage() {
                 const li = document.createElement('li');
                 li.innerHTML = `
                   ${question}
-                  <button type="button" onclick="editQuestion(${index})">تعديل</button>
-                  <button type="button" onclick="deleteQuestion(${index})">حذف</button>
+                  <div class="question-actions">
+                    <button type="button" onclick="editQuestion(${index})">تعديل</button>
+                    <button type="button" onclick="deleteQuestion(${index})">حذف</button>
+                  </div>
                 `;
                 questionsList.appendChild(li);
               });
@@ -299,54 +313,67 @@ async function loadChatPage() {
             <div class="form-group">
               <label for="chatLink">رابط صفحة الدردشة:</label>
               <input type="text" id="chatLink" value="${data.link}" readonly>
-              <button id="copyLinkBtn">نسخ الرابط</button>
+              <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
             </div>
-            <form id="customizationForm" enctype="multipart/form-data">
+            <form id="customizationForm" class="settings-group" enctype="multipart/form-data">
               <div class="form-group">
                 <label for="title">عنوان الصفحة:</label>
                 <input type="text" id="title" name="title" value="صفحة دردشة" required>
               </div>
-              <div class="form-group">
+              <div class="form-group color-picker-section">
                 <label for="titleColor">لون نص العنوان:</label>
-                <input type="color" id="titleColor" name="titleColor" value="#ffffff">
+                <div class="color-picker-wrapper">
+                  <input type="color" id="titleColor" name="titleColor" value="#ffffff">
+                </div>
               </div>
-              <div class="form-group">
+              <div class="form-group color-picker-section">
                 <h3>إعدادات الألوان:</h3>
-                <label for="headerColor">لون الهيدر:</label>
-                <input type="color" id="headerColor" name="headerColor" value="#007bff">
-                <label for="backgroundColor">لون الخلفية:</label>
-                <input type="color" id="backgroundColor" name="backgroundColor" value="#f8f9fa">
-                <label for="textColor">لون النص:</label>
-                <input type="color" id="textColor" name="textColor" value="#333333">
-                <label for="buttonColor">لون الأزرار:</label>
-                <input type="color" id="buttonColor" name="buttonColor" value="#007bff">
+                <div class="color-picker-wrapper">
+                  <label for="headerColor">لون الهيدر:</label>
+                  <input type="color" id="headerColor" name="headerColor" value="#007bff">
+                </div>
+                <div class="color-picker-wrapper">
+                  <label for="backgroundColor">لون الخلفية:</label>
+                  <input type="color" id="backgroundColor" name="backgroundColor" value="#f8f9fa">
+                </div>
+                <div class="form-group color-picker-section">
+                <div class="color-picker-wrapper">
+                  <label for="textColor">لون النص:</label>
+                  <input type="color" id="textColor" name="textColor" value="#333333">
+                </div>
+                <div class="color-picker-wrapper">
+                  <label for="buttonColor">لون الأزرار:</label>
+                  <input type="color" id="buttonColor" name="buttonColor" value="#007bff">
+                </div>
               </div>
-              <div class="form-group">
+              <div class="form-group logo-section">
                 <label for="logo">شعار الصفحة (PNG):</label>
                 <input type="file" id="logo" name="logo" accept="image/png">
                 <p style="font-size: 0.8em;">يفضل شعار بدون خلفية أو بنفس خلفية الهيدر</p>
                 <img id="logoPreview" style="max-width: 100px; display: none;" alt="Logo Preview" />
               </div>
-              <div class="form-group">
-                <label>
+              <div class="form-group checkbox-group">
+                <label class="checkbox-label">
                   <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled">
                   تفعيل الأسئلة المقترحة
                 </label>
-                <div id="suggestedQuestionsContainer" style="display: none;">
+                <div id="suggestedQuestionsContainer" class="suggested-questions-container" style="display: none;">
                   <h3>إدارة الأسئلة المقترحة</h3>
-                  <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
-                  <button type="button" id="addQuestionBtn">إضافة سؤال</button>
-                  <ul id="questionsList"></ul>
+                  <div class="question-input-group">
+                    <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
+                    <button type="button" id="addQuestionBtn" class="submit-btn">إضافة سؤال</button>
+                  </div>
+                  <ul id="questionsList" class="questions-list"></ul>
                 </div>
               </div>
-              <div class="form-group">
-                <label>
+              <div class="form-group checkbox-group">
+                <label class="checkbox-label">
                   <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled">
                   تفعيل إرفاق الصور
                 </label>
               </div>
-              <div class="form-group">
-                <label>
+              <div class="form-group checkbox-group">
+                <label class="checkbox-label">
                   <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled">
                   تفعيل الوضع الليلي
                 </label>
@@ -412,8 +439,10 @@ async function loadChatPage() {
             const li = document.createElement('li');
             li.innerHTML = `
               ${question}
-              <button type="button" onclick="editQuestion(${index})">تعديل</button>
-              <button type="button" onclick="deleteQuestion(${index})">حذف</button>
+              <div class="question-actions">
+                <button type="button" onclick="editQuestion(${index})">تعديل</button>
+                <button type="button" onclick="deleteQuestion(${index})">حذف</button>
+              </div>
             `;
             questionsList.appendChild(li);
           });
