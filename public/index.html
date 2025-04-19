@@ -5,24 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تسجيل الدخول - نظام إدارة البوتات</title>
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="manifest" href="/manifest.json">
 </head>
 <body>
-  <div class="loader" id="globalLoader"></div>
   <div class="container">
     <h1>تسجيل الدخول</h1>
     <form id="loginForm">
-      <div>
-        <label for="username">اسم المستخدم:</label>
-        <input type="text" id="username" required>
+      <div class="form-group">
+        <input type="text" id="username" required placeholder=" ">
+        <label for="username">اسم المستخدم</label>
       </div>
-      <div>
-        <label for="password">كلمة المرور:</label>
-        <input type="password" id="password" required>
+      <div class="form-group">
+        <input type="password" id="password" required placeholder=" ">
+        <label for="password">كلمة المرور</label>
       </div>
       <button type="submit">تسجيل الدخول</button>
     </form>
-    <p id="error" style="color: red;"></p>
+    <p id="error" style="color: #dc3545;"></p>
   </div>
   <script src="/js/auth.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'92f11253d9ffadc6',t:'MTc0NDQ0MzU4NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9328d8550cb04546',t:'MTc0NTAyODQxMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.log('Service Worker Registered'))
+        .catch((err) => console.error('Service Worker Error:', err));
+    }
+  </script>
+</body>
 </html>
