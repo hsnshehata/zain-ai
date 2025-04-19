@@ -109,8 +109,11 @@ async function loadChatPage() {
                   <div class="form-group logo-section">
                     <label for="logo">شعار الصفحة (PNG):</label>
                     <input type="file" id="logo" name="logo" accept="image/png">
-                    <p style="font-size: 0.8em;">الشعار الحالي: ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />` : 'لا يوجد'}</p>
-                    <img id="logoPreview" style="max-width: 100px; display: none;" alt="Logo Preview" />
+                    <div class="logo-preview-container">
+                      <p style="font-size: 0.8em; margin-bottom: 5px;">الشعار الحالي:</p>
+                      ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo Preview" class="logo-preview-img" />` : '<p style="font-size: 0.8em;">لا يوجد</p>'}
+                    </div>
+                    <img id="logoPreview" class="logo-preview-img" style="display: none;" alt="Logo Preview" />
                   </div>
                   <div class="form-group checkbox-group">
                     <label class="checkbox-label">
@@ -143,6 +146,18 @@ async function loadChatPage() {
                 <p style="font-size: 0.8em;">جميع الحقوق محفوظة © ghazal bost</p>
               </div>
             `;
+
+            // Apply dark/light mode based on initial state
+            const darkModeEnabledCheckbox = document.getElementById('darkModeEnabled');
+            if (darkModeEnabledCheckbox) {
+              // Set initial mode based on saved data
+              document.body.classList.toggle('light', !data.darkModeEnabled);
+
+              // Add event listener to toggle dark/light mode
+              darkModeEnabledCheckbox.addEventListener('change', () => {
+                document.body.classList.toggle('light', !darkModeEnabledCheckbox.checked);
+              });
+            }
 
             // Add logo preview on file selection
             const logoInput = document.getElementById('logo');
@@ -257,7 +272,7 @@ async function loadChatPage() {
                 const result = await response.json();
                 // Update logo preview if a new logo was uploaded
                 if (result.logoUrl) {
-                  document.querySelector('p[style="font-size: 0.8em;"]').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />`;
+                  document.querySelector('.logo-preview-container p').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" class="logo-preview-img" />`;
                   logoPreview.src = result.logoUrl;
                   logoPreview.style.display = 'block';
                 }
@@ -336,7 +351,6 @@ async function loadChatPage() {
                   <label for="backgroundColor">لون الخلفية:</label>
                   <input type="color" id="backgroundColor" name="backgroundColor" value="#f8f9fa">
                 </div>
-                <div class="form-group color-picker-section">
                 <div class="color-picker-wrapper">
                   <label for="textColor">لون النص:</label>
                   <input type="color" id="textColor" name="textColor" value="#333333">
@@ -349,8 +363,10 @@ async function loadChatPage() {
               <div class="form-group logo-section">
                 <label for="logo">شعار الصفحة (PNG):</label>
                 <input type="file" id="logo" name="logo" accept="image/png">
-                <p style="font-size: 0.8em;">يفضل شعار بدون خلفية أو بنفس خلفية الهيدر</p>
-                <img id="logoPreview" style="max-width: 100px; display: none;" alt="Logo Preview" />
+                <div class="logo-preview-container">
+                  <p style="font-size: 0.8em; margin-bottom: 5px;">يفضل شعار بدون خلفية أو بنفس خلفية الهيدر</p>
+                </div>
+                <img id="logoPreview" class="logo-preview-img" style="display: none;" alt="Logo Preview" />
               </div>
               <div class="form-group checkbox-group">
                 <label class="checkbox-label">
@@ -383,6 +399,18 @@ async function loadChatPage() {
             <p style="font-size: 0.8em;">جميع الحقوق محفوظة © ghazal bost</p>
           </div>
         `;
+
+        // Apply dark/light mode based on initial state
+        const darkModeEnabledCheckbox = document.getElementById('darkModeEnabled');
+        if (darkModeEnabledCheckbox) {
+          // Set initial mode (default to dark mode since it's a new page)
+          document.body.classList.toggle('light', !darkModeEnabledCheckbox.checked);
+
+          // Add event listener to toggle dark/light mode
+          darkModeEnabledCheckbox.addEventListener('change', () => {
+            document.body.classList.toggle('light', !darkModeEnabledCheckbox.checked);
+          });
+        }
 
         // Add logo preview on file selection
         const logoInput = document.getElementById('logo');
@@ -495,7 +523,7 @@ async function loadChatPage() {
             const result = await response.json();
             // Update logo preview if a new logo was uploaded
             if (result.logoUrl) {
-              document.querySelector('p[style="font-size: 0.8em;"]').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />`;
+              document.querySelector('.logo-preview-container p').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" class="logo-preview-img" />`;
               logoPreview.src = result.logoUrl;
               logoPreview.style.display = 'block';
             }
