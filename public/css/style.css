@@ -301,6 +301,25 @@ body.light .user-card {
   transform: translateY(-5px);
 }
 
+/* Analytics Page */
+.analytics-container {
+  display: grid;
+  gap: 20px;
+}
+
+#analyticsData {
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+body.light #analyticsData {
+  background: #fff;
+  border: 1px solid #ddd;
+}
+
 /* Chat Page (Unchanged) */
 .chat-page-settings, #suggestedQuestionsContainer {
   padding: 15px;
