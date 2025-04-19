@@ -130,13 +130,13 @@ body.light {
 }
 
 /* Typography */
-h1, .form-group h3 {
+h1, .form-group h3, .form-group h4 {
   text-align: center;
   margin-bottom: 20px;
   color: var(--text-dark);
 }
 
-body.light h1, body.light .form-group h3 {
+body.light h1, body.light .form-group h3, body.light .form-group h4 {
   color: var(--text-light);
 }
 
@@ -252,6 +252,13 @@ body.light .color-picker-wrapper label {
 }
 
 /* Checkbox Styling */
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
 .checkbox-label {
   display: flex;
   align-items: center;
@@ -261,6 +268,25 @@ body.light .color-picker-wrapper label {
 
 body.light .checkbox-label {
   color: var(--text-light);
+}
+
+/* Logo and Settings Sections */
+.logo-section, .settings-section {
+  padding: 15px;
+  border-radius: 8px;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow);
+  margin-bottom: 20px;
+}
+
+body.light .logo-section, body.light .settings-section {
+  background: #fff;
+  border: 1px solid #ddd;
+}
+
+.logo-section h3, .settings-section h3, .settings-section h4 {
+  margin-top: 0;
 }
 
 /* Buttons */
