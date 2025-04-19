@@ -40,7 +40,6 @@ async function loadChatPage() {
 
   let html = `
     <div class="form-group">
-      <label for="botId">اختر البوت:</label>
       <select id="botId" name="botId" required>
         <option value="">اختر بوت</option>
   `;
@@ -52,6 +51,7 @@ async function loadChatPage() {
 
   html += `
       </select>
+      <label for="botId">اختر البوت:</label>
     </div>
     <button id="createChatPageBtn" disabled>إنشاء صفحة دردشة</button>
   `;
@@ -80,33 +80,35 @@ async function loadChatPage() {
               <h2>تخصيص صفحة الدردشة</h2>
               <div class="chat-page-settings">
                 <div class="form-group">
-                  <label for="chatLink">رابط صفحة الدردشة:</label>
                   <input type="text" id="chatLink" value="${data.link}" readonly>
+                  <label for="chatLink">رابط صفحة الدردشة:</label>
                   <button id="copyLinkBtn">نسخ الرابط</button>
                 </div>
                 <form id="customizationForm" enctype="multipart/form-data">
                   <div class="form-group">
+                    <input type="text" id="title" name="title" value="${data.title}" required placeholder=" ">
                     <label for="title">عنوان الصفحة:</label>
-                    <input type="text" id="title" name="title" value="${data.title}" required>
                   </div>
                   <div class="form-group">
-                    <label for="titleColor">لون نص العنوان:</label>
                     <input type="color" id="titleColor" name="titleColor" value="${data.titleColor || '#ffffff'}">
+                    <label for="titleColor">لون نص العنوان:</label>
                   </div>
                   <div class="form-group">
                     <h3>إعدادات الألوان:</h3>
-                    <label for="headerColor">لون الهيدر:</label>
                     <input type="color" id="headerColor" name="headerColor" value="${data.colors.header}">
-                    <label for="backgroundColor">لون الخلفية:</label>
+                    <label for="headerColor">لون الهيدر:</label>
                     <input type="color" id="backgroundColor" name="backgroundColor" value="${data.colors.background}">
+                    <label for="backgroundColor">لون الخلفية:</label>
+                    <input type="color" id="textColor" name="textColor" value="${data.colors.text}">
                     <label for="textColor">لون النص:</label>
                     <input type="color" id="textColor" name="textColor" value="${data.colors.text}">
-                    <label for="buttonColor">لون الأزرار:</label>
+                    <label for="textColor">لون النص:</label>
                     <input type="color" id="buttonColor" name="buttonColor" value="${data.colors.button}">
+                    <label for="buttonColor">لون الأزرار:</label>
                   </div>
                   <div class="form-group">
-                    <label for="logo">شعار الصفحة (PNG):</label>
                     <input type="file" id="logo" name="logo" accept="image/png">
+                    <label for="logo">شعار الصفحة (PNG):</label>
                     <p style="font-size: 0.8em;">الشعار الحالي: ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />` : 'لا يوجد'}</p>
                     <img id="logoPreview" style="max-width: 100px; display: none;" alt="Logo Preview" />
                   </div>
@@ -305,33 +307,33 @@ async function loadChatPage() {
           <h2>تخصيص صفحة الدردشة</h2>
           <div class="chat-page-settings">
             <div class="form-group">
-              <label for="chatLink">رابط صفحة الدردشة:</label>
               <input type="text" id="chatLink" value="${data.link}" readonly>
+              <label for="chatLink">رابط صفحة الدردشة:</label>
               <button id="copyLinkBtn">نسخ الرابط</button>
             </div>
             <form id="customizationForm" enctype="multipart/form-data">
               <div class="form-group">
+                <input type="text" id="title" name="title" value="صفحة دردشة" required placeholder=" ">
                 <label for="title">عنوان الصفحة:</label>
-                <input type="text" id="title" name="title" value="صفحة دردشة" required>
               </div>
               <div class="form-group">
-                <label for="titleColor">لون نص العنوان:</label>
                 <input type="color" id="titleColor" name="titleColor" value="#ffffff">
+                <label for="titleColor">لون نص العنوان:</label>
               </div>
               <div class="form-group">
                 <h3>إعدادات الألوان:</h3>
-                <label for="headerColor">لون الهيدر:</label>
                 <input type="color" id="headerColor" name="headerColor" value="#007bff">
-                <label for="backgroundColor">لون الخلفية:</label>
+                <label for="headerColor">لون الهيدر:</label>
                 <input type="color" id="backgroundColor" name="backgroundColor" value="#f8f9fa">
-                <label for="textColor">لون النص:</label>
+                <label for="backgroundColor">لون الخلفية:</label>
                 <input type="color" id="textColor" name="textColor" value="#333333">
-                <label for="buttonColor">لون الأزرار:</label>
+                <label for="textColor">لون النص:</label>
                 <input type="color" id="buttonColor" name="buttonColor" value="#007bff">
+                <label for="buttonColor">لون الأزرار:</label>
               </div>
               <div class="form-group">
-                <label for="logo">شعار الصفحة (PNG):</label>
                 <input type="file" id="logo" name="logo" accept="image/png">
+                <label for="logo">شعار الصفحة (PNG):</label>
                 <p style="font-size: 0.8em;">يفضل شعار بدون خلفية أو بنفس خلفية الهيدر</p>
                 <img id="logoPreview" style="max-width: 100px; display: none;" alt="Logo Preview" />
               </div>
