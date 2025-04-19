@@ -72,6 +72,8 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadPageBasedOnHash() {
     const hash = window.location.hash;
     const userRole = localStorage.getItem('role');
+    const content = document.getElementById('content');
+    content.classList.add('page-transition');
 
     if (userRole !== 'superadmin' && !hash) {
       window.location.hash = 'rules';
