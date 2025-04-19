@@ -18,9 +18,11 @@ async function loadAnalyticsPage() {
 
   const botSelect = document.getElementById('botSelect');
   try {
+    document.getElementById('globalLoader').style.display = 'block';
     const res = await fetch('/api/bots', {
       headers: { Authorization: `Bearer ${token}` },
     });
+    document.getElementById('globalLoader').style.display = 'none';
     if (!res.ok) {
       throw new Error('فشل في جلب البوتات');
     }
@@ -33,6 +35,7 @@ async function loadAnalyticsPage() {
       botSelect.innerHTML += `<option value="${bot._id}">${bot.name}</option>`;
     });
   } catch (err) {
+    document.getElementById('globalLoader').style.display = 'none';
     console.error('خطأ في جلب البوتات:', err);
     alert('خطأ في جلب البوتات');
     return;
@@ -42,9 +45,11 @@ async function loadAnalyticsPage() {
     const botId = botSelect.value;
     if (botId) {
       try {
+        document.getElementById('globalLoader').style.display = 'block';
         const res = await fetch(`/api/analytics?botId=${botId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        document.getElementById('globalLoader').style.display = 'none';
         if (!res.ok) {
           throw new Error('فشل في جلب الإحصائيات');
         }
@@ -56,6 +61,7 @@ async function loadAnalyticsPage() {
         document.getElementById('messagesCount').textContent = `عدد الرسائل: ${adjustedMessagesCount}`;
         document.getElementById('activeRules').textContent = `عدد القواعد النشطة: ${analytics.activeRules || 0}`;
       } catch (err) {
+        document.getElementById('globalLoader').style.display = 'none';
         console.error('خطأ في جلب الإحصائيات:', err);
         alert('خطأ في جلب الإحصائيات، يرجى المحاولة لاحقًا');
         document.getElementById('messagesCount').textContent = `عدد الرسائل: 0`;
