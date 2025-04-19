@@ -6,11 +6,19 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  const botsBtn = document.querySelectorAll('#botsBtn');
-  const rulesBtn = document.querySelectorAll('#rulesBtn');
-  const chatPageBtn = document.querySelectorAll('#chatPageBtn');
-  const analyticsBtn = document.querySelectorAll('#analyticsBtn');
-  const logoutBtn = document.querySelectorAll('#logoutBtn');
+  // Select buttons using classes
+  const botsBtn = document.querySelectorAll('.bots-btn');
+  const rulesBtn = document.querySelectorAll('.rules-btn');
+  const chatPageBtn = document.querySelectorAll('.chat-page-btn');
+  const analyticsBtn = document.querySelectorAll('.analytics-btn');
+  const logoutBtn = document.querySelectorAll('.logout-btn');
+
+  // Debug: Log the buttons to ensure they are selected
+  console.log('Bots Buttons:', botsBtn);
+  console.log('Rules Buttons:', rulesBtn);
+  console.log('Chat Page Buttons:', chatPageBtn);
+  console.log('Analytics Buttons:', analyticsBtn);
+  console.log('Logout Buttons:', logoutBtn);
 
   // Show/hide bots button based on role
   if (role !== 'superadmin') {
@@ -42,65 +50,92 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Button event listeners
-  botsBtn.forEach(btn => {
-    btn.addEventListener('click', () => {
-      window.location.hash = 'bots';
-      loadPageBasedOnHash();
+  // Function to attach event listeners
+  const attachEventListeners = () => {
+    // Remove existing event listeners to avoid duplicates
+    botsBtn.forEach(btn => {
+      btn.removeEventListener('click', botsBtnClickHandler);
+      btn.addEventListener('click', botsBtnClickHandler);
     });
-  });
 
-  rulesBtn.forEach(btn => {
-    btn.addEventListener('click', () => {
-      window.location.hash = 'rules';
-      loadPageBasedOnHash();
+    rulesBtn.forEach(btn => {
+      btn.removeEventListener('click', rulesBtnClickHandler);
+      btn.addEventListener('click', rulesBtnClickHandler);
     });
-  });
 
-  chatPageBtn.forEach(btn => {
-    btn.addEventListener('click', () => {
-      window.location.hash = 'chat-page';
-      loadPageBasedOnHash();
+    chatPageBtn.forEach(btn => {
+      btn.removeEventListener('click', chatPageBtnClickHandler);
+      btn.addEventListener('click', chatPageBtnClickHandler);
     });
-  });
 
-  analyticsBtn.forEach(btn => {
-    btn.addEventListener('click', () => {
-      window.location.hash = 'analytics';
-      loadPageBasedOnHash();
+    analyticsBtn.forEach(btn => {
+      btn.removeEventListener('click', analyticsBtnClickHandler);
+      btn.addEventListener('click', analyticsBtnClickHandler);
     });
-  });
 
-  logoutBtn.forEach(btn => {
-    btn.addEventListener('click', async () => {
-      try {
-        console.log('📤 Sending logout request for username:', localStorage.getItem('username'));
-        const response = await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ username: localStorage.getItem('username') }),
-        });
+    logoutBtn.forEach(btn => {
+      btn.removeEventListener('click', logoutBtnClickHandler);
+      btn.addEventListener('click', logoutBtnClickHandler);
+    });
+  };
 
-        const data = await response.json();
-        console.log('📥 Logout response:', data);
+  // Event handler functions
+  const botsBtnClickHandler = () => {
+    console.log('Bots Button Clicked');
+    window.location.hash = 'bots';
+    loadPageBasedOnHash();
+  };
 
-        if (response.ok && data.success) {
-          localStorage.removeItem('token');
-          localStorage.removeItem('role');
-          localStorage.removeItem('userId');
-          localStorage.removeItem('username');
-          console.log('✅ Logout successful, localStorage cleared');
-          window.location.href = '/';
-        } else {
-          console.log('❌ Logout failed:', data.message);
-          alert('فشل تسجيل الخروج، حاول مرة أخرى');
-        }
-      } catch (err) {
-        console.error('❌ Error during logout:', err);
-        alert('حدث خطأ أثناء تسجيل الخروج');
+  const rulesBtnClickHandler = () => {
+    console.log('Rules Button Clicked');
+    window.location.hash = 'rules';
+    loadPageBasedOnHash();
+  };
+
+  const chatPageBtnClickHandler = () => {
+    console.log('Chat Page Button Clicked');
+    window.location.hash = 'chat-page';
+    loadPageBasedOnHash();
+  };
+
+  const analyticsBtnClickHandler = () => {
+    console.log('Analytics Button Clicked');
+    window.location.hash = 'analytics';
+    loadPageBasedOnHash();
+  };
+
+  const logoutBtnClickHandler = async () => {
+    console.log('Logout Button Clicked');
+    try {
+      console.log('📤 Sending logout request for username:', localStorage.getItem('username'));
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: localStorage.getItem('username') }),
+      });
+
+      const data = await response.json();
+      console.log('📥 Logout response:', data);
+
+      if (response.ok && data.success) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('username');
+        console.log('✅ Logout successful, localStorage cleared');
+        window.location.href = '/';
+      } else {
+        console.log('❌ Logout failed:', data.message);
+        alert('فشل تسجيل الخروج، حاول مرة أخرى');
       }
-    });
-  });
+    } catch (err) {
+      console.error('❌ Error during logout:', err);
+      alert('حدث خطأ أثناء تسجيل الخروج');
+    }
+  };
+
+  // Attach event listeners initially
+  attachEventListeners();
 
   async function loadPageBasedOnHash() {
     const hash = window.location.hash;
