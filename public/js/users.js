@@ -3,24 +3,24 @@ function showCreateUserForm() {
   formContainer.innerHTML = `
     <h3>إنشاء مستخدم جديد</h3>
     <form id="createUserForm">
-      <div>
-        <label for="username">اسم المستخدم:</label>
-        <input type="text" id="username" required>
+      <div class="form-group">
+        <input type="text" id="username" required placeholder=" ">
+        <label for="username">اسم المستخدم</label>
       </div>
-      <div>
-        <label for="password">كلمة المرور:</label>
-        <input type="password" id="password" required>
+      <div class="form-group">
+        <input type="password" id="password" required placeholder=" ">
+        <label for="password">كلمة المرور</label>
       </div>
-      <div>
-        <label for="confirmPassword">تأكيد كلمة المرور:</label>
-        <input type="password" id="confirmPassword" required>
+      <div class="form-group">
+        <input type="password" id="confirmPassword" required placeholder=" ">
+        <label for="confirmPassword">تأكيد كلمة المرور</label>
       </div>
-      <div>
-        <label for="role">نوع المستخدم:</label>
+      <div class="form-group">
         <select id="role" required>
           <option value="user">مستخدم عادي</option>
           <option value="superadmin">سوبر أدمن</option>
         </select>
+        <label for="role">نوع المستخدم</label>
       </div>
       <button type="submit">إنشاء</button>
     </form>
@@ -37,7 +37,6 @@ function showCreateUserForm() {
     const errorEl = document.getElementById('userError');
 
     try {
-      document.getElementById('globalLoader').style.display = 'block';
       const res = await fetch('/api/users', {
         method: 'POST',
         headers: {
@@ -46,7 +45,6 @@ function showCreateUserForm() {
         },
         body: JSON.stringify({ username, password, confirmPassword, role }),
       });
-      document.getElementById('globalLoader').style.display = 'none';
 
       const data = await res.json();
       if (res.ok) {
@@ -56,7 +54,6 @@ function showCreateUserForm() {
         errorEl.textContent = data.message || 'فشل في إنشاء المستخدم';
       }
     } catch (err) {
-      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في إنشاء المستخدم:', err);
       errorEl.textContent = 'خطأ في السيرفر';
     }
@@ -68,7 +65,6 @@ async function editUser(id, username, role) {
   const newRole = prompt('أدخل نوع المستخدم (user أو superadmin):', role);
   if (newUsername && newRole) {
     try {
-      document.getElementById('globalLoader').style.display = 'block';
       const res = await fetch(`/api/users/${id}`, {
         method: 'PUT',
         headers: {
@@ -77,7 +73,6 @@ async function editUser(id, username, role) {
         },
         body: JSON.stringify({ username: newUsername, role: newRole }),
       });
-      document.getElementById('globalLoader').style.display = 'none';
 
       const data = await res.json();
       if (res.ok) {
@@ -87,7 +82,6 @@ async function editUser(id, username, role) {
         alert(data.message || 'فشل في تعديل المستخدم');
       }
     } catch (err) {
-      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في تعديل المستخدم:', err);
       alert('خطأ في السيرفر');
     }
@@ -97,12 +91,10 @@ async function editUser(id, username, role) {
 async function deleteUser(id) {
   if (confirm('هل أنت متأكد من حذف هذا المستخدم؟')) {
     try {
-      document.getElementById('globalLoader').style.display = 'block';
       const res = await fetch(`/api/users/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
-      document.getElementById('globalLoader').style.display = 'none';
 
       const data = await res.json();
       if (res.ok) {
@@ -112,7 +104,6 @@ async function deleteUser(id) {
         alert(data.message || 'فشل في حذف المستخدم');
       }
     } catch (err) {
-      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في حذف المستخدم:', err);
       alert('خطأ في السيرفر');
     }
