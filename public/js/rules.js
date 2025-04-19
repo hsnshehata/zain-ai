@@ -6,72 +6,57 @@ async function loadRulesPage() {
 
   content.innerHTML = `
     <h2>إدارة القواعد</h2>
-    <div id="rulesContent">
-      <p>جاري تحميل البوتات...</p>
+    <div class="rules-container">
+      <div class="spinner"><div class="loader"></div></div>
+      <div id="rulesContent" style="display: none;">
+        <div class="form-group">
+          <select id="botId" name="botId" required>
+            <option value="">اختر بوت</option>
+          </select>
+          <label for="botId">اختر البوت</label>
+        </div>
+        <div class="rule-tabs">
+          <button class="rule-type-btn active" data-type="general">قواعد عامة</button>
+          <button class="rule-type-btn" data-type="products">قائمة الأسعار</button>
+          <button class="rule-type-btn" data-type="qa">سؤال وجواب</button>
+          <button class="rule-type-btn" data-type="api">ربط API للمتجر</button>
+          ${role === 'superadmin' ? '<button class="rule-type-btn" data-type="global">قواعد موحدة</button>' : ''}
+        </div>
+        <div id="ruleFormContainer" style="display: none;">
+          <form id="ruleForm">
+            <div id="contentFields"></div>
+            <button type="submit">إضافة القاعدة</button>
+          </form>
+        </div>
+        <h3>القواعد الحالية</h3>
+        <div id="rulesList" class="rules-grid"></div>
+      </div>
     </div>
   `;
 
   const rulesContent = document.getElementById('rulesContent');
+  const spinner = document.querySelector('.spinner');
 
   let bots = [];
   try {
-    document.getElementById('globalLoader').style.display = 'block';
+    spinner.style.display = 'flex';
     const response = await fetch('/api/bots', {
       headers: { 'Authorization': `Bearer ${token}` },
     });
-    document.getElementById('globalLoader').style.display = 'none';
     if (!response.ok) {
       throw new Error(`فشل في جلب البوتات: ${response.status} ${response.statusText}`);
     }
     bots = await response.json();
+    rulesContent.style.display = 'block';
+    spinner.style.display = 'none';
   } catch (err) {
-    document.getElementById('globalLoader').style.display = 'none';
     console.error('خطأ في جلب البوتات:', err);
     rulesContent.innerHTML = `
       <p style="color: red;">تعذر جلب البوتات، حاول مرة أخرى لاحقًا.</p>
     `;
+    spinner.style.display = 'none';
     return;
   }
-
-  let html = `
-    <div>
-      <label for="botId">اختر البوت:</label>
-      <select id="botId" name="botId" required>
-        <option value="">اختر بوت</option>
-  `;
-
-  const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
-  userBots.forEach(bot => {
-    html += `<option value="${bot._id}">${bot.name}</option>`;
-  });
-
-  html += `
-      </select>
-    </div>
-    <div id="ruleTypeButtons">
-      <button class="rule-type-btn" data-type="general">قواعد عامة</button>
-      <button class="rule-type-btn" data-type="products">قائمة الأسعار</button>
-      <button class="rule-type-btn" data-type="qa">سؤال وجواب</button>
-      <button class="rule-type-btn" data-type="api">ربط API للمتجر</button>
-  `;
-
-  if (role === 'superadmin') {
-    html += `<button class="rule-type-btn" data-type="global">قواعد موحدة</button>`;
-  }
-
-  html += `
-    </div>
-    <div id="ruleFormContainer" style="display: none;">
-      <form id="ruleForm">
-        <div id="contentFields"></div>
-        <button type="submit">إضافة القاعدة</button>
-      </form>
-    </div>
-    <h3>القواعد الحالية</h3>
-    <ul id="rulesList"></ul>
-  `;
-
-  rulesContent.innerHTML = html;
 
   const botIdSelect = document.getElementById('botId');
   const ruleTypeButtons = document.querySelectorAll('.rule-type-btn');
@@ -79,6 +64,11 @@ async function loadRulesPage() {
   const ruleFormContainer = document.getElementById('ruleFormContainer');
   const ruleForm = document.getElementById('ruleForm');
   const rulesList = document.getElementById('rulesList');
+
+  const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
+  userBots.forEach(bot => {
+    botIdSelect.innerHTML += `<option value="${bot._id}">${bot.name}</option>`;
+  });
 
   if (botIdSelect && userBots.length > 0) {
     botIdSelect.value = userBots[0]._id;
@@ -92,40 +82,56 @@ async function loadRulesPage() {
 
     if (type === 'general') {
       contentFields.innerHTML = `
-        <label for="generalContent">المحتوى (خاص بالبوت المحدد):</label>
-        <textarea id="generalContent" name="generalContent" required placeholder="أدخل المحتوى العام لهذا البوت"></textarea>
+        <div class="form-group">
+          <textarea id="generalContent" name="generalContent" required placeholder=" "></textarea>
+          <label for="generalContent">المحتوى (خاص بالبوت المحدد)</label>
+        </div>
       `;
       console.log(`📋 تم تحميل حقل المحتوى العام لنوع general`);
     } else if (type === 'global') {
       contentFields.innerHTML = `
-        <label for="globalContent">المحتوى (موحد لكل البوتات):</label>
-        <textarea id="globalContent" name="globalContent" required placeholder="أدخل المحتوى الموحد لكل البوتات"></textarea>
+        <div class="form-group">
+          <textarea id="globalContent" name="globalContent" required placeholder=" "></textarea>
+          <label for="globalContent">المحتوى (موحد لكل البوتات)</label>
+        </div>
       `;
       console.log(`📋 تم تحميل حقل المحتوى الموحد لنوع global`);
     } else if (type === 'products') {
       contentFields.innerHTML = `
-        <label for="product">المنتج:</label>
-        <input type="text" id="product" name="product" required placeholder="اسم المنتج">
-        <label for="price">السعر:</label>
-        <input type="number" id="price" name="price" required placeholder="السعر" min="0" step="0.01">
-        <label for="currency">العملة:</label>
-        <select id="currency" name="currency" required>
-          <option value="">اختر العملة</option>
-          <option value="جنيه">جنيه</option>
-          <option value="دولار">دولار</option>
-        </select>
+        <div class="form-group">
+          <input type="text" id="product" name="product" required placeholder=" ">
+          <label for="product">المنتج</label>
+        </div>
+        <div class="form-group">
+          <input type="number" id="price" name="price" required placeholder=" " min="0" step="0.01">
+          <label for="price">السعر</label>
+        </div>
+        <div class="form-group">
+          <select id="currency" name="currency" required>
+            <option value="">اختر العملة</option>
+            <option value="جنيه">جنيه</option>
+            <option value="دولار">دولار</option>
+          </select>
+          <label for="currency">العملة</label>
+        </div>
       `;
     } else if (type === 'qa') {
       contentFields.innerHTML = `
-        <label for="question">السؤال:</label>
-        <input type="text" id="question" name="question" required placeholder="أدخل السؤال">
-        <label for="answer">الإجابة:</label>
-        <textarea id="answer" name="answer" required placeholder="أدخل الإجابة"></textarea>
+        <div class="form-group">
+          <input type="text" id="question" name="question" required placeholder=" ">
+          <label for="question">السؤال</label>
+        </div>
+        <div class="form-group">
+          <textarea id="answer" name="answer" required placeholder=" "></textarea>
+          <label for="answer">الإجابة</label>
+        </div>
       `;
     } else if (type === 'api') {
       contentFields.innerHTML = `
-        <label for="apiKey">مفتاح API:</label>
-        <input type="text" id="apiKey" name="apiKey" required placeholder="أدخل مفتاح API">
+        <div class="form-group">
+          <input type="text" id="apiKey" name="apiKey" required placeholder=" ">
+          <label for="apiKey">مفتاح API</label>
+        </div>
       `;
     }
   };
@@ -138,6 +144,11 @@ async function loadRulesPage() {
       loadContentFields(type);
     });
   });
+
+  // Set default tab
+  if (ruleTypeButtons.length > 0) {
+    ruleTypeButtons[0].click();
+  }
 
   if (botIdSelect) {
     botIdSelect.addEventListener('change', () => {
@@ -213,7 +224,6 @@ async function loadRulesPage() {
       }
 
       try {
-        document.getElementById('globalLoader').style.display = 'block';
         console.log('📤 إرسال قاعدة جديدة:', { botId, type, content });
         const response = await fetch('/api/rules', {
           method: 'POST',
@@ -223,7 +233,6 @@ async function loadRulesPage() {
           },
           body: JSON.stringify({ botId, type, content }),
         });
-        document.getElementById('globalLoader').style.display = 'none';
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || 'فشل في إضافة القاعدة');
@@ -231,7 +240,6 @@ async function loadRulesPage() {
         alert('تم إضافة القاعدة بنجاح');
         loadRules(botId, rulesList, token);
       } catch (err) {
-        document.getElementById('globalLoader').style.display = 'none';
         console.error('خطأ في إضافة القاعدة:', err);
         alert(`خطأ في إضافة القاعدة: ${err.message}`);
       }
@@ -240,21 +248,20 @@ async function loadRulesPage() {
 
   async function loadRules(botId, rulesList, token) {
     try {
-      document.getElementById('globalLoader').style.display = 'block';
       const response = await fetch(`/api/rules?botId=${botId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      document.getElementById('globalLoader').style.display = 'none';
       if (!response.ok) {
         throw new Error('فشل في جلب القواعد');
       }
       const rules = await response.json();
       rulesList.innerHTML = '';
       if (rules.length === 0) {
-        rulesList.innerHTML = '<li>لا توجد قواعد لهذا البوت.</li>';
+        rulesList.innerHTML = '<div class="rule-card"><p>لا توجد قواعد لهذا البوت.</p></div>';
       } else {
         rules.forEach(rule => {
-          const li = document.createElement('li');
+          const card = document.createElement('div');
+          card.className = 'rule-card';
           let contentDisplay = '';
           if (rule.type === 'general') {
             contentDisplay = `المحتوى العام: ${rule.content}`;
@@ -267,28 +274,28 @@ async function loadRulesPage() {
           } else if (rule.type === 'api') {
             contentDisplay = `مفتاح API: ${rule.content.apiKey}`;
           }
-          li.innerHTML = `
-            نوع القاعدة: ${rule.type} | ${contentDisplay}
-            <button onclick="editRule('${rule._id}')">تعديل</button>
-            <button onclick="deleteRule('${rule._id}')">حذف</button>
+          card.innerHTML = `
+            <h4>نوع القاعدة: ${rule.type}</h4>
+            <p>${contentDisplay}</p>
+            <div class="card-actions">
+              <button onclick="editRule('${rule._id}')">تعديل</button>
+              <button onclick="deleteRule('${rule._id}')">حذف</button>
+            </div>
           `;
-          rulesList.appendChild(li);
+          rulesList.appendChild(card);
         });
       }
     } catch (err) {
-      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في جلب القواعد:', err);
-      rulesList.innerHTML = '<li style="color: red;">تعذر جلب القواعد، حاول مرة أخرى لاحقًا.</li>';
+      rulesList.innerHTML = '<div class="rule-card"><p style="color: red;">تعذر جلب القواعد، حاول مرة أخرى لاحقًا.</p></div>';
     }
   }
 
   window.editRule = async (ruleId) => {
     try {
-      document.getElementById('globalLoader').style.display = 'block';
       const response = await fetch(`/api/rules/${ruleId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      document.getElementById('globalLoader').style.display = 'none';
       if (!response.ok) {
         throw new Error('فشل في جلب القاعدة');
       }
@@ -338,7 +345,6 @@ async function loadRulesPage() {
       }
 
       if (newContent) {
-        document.getElementById('globalLoader').style.display = 'block';
         const updateResponse = await fetch(`/api/rules/${ruleId}`, {
           method: 'PUT',
           headers: {
@@ -347,7 +353,6 @@ async function loadRulesPage() {
           },
           body: JSON.stringify({ type: rule.type, content: newContent }),
         });
-        document.getElementById('globalLoader').style.display = 'none';
         if (!updateResponse.ok) {
           throw new Error('فشل في تعديل القاعدة');
         }
@@ -355,7 +360,6 @@ async function loadRulesPage() {
         loadRules(botIdSelect.value, rulesList, token);
       }
     } catch (err) {
-      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في تعديل القاعدة:', err);
       alert('خطأ في تعديل القاعدة، حاول مرة أخرى لاحقًا');
     }
@@ -363,11 +367,9 @@ async function loadRulesPage() {
 
   window.deleteRule = async (ruleId) => {
     try {
-      document.getElementById('globalLoader').style.display = 'block';
       const response = await fetch(`/api/rules/${ruleId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
-      document.getElementById('globalLoader').style.display = 'none';
       if (!response.ok) {
         throw new Error('فشل في جلب القاعدة');
       }
@@ -377,12 +379,10 @@ async function loadRulesPage() {
         return;
       }
       if (confirm('هل أنت متأكد من حذف هذه القاعدة؟')) {
-        document.getElementById('globalLoader').style.display = 'block';
         const deleteResponse = await fetch(`/api/rules/${ruleId}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` },
         });
-        document.getElementById('globalLoader').style.display = 'none';
         if (!deleteResponse.ok) {
           throw new Error('فشل في حذف القاعدة');
         }
@@ -390,7 +390,6 @@ async function loadRulesPage() {
         loadRules(botIdSelect.value, rulesList, token);
       }
     } catch (err) {
-      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في حذف القاعدة:', err);
       alert('خطأ في حذف القاعدة، حاول مرة أخرى لاحقًا');
     }
