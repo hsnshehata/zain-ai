@@ -5,42 +5,43 @@ async function loadBotsPage() {
   const role = localStorage.getItem('role');
   const userId = localStorage.getItem('userId');
 
-  let html = `
+  content.innerHTML = `
     <h2>إدارة البوتات</h2>
-    <div>
-      <label for="botSelect">اختر بوت:</label>
-      <select id="botSelect" onchange="selectBot(this.value)"></select>
+    <div class="bots-container">
+      <div class="spinner"><div class="loader"></div></div>
+      <div id="botsContent" style="display: none;">
+        <div class="form-group">
+          <select id="botSelect" onchange="selectBot(this.value)"></select>
+          <label for="botSelect">اختر بوت</label>
+        </div>
+        <div class="admin-actions">
+          ${role === 'superadmin' ? `
+            <button onclick="showCreateUserForm()">إنشاء مستخدم جديد</button>
+            <button onclick="showCreateBotForm()">إنشاء بوت جديد</button>
+          ` : ''}
+        </div>
+        <div id="formContainer"></div>
+        <div id="usersTable" class="users-grid"></div>
+      </div>
     </div>
   `;
 
-  // إظهار أزرار "إنشاء مستخدم جديد" و"إنشاء بوت جديد" للسوبر أدمن فقط
-  if (role === 'superadmin') {
-    html += `
-      <button onclick="showCreateUserForm()">إنشاء مستخدم جديد</button>
-      <button onclick="showCreateBotForm()">إنشاء بوت جديد</button>
-    `;
-  }
+  const botsContent = document.getElementById('botsContent');
+  const spinner = document.querySelector('.spinner');
 
-  html += `
-    <div id="formContainer"></div>
-    <table>
-      <thead>
-        <tr>
-          <th>اسم المستخدم</th>
-          <th>نوع المستخدم</th>
-          <th>البوتات</th>
-          <th>الإجراءات</th>
-        </tr>
-      </thead>
-      <tbody id="usersTable"></tbody>
-    </table>
-  `;
-
-  content.innerHTML = html;
-  await fetchUsers();
-  await populateBotSelect();
-  if (!selectedBotId && document.getElementById('botSelect').options.length > 0) {
-    selectBot(document.getElementById('botSelect').options[0].value);
+  try {
+    spinner.style.display = 'flex';
+    await fetchUsers();
+    await populateBotSelect();
+    botsContent.style.display = 'block';
+    spinner.style.display = 'none';
+    if (!selectedBotId && document.getElementById('botSelect').options.length > 0) {
+      selectBot(document.getElementById('botSelect').options[0].value);
+    }
+  } catch (err) {
+    console.error('خطأ في تحميل البوتات:', err);
+    botsContent.innerHTML = `<p style="color: red;">تعذر تحميل البيانات، حاول مرة أخرى لاحقًا.</p>`;
+    spinner.style.display = 'none';
   }
 }
 
@@ -49,24 +50,20 @@ async function populateBotSelect() {
   const role = localStorage.getItem('role');
   const userId = localStorage.getItem('userId');
   try {
-    document.getElementById('globalLoader').style.display = 'block';
     const res = await fetch('/api/bots', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
-    document.getElementById('globalLoader').style.display = 'none';
     if (!res.ok) {
       throw new Error('فشل في جلب البوتات');
     }
     const bots = await res.json();
 
     botSelect.innerHTML = '';
-    // للمستخدم العادي، نعرض فقط البوتات الخاصة به
     const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
     userBots.forEach((bot) => {
       botSelect.innerHTML += `<option value="${bot._id}">${bot.name}</option>`;
     });
   } catch (err) {
-    document.getElementById('globalLoader').style.display = 'none';
     console.error('خطأ في جلب البوتات:', err);
     alert('خطأ في جلب البوتات');
   }
@@ -87,27 +84,28 @@ async function fetchUsers() {
   const role = localStorage.getItem('role');
   const userId = localStorage.getItem('userId');
   try {
-    document.getElementById('globalLoader').style.display = 'block';
     const res = await fetch('/api/users', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
-    document.getElementById('globalLoader').style.display = 'none';
     if (!res.ok) {
       throw new Error('فشل في جلب المستخدمين');
     }
     let users = await res.json();
 
-    const tbody = document.getElementById('usersTable');
-    tbody.innerHTML = '';
+    const usersGrid = document.getElementById('usersTable');
+    usersGrid.innerHTML = '';
 
-    // للمستخدم العادي، نعرض فقط بياناته هو
     if (role !== 'superadmin') {
       users = users.filter(user => user._id === userId);
     }
 
+    if (users.length === 0) {
+      usersGrid.innerHTML = '<div class="user-card"><p>لا توجد مستخدمين.</p></div>';
+      return;
+    }
+
     users.forEach((user) => {
       const botsList = user.bots.map((bot) => {
-        // للمستخدم العادي، نعرض اسم البوت فقط بدون أزرار تعديل أو حذف
         if (role === 'superadmin') {
           return `
             ${bot.name}
@@ -119,23 +117,22 @@ async function fetchUsers() {
         }
       }).join('<br>');
 
-      const row = `
-        <tr>
-          <td>${user.username}</td>
-          <td>${user.role === 'superadmin' ? 'سوبر أدمن' : 'مستخدم عادي'}</td>
-          <td>${botsList || 'لا توجد بوتات'}</td>
-          <td>
-            ${role === 'superadmin' ? `
-              <button onclick="editUser('${user._id}', '${user.username}', '${user.role}')">تعديل</button>
-              <button onclick="deleteUser('${user._id}')">حذف</button>
-            ` : ''}
-          </td>
-        </tr>
+      const card = document.createElement('div');
+      card.className = 'user-card';
+      card.innerHTML = `
+        <h4>${user.username}</h4>
+        <p>نوع المستخدم: ${user.role === 'superadmin' ? 'سوبر أدمن' : 'مستخدم عادي'}</p>
+        <p>البوتات: ${botsList || 'لا توجد بوتات'}</p>
+        ${role === 'superadmin' ? `
+          <div class="card-actions">
+            <button onclick="editUser('${user._id}', '${user.username}', '${user.role}')">تعديل</button>
+            <button onclick="deleteUser('${user._id}')">حذف</button>
+          </div>
+        ` : ''}
       `;
-      tbody.innerHTML += row;
+      usersGrid.appendChild(card);
     });
   } catch (err) {
-    document.getElementById('globalLoader').style.display = 'none';
     console.error('خطأ في جلب المستخدمين:', err);
     alert('خطأ في جلب المستخدمين');
   }
@@ -146,21 +143,23 @@ function showCreateBotForm() {
   formContainer.innerHTML = `
     <h3>إنشاء بوت جديد</h3>
     <form id="createBotForm">
-      <div>
-        <label for="botName">اسم البوت:</label>
-        <input type="text" id="botName" required>
+      <div class="form-group">
+        <input type="text" id="botName" required placeholder=" ">
+        <label for="botName">اسم البوت</label>
       </div>
-      <div>
-        <label for="facebookApiKey">رقم API لفيسبوك (اختياري):</label>
-        <input type="text" id="facebookApiKey">
+      <div class="form-group">
+        <input type="text" id="facebookApiKey" placeholder=" ">
+        <label for="facebookApiKey">رقم API لفيسبوك (اختياري)</label>
       </div>
       <div id="facebookPageIdContainer" style="display: none;">
-        <label for="facebookPageId">معرف صفحة الفيسبوك:</label>
-        <input type="text" id="facebookPageId">
+        <div class="form-group">
+          <input type="text" id="facebookPageId" placeholder=" ">
+          <label for="facebookPageId">معرف صفحة الفيسبوك</label>
+        </div>
       </div>
-      <div>
-        <label for="userId">المستخدم:</label>
-        <input type="text" id="userSearch" placeholder="ابحث عن المستخدم...">
+      <div class="form-group">
+        <input type="text" id="userSearch" placeholder=" ">
+        <label for="userSearch">ابحث عن المستخدم...</label>
         <select id="userId" required></select>
       </div>
       <button type="submit">إنشاء</button>
@@ -178,14 +177,10 @@ function showCreateBotForm() {
   const userSelect = document.getElementById('userId');
   let allUsers = [];
 
-  document.getElementById('globalLoader').style.display = 'block';
   fetch('/api/users', {
     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
   })
-    .then((res) => {
-      document.getElementById('globalLoader').style.display = 'none';
-      return res.json();
-    })
+    .then((res) => res.json())
     .then((users) => {
       allUsers = users;
       users.forEach((user) => {
@@ -193,7 +188,6 @@ function showCreateBotForm() {
       });
     })
     .catch((err) => {
-      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في جلب المستخدمين:', err);
       document.getElementById('botError').textContent = 'خطأ في جلب المستخدمين';
     });
@@ -218,7 +212,6 @@ function showCreateBotForm() {
     const errorEl = document.getElementById('botError');
 
     try {
-      document.getElementById('globalLoader').style.display = 'block';
       const res = await fetch('/api/bots', {
         method: 'POST',
         headers: {
@@ -227,7 +220,6 @@ function showCreateBotForm() {
         },
         body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId }),
       });
-      document.getElementById('globalLoader').style.display = 'none';
 
       const data = await res.json();
       if (res.ok) {
@@ -241,7 +233,6 @@ function showCreateBotForm() {
         errorEl.textContent = data.message || 'فشل في إنشاء البوت';
       }
     } catch (err) {
-      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في إنشاء البوت:', err);
       errorEl.textContent = 'خطأ في السيرفر';
     }
@@ -257,7 +248,6 @@ async function editBot(id, name, facebookApiKey, facebookPageId) {
   }
   if (newName) {
     try {
-      document.getElementById('globalLoader').style.display = 'block';
       const res = await fetch(`/api/bots/${id}`, {
         method: 'PUT',
         headers: {
@@ -266,7 +256,6 @@ async function editBot(id, name, facebookApiKey, facebookPageId) {
         },
         body: JSON.stringify({ name: newName, facebookApiKey: newFacebookApiKey, facebookPageId: newFacebookPageId }),
       });
-      document.getElementById('globalLoader').style.display = 'none';
 
       const data = await res.json();
       if (res.ok) {
@@ -277,7 +266,6 @@ async function editBot(id, name, facebookApiKey, facebookPageId) {
         alert(data.message || 'فشل في تعديل البوت');
       }
     } catch (err) {
-      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في تعديل البوت:', err);
       alert('خطأ في السيرفر');
     }
@@ -287,12 +275,10 @@ async function editBot(id, name, facebookApiKey, facebookPageId) {
 async function deleteBot(id) {
   if (confirm('هل أنت متأكد من حذف هذا البوت؟')) {
     try {
-      document.getElementById('globalLoader').style.display = 'block';
       const res = await fetch(`/api/bots/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
-      document.getElementById('globalLoader').style.display = 'none';
 
       const data = await res.json();
       if (res.ok) {
@@ -308,7 +294,6 @@ async function deleteBot(id) {
         alert(data.message || 'فشل في حذف البوت');
       }
     } catch (err) {
-      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في حذف البوت:', err);
       alert('خطأ في السيرفر');
     }
