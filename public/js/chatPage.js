@@ -45,7 +45,7 @@ async function loadChatPage() {
   html += `
       </select>
     </div>
-    <button id="createChatPageBtn" class="submit-btn" disabled>إنشاء صفحة دردشة</button>
+    <button id="createChatPageBtn" class="submit-btn" style="display: none;">إنشاء صفحة دردشة</button>
   `;
 
   chatPageContent.innerHTML = html;
@@ -56,6 +56,7 @@ async function loadChatPage() {
   if (botIdSelect) {
     botIdSelect.addEventListener('change', async () => {
       const selectedBotId = botIdSelect.value;
+      createChatPageBtn.style.display = selectedBotId ? 'block' : 'none'; // Show button only if a bot is selected
       createChatPageBtn.disabled = !selectedBotId;
       console.log(`Selected bot ID: ${selectedBotId}`);
 
