@@ -89,22 +89,33 @@ async function loadChatPage() {
                     <input type="text" id="title" name="title" value="${data.title}" required placeholder=" ">
                     <label for="title">عنوان الصفحة:</label>
                   </div>
-                  <div class="form-group">
-                    <input type="color" id="titleColor" name="titleColor" value="${data.titleColor || '#ffffff'}">
+                  <div class="form-group color-picker-wrapper">
+                    <button type="button" class="color-picker-btn" id="titleColorBtn" style="background-color: ${data.titleColor || '#ffffff'};"></button>
+                    <input type="color" id="titleColor" name="titleColor" value="${data.titleColor || '#ffffff'}" style="display: none;">
                     <label for="titleColor">لون نص العنوان:</label>
                   </div>
                   <div class="form-group">
                     <h3>إعدادات الألوان:</h3>
-                    <input type="color" id="headerColor" name="headerColor" value="${data.colors.header}">
-                    <label for="headerColor">لون الهيدر:</label>
-                    <input type="color" id="backgroundColor" name="backgroundColor" value="${data.colors.background}">
-                    <label for="backgroundColor">لون الخلفية:</label>
-                    <input type="color" id="textColor" name="textColor" value="${data.colors.text}">
-                    <label for="textColor">لون النص:</label>
-                    <input type="color" id="textColor" name="textColor" value="${data.colors.text}">
-                    <label for="textColor">لون النص:</label>
-                    <input type="color" id="buttonColor" name="buttonColor" value="${data.colors.button}">
-                    <label for="buttonColor">لون الأزرار:</label>
+                    <div class="color-picker-wrapper">
+                      <button type="button" class="color-picker-btn" id="headerColorBtn" style="background-color: ${data.colors.header};"></button>
+                      <input type="color" id="headerColor" name="headerColor" value="${data.colors.header}" style="display: none;">
+                      <label for="headerColor">لون الهيدر:</label>
+                    </div>
+                    <div class="color-picker-wrapper">
+                      <button type="button" class="color-picker-btn" id="backgroundColorBtn" style="background-color: ${data.colors.background};"></button>
+                      <input type="color" id="backgroundColor" name="backgroundColor" value="${data.colors.background}" style="display: none;">
+                      <label for="backgroundColor">لون الخلفية:</label>
+                    </div>
+                    <div class="color-picker-wrapper">
+                      <button type="button" class="color-picker-btn" id="textColorBtn" style="background-color: ${data.colors.text};"></button>
+                      <input type="color" id="textColor" name="textColor" value="${data.colors.text}" style="display: none;">
+                      <label for="textColor">لون النص:</label>
+                    </div>
+                    <div class="color-picker-wrapper">
+                      <button type="button" class="color-picker-btn" id="buttonColorBtn" style="background-color: ${data.colors.button};"></button>
+                      <input type="color" id="buttonColor" name="buttonColor" value="${data.colors.button}" style="display: none;">
+                      <label for="buttonColor">لون الأزرار:</label>
+                    </div>
                   </div>
                   <div class="form-group">
                     <input type="file" id="logo" name="logo" accept="image/png">
@@ -137,10 +148,23 @@ async function loadChatPage() {
                     </label>
                   </div>
                   <button type="submit" class="submit-btn">حفظ الإعدادات</button>
+                  <p style="font-size: 0.8em; margin-top: 20px;">جميع الحقوق محفوظة © ghazal bost</p>
                 </form>
-                <p style="font-size: 0.8em;">جميع الحقوق محفوظة © ghazal bost</p>
               </div>
             `;
+
+            // Attach color picker button handlers
+            const colorInputs = ['titleColor', 'headerColor', 'backgroundColor', 'textColor', 'buttonColor'];
+            colorInputs.forEach(colorId => {
+              const colorBtn = document.getElementById(`${colorId}Btn`);
+              const colorInput = document.getElementById(colorId);
+              colorBtn.addEventListener('click', () => {
+                colorInput.click();
+              });
+              colorInput.addEventListener('input', () => {
+                colorBtn.style.backgroundColor = colorInput.value;
+              });
+            });
 
             // Add logo preview on file selection
             const logoInput = document.getElementById('logo');
@@ -253,7 +277,7 @@ async function loadChatPage() {
                 const result = await response.json();
                 // Update logo preview if a new logo was uploaded
                 if (result.logoUrl) {
-                  document.querySelector('p[style="font-size: 0.8em;"]').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />`;
+                  document.querySelector('p[style="font-size: 0.8em; margin-top: 20px;"]').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />`;
                   logoPreview.src = result.logoUrl;
                   logoPreview.style.display = 'block';
                 }
@@ -316,20 +340,33 @@ async function loadChatPage() {
                 <input type="text" id="title" name="title" value="صفحة دردشة" required placeholder=" ">
                 <label for="title">عنوان الصفحة:</label>
               </div>
-              <div class="form-group">
-                <input type="color" id="titleColor" name="titleColor" value="#ffffff">
+              <div class="form-group color-picker-wrapper">
+                <button type="button" class="color-picker-btn" id="titleColorBtn" style="background-color: #ffffff;"></button>
+                <input type="color" id="titleColor" name="titleColor" value="#ffffff" style="display: none;">
                 <label for="titleColor">لون نص العنوان:</label>
               </div>
               <div class="form-group">
                 <h3>إعدادات الألوان:</h3>
-                <input type="color" id="headerColor" name="headerColor" value="#007bff">
-                <label for="headerColor">لون الهيدر:</label>
-                <input type="color" id="backgroundColor" name="backgroundColor" value="#f8f9fa">
-                <label for="backgroundColor">لون الخلفية:</label>
-                <input type="color" id="textColor" name="textColor" value="#333333">
-                <label for="textColor">لون النص:</label>
-                <input type="color" id="buttonColor" name="buttonColor" value="#007bff">
-                <label for="buttonColor">لون الأزرار:</label>
+                <div class="color-picker-wrapper">
+                  <button type="button" class="color-picker-btn" id="headerColorBtn" style="background-color: #007bff;"></button>
+                  <input type="color" id="headerColor" name="headerColor" value="#007bff" style="display: none;">
+                  <label for="headerColor">لون الهيدر:</label>
+                </div>
+                <div class="color-picker-wrapper">
+                  <button type="button" class="color-picker-btn" id="backgroundColorBtn" style="background-color: #f8f9fa;"></button>
+                  <input type="color" id="backgroundColor" name="backgroundColor" value="#f8f9fa" style="display: none;">
+                  <label for="backgroundColor">لون الخلفية:</label>
+                </div>
+                <div class="color-picker-wrapper">
+                  <button type="button" class="color-picker-btn" id="textColorBtn" style="background-color: #333333;"></button>
+                  <input type="color" id="textColor" name="textColor" value="#333333" style="display: none;">
+                  <label for="textColor">لون النص:</label>
+                </div>
+                <div class="color-picker-wrapper">
+                  <button type="button" class="color-picker-btn" id="buttonColorBtn" style="background-color: #007bff;"></button>
+                  <input type="color" id="buttonColor" name="buttonColor" value="#007bff" style="display: none;">
+                  <label for="buttonColor">لون الأزرار:</label>
+                </div>
               </div>
               <div class="form-group">
                 <input type="file" id="logo" name="logo" accept="image/png">
@@ -362,10 +399,23 @@ async function loadChatPage() {
                 </label>
               </div>
               <button type="submit" class="submit-btn">حفظ الإعدادات</button>
+              <p style="font-size: 0.8em; margin-top: 20px;">جميع الحقوق محفوظة © ghazal bost</p>
             </form>
-            <p style="font-size: 0.8em;">جميع الحقوق محفوظة © ghazal bost</p>
           </div>
         `;
+
+        // Attach color picker button handlers
+        const colorInputs = ['titleColor', 'headerColor', 'backgroundColor', 'textColor', 'buttonColor'];
+        colorInputs.forEach(colorId => {
+          const colorBtn = document.getElementById(`${colorId}Btn`);
+          const colorInput = document.getElementById(colorId);
+          colorBtn.addEventListener('click', () => {
+            colorInput.click();
+          });
+          colorInput.addEventListener('input', () => {
+            colorBtn.style.backgroundColor = colorInput.value;
+          });
+        });
 
         // Add logo preview on file selection
         const logoInput = document.getElementById('logo');
@@ -476,7 +526,7 @@ async function loadChatPage() {
             const result = await response.json();
             // Update logo preview if a new logo was uploaded
             if (result.logoUrl) {
-              document.querySelector('p[style="font-size: 0.8em;"]').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />`;
+              document.querySelector('p[style="font-size: 0.8em; margin-top: 20px;"]').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" style="max-width: 100px;" />`;
               logoPreview.src = result.logoUrl;
               logoPreview.style.display = 'block';
             }
