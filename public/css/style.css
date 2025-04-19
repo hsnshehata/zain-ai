@@ -159,8 +159,8 @@ body.light .form-group label {
   color: var(--text-light);
 }
 
-.form-group input:not([type="checkbox"]):focus + label,
-.form-group input:not([type="checkbox"]):not(:placeholder-shown) + label,
+.form-group input:not([type="checkbox"]):not([type="color"]):not([type="file"]):focus + label,
+.form-group input:not([type="checkbox"]):not([type="color"]):not([type="file"]):not(:placeholder-shown) + label,
 .form-group textarea:focus + label,
 .form-group textarea:not(:placeholder-shown) + label,
 .form-group select:focus + label,
@@ -183,7 +183,7 @@ input, textarea, select {
 body.light input, body.light textarea, body.light select {
   background: #fff;
   border: 1px solid #ddd;
-  color: #000; /* Force black text for dropdowns */
+  color: #000;
 }
 
 input:focus, textarea:focus, select:focus {
@@ -205,7 +205,7 @@ body.light select {
 }
 
 select option {
-  color: #000; /* Force black text for dropdown options */
+  color: #000;
 }
 
 .form-group input[type="checkbox"] {
@@ -238,6 +238,22 @@ body.light .color-picker-wrapper label {
   color: var(--text-light);
 }
 
+.form-group input[type="color"] {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.form-group input[type="color"] + label {
+  position: static;
+  display: block;
+  margin-bottom: 5px;
+  pointer-events: auto;
+}
+
 .color-picker-btn {
   width: 40px;
   height: 40px;
@@ -258,6 +274,9 @@ body.light .color-picker-wrapper label {
   border-radius: 8px;
   background: var(--glass-bg);
   backdrop-filter: blur(10px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 body.light .checkbox-group {
@@ -265,11 +284,17 @@ body.light .checkbox-group {
   border: 1px solid #ddd;
 }
 
+.checkbox-group label {
+  position: static;
+  pointer-events: auto;
+}
+
 .checkbox-label {
   display: flex;
   align-items: center;
   gap: 10px;
   color: var(--text-dark);
+  padding: 5px 0;
 }
 
 body.light .checkbox-label {
@@ -284,6 +309,9 @@ body.light .checkbox-label {
   backdrop-filter: blur(10px);
   box-shadow: var(--shadow);
   margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 body.light .logo-section, body.light .settings-section {
@@ -291,8 +319,42 @@ body.light .logo-section, body.light .settings-section {
   border: 1px solid #ddd;
 }
 
-.logo-section h3, .settings-section h3, .settings-section h4 {
+.logo-section h3, .settings-section h3, .settings-section integrar {
   margin-top: 0;
+}
+
+.form-group input[type="file"] {
+  background: var(--glass-bg);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px;
+  color: var(--text-dark);
+}
+
+body.light .form-group input[type="file"] {
+  background: #fff;
+  border: 1px solid #ddd;
+  color: var(--text-light);
+}
+
+.form-group input[type="file"] + label {
+  position: static;
+  display: block;
+  margin-bottom: 5px;
+  pointer-events: auto;
+}
+
+.logo-preview-container {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.logo-preview-img {
+  max-width: 100px;
+  height: auto;
+  display: block;
 }
 
 /* Settings Group */
@@ -461,8 +523,8 @@ body.light .rule-card {
 .bots-container {
   display: grid;
   gap: 20px;
-  overflow-y: auto; /* Enable scrolling for Bots page */
-  height: 100%; /* Ensure it takes full height */
+  overflow-y: auto;
+  height: 100%;
 }
 
 .admin-actions {
@@ -481,13 +543,13 @@ body.light .rule-card {
 
 @media (max-width: 600px) {
   .admin-actions {
-    display: none; /* Hide admin actions on mobile */
+    display: none;
   }
 }
 
 @media (min-width: 1024px) {
   .admin-actions {
-    display: flex; /* Show admin actions on desktop */
+    display: flex;
   }
 }
 
@@ -633,16 +695,29 @@ body.light .chat-page-settings {
   color: #dc3545;
 }
 
+/* Input Group for Chat Link */
+.input-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.input-group input {
+  flex: 1;
+  min-width: 200px;
+}
+
 /* Responsive Design */
 @media (max-width: 600px) {
   .rules-grid, .users-grid {
     grid-template-columns: 1fr;
   }
   .admin-actions {
-    display: none; /* Already added above */
+    display: none;
   }
   .bottom-nav {
-    height: 60px; /* Fixed height */
+    height: 60px;
   }
   .color-picker-wrapper {
     flex-direction: column;
@@ -658,47 +733,11 @@ body.light .chat-page-settings {
   .question-input-group input {
     min-width: 100%;
   }
-}
-
-/* Form Elements */
-.form-group label {
-  position: absolute;
-  top: 12px;
-  right: 15px;
-  color: var(--text-dark);
-  transition: all 0.2s;
-  pointer-events: none;
-}
-
-/* Override absolute positioning for labels inside checkbox-group */
-.checkbox-group label {
-  position: static; /* Prevent absolute positioning inside checkbox-group */
-  pointer-events: auto; /* Allow interaction with the label */
-}
-
-/* Ensure proper spacing for checkbox labels */
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--text-dark);
-  padding: 5px 0; /* Add padding for better spacing */
-}
-
-body.light .checkbox-label {
-  color: var(--text-light);
-}
-
-/* Logo Preview Container */
-.logo-preview-container {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.logo-preview-img {
-  max-width: 100px;
-  height: auto;
-  display: block;
+  .input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .input-group input {
+    min-width: 100%;
+  }
 }
