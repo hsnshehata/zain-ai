@@ -15,14 +15,17 @@ async function loadRulesPage() {
 
   let bots = [];
   try {
+    document.getElementById('globalLoader').style.display = 'block';
     const response = await fetch('/api/bots', {
       headers: { 'Authorization': `Bearer ${token}` },
     });
+    document.getElementById('globalLoader').style.display = 'none';
     if (!response.ok) {
       throw new Error(`فشل في جلب البوتات: ${response.status} ${response.statusText}`);
     }
     bots = await response.json();
   } catch (err) {
+    document.getElementById('globalLoader').style.display = 'none';
     console.error('خطأ في جلب البوتات:', err);
     rulesContent.innerHTML = `
       <p style="color: red;">تعذر جلب البوتات، حاول مرة أخرى لاحقًا.</p>
@@ -210,6 +213,7 @@ async function loadRulesPage() {
       }
 
       try {
+        document.getElementById('globalLoader').style.display = 'block';
         console.log('📤 إرسال قاعدة جديدة:', { botId, type, content });
         const response = await fetch('/api/rules', {
           method: 'POST',
@@ -219,6 +223,7 @@ async function loadRulesPage() {
           },
           body: JSON.stringify({ botId, type, content }),
         });
+        document.getElementById('globalLoader').style.display = 'none';
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || 'فشل في إضافة القاعدة');
@@ -226,6 +231,7 @@ async function loadRulesPage() {
         alert('تم إضافة القاعدة بنجاح');
         loadRules(botId, rulesList, token);
       } catch (err) {
+        document.getElementById('globalLoader').style.display = 'none';
         console.error('خطأ في إضافة القاعدة:', err);
         alert(`خطأ في إضافة القاعدة: ${err.message}`);
       }
@@ -234,9 +240,11 @@ async function loadRulesPage() {
 
   async function loadRules(botId, rulesList, token) {
     try {
+      document.getElementById('globalLoader').style.display = 'block';
       const response = await fetch(`/api/rules?botId=${botId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
+      document.getElementById('globalLoader').style.display = 'none';
       if (!response.ok) {
         throw new Error('فشل في جلب القواعد');
       }
@@ -268,6 +276,7 @@ async function loadRulesPage() {
         });
       }
     } catch (err) {
+      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في جلب القواعد:', err);
       rulesList.innerHTML = '<li style="color: red;">تعذر جلب القواعد، حاول مرة أخرى لاحقًا.</li>';
     }
@@ -275,9 +284,11 @@ async function loadRulesPage() {
 
   window.editRule = async (ruleId) => {
     try {
+      document.getElementById('globalLoader').style.display = 'block';
       const response = await fetch(`/api/rules/${ruleId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
+      document.getElementById('globalLoader').style.display = 'none';
       if (!response.ok) {
         throw new Error('فشل في جلب القاعدة');
       }
@@ -327,6 +338,7 @@ async function loadRulesPage() {
       }
 
       if (newContent) {
+        document.getElementById('globalLoader').style.display = 'block';
         const updateResponse = await fetch(`/api/rules/${ruleId}`, {
           method: 'PUT',
           headers: {
@@ -335,6 +347,7 @@ async function loadRulesPage() {
           },
           body: JSON.stringify({ type: rule.type, content: newContent }),
         });
+        document.getElementById('globalLoader').style.display = 'none';
         if (!updateResponse.ok) {
           throw new Error('فشل في تعديل القاعدة');
         }
@@ -342,6 +355,7 @@ async function loadRulesPage() {
         loadRules(botIdSelect.value, rulesList, token);
       }
     } catch (err) {
+      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في تعديل القاعدة:', err);
       alert('خطأ في تعديل القاعدة، حاول مرة أخرى لاحقًا');
     }
@@ -349,9 +363,11 @@ async function loadRulesPage() {
 
   window.deleteRule = async (ruleId) => {
     try {
+      document.getElementById('globalLoader').style.display = 'block';
       const response = await fetch(`/api/rules/${ruleId}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
+      document.getElementById('globalLoader').style.display = 'none';
       if (!response.ok) {
         throw new Error('فشل في جلب القاعدة');
       }
@@ -361,10 +377,12 @@ async function loadRulesPage() {
         return;
       }
       if (confirm('هل أنت متأكد من حذف هذه القاعدة؟')) {
+        document.getElementById('globalLoader').style.display = 'block';
         const deleteResponse = await fetch(`/api/rules/${ruleId}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` },
         });
+        document.getElementById('globalLoader').style.display = 'none';
         if (!deleteResponse.ok) {
           throw new Error('فشل في حذف القاعدة');
         }
@@ -372,6 +390,7 @@ async function loadRulesPage() {
         loadRules(botIdSelect.value, rulesList, token);
       }
     } catch (err) {
+      document.getElementById('globalLoader').style.display = 'none';
       console.error('خطأ في حذف القاعدة:', err);
       alert('خطأ في حذف القاعدة، حاول مرة أخرى لاحقًا');
     }
