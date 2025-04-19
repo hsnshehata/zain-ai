@@ -1,743 +1,536 @@
-/* General Styles */
-:root {
-  --primary: #6200EA; /* بنفسجي فخم */
-  --secondary: #00C4B4; /* تركواز */
-  --accent: #FFD700; /* ذهبي */
-  --bg-dark: #121212; /* خلفية داكنة */
-  --bg-light: #F5F7FA; /* خلفية فاتحة */
-  --text-dark: #E0E0E0; /* نص على خلفية داكنة */
-  --text-light: #333; /* نص على خلفية فاتحة */
-  --card-bg: rgba(255, 255, 255, 0.1); /* خلفية الكروت */
-  --glass-bg: rgba(255, 255, 255, 0.05); /* تأثير زجاجي */
-  --shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-}
+async function loadChatPage() {
+  const content = document.getElementById('content');
+  const role = localStorage.getItem('role');
+  const userId = localStorage.getItem('userId');
+  const token = localStorage.getItem('token');
 
-body {
-  font-family: 'Segoe UI', Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  background-color: var(--bg-dark);
-  color: var(--text-dark);
-  transition: all 0.3s ease;
-  overflow-x: hidden; /* Prevent horizontal scroll */
-}
+  content.innerHTML = `
+    <h2>تخصيص صفحة الدردشة</h2>
+    <div id="chatPageContent" class="chat-page-settings">
+      <p>جاري تحميل البوتات...</p>
+    </div>
+  `;
 
-body.light {
-  background-color: var(--bg-light);
-  color: var(--text-light);
-}
+  const chatPageContent = document.getElementById('chatPageContent');
 
-/* Containers */
-.container, .dashboard-container {
-  max-width: 1200px;
-  margin: 20px auto;
-  padding: 20px;
-  padding-bottom: 80px; /* Space for Bottom Navigation */
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  box-shadow: var(--shadow);
-  overflow-y: auto; /* Enable vertical scrolling */
-  min-height: calc(100vh - 140px); /* Adjust height for Bottom Navigation */
-  position: relative;
-}
-
-.container {
-  max-width: 400px;
-}
-
-@media (max-width: 600px) {
-  .container, .dashboard-container {
-    margin: 10px;
-    padding: 15px;
-    padding-bottom: 80px; /* Space for Bottom Navigation */
-    min-height: calc(100vh - 80px);
-    overflow-y: auto; /* Ensure scrolling */
+  let bots = [];
+  try {
+    const response = await fetch('/api/bots', {
+      headers: { 'Authorization': `Bearer ${token}` },
+    });
+    if (!response.ok) {
+      throw new Error(`فشل في جلب البوتات: ${response.status} ${response.statusText}`);
+    }
+    bots = await response.json();
+  } catch (err) {
+    console.error('خطأ في جلب البوتات:', err);
+    chatPageContent.innerHTML = `
+      <p style="color: red;">تعذر جلب البوتات، حاول مرة أخرى لاحقًا.</p>
+    `;
+    return;
   }
-}
 
-@media (min-width: 1024px) {
-  .dashboard-container {
-    margin-left: 270px; /* Offset for Sidebar */
-    padding-bottom: 20px; /* No Bottom Navigation on Desktop */
+  let html = `
+    <div class="form-group">
+      <label for="botId">اختر البوت:</label>
+      <select id="botId" name="botId" required>
+        <option value="">اختر بوت</option>
+  `;
+
+  const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId && bot.userId._id === userId);
+  userBots.forEach(bot => {
+    html += `<option value="${bot._id}">${bot.name}</option>`;
+  });
+
+  html += `
+      </select>
+    </div>
+    <button id="createChatPageBtn" class="submit-btn" disabled>إنشاء صفحة دردشة</button>
+  `;
+
+  chatPageContent.innerHTML = html;
+
+  const botIdSelect = document.getElementById('botId');
+  const createChatPageBtn = document.getElementById('createChatPageBtn');
+
+  if (botIdSelect) {
+    botIdSelect.addEventListener('change', async () => {
+      const selectedBotId = botIdSelect.value;
+      createChatPageBtn.disabled = !selectedBotId;
+      console.log(`Selected bot ID: ${selectedBotId}`);
+
+      if (selectedBotId) {
+        try {
+          const response = await fetch(`/api/chat-page/bot/${selectedBotId}`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            content.innerHTML = `
+              <h2>تخصيص صفحة الدردشة</h2>
+              <div class="chat-page-settings">
+                <div class="form-group">
+                  <label for="chatLink">رابط صفحة الدردشة:</label>
+                  <div class="input-group">
+                    <input type="text" id="chatLink" value="${data.link}" readonly>
+                    <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
+                  </div>
+                </div>
+                <form id="customizationForm" class="settings-group" enctype="multipart/form-data">
+                  <div class="form-group">
+                    <label for="title">عنوان الصفحة:</label>
+                    <input type="text" id="title" name="title" value="${data.title}" required placeholder="أدخل عنوان الصفحة">
+                  </div>
+                  <div class="form-group color-picker-section">
+                    <label for="titleColor">لون نص العنوان:</label>
+                    <div class="color-picker-wrapper">
+                      <input type="color" id="titleColor" name="titleColor" value="${data.titleColor || '#ffffff'}">
+                    </div>
+                  </div>
+                  <div class="form-group color-picker-section">
+                    <h3>إعدادات الألوان:</h3>
+                    <div class="color-picker-wrapper">
+                      <label for="headerColor">لون الهيدر:</label>
+                      <input type="color" id="headerColor" name="headerColor" value="${data.colors.header}">
+                    </div>
+                    <div class="color-picker-wrapper">
+                      <label for="backgroundColor">لون الخلفية:</label>
+                      <input type="color" id="backgroundColor" name="backgroundColor" value="${data.colors.background}">
+                    </div>
+                    <div class="color-picker-wrapper">
+                      <label for="textColor">لون النص:</label>
+                      <input type="color" id="textColor" name="textColor" value="${data.colors.text}">
+                    </div>
+                    <div class="color-picker-wrapper">
+                      <label for="buttonColor">لون الأزرار:</label>
+                      <input type="color" id="buttonColor" name="buttonColor" value="${data.colors.button}">
+                    </div>
+                  </div>
+                  <div class="form-group logo-section">
+                    <label for="logo">شعار الصفحة (PNG):</label>
+                    <input type="file" id="logo" name="logo" accept="image/png">
+                    <div class="logo-preview-container">
+                      <p style="font-size: 0.8em; margin-bottom: 5px;">الشعار الحالي:</p>
+                      ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo Preview" class="logo-preview-img" />` : '<p style="font-size: 0.8em;">لا يوجد</p>'}
+                    </div>
+                    <img id="logoPreview" class="logo-preview-img" style="display: none;" alt="Logo Preview" />
+                  </div>
+                  <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled" ${data.suggestedQuestionsEnabled ? 'checked' : ''}>
+                      تفعيل الأسئلة المقترحة
+                    </label>
+                    <div id="suggestedQuestionsContainer" class="suggested-questions-container" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
+                      <h3>إدارة الأسئلة المقترحة</h3>
+                      <div class="question-input-group">
+                        <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
+                        <button type="button" id="addQuestionBtn" class="submit-btn">إضافة سؤال</button>
+                      </div>
+                      <ul id="questionsList" class="questions-list"></ul>
+                    </div>
+                  </div>
+                  <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled" ${data.imageUploadEnabled ? 'checked' : ''}>
+                      تفعيل إرفاق الصور
+                    </label>
+                  </div>
+                  <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled" ${data.darkModeEnabled ? 'checked' : ''}>
+                      تفعيل الوضع الليلي
+                    </label>
+                  </div>
+                  <button type="submit" class="submit-btn">حفظ الإعدادات</button>
+                </form>
+                <p style="font-size: 0.8em;">جميع الحقوق محفوظة © ghazal bost</p>
+              </div>
+            `;
+
+            const darkModeEnabledCheckbox = document.getElementById('darkModeEnabled');
+            if (darkModeEnabledCheckbox) {
+              document.body.classList.toggle('light', !data.darkModeEnabled);
+              darkModeEnabledCheckbox.addEventListener('change', () => {
+                document.body.classList.toggle('light', !darkModeEnabledCheckbox.checked);
+              });
+            }
+
+            const logoInput = document.getElementById('logo');
+            const logoPreview = document.getElementById('logoPreview');
+            logoInput.addEventListener('change', () => {
+              const file = logoInput.files[0];
+              if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                  logoPreview.src = e.target.result;
+                  logoPreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+              } else {
+                logoPreview.style.display = 'none';
+              }
+            });
+
+            document.getElementById('copyLinkBtn').addEventListener('click', async () => {
+              const linkInput = document.getElementById('chatLink');
+              try {
+                await navigator.clipboard.writeText(linkInput.value);
+                alert('تم نسخ الرابط بنجاح!');
+                console.log(`Link copied: ${linkInput.value}`);
+              } catch (err) {
+                console.error('خطأ في نسخ الرابط:', err);
+                alert('فشل في نسخ الرابط، حاول مرة أخرى');
+              }
+            });
+
+            const suggestedQuestionsEnabledCheckbox = document.getElementById('suggestedQuestionsEnabled');
+            const suggestedQuestionsContainer = document.getElementById('suggestedQuestionsContainer');
+            suggestedQuestionsEnabledCheckbox.addEventListener('change', () => {
+              suggestedQuestionsContainer.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
+            });
+
+            let questions = data.suggestedQuestions || [];
+            document.getElementById('addQuestionBtn').addEventListener('click', () => {
+              const newQuestionInput = document.getElementById('newQuestion');
+              const question = newQuestionInput.value.trim();
+              if (question) {
+                questions.push(question);
+                newQuestionInput.value = '';
+                updateQuestionsList();
+              } else {
+                alert('يرجى إدخال سؤال صالح');
+              }
+            });
+
+            function updateQuestionsList() {
+              const questionsList = document.getElementById('questionsList');
+              questionsList.innerHTML = '';
+              questions.forEach((question, index) => {
+                const li = document.createElement('li');
+                li.innerHTML = `
+                  ${question}
+                  <div class="question-actions">
+                    <button type="button" onclick="editQuestion(${index})">تعديل</button>
+                    <button type="button" onclick="deleteQuestion(${index})">حذف</button>
+                  </div>
+                `;
+                questionsList.appendChild(li);
+              });
+            }
+
+            window.editQuestion = (index) => {
+              const newQuestion = prompt('أدخل السؤال الجديد:', questions[index]);
+              if (newQuestion && newQuestion.trim()) {
+                questions[index] = newQuestion.trim();
+                updateQuestionsList();
+              }
+            };
+
+            window.deleteQuestion = (index) => {
+              if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
+                questions.splice(index, 1);
+                updateQuestionsList();
+              }
+            };
+
+            updateQuestionsList();
+
+            document.getElementById('customizationForm').addEventListener('submit', async (e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              formData.set('title', formData.get('title'));
+              formData.set('titleColor', formData.get('titleColor'));
+              formData.set('colors', JSON.stringify({
+                header: formData.get('headerColor'),
+                background: formData.get('backgroundColor'),
+                text: formData.get('textColor'),
+                button: formData.get('buttonColor'),
+              }));
+              formData.set('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on' ? 'true' : 'false');
+              formData.set('suggestedQuestions', JSON.stringify(questions));
+              formData.set('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on' ? 'true' : 'false');
+              formData.set('darkModeEnabled', formData.get('darkModeEnabled') === 'on' ? 'true' : 'false');
+
+              try {
+                const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
+                  method: 'PUT',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                  },
+                  body: formData,
+                });
+
+                if (!response.ok) {
+                  throw new Error(`فشل في حفظ الإعدادات: ${response.status} ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                if (result.logoUrl) {
+                  document.querySelector('.logo-preview-container p').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" class="logo-preview-img" />`;
+                  logoPreview.src = result.logoUrl;
+                  logoPreview.style.display = 'block';
+                }
+                alert('تم حفظ الإعدادات بنجاح!');
+              } catch (err) {
+                console.error('خطأ في حفظ الإعدادات:', err);
+                alert('فشل في حفظ الإعدادات، حاول مرة أخرى');
+              }
+            });
+          } else {
+            createChatPageBtn.style.display = 'block';
+          }
+        } catch (err) {
+          console.error('خطأ في جلب صفحة الدردشة:', err);
+          createChatPageBtn.style.display = 'block';
+        }
+      }
+    });
+  } else {
+    console.error('botId select element not found in DOM');
   }
-}
 
-/* Bottom Navigation */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-around;
-  background: var(--glass-bg);
-  backdrop-filter: blur(10px);
-  padding: 10px 0;
-  box-shadow: var(--shadow);
-  z-index: 1000;
-  height: 60px; /* Fixed height for Bottom Navigation */
-}
-
-.nav-item {
-  background: none;
-  border: none;
-  color: var(--text-dark);
-  font-size: 0.9em;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 5px;
-  transition: color 0.3s;
-  cursor: pointer;
-}
-
-.nav-item:hover, .nav-item.active {
-  color: var(--accent);
-}
-
-.nav-item i {
-  margin-bottom: 5px;
-}
-
-@media (min-width: 1024px) {
-  .bottom-nav {
-    display: none !important; /* Ensure Bottom Navigation is hidden on desktop */
-  }
-  .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 250px;
-    height: 100%;
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    padding: 20px;
-    box-shadow: var(--shadow);
-    z-index: 1000;
-  }
-  .sidebar .nav-item {
-    display: block;
-    padding: 15px;
-    margin: 10px 0;
-    border-radius: 8px;
-    cursor: pointer;
-  }
-  .sidebar .nav-item:hover {
-    background: var(--primary);
-    color: white;
-  }
-}
-
-/* Typography */
-h1, .form-group h3, .form-group h4 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: var(--text-dark);
-}
-
-body.light h1, body.light .form-group h3, body.light .form-group h4 {
-  color: var(--text-light);
-}
-
-/* Form Elements */
-.form-group {
-  margin-bottom: 20px;
-  position: relative;
-}
-
-.form-group label {
-  position: absolute;
-  top: 12px;
-  right: 15px;
-  color: var(--text-dark);
-  transition: all 0.2s;
-  pointer-events: none;
-}
-
-body.light .form-group label {
-  color: var(--text-light);
-}
-
-.form-group input:not([type="checkbox"]):not([type="color"]):not([type="file"]):focus + label,
-.form-group input:not([type="checkbox"]):not([type="color"]):not([type="file"]):not(:placeholder-shown) + label,
-.form-group textarea:focus + label,
-.form-group textarea:not(:placeholder-shown) + label,
-.form-group select:focus + label,
-.form-group select:not(:placeholder-shown) + label {
-  top: -20px;
-  font-size: 0.8em;
-  color: var(--accent);
-}
-
-input, textarea, select {
-  width: 100%;
-  padding: 12px;
-  border: 1px solid transparent;
-  background: var(--glass-bg);
-  color: var(--text-dark);
-  border-radius: 8px;
-  transition: all 0.3s;
-}
-
-body.light input, body.light textarea, body.light select {
-  background: #fff;
-  border: 1px solid #ddd;
-  color: #000;
-}
-
-input:focus, textarea:focus, select:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 5px var(--accent);
-}
-
-select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background: url('data:image/svg+xml;utf8,<svg fill="%23ffffff" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 10px center;
-  background-size: 20px;
-  padding-right: 30px;
-}
-
-body.light select {
-  background: url('data:image/svg+xml;utf8,<svg fill="%23000000" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 10px center;
-}
-
-select option {
-  color: #000;
-}
-
-.form-group input[type="checkbox"] {
-  margin-right: 10px;
-  width: auto;
-}
-
-/* Color Picker Buttons */
-.color-picker-section {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.color-picker-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 0;
-}
-
-.color-picker-wrapper label {
-  position: static;
-  color: var(--text-dark);
-  font-size: 1em;
-  margin-right: 10px;
-}
-
-body.light .color-picker-wrapper label {
-  color: var(--text-light);
-}
-
-.form-group input[type="color"] {
-  width: 40px;
-  height: 40px;
-  padding: 0;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.form-group input[type="color"] + label {
-  position: static;
-  display: block;
-  margin-bottom: 5px;
-  pointer-events: auto;
-}
-
-.color-picker-btn {
-  width: 40px;
-  height: 40px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.color-picker-btn:hover {
-  transform: scale(1.1);
-}
-
-/* Checkbox Styling */
-.checkbox-group {
-  margin-bottom: 20px;
-  padding: 10px;
-  border-radius: 8px;
-  background: var(--glass-bg);
-  backdrop-filter: blur(10px);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-body.light .checkbox-group {
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
-.checkbox-group label {
-  position: static;
-  pointer-events: auto;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--text-dark);
-  padding: 5px 0;
-}
-
-body.light .checkbox-label {
-  color: var(--text-light);
-}
-
-/* Logo and Settings Sections */
-.logo-section, .settings-section {
-  padding: 15px;
-  border-radius: 8px;
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  box-shadow: var(--shadow);
-  margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-body.light .logo-section, body.light .settings-section {
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
-.logo-section h3, .settings-section h3, .settings-section integrar {
-  margin-top: 0;
-}
-
-.form-group input[type="file"] {
-  background: var(--glass-bg);
-  border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 8px;
-  color: var(--text-dark);
-}
-
-body.light .form-group input[type="file"] {
-  background: #fff;
-  border: 1px solid #ddd;
-  color: var(--text-light);
-}
-
-.form-group input[type="file"] + label {
-  position: static;
-  display: block;
-  margin-bottom: 5px;
-  pointer-events: auto;
-}
-
-.logo-preview-container {
-  margin-top: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.logo-preview-img {
-  max-width: 100px;
-  height: auto;
-  display: block;
-}
-
-/* Settings Group */
-.settings-group {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  margin-bottom: 20px;
-}
-
-/* Suggested Questions Section */
-.suggested-questions-container {
-  padding: 15px;
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  margin-top: 15px;
-  margin-bottom: 20px;
-}
-
-body.light .suggested-questions-container {
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
-.question-input-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 15px;
-}
-
-.question-input-group input {
-  flex: 1;
-  min-width: 200px;
-}
-
-.question-input-group button {
-  padding: 8px 16px;
-}
-
-.questions-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.questions-list li {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-body.light .questions-list li {
-  border-bottom: 1px solid #ddd;
-}
-
-.questions-list li:last-child {
-  border-bottom: none;
-}
-
-.question-actions {
-  display: flex;
-  gap: 5px;
-}
-
-.question-actions button {
-  padding: 5px 10px;
-  font-size: 0.9em;
-}
-
-/* Buttons */
-button {
-  background: var(--primary);
-  color: white;
-  padding: 12px 24px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-button:hover {
-  background: #4500a1;
-  transform: translateY(-2px);
-}
-
-button:active {
-  transform: translateY(0);
-}
-
-.rule-type-btn {
-  background: var(--glass-bg);
-  color: var(--text-dark);
-  padding: 10px 20px;
-  border-radius: 20px;
-  transition: all 0.3s;
-}
-
-body.light .rule-type-btn {
-  background: #e0e0e0;
-  color: var(--text-light);
-}
-
-.rule-type-btn.active {
-  background: var(--primary);
-  color: white;
-}
-
-.rule-type-btn:hover {
-  background: var(--secondary);
-}
-
-/* Rules Page */
-.rules-container {
-  display: grid;
-  gap: 20px;
-}
-
-.rule-tabs {
-  display: flex;
-  gap: 10px;
-  overflow-x: auto;
-  padding-bottom: 10px;
-}
-
-.rules-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.rule-card {
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-  transition: transform 0.3s;
-}
-
-body.light .rule-card {
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
-.rule-card:hover {
-  transform: translateY(-5px);
-}
-
-.card-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-
-.card-actions button {
-  flex: 1;
-}
-
-/* Bots Page */
-.bots-container {
-  display: grid;
-  gap: 20px;
-  overflow-y: auto;
-  height: 100%;
-}
-
-.admin-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-  position: sticky;
-  top: 0;
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  padding: 10px;
-  z-index: 100;
-  border-radius: 8px;
-}
-
-@media (max-width: 600px) {
-  .admin-actions {
-    display: none;
-  }
-}
-
-@media (min-width: 1024px) {
-  .admin-actions {
-    display: flex;
-  }
-}
-
-.users-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.user-card {
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-  transition: transform 0.3s;
-}
-
-body.light .user-card {
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
-.user-card:hover {
-  transform: translateY(-5px);
-}
-
-/* Analytics Page */
-.analytics-container {
-  display: grid;
-  gap: 20px;
-}
-
-#analyticsData {
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-}
-
-body.light #analyticsData {
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
-/* Chat Page */
-.chat-container {
-  display: grid;
-  gap: 20px;
-}
-
-.chat-page-settings {
-  padding: 15px;
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-}
-
-body.light .chat-page-settings {
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
-#chatHeader {
-  padding: 10px;
-  text-align: center;
-  border-radius: 8px 8px 0 0;
-}
-
-#chatLogo {
-  max-height: 50px;
-  margin-right: 10px;
-}
-
-#chatTitle {
-  margin: 0;
-  display: inline;
-}
-
-#chatMessages {
-  height: 300px;
-  overflow-y: auto;
-  margin-bottom: 20px;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
-.message {
-  margin: 5px 0;
-  padding: 8px;
-  border-radius: 5px;
-}
-
-.user-message {
-  background-color: #007bff;
-  color: white;
-  text-align: right;
-}
-
-.bot-message {
-  background-color: #e9ecef;
-  text-align: left;
-}
-
-.suggested-question {
-  margin: 5px;
-  padding: 8px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  color: white;
-}
-
-/* Spinner */
-.spinner {
-  display: none;
-  justify-content: center;
-  align-items: center;
-  height: 100px;
-}
-
-.loader {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid var(--primary);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Error */
-#error {
-  text-align: center;
-  margin-top: 10px;
-  color: #dc3545;
-}
-
-/* Input Group for Chat Link */
-.input-group {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.input-group input {
-  flex: 1;
-  min-width: 200px;
-}
-
-/* Responsive Design */
-@media (max-width: 600px) {
-  .rules-grid, .users-grid {
-    grid-template-columns: 1fr;
-  }
-  .admin-actions {
-    display: none;
-  }
-  .bottom-nav {
-    height: 60px;
-  }
-  .color-picker-wrapper {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .color-picker-wrapper label {
-    margin-bottom: 5px;
-  }
-  .question-input-group {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .question-input-group input {
-    min-width: 100%;
-  }
-  .input-group {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .input-group input {
-    min-width: 100%;
+  if (createChatPageBtn) {
+    createChatPageBtn.addEventListener('click', async () => {
+      const selectedBotId = botIdSelect.value;
+      if (!selectedBotId) {
+        alert('يرجى اختيار بوت أولاً');
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/chat-page', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: localStorage.getItem('userId'),
+            botId: selectedBotId,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`فشل في إنشاء صفحة الدردشة: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        content.innerHTML = `
+          <h2>تخصيص صفحة الدردشة</h2>
+          <div class="chat-page-settings">
+            <div class="form-group">
+              <label for="chatLink">رابط صفحة الدردشة:</label>
+              <div class="input-group">
+                <input type="text" id="chatLink" value="${data.link}" readonly>
+                <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
+              </div>
+            </div>
+            <form id="customizationForm" class="settings-group" enctype="multipart/form-data">
+              <div class="form-group">
+                <label for="title">عنوان الصفحة:</label>
+                <input type="text" id="title" name="title" value="صفحة دردشة" required placeholder="أدخل عنوان الصفحة">
+              </div>
+              <div class="form-group color-picker-section">
+                <label for="titleColor">لون نص العنوان:</label>
+                <div class="color-picker-wrapper">
+                  <input type="color" id="titleColor" name="titleColor" value="#ffffff">
+                </div>
+              </div>
+              <div class="form-group color-picker-section">
+                <h3>إعدادات الألوان:</h3>
+                <div class="color-picker-wrapper">
+                  <label for="headerColor">لون الهيدر:</label>
+                  <input type="color" id="headerColor" name="headerColor" value="#007bff">
+                </div>
+                <div class="color-picker-wrapper">
+                  <label for="backgroundColor">لون الخلفية:</label>
+                  <input type="color" id="backgroundColor" name="backgroundColor" value="#f8f9fa">
+                </div>
+                <div class="color-picker-wrapper">
+                  <label for="textColor">لون النص:</label>
+                  <input type="color" id="textColor" name="textColor" value="#333333">
+                </div>
+                <div class="color-picker-wrapper">
+                  <label for="buttonColor">لون الأزرار:</label>
+                  <input type="color" id="buttonColor" name="buttonColor" value="#007bff">
+                </div>
+              </div>
+              <div class="form-group logo-section">
+                <label for="logo">شعار الصفحة (PNG):</label>
+                <input type="file" id="logo" name="logo" accept="image/png">
+                <div class="logo-preview-container">
+                  <p style="font-size: 0.8em; margin-bottom: 5px;">يفضل شعار بدون خلفية أو بنفس خلفية الهيدر</p>
+                </div>
+                <img id="logoPreview" class="logo-preview-img" style="display: none;" alt="Logo Preview" />
+              </div>
+              <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled">
+                  تفعيل الأسئلة المقترحة
+                </label>
+                <div id="suggestedQuestionsContainer" class="suggested-questions-container" style="display: none;">
+                  <h3>إدارة الأسئلة المقترحة</h3>
+                  <div class="question-input-group">
+                    <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
+                    <button type="button" id="addQuestionBtn" class="submit-btn">إضافة سؤال</button>
+                  </div>
+                  <ul id="questionsList" class="questions-list"></ul>
+                </div>
+              </div>
+              <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled">
+                  تفعيل إرفاق الصور
+                </label>
+              </div>
+              <div class="form-group checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled">
+                  تفعيل الوضع الليلي
+                </label>
+              </div>
+              <button type="submit" class="submit-btn">حفظ الإعدادات</button>
+            </form>
+            <p style="font-size: 0.8em;">جميع الحقوق محفوظة © ghazal bost</p>
+          </div>
+        `;
+
+        const darkModeEnabledCheckbox = document.getElementById('darkModeEnabled');
+        if (darkModeEnabledCheckbox) {
+          document.body.classList.toggle('light', !darkModeEnabledCheckbox.checked);
+          darkModeEnabledCheckbox.addEventListener('change', () => {
+            document.body.classList.toggle('light', !darkModeEnabledCheckbox.checked);
+          });
+        }
+
+        const logoInput = document.getElementById('logo');
+        const logoPreview = document.getElementById('logoPreview');
+        logoInput.addEventListener('change', () => {
+          const file = logoInput.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+              logoPreview.src = e.target.result;
+              logoPreview.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+          } else {
+            logoPreview.style.display = 'none';
+          }
+        });
+
+        document.getElementById('copyLinkBtn').addEventListener('click', async () => {
+          const linkInput = document.getElementById('chatLink');
+          try {
+            await navigator.clipboard.writeText(linkInput.value);
+            alert('تم نسخ الرابط بنجاح!');
+            console.log(`Link copied: ${linkInput.value}`);
+          } catch (err) {
+            console.error('خطأ في نسخ الرابط:', err);
+            alert('فشل في نسخ الرابط، حاول مرة أخرى');
+          }
+        });
+
+        const suggestedQuestionsEnabledCheckbox = document.getElementById('suggestedQuestionsEnabled');
+        const suggestedQuestionsContainer = document.getElementById('suggestedQuestionsContainer');
+        suggestedQuestionsEnabledCheckbox.addEventListener('change', () => {
+          suggestedQuestionsContainer.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
+        });
+
+        let questions = [];
+        document.getElementById('addQuestionBtn').addEventListener('click', () => {
+          const newQuestionInput = document.getElementById('newQuestion');
+          const question = newQuestionInput.value.trim();
+          if (question) {
+            questions.push(question);
+            newQuestionInput.value = '';
+            updateQuestionsList();
+          } else {
+            alert('يرجى إدخال سؤال صالح');
+          }
+        });
+
+        function updateQuestionsList() {
+          const questionsList = document.getElementById('questionsList');
+          questionsList.innerHTML = '';
+          questions.forEach((question, index) => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+              ${question}
+              <div class="question-actions">
+                <button type="button" onclick="editQuestion(${index})">تعديل</button>
+                <button type="button" onclick="deleteQuestion(${index})">حذف</button>
+              </div>
+            `;
+            questionsList.appendChild(li);
+          });
+        }
+
+        window.editQuestion = (index) => {
+          const newQuestion = prompt('أدخل السؤال الجديد:', questions[index]);
+          if (newQuestion && newQuestion.trim()) {
+            questions[index] = newQuestion.trim();
+            updateQuestionsList();
+          }
+        };
+
+        window.deleteQuestion = (index) => {
+          if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
+            questions.splice(index, 1);
+            updateQuestionsList();
+          }
+        };
+
+        document.getElementById('customizationForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          formData.set('title', formData.get('title'));
+          formData.set('titleColor', formData.get('titleColor'));
+          formData.set('colors', JSON.stringify({
+            header: formData.get('headerColor'),
+            background: formData.get('backgroundColor'),
+            text: formData.get('textColor'),
+            button: formData.get('buttonColor'),
+          }));
+          formData.set('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on' ? 'true' : 'false');
+          formData.set('suggestedQuestions', JSON.stringify(questions));
+          formData.set('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on' ? 'true' : 'false');
+          formData.set('darkModeEnabled', formData.get('darkModeEnabled') === 'on' ? 'true' : 'false');
+
+          try {
+            const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
+              method: 'PUT',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+              },
+              body: formData,
+            });
+
+            if (!response.ok) {
+              throw new Error(`فشل في حفظ الإعدادات: ${response.status} ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            if (result.logoUrl) {
+              document.querySelector('.logo-preview-container p').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" class="logo-preview-img" />`;
+              logoPreview.src = result.logoUrl;
+              logoPreview.style.display = 'block';
+            }
+            alert('تم حفظ الإعدادات بنجاح!');
+          } catch (err) {
+            console.error('خطأ في حفظ الإعدادات:', err);
+            alert('فشل في حفظ الإعدادات، حاول مرة أخرى');
+          }
+        });
+      } catch (err) {
+        console.error('خطأ في إنشاء صفحة الدردشة:', err);
+        content.innerHTML = `
+          <p style="color: red;">تعذر إنشاء صفحة الدردشة، حاول مرة أخرى لاحقًا.</p>
+        `;
+      }
+    });
+  } else {
+    console.error('createChatPageBtn not found in DOM');
   }
 }
