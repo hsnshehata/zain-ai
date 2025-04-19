@@ -65,9 +65,15 @@ async function loadRulesPage() {
   const ruleForm = document.getElementById('ruleForm');
   const rulesList = document.getElementById('rulesList');
 
+  // Clear the dropdown before populating to avoid duplicates
+  botIdSelect.innerHTML = '<option value="">اختر بوت</option>';
+
   const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
   userBots.forEach(bot => {
-    botIdSelect.innerHTML += `<option value="${bot._id}">${bot.name}</option>`;
+    const option = document.createElement('option');
+    option.value = bot._id;
+    option.textContent = bot.name;
+    botIdSelect.appendChild(option);
   });
 
   if (botIdSelect && userBots.length > 0) {
