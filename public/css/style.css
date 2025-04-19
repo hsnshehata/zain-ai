@@ -1,8 +1,8 @@
 :root {
-  --primary-color: #1e3a8a; /* لون أساسي غامق أنيق */
-  --secondary-color: #3b82f6; /* لون ثانوي زاهي */
-  --accent-color: #10b981; /* لون مميز للأزرار */
-  --background-color: #f1f5f9; /* خلفية فاتحة */
+  --primary-color: #1e3a8a; /* أزرق غامق أنيق */
+  --secondary-color: #4b6cb7; /* أزرق متوسط للأزرار */
+  --accent-color: #ffffff; /* أبيض للتباين */
+  --background-color: #f3f4f6; /* رمادي فاتح مريح */
   --card-background: rgba(255, 255, 255, 0.95); /* خلفية زجاجية */
   --text-color: #1f2937; /* نص غامق */
   --border-radius: 12px;
@@ -18,7 +18,7 @@
 }
 
 body {
-  background: linear-gradient(135deg, var(--background-color), #e2e8f0);
+  background: linear-gradient(135deg, var(--background-color), #e5e7eb);
   color: var(--text-color);
   direction: rtl;
   min-height: 100vh;
@@ -34,7 +34,7 @@ body {
   width: 60px;
   height: 60px;
   border: 5px solid var(--secondary-color);
-  border-top-color: var(--accent-color);
+  border-top-color: var(--primary-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   z-index: 1000;
@@ -84,8 +84,8 @@ h1, h2, h3 {
 
 /* الأزرار العامة */
 button, .submit-btn, .rule-type-btn {
-  background: linear-gradient(45deg, var(--secondary-color), var(--accent-color));
-  color: white;
+  background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+  color: var(--accent-color);
   border: none;
   padding: 0.75rem 1.5rem;
   border-radius: 8px;
@@ -199,7 +199,7 @@ th, td {
 
 th {
   background: var(--primary-color);
-  color: white;
+  color: var(--accent-color);
 }
 
 tr:hover {
@@ -221,7 +221,7 @@ tr:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
+  color: var(--accent-color);
 }
 
 .header-content {
@@ -262,7 +262,7 @@ tr:hover {
 }
 
 #suggestedQuestions button {
-  background: var(--accent-color);
+  background: var(--secondary-color);
   padding: 0.5rem 1rem;
   font-size: 0.9rem;
 }
@@ -277,7 +277,7 @@ tr:hover {
 }
 
 .rule-type-btn.active {
-  background: var(--accent-color);
+  background: var(--primary-color);
   transform: scale(1.05);
 }
 
