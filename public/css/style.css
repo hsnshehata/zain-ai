@@ -143,31 +143,18 @@ body.light h1, body.light .form-group h3, body.light .form-group h4 {
 /* Form Elements */
 .form-group {
   margin-bottom: 20px;
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .form-group label {
-  position: absolute;
-  top: 12px;
-  right: 15px;
   color: var(--text-dark);
-  transition: all 0.2s;
-  pointer-events: none;
+  font-size: 1em;
 }
 
 body.light .form-group label {
   color: var(--text-light);
-}
-
-.form-group input:not([type="checkbox"]):not([type="color"]):not([type="file"]):focus + label,
-.form-group input:not([type="checkbox"]):not([type="color"]):not([type="file"]):not(:placeholder-shown) + label,
-.form-group textarea:focus + label,
-.form-group textarea:not(:placeholder-shown) + label,
-.form-group select:focus + label,
-.form-group select:not(:placeholder-shown) + label {
-  top: -20px;
-  font-size: 0.8em;
-  color: var(--accent);
 }
 
 input, textarea, select {
@@ -228,7 +215,6 @@ select option {
 }
 
 .color-picker-wrapper label {
-  position: static;
   color: var(--text-dark);
   font-size: 1em;
   margin-right: 10px;
@@ -245,13 +231,6 @@ body.light .color-picker-wrapper label {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-}
-
-.form-group input[type="color"] + label {
-  position: static;
-  display: block;
-  margin-bottom: 5px;
-  pointer-events: auto;
 }
 
 .color-picker-btn {
@@ -284,11 +263,6 @@ body.light .checkbox-group {
   border: 1px solid #ddd;
 }
 
-.checkbox-group label {
-  position: static;
-  pointer-events: auto;
-}
-
 .checkbox-label {
   display: flex;
   align-items: center;
@@ -319,7 +293,7 @@ body.light .logo-section, body.light .settings-section {
   border: 1px solid #ddd;
 }
 
-.logo-section h3, .settings-section h3, .settings-section integrar {
+.logo-section h3, .settings-section h3, .settings-section h4 {
   margin-top: 0;
 }
 
@@ -335,13 +309,6 @@ body.light .form-group input[type="file"] {
   background: #fff;
   border: 1px solid #ddd;
   color: var(--text-light);
-}
-
-.form-group input[type="file"] + label {
-  position: static;
-  display: block;
-  margin-bottom: 5px;
-  pointer-events: auto;
 }
 
 .logo-preview-container {
