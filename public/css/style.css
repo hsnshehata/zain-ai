@@ -214,6 +214,13 @@ select option {
 }
 
 /* Color Picker Buttons */
+.color-picker-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
 .color-picker-btn {
   width: 40px;
   height: 40px;
@@ -225,12 +232,6 @@ select option {
 
 .color-picker-btn:hover {
   transform: scale(1.1);
-}
-
-.form-group .color-picker-wrapper {
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 
 /* Buttons */
