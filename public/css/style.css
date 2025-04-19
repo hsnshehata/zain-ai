@@ -304,6 +304,18 @@ body.light .rule-card {
   border-radius: 8px;
 }
 
+@media (max-width: 600px) {
+  .admin-actions {
+    display: none; /* Hide admin actions on mobile */
+  }
+}
+
+@media (min-width: 1024px) {
+  .admin-actions {
+    display: flex; /* Show admin actions on desktop */
+  }
+}
+
 .users-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -347,17 +359,23 @@ body.light #analyticsData {
   border: 1px solid #ddd;
 }
 
-/* Chat Page (Unchanged) */
-.chat-page-settings, #suggestedQuestionsContainer {
-  padding: 15px;
-  background-color: #f9f9f9;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+/* Chat Page */
+.chat-container {
+  display: grid;
+  gap: 20px;
 }
 
-.chat-page-settings {
-  background-color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+.chat-page-settings, #suggestedQuestionsContainer {
+  padding: 15px;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+body.light .chat-page-settings, body.light #suggestedQuestionsContainer {
+  background: #fff;
+  border: 1px solid #ddd;
 }
 
 #chatHeader {
@@ -446,11 +464,7 @@ body.light #analyticsData {
     grid-template-columns: 1fr;
   }
   .admin-actions {
-    flex-direction: column;
-    position: static; /* Remove sticky on mobile */
-  }
-  .admin-actions button {
-    width: 100%;
+    display: none; /* Already added above */
   }
   .bottom-nav {
     height: 60px; /* Fixed height */
