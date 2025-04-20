@@ -170,7 +170,7 @@ async function loadChatPage() {
               </div>
               <div class="settings-section">
                 <form id="customizationForm" class="settings-group" enctype="multipart/form-data">
-                  <div class="form-group">
+                  ㄷ<div class="form-group">
                     <label for="title">عنوان الصفحة:</label>
                     <input type="text" id="title" name="title" value="${data.title}" required placeholder="أدخل عنوان الصفحة">
                   </div>
