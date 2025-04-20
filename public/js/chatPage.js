@@ -1,9 +1,4 @@
 async function loadChatPage() {
-  // Load the vanilla-picker library
-  const pickerScript = document.createElement('script');
-  pickerScript.src = '/js/vanilla-picker.min.js';
-  document.head.appendChild(pickerScript);
-
   const content = document.getElementById('content');
   const role = localStorage.getItem('role');
   const userId = localStorage.getItem('userId');
@@ -95,11 +90,11 @@ async function loadChatPage() {
                       <div id="header-settings" class="settings-popup" style="display: none;">
                         <div class="color-picker-wrapper">
                           <label for="titleColor">لون نص العنوان:</label>
-                          <span class="color-preview" id="titleColorPreview" data-color-id="titleColor" style="background-color: ${data.titleColor || '#ffffff'};"></span>
+                          <input type="color" class="color-input" id="titleColorInput" data-color-id="titleColor" value="${data.titleColor || '#ffffff'}">
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="headerColor">لون الهيدر:</label>
-                          <span class="color-preview" id="headerColorPreview" data-color-id="headerColor" style="background-color: ${data.colors.header};"></span>
+                          <input type="color" class="color-input" id="headerColorInput" data-color-id="headerColor" value="${data.colors.header}">
                         </div>
                       </div>
                     </div>
@@ -112,27 +107,27 @@ async function loadChatPage() {
                       <div id="messages-settings" class="settings-popup" style="display: none;">
                         <div class="color-picker-wrapper">
                           <label for="chatAreaBackgroundColor">لون خلفية مربع الدردشة:</label>
-                          <span class="color-preview" id="chatAreaBackgroundColorPreview" data-color-id="chatAreaBackgroundColor" style="background-color: ${data.colors.chatAreaBackground || '#ffffff'};"></span>
+                          <input type="color" class="color-input" id="chatAreaBackgroundColorInput" data-color-id="chatAreaBackgroundColor" value="${data.colors.chatAreaBackground || '#ffffff'}">
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="textColor">لون النص العام:</label>
-                          <span class="color-preview" id="textColorPreview" data-color-id="textColor" style="background-color: ${data.colors.text};"></span>
+                          <input type="color" class="color-input" id="textColorInput" data-color-id="textColor" value="${data.colors.text}">
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="userMessageBackgroundColor">لون فقاعة المستخدم:</label>
-                          <span class="color-preview" id="userMessageBackgroundColorPreview" data-color-id="userMessageBackgroundColor" style="background-color: ${data.colors.userMessageBackground || '#007bff'};"></span>
+                          <input type="color" class="color-input" id="userMessageBackgroundColorInput" data-color-id="userMessageBackgroundColor" value="${data.colors.userMessageBackground || '#007bff'}">
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="userMessageTextColor">لون نص المستخدم:</label>
-                          <span class="color-preview" id="userMessageTextColorPreview" data-color-id="userMessageTextColor" style="background-color: ${data.colors.userMessageTextColor || '#ffffff'};"></span>
+                          <input type="color" class="color-input" id="userMessageTextColorInput" data-color-id="userMessageTextColor" value="${data.colors.userMessageTextColor || '#ffffff'}">
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="botMessageBackgroundColor">لون فقاعة البوت:</label>
-                          <span class="color-preview" id="botMessageBackgroundColorPreview" data-color-id="botMessageBackgroundColor" style="background-color: ${data.colors.botMessageBackground || '#e9ecef'};"></span>
+                          <input type="color" class="color-input" id="botMessageBackgroundColorInput" data-color-id="botMessageBackgroundColor" value="${data.colors.botMessageBackground || '#e9ecef'}">
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="botMessageTextColor">لون نص البوت:</label>
-                          <span class="color-preview" id="botMessageTextColorPreview" data-color-id="botMessageTextColor" style="background-color: ${data.colors.botMessageTextColor || '#000000'};"></span>
+                          <input type="color" class="color-input" id="botMessageTextColorInput" data-color-id="botMessageTextColor" value="${data.colors.botMessageTextColor || '#000000'}">
                         </div>
                       </div>
                     </div>
@@ -144,7 +139,7 @@ async function loadChatPage() {
                       <div id="suggested-questions-settings" class="settings-popup" style="display: none;">
                         <div class="color-picker-wrapper">
                           <label for="buttonColor">لون الأزرار المقترحة:</label>
-                          <span class="color-preview" id="buttonColorPreview" data-color-id="buttonColor" style="background-color: ${data.colors.button};"></span>
+                          <input type="color" class="color-input" id="buttonColorInput" data-color-id="buttonColor" value="${data.colors.button}">
                         </div>
                       </div>
                     </div>
@@ -158,15 +153,15 @@ async function loadChatPage() {
                       <div id="input-settings" class="settings-popup" style="display: none;">
                         <div class="color-picker-wrapper">
                           <label for="backgroundColor">لون الخلفية:</label>
-                          <span class="color-preview" id="backgroundColorPreview" data-color-id="backgroundColor" style="background-color: ${data.colors.background};"></span>
+                          <input type="color" class="color-input" id="backgroundColorInput" data-color-id="backgroundColor" value="${data.colors.background}">
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="inputTextColor">لون نص مربع الإدخال:</label>
-                          <span class="color-preview" id="inputTextColorPreview" data-color-id="inputTextColor" style="background-color: ${data.colors.inputTextColor || '#333333'};"></span>
+                          <input type="color" class="color-input" id="inputTextColorInput" data-color-id="inputTextColor" value="${data.colors.inputTextColor || '#333333'}">
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="buttonColorInput">لون زر الإرسال:</label>
-                          <span class="color-preview" id="buttonColorInputPreview" data-color-id="buttonColorInput" style="background-color: ${data.colors.button};"></span>
+                          <input type="color" class="color-input" id="buttonColorInputInput" data-color-id="buttonColorInput" value="${data.colors.button}">
                         </div>
                       </div>
                     </div>
@@ -258,19 +253,19 @@ async function loadChatPage() {
             botMessage.style.backgroundColor = colorValues.botMessageBackgroundColor;
             botMessage.style.color = colorValues.botMessageTextColor;
 
-            // Update color previews
-            document.getElementById('titleColorPreview').style.backgroundColor = colorValues.titleColor;
-            document.getElementById('headerColorPreview').style.backgroundColor = colorValues.headerColor;
-            document.getElementById('chatAreaBackgroundColorPreview').style.backgroundColor = colorValues.chatAreaBackgroundColor;
-            document.getElementById('textColorPreview').style.backgroundColor = colorValues.textColor;
-            document.getElementById('userMessageBackgroundColorPreview').style.backgroundColor = colorValues.userMessageBackgroundColor;
-            document.getElementById('userMessageTextColorPreview').style.backgroundColor = colorValues.userMessageTextColor;
-            document.getElementById('botMessageBackgroundColorPreview').style.backgroundColor = colorValues.botMessageBackgroundColor;
-            document.getElementById('botMessageTextColorPreview').style.backgroundColor = colorValues.botMessageTextColor;
-            document.getElementById('buttonColorPreview').style.backgroundColor = colorValues.buttonColor;
-            document.getElementById('backgroundColorPreview').style.backgroundColor = colorValues.backgroundColor;
-            document.getElementById('inputTextColorPreview').style.backgroundColor = colorValues.inputTextColor;
-            document.getElementById('buttonColorInputPreview').style.backgroundColor = colorValues.buttonColorInput;
+            // Update color inputs
+            document.getElementById('titleColorInput').value = colorValues.titleColor;
+            document.getElementById('headerColorInput').value = colorValues.headerColor;
+            document.getElementById('chatAreaBackgroundColorInput').value = colorValues.chatAreaBackgroundColor;
+            document.getElementById('textColorInput').value = colorValues.textColor;
+            document.getElementById('userMessageBackgroundColorInput').value = colorValues.userMessageBackgroundColor;
+            document.getElementById('userMessageTextColorInput').value = colorValues.userMessageTextColor;
+            document.getElementById('botMessageBackgroundColorInput').value = colorValues.botMessageBackgroundColor;
+            document.getElementById('botMessageTextColorInput').value = colorValues.botMessageTextColor;
+            document.getElementById('buttonColorInput').value = colorValues.buttonColor;
+            document.getElementById('backgroundColorInput').value = colorValues.backgroundColor;
+            document.getElementById('inputTextColorInput').value = colorValues.inputTextColor;
+            document.getElementById('buttonColorInputInput').value = colorValues.buttonColorInput;
           }
 
           // Handle gear buttons to show/hide settings popups
@@ -289,99 +284,20 @@ async function loadChatPage() {
             });
           });
 
-          // Wait for vanilla-picker to load before initializing color pickers
-          pickerScript.onload = () => {
-            if (!window.VanillaPicker) {
-              console.error('Failed to load vanilla-picker: window.VanillaPicker is undefined');
-              alert('تعذر تحميل مكتبة الألوان، تأكد من وجود ملف vanilla-picker.min.js في مجلد /js');
-              return;
-            }
-            console.log('vanilla-picker loaded successfully');
-
-            // Ensure DOM is fully rendered before attaching listeners
-            setTimeout(() => {
-              const colorPickers = {};
-
-              const previews = document.querySelectorAll('.color-preview');
-              console.log(`Found ${previews.length} color-preview elements`);
-              previews.forEach(preview => {
-                const colorId = preview.getAttribute('data-color-id');
-                const initialColor = colorValues[colorId];
-                console.log(`Initializing color picker for ${colorId} with initial color ${initialColor}`);
-
-                // Create a container for the color picker
-                const pickerContainer = document.createElement('div');
-                pickerContainer.className = 'color-picker-container';
-                pickerContainer.style.position = 'absolute';
-                pickerContainer.style.zIndex = '1004';
-                pickerContainer.style.display = 'none';
-                preview.parentNode.appendChild(pickerContainer);
-                console.log(`Created pickerContainer for ${colorId}`);
-
-                // Initialize vanilla-picker
-                try {
-                  const colorPicker = new VanillaPicker({
-                    parent: pickerContainer,
-                    color: initialColor,
-                    popup: 'top',
-                    alpha: false,
-                    onChange: (color) => {
-                      const hex = color.hex.substring(0, 7); // Remove alpha if present
-                      colorValues[colorId] = hex;
-                      updatePreviewStyles();
-                      console.log(`Color changed for ${colorId}: ${hex}`);
-                    },
-                  });
-
-                  colorPickers[colorId] = { picker: colorPicker, container: pickerContainer };
-                  console.log(`Color picker initialized for ${colorId}`);
-
-                  // Show/hide color picker on click
-                  preview.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    console.log(`Color preview clicked: ${colorId}`);
-                    const isVisible = pickerContainer.style.display === 'block';
-                    // Hide all other pickers
-                    Object.values(colorPickers).forEach(({ container }) => {
-                      container.style.display = 'none';
-                    });
-                    // Toggle the clicked picker
-                    if (!isVisible) {
-                      pickerContainer.style.display = 'block';
-                      const rect = preview.getBoundingClientRect();
-                      const scrollY = window.scrollY || window.pageYOffset;
-                      const scrollX = window.scrollX || window.pageXOffset;
-                      const top = rect.bottom + scrollY + 5;
-                      const left = Math.max(10, Math.min(rect.left + scrollX, window.innerWidth - 170));
-                      pickerContainer.style.top = `${top}px`;
-                      pickerContainer.style.left = `${left}px`;
-                      console.log(`Showing picker for ${colorId} at top: ${top}px, left: ${left}px`);
-                      colorPicker.openHandler(); // Open the picker
-                    } else {
-                      pickerContainer.style.display = 'none';
-                      console.log(`Hiding picker for ${colorId}`);
-                    }
-                  });
-
-                  // Hide picker when clicking outside
-                  document.addEventListener('click', (event) => {
-                    if (!pickerContainer.contains(event.target) && !preview.contains(event.target)) {
-                      pickerContainer.style.display = 'none';
-                      console.log(`Document click: Hiding picker for ${colorId}`);
-                    }
-                  }, { capture: true });
-                } catch (err) {
-                  console.error(`Failed to initialize color picker for ${colorId}:`, err);
-                }
+          // Attach event listeners to color inputs
+          setTimeout(() => {
+            const colorInputs = document.querySelectorAll('.color-input');
+            console.log(`Found ${colorInputs.length} color-input elements`);
+            colorInputs.forEach(input => {
+              const colorId = input.getAttribute('data-color-id');
+              console.log(`Attaching event listener for ${colorId}`);
+              input.addEventListener('input', (e) => {
+                colorValues[colorId] = e.target.value;
+                updatePreviewStyles();
+                console.log(`Color changed for ${colorId}: ${e.target.value}`);
               });
-            }, 0); // Ensure DOM is fully rendered
-          };
-
-          // Handle vanilla-picker load failure
-          pickerScript.onerror = () => {
-            console.error('Failed to load vanilla-picker from /js/vanilla-picker.min.js');
-            alert('تعذر تحميل مكتبة الألوان، تأكد من وجود ملف vanilla-picker.min.js في مجلد /js');
-          };
+            });
+          }, 0); // Ensure DOM is fully rendered
 
           // Update title in preview
           document.getElementById('title').addEventListener('input', (e) => {
