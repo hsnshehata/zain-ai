@@ -200,6 +200,21 @@ select option {
   width: auto;
 }
 
+/* Bot Selector */
+.bot-selector {
+  margin-bottom: 20px;
+  padding: 10px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+}
+
+body.light .bot-selector {
+  background: #fff;
+  border: 1px solid #ddd;
+}
+
 /* Color Picker Buttons */
 .color-picker-section {
   display: flex;
@@ -210,14 +225,15 @@ select option {
 .color-picker-wrapper {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   margin-bottom: 0;
 }
 
 .color-picker-wrapper label {
   color: var(--text-dark);
   font-size: 0.9em;
-  margin-right: 10px;
+  margin-right: 8px;
+  flex: 1;
 }
 
 body.light .color-picker-wrapper label {
@@ -226,8 +242,8 @@ body.light .color-picker-wrapper label {
 
 /* Color Preview */
 .color-preview {
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
@@ -259,9 +275,7 @@ body.light .checkbox-group {
   border: 1px solid #ddd;
 }
 
-.checkbox
-
--label {
+.checkbox-label {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -874,8 +888,8 @@ body.light .settings-popup {
   }
 
   .color-preview {
-    width: 35px;
-    height: 35px;
+    width: 25px;
+    height: 25px;
   }
 }
 
@@ -966,11 +980,11 @@ body.light .settings-popup {
     height: 60px;
   }
   .color-picker-wrapper {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
   }
   .color-picker-wrapper label {
-    margin-bottom: 5px;
+    margin-bottom: 0;
   }
   .question-input-group {
     flex-direction: column;
