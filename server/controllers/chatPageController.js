@@ -1,541 +1,231 @@
-async function loadChatPage() {
-  const content = document.getElementById('content');
-  const role = localStorage.getItem('role');
-  const userId = localStorage.getItem('userId');
-  const token = localStorage.getItem('token');
+const { v4: uuidv4 } = require('uuid');
+const ChatPage = require('../models/ChatPage');
+const path = require('path');
+const fs = require('fs');
+const axios = require('axios');
+const FormData = require('form-data');
 
-  content.innerHTML = `
-    <h2>تخصيص صفحة الدردشة</h2>
-    <div id="chatPageContent" class="chat-page-settings">
-      <p>جاري تحميل البوتات...</p>
-    </div>
-  `;
+// Load environment variables
+require('dotenv').config();
+const IMGBB_API_KEY = process.env.IMGBB_API_KEY;
 
-  const chatPageContent = document.getElementById('chatPageContent');
-
-  let bots = [];
+// Function to upload image to imgbb using axios
+async function uploadToImgbb(file) {
   try {
-    const response = await fetch('/api/bots', {
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    if (!response.ok) {
-      throw new Error(`فشل في جلب البوتات: ${response.status} ${response.statusText}`);
+    // Validate file size (imgbb max size is 32MB)
+    const maxSizeInBytes = 32 * 1024 * 1024; // 32MB in bytes
+    if (file.size > maxSizeInBytes) {
+      throw new Error('حجم الصورة أكبر من الحد الأقصى المسموح (32 ميجابايت)');
     }
-    bots = await response.json();
+
+    // Validate file type (imgbb accepts PNG, JPG, etc., but we're expecting PNG as per the frontend)
+    const allowedTypes = ['image/png'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      throw new Error('نوع الصورة غير مدعوم، يرجى رفع صورة بصيغة PNG');
+    }
+
+    const formData = new FormData();
+    formData.append('image', file.data, file.name);
+    formData.append('key', IMGBB_API_KEY);
+
+    console.log('📤 Uploading image to imgbb...');
+    const response = await axios.post('https://api.imgbb.com/1/upload', formData, {
+      headers: {
+        ...formData.getHeaders(),
+      },
+    });
+
+    console.log('📥 imgbb response:', response.data);
+
+    if (response.status !== 200 || !response.data.success) {
+      throw new Error(`فشل في رفع الصورة إلى imgbb: ${response.data.error?.message || 'خطأ غير معروف'}`);
+    }
+
+    return {
+      url: response.data.data.url,
+      deleteUrl: response.data.data.delete_url,
+    };
   } catch (err) {
-    console.error('خطأ في جلب البوتات:', err);
-    chatPageContent.innerHTML = `
-      <p style="color: red;">تعذر جلب البوتات، حاول مرة أخرى لاحقًا.</p>
-    `;
-    return;
-  }
-
-  let html = `
-    <div class="form-group bot-selector">
-      <label for="botId">اختر البوت:</label>
-      <select id="botId" name="botId" required>
-        <option value="">اختر بوت</option>
-  `;
-
-  const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId && bot.userId._id === userId);
-  userBots.forEach(bot => {
-    html += `<option value="${bot._id}">${bot.name}</option>`;
-  });
-
-  html += `
-      </select>
-    </div>
-    <div id="chatPageSettings" class="chat-page-settings-content"></div>
-  `;
-
-  chatPageContent.innerHTML = html;
-
-  const botIdSelect = document.getElementById('botId');
-  const chatPageSettings = document.getElementById('chatPageSettings');
-
-  if (botIdSelect) {
-    // Function to load chat page settings based on selected bot
-    async function loadChatPageSettings(selectedBotId) {
-      if (!selectedBotId) {
-        chatPageSettings.innerHTML = '';
-        return;
-      }
-
-      try {
-        const response = await fetch(`/api/chat-page/bot/${selectedBotId}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          chatPageSettings.innerHTML = `
-            <div class="form-group">
-              <label for="chatLink">رابط صفحة الدردشة:</label>
-              <div class="input-group">
-                <input type="text" id="chatLink" value="${data.link}" readonly>
-                <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
-              </div>
-            </div>
-            <div class="preview-settings-container">
-              <div class="preview-section">
-                <h3>معاينة صفحة الدردشة</h3>
-                <div class="chat-preview-container">
-                  <div id="previewChat" class="chat-container">
-                    <div class="section-with-settings">
-                      <div id="previewChatHeader" class="chat-header">
-                        <img id="previewChatLogo" class="chat-logo" style="display: ${data.logoUrl ? 'block' : 'none'};" src="${data.logoUrl || ''}" alt="Logo">
-                        <h1 id="previewChatTitle" class="chat-title">${data.title}</h1>
-                      </div>
-                      <button class="settings-gear" data-target="header-settings">⚙️</button>
-                      <div id="header-settings" class="settings-popup" style="display: none;">
-                        <div class="color-picker-wrapper">
-                          <label for="titleColor">لون نص العنوان:</label>
-                          <input type="color" class="color-input" id="titleColorInput" data-color-id="titleColor" value="${data.titleColor || '#ffffff'}">
-                        </div>
-                        <div class="color-picker-wrapper">
-                          <label for="headerColor">لون الهيدر:</label>
-                          <input type="color" class="color-input" id="headerColorInput" data-color-id="headerColor" value="${data.colors.header}">
-                        </div>
-                      </div>
-                    </div>
-                    <div class="section-with-settings">
-                      <div id="previewChatMessages" class="chat-messages">
-                        <div class="message user-message">رسالة المستخدم</div>
-                        <div class="message bot-message">رد البوت</div>
-                      </div>
-                      <button class="settings-gear" data-target="messages-settings">⚙️</button>
-                      <div id="messages-settings" class="settings-popup" style="display: none;">
-                        <div class="color-picker-wrapper">
-                          <label for="chatAreaBackgroundColor">لون خلفية مربع الدردشة:</label>
-                          <input type="color" class="color-input" id="chatAreaBackgroundColorInput" data-color-id="chatAreaBackgroundColor" value="${data.colors.chatAreaBackground || '#ffffff'}">
-                        </div>
-                        <div class="color-picker-wrapper">
-                          <label for="textColor">لون النص العام:</label>
-                          <input type="color" class="color-input" id="textColorInput" data-color-id="textColor" value="${data.colors.text}">
-                        </div>
-                        <div class="color-picker-wrapper">
-                          <label for="userMessageBackgroundColor">لون فقاعة المستخدم:</label>
-                          <input type="color" class="color-input" id="userMessageBackgroundColorInput" data-color-id="userMessageBackgroundColor" value="${data.colors.userMessageBackground || '#007bff'}">
-                        </div>
-                        <div class="color-picker-wrapper">
-                          <label for="userMessageTextColor">لون نص المستخدم:</label>
-                          <input type="color" class="color-input" id="userMessageTextColorInput" data-color-id="userMessageTextColor" value="${data.colors.userMessageTextColor || '#ffffff'}">
-                        </div>
-                        <div class="color-picker-wrapper">
-                          <label for="botMessageBackgroundColor">لون فقاعة البوت:</label>
-                          <input type="color" class="color-input" id="botMessageBackgroundColorInput" data-color-id="botMessageBackgroundColor" value="${data.colors.botMessageBackground || '#e9ecef'}">
-                        </div>
-                        <div class="color-picker-wrapper">
-                          <label for="botMessageTextColor">لون نص البوت:</label>
-                          <input type="color" class="color-input" id="botMessageTextColorInput" data-color-id="botMessageTextColor" value="${data.colors.botMessageTextColor || '#000000'}">
-                        </div>
-                      </div>
-                    </div>
-                    <div class="section-with-settings">
-                      <div id="previewSuggestedQuestions" class="suggested-questions" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
-                        ${data.suggestedQuestions?.map(q => `<button class="suggested-question">${q}</button>`).join('') || ''}
-                      </div>
-                      <button class="settings-gear" data-target="suggested-questions-settings" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};" id="suggestedQuestionsGear">⚙️</button>
-                      <div id="suggested-questions-settings" class="settings-popup" style="display: none;">
-                        <div class="color-picker-wrapper">
-                          <label for="buttonColor">لون الأزرار المقترحة:</label>
-                          <input type="color" class="color-input" id="buttonColorInput" data-color-id="buttonColor" value="${data.colors.button}">
-                        </div>
-                      </div>
-                    </div>
-                    <div class="section-with-settings">
-                      <div class="chat-input">
-                        <input type="text" id="previewMessageInput" placeholder="اكتب رسالتك...">
-                        <input type="file" id="previewImageInput" accept="image/*" style="display: ${data.imageUploadEnabled ? 'block' : 'none'};">
-                        <button id="previewSendMessageBtn">إرسال</button>
-                      </div>
-                      <button class="settings-gear" data-target="input-settings">⚙️</button>
-                      <div id="input-settings" class="settings-popup" style="display: none;">
-                        <div class="color-picker-wrapper">
-                          <label for="backgroundColor">لون الخلفية:</label>
-                          <input type="color" class="color-input" id="backgroundColorInput" data-color-id="backgroundColor" value="${data.colors.background}">
-                        </div>
-                        <div class="color-picker-wrapper">
-                          <label for="inputTextColor">لون نص مربع الإدخال:</label>
-                          <input type="color" class="color-input" id="inputTextColorInput" data-color-id="inputTextColor" value="${data.colors.inputTextColor || '#333333'}">
-                        </div>
-                        <div class="color-picker-wrapper">
-                          <label for="buttonColorInput">لون زر الإرسال:</label>
-                          <input type="color" class="color-input" id="buttonColorInputInput" data-color-id="buttonColorInput" value="${data.colors.button}">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="settings-section">
-                <form id="customizationForm" class="settings-group" enctype="multipart/form-data">
-                  <div class="form-group">
-                    <label for="title">عنوان الصفحة:</label>
-                    <input type="text" id="title" name="title" value="${data.title}" required placeholder="أدخل عنوان الصفحة">
-                  </div>
-                  <div class="form-group logo-section">
-                    <label for="logo">شعار الصفحة (PNG):</label>
-                    <input type="file" id="logo" name="logo" accept="image/png">
-                    <div class="logo-preview-container">
-                      <p style="font-size: 0.8em; margin-bottom: 5px;">الشعار الحالي:</p>
-                      ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo Preview" class="logo-preview-img" />` : '<p style="font-size: 0.8em;">لا يوجد</p>'}
-                    </div>
-                    <img id="logoPreview" class="logo-preview-img" style="display: none;" alt="Logo Preview" />
-                  </div>
-                  <div class="form-group checkbox-group">
-                    <label class="checkbox-label">
-                      <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled" ${data.suggestedQuestionsEnabled ? 'checked' : ''}>
-                      تفعيل الأسئلة المقترحة
-                    </label>
-                    <div id="suggestedQuestionsContainer" class="suggested-questions-container" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
-                      <h3>إدارة الأسئلة المقترحة</h3>
-                      <div class="question-input-group">
-                        <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
-                        <button type="button" id="addQuestionBtn" class="submit-btn">إضافة سؤال</button>
-                      </div>
-                      <ul id="questionsList" class="questions-list"></ul>
-                    </div>
-                  </div>
-                  <div class="form-group checkbox-group">
-                    <label class="checkbox-label">
-                      <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled" ${data.imageUploadEnabled ? 'checked' : ''}>
-                      تفعيل إرفاق الصور
-                    </label>
-                  </div>
-                  <button type="submit" class="submit-btn">حفظ الإعدادات</button>
-                </form>
-              </div>
-            </div>
-          `;
-
-          // Apply initial styles to the preview
-          const previewChat = document.getElementById('previewChat');
-          const previewChatHeader = document.getElementById('previewChatHeader');
-          const previewChatTitle = document.getElementById('previewChatTitle');
-          const previewChatMessages = document.getElementById('previewChatMessages');
-          const previewSuggestedQuestions = document.getElementById('previewSuggestedQuestions');
-          const previewSendMessageBtn = document.getElementById('previewSendMessageBtn');
-          const previewMessageInput = document.getElementById('previewMessageInput');
-          const previewImageInput = document.getElementById('previewImageInput');
-          const userMessage = document.querySelector('#previewChatMessages .user-message');
-          const botMessage = document.querySelector('#previewChatMessages .bot-message');
-
-          // Object to store color values
-          let colorValues = {
-            titleColor: data.titleColor || '#ffffff',
-            headerColor: data.colors.header,
-            chatAreaBackgroundColor: data.colors.chatAreaBackground || '#ffffff',
-            textColor: data.colors.text,
-            userMessageBackgroundColor: data.colors.userMessageBackground || '#007bff',
-            userMessageTextColor: data.colors.userMessageTextColor || '#ffffff',
-            botMessageBackgroundColor: data.colors.botMessageBackground || '#e9ecef',
-            botMessageTextColor: data.colors.botMessageTextColor || '#000000',
-            buttonColor: data.colors.button,
-            backgroundColor: data.colors.background,
-            inputTextColor: data.colors.inputTextColor || '#333333',
-            buttonColorInput: data.colors.button,
-          };
-
-          function updatePreviewStyles() {
-            previewChat.style.backgroundColor = colorValues.backgroundColor;
-            previewChatHeader.style.backgroundColor = colorValues.headerColor;
-            previewChatTitle.style.color = colorValues.titleColor;
-            previewChatMessages.style.backgroundColor = colorValues.chatAreaBackgroundColor;
-            previewChat.style.color = colorValues.textColor;
-            previewSendMessageBtn.style.backgroundColor = colorValues.buttonColorInput;
-            previewMessageInput.style.color = colorValues.inputTextColor;
-            Array.from(previewSuggestedQuestions.children).forEach(btn => {
-              btn.style.backgroundColor = colorValues.buttonColor;
-            });
-            userMessage.style.backgroundColor = colorValues.userMessageBackgroundColor;
-            userMessage.style.color = colorValues.userMessageTextColor;
-            botMessage.style.backgroundColor = colorValues.botMessageBackgroundColor;
-            botMessage.style.color = colorValues.botMessageTextColor;
-
-            // Update color inputs
-            document.getElementById('titleColorInput').value = colorValues.titleColor;
-            document.getElementById('headerColorInput').value = colorValues.headerColor;
-            document.getElementById('chatAreaBackgroundColorInput').value = colorValues.chatAreaBackgroundColor;
-            document.getElementById('textColorInput').value = colorValues.textColor;
-            document.getElementById('userMessageBackgroundColorInput').value = colorValues.userMessageBackgroundColor;
-            document.getElementById('userMessageTextColorInput').value = colorValues.userMessageTextColor;
-            document.getElementById('botMessageBackgroundColorInput').value = colorValues.botMessageBackgroundColor;
-            document.getElementById('botMessageTextColorInput').value = colorValues.botMessageTextColor;
-            document.getElementById('buttonColorInput').value = colorValues.buttonColor;
-            document.getElementById('backgroundColorInput').value = colorValues.backgroundColor;
-            document.getElementById('inputTextColorInput').value = colorValues.inputTextColor;
-            document.getElementById('buttonColorInputInput').value = colorValues.buttonColorInput;
-          }
-
-          // Handle gear buttons to show/hide settings popups
-          document.querySelectorAll('.settings-gear').forEach(gear => {
-            gear.addEventListener('click', (e) => {
-              e.stopPropagation();
-              console.log('Settings gear clicked:', gear.getAttribute('data-target'));
-              const targetId = gear.getAttribute('data-target');
-              const popup = document.getElementById(targetId);
-              const isVisible = popup.style.display === 'block';
-              // Hide all popups first
-              document.querySelectorAll('.settings-popup').forEach(p => p.style.display = 'none');
-              // Toggle the clicked popup
-              popup.style.display = isVisible ? 'none' : 'block';
-              console.log(`Toggled popup ${targetId} to ${popup.style.display}`);
-            });
-          });
-
-          // Attach event listeners to color inputs
-          setTimeout(() => {
-            const colorInputs = document.querySelectorAll('.color-input');
-            console.log(`Found ${colorInputs.length} color-input elements`);
-            colorInputs.forEach(input => {
-              const colorId = input.getAttribute('data-color-id');
-              console.log(`Attaching event listener for ${colorId}`);
-              input.addEventListener('input', (e) => {
-                colorValues[colorId] = e.target.value;
-                updatePreviewStyles();
-                console.log(`Color changed for ${colorId}: ${e.target.value}`);
-              });
-            });
-          }, 0); // Ensure DOM is fully rendered
-
-          // Update title in preview
-          document.getElementById('title').addEventListener('input', (e) => {
-            previewChatTitle.textContent = e.target.value || 'صفحة الدردشة';
-          });
-
-          // Logo upload preview
-          const logoInput = document.getElementById('logo');
-          const logoPreview = document.getElementById('logoPreview');
-          const previewChatLogo = document.getElementById('previewChatLogo');
-          logoInput.addEventListener('change', () => {
-            const file = logoInput.files[0];
-            if (file) {
-              const reader = new FileReader();
-              reader.onload = (e) => {
-                logoPreview.src = e.target.result;
-                logoPreview.style.display = 'block';
-                previewChatLogo.src = e.target.result;
-                previewChatLogo.style.display = 'block';
-              };
-              reader.readAsDataURL(file);
-            } else {
-              logoPreview.style.display = 'none';
-              previewChatLogo.style.display = 'none';
-            }
-          });
-
-          // Copy link functionality
-          document.getElementById('copyLinkBtn').addEventListener('click', async () => {
-            const linkInput = document.getElementById('chatLink');
-            try {
-              await navigator.clipboard.writeText(linkInput.value);
-              alert('تم نسخ الرابط بنجاح!');
-              console.log(`Link copied: ${linkInput.value}`);
-            } catch (err) {
-              console.error('خطأ في نسخ الرابط:', err);
-              alert('فشل في نسخ الرابط، حاول مرة أخرى');
-            }
-          });
-
-          // Suggested questions functionality
-          const suggestedQuestionsEnabledCheckbox = document.getElementById('suggestedQuestionsEnabled');
-          const suggestedQuestionsContainer = document.getElementById('suggestedQuestionsContainer');
-          const suggestedQuestionsGear = document.getElementById('suggestedQuestionsGear');
-          suggestedQuestionsEnabledCheckbox.addEventListener('change', () => {
-            suggestedQuestionsContainer.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
-            previewSuggestedQuestions.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
-            suggestedQuestionsGear.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
-          });
-
-          let questions = data.suggestedQuestions || [];
-          document.getElementById('addQuestionBtn').addEventListener('click', () => {
-            const newQuestionInput = document.getElementById('newQuestion');
-            const question = newQuestionInput.value.trim();
-            if (question) {
-              questions.push(question);
-              newQuestionInput.value = '';
-              updateQuestionsList();
-              updatePreviewSuggestedQuestions();
-            } else {
-              alert('يرجى إدخال سؤال صالح');
-            }
-          });
-
-          function updateQuestionsList() {
-            const questionsList = document.getElementById('questionsList');
-            questionsList.innerHTML = '';
-            questions.forEach((question, index) => {
-              const li = document.createElement('li');
-              li.innerHTML = `
-                ${question}
-                <div class="question-actions">
-                  <button type="button" onclick="editQuestion(${index})">تعديل</button>
-                  <button type="button" onclick="deleteQuestion(${index})">حذف</button>
-                </div>
-              `;
-              questionsList.appendChild(li);
-            });
-          }
-
-          function updatePreviewSuggestedQuestions() {
-            previewSuggestedQuestions.innerHTML = questions.map(q => `<button class="suggested-question">${q}</button>`).join('');
-            Array.from(previewSuggestedQuestions.children).forEach(btn => {
-              btn.style.backgroundColor = colorValues.buttonColor;
-            });
-          }
-
-          window.editQuestion = (index) => {
-            const newQuestion = prompt('أدخل السؤال الجديد:', questions[index]);
-            if (newQuestion && newQuestion.trim()) {
-              questions[index] = newQuestion.trim();
-              updateQuestionsList();
-              updatePreviewSuggestedQuestions();
-            }
-          };
-
-          window.deleteQuestion = (index) => {
-            if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
-              questions.splice(index, 1);
-              updateQuestionsList();
-              updatePreviewSuggestedQuestions();
-            }
-          };
-
-          updateQuestionsList();
-
-          // Image upload toggle
-          document.getElementById('imageUploadEnabled').addEventListener('change', (e) => {
-            previewImageInput.style.display = e.target.checked ? 'block' : 'none';
-          });
-
-          // Form submission
-          document.getElementById('customizationForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const formData = new FormData(e.target);
-            formData.set('title', formData.get('title'));
-            formData.set('titleColor', colorValues.titleColor);
-            formData.set('colors', JSON.stringify({
-              header: colorValues.headerColor,
-              background: colorValues.backgroundColor,
-              chatAreaBackground: colorValues.chatAreaBackgroundColor,
-              text: colorValues.textColor,
-              button: colorValues.buttonColor, // Include buttonColor
-              userMessageBackground: colorValues.userMessageBackgroundColor,
-              userMessageTextColor: colorValues.userMessageTextColor,
-              botMessageBackground: colorValues.botMessageBackgroundColor,
-              botMessageTextColor: colorValues.botMessageTextColor,
-              inputTextColor: colorValues.inputTextColor,
-            }));
-            formData.set('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on' ? 'true' : 'false');
-            formData.set('suggestedQuestions', JSON.stringify(questions));
-            formData.set('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on' ? 'true' : 'false');
-
-            try {
-              const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
-                method: 'PUT',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                },
-                body: formData,
-              });
-
-              if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || `فشل في حفظ الإعدادات: ${response.status}`);
-              }
-
-              const result = await response.json();
-              if (result.logoUrl) {
-                document.querySelector('.logo-preview-container p').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" class="logo-preview-img" />`;
-                logoPreview.src = result.logoUrl;
-                logoPreview.style.display = 'block';
-                previewChatLogo.src = result.logoUrl;
-                previewChatLogo.style.display = 'block';
-              }
-              // Update colorValues with the new values from the server response
-              if (result.colors) {
-                colorValues.headerColor = result.colors.header || colorValues.headerColor;
-                colorValues.backgroundColor = result.colors.background || colorValues.backgroundColor;
-                colorValues.chatAreaBackgroundColor = result.colors.chatAreaBackground || colorValues.chatAreaBackgroundColor;
-                colorValues.textColor = result.colors.text || colorValues.textColor;
-                colorValues.buttonColor = result.colors.button || colorValues.buttonColor; // Update buttonColor
-                colorValues.userMessageBackgroundColor = result.colors.userMessageBackground || colorValues.userMessageBackgroundColor;
-                colorValues.userMessageTextColor = result.colors.userMessageTextColor || colorValues.userMessageTextColor;
-                colorValues.botMessageBackgroundColor = result.colors.botMessageBackground || colorValues.botMessageBackgroundColor;
-                colorValues.botMessageTextColor = result.colors.botMessageTextColor || colorValues.botMessageTextColor;
-                colorValues.inputTextColor = result.colors.inputTextColor || colorValues.inputTextColor;
-                colorValues.buttonColorInput = result.colors.button || colorValues.buttonColorInput;
-
-                // Update the preview with the new values
-                updatePreviewStyles();
-              }
-              alert('تم حفظ الإعدادات بنجاح!');
-            } catch (err) {
-              console.error('خطأ في حفظ الإعدادات:', err);
-              alert(err.message || 'فشل في حفظ الإعدادات، حاول مرة أخرى');
-            }
-          });
-
-          // Initial preview update
-          updatePreviewStyles();
-        } else {
-          // If no chat page exists for the selected bot, show the "Create Chat Page" button
-          chatPageSettings.innerHTML = `
-            <button id="createChatPageBtn" class="submit-btn">إنشاء صفحة دردشة</button>
-          `;
-
-          const createChatPageBtn = document.getElementById('createChatPageBtn');
-          if (createChatPageBtn) {
-            createChatPageBtn.addEventListener('click', async () => {
-              try {
-                const response = await fetch('/api/chat-page', {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    userId: localStorage.getItem('userId'),
-                    botId: selectedBotId,
-                  }),
-                });
-
-                if (!response.ok) {
-                  throw new Error(`فشل في إنشاء صفحة الدردشة: ${response.status} ${response.statusText}`);
-                }
-
-                // After creating the chat page, reload settings
-                loadChatPageSettings(selectedBotId);
-              } catch (err) {
-                console.error('خطأ في إنشاء صفحة الدردشة:', err);
-                chatPageSettings.innerHTML = `
-                  <p style="color: red;">تعذر إنشاء صفحة الدردشة، حاول مرة أخرى لاحقًا.</p>
-                `;
-              }
-            });
-          }
-        }
-      } catch (err) {
-        console.error('خطأ في جلب صفحة الدردشة:', err);
-        chatPageSettings.innerHTML = `
-          <p style="color: red;">تعذر جلب صفحة الدردشة، حاول مرة أخرى لاحقًا.</p>
-        `;
-      }
-    }
-
-    // Automatically load settings for the first bot if available
-    if (userBots.length > 0) {
-      botIdSelect.value = userBots[0]._id;
-      await loadChatPageSettings(userBots[0]._id);
-    }
-
-    // Add change event listener to reload settings when a different bot is selected
-    botIdSelect.addEventListener('change', async () => {
-      const selectedBotId = botIdSelect.value;
-      await loadChatPageSettings(selectedBotId);
-    });
-  } else {
-    console.error('botId select element not found in DOM');
+    console.error('❌ Error uploading to imgbb:', err.message);
+    throw err;
   }
 }
+
+// Function to delete image from imgbb using axios
+async function deleteFromImgbb(deleteUrl) {
+  if (!deleteUrl) return;
+
+  try {
+    const response = await axios.delete(deleteUrl);
+    if (response.status !== 200) {
+      console.error(`فشل في حذف الصورة من imgbb: ${response.status} ${response.statusText}`);
+    } else {
+      console.log('تم حذف الصورة القديمة بنجاح من imgbb');
+    }
+  } catch (err) {
+    console.error('خطأ أثناء حذف الصورة من imgbb:', err);
+  }
+}
+
+// Create a new chat page
+exports.createChatPage = async (req, res) => {
+  try {
+    const { userId, botId } = req.body;
+    if (!userId || !botId) {
+      return res.status(400).json({ message: 'User ID and Bot ID are required' });
+    }
+
+    // Check if a chat page already exists for this bot
+    const existingPage = await ChatPage.findOne({ botId });
+    if (existingPage) {
+      const chatLink = `${process.env.APP_URL || 'https://zain-ai-a06a.onrender.com'}/chat/${existingPage.linkId}`;
+      return res.status(200).json({ link: chatLink, chatPageId: existingPage._id, exists: true });
+    }
+
+    const linkId = uuidv4();
+    const chatPage = new ChatPage({
+      userId,
+      botId,
+      linkId,
+    });
+
+    await chatPage.save();
+
+    const chatLink = `${process.env.APP_URL || 'https://zain-ai-a06a.onrender.com'}/chat/${linkId}`;
+
+    res.status(201).json({ link: chatLink, chatPageId: chatPage._id, exists: false });
+  } catch (err) {
+    console.error('Error creating chat page:', err);
+    throw err; // Let the global error handler catch it
+  }
+};
+
+// Update chat page settings
+exports.updateChatPage = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const chatPage = await ChatPage.findById(id);
+    if (!chatPage) {
+      return res.status(404).json({ message: 'Chat page not found' });
+    }
+
+    // Parse FormData fields safely
+    const title = req.body.title || chatPage.title;
+    const titleColor = req.body.titleColor || chatPage.titleColor;
+    let colors = chatPage.colors;
+    if (req.body.colors) {
+      try {
+        colors = JSON.parse(req.body.colors);
+      } catch (e) {
+        console.error('Error parsing colors:', e);
+        return res.status(400).json({ message: 'Invalid colors format' });
+      }
+    }
+    const suggestedQuestionsEnabled = req.body.suggestedQuestionsEnabled === 'true' ? true : req.body.suggestedQuestionsEnabled === 'false' ? false : chatPage.suggestedQuestionsEnabled;
+    let suggestedQuestions = chatPage.suggestedQuestions;
+    if (req.body.suggestedQuestions) {
+      try {
+        suggestedQuestions = JSON.parse(req.body.suggestedQuestions);
+      } catch (e) {
+        console.error('Error parsing suggestedQuestions:', e);
+        return res.status(400).json({ message: 'Invalid suggestedQuestions format' });
+      }
+    }
+    const imageUploadEnabled = req.body.imageUploadEnabled === 'true' ? true : req.body.imageUploadEnabled === 'false' ? false : chatPage.imageUploadEnabled;
+    const darkModeEnabled = req.body.darkModeEnabled === 'true' ? true : req.body.darkModeEnabled === 'false' ? false : chatPage.darkModeEnabled;
+
+    // Handle logo upload to imgbb
+    let logoUrl = chatPage.logoUrl;
+    let logoDeleteUrl = chatPage.logoDeleteUrl;
+
+    if (req.files && req.files.logo) {
+      try {
+        // Delete the old image from imgbb if it exists
+        if (logoDeleteUrl) {
+          await deleteFromImgbb(logoDeleteUrl);
+        }
+
+        // Upload the new image to imgbb
+        const uploadResult = await uploadToImgbb(req.files.logo);
+        logoUrl = uploadResult.url;
+        logoDeleteUrl = uploadResult.deleteUrl;
+      } catch (err) {
+        return res.status(500).json({ message: `فشل في رفع الشعار: ${err.message}` });
+      }
+    }
+
+    // Update chat page
+    chatPage.title = title;
+    chatPage.titleColor = titleColor;
+    chatPage.colors = colors;
+    chatPage.logoUrl = logoUrl;
+    chatPage.logoDeleteUrl = logoDeleteUrl;
+    chatPage.suggestedQuestionsEnabled = suggestedQuestionsEnabled;
+    chatPage.suggestedQuestions = suggestedQuestions;
+    chatPage.imageUploadEnabled = imageUploadEnabled;
+    chatPage.darkModeEnabled = darkModeEnabled;
+
+    await chatPage.save();
+
+    res.status(200).json({
+      message: 'Chat page settings updated successfully',
+      logoUrl: chatPage.logoUrl,
+      colors: chatPage.colors, // Return the updated colors object
+    });
+  } catch (err) {
+    console.error('Error updating chat page:', err);
+    throw err; // Let the global error handler catch it
+  }
+};
+
+// Get chat page settings by linkId
+exports.getChatPageByLinkId = async (req, res) => {
+  try {
+    const { linkId } = req.params;
+    const chatPage = await ChatPage.findOne({ linkId }).populate('botId');
+    if (!chatPage) {
+      return res.status(404).json({ message: 'Chat page not found' });
+    }
+    res.status(200).json({
+      title: chatPage.title,
+      titleColor: chatPage.titleColor,
+      colors: chatPage.colors,
+      logoUrl: chatPage.logoUrl,
+      suggestedQuestionsEnabled: chatPage.suggestedQuestionsEnabled,
+      suggestedQuestions: chatPage.suggestedQuestions,
+      imageUploadEnabled: chatPage.imageUploadEnabled,
+      darkModeEnabled: chatPage.darkModeEnabled,
+      botId: chatPage.botId._id,
+    });
+  } catch (err) {
+    console.error('Error fetching chat page:', err);
+    throw err; // Let the global error handler catch it
+  }
+};
+
+// Get chat page settings by botId
+exports.getChatPageByBotId = async (req, res) => {
+  try {
+    const { botId } = req.params;
+    const chatPage = await ChatPage.findOne({ botId });
+    if (!chatPage) {
+      return res.status(404).json({ message: 'No chat page found for this bot' });
+    }
+    const chatLink = `${process.env.APP_URL || 'https://zain-ai-a06a.onrender.com'}/chat/${chatPage.linkId}`;
+    res.status(200).json({
+      link: chatLink,
+      chatPageId: chatPage._id,
+      title: chatPage.title,
+      titleColor: chatPage.titleColor,
+      colors: chatPage.colors,
+      logoUrl: chatPage.logoUrl,
+      suggestedQuestionsEnabled: chatPage.suggestedQuestionsEnabled,
+      suggestedQuestions: chatPage.suggestedQuestions,
+      imageUploadEnabled: chatPage.imageUploadEnabled,
+      darkModeEnabled: chatPage.darkModeEnabled,
+    });
+  } catch (err) {
+    console.error('Error fetching chat page by botId:', err);
+    throw err; // Let the global error handler catch it
+  }
+};
