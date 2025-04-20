@@ -2,48 +2,62 @@ const { v4: uuidv4 } = require('uuid');
 const ChatPage = require('../models/ChatPage');
 const path = require('path');
 const fs = require('fs');
-const fetch = require('node-fetch'); // Import node-fetch for making HTTP requests
+const axios = require('axios');
+const FormData = require('form-data');
 
 // Load environment variables
 require('dotenv').config();
 const IMGBB_API_KEY = process.env.IMGBB_API_KEY;
 
-// Function to upload image to imgbb
+// Function to upload image to imgbb using axios
 async function uploadToImgbb(file) {
-  const formData = new FormData();
-  formData.append('image', file.data, file.name); // Use file data and name
-  formData.append('key', IMGBB_API_KEY);
+  try {
+    // Validate file size (imgbb max size is 32MB)
+    const maxSizeInBytes = 32 * 1024 * 1024; // 32MB in bytes
+    if (file.size > maxSizeInBytes) {
+      throw new Error('حجم الصورة أكبر من الحد الأقصى المسموح (32 ميجابايت)');
+    }
 
-  const response = await fetch('https://api.imgbb.com/1/upload', {
-    method: 'POST',
-    body: formData,
-  });
+    // Validate file type (imgbb accepts PNG, JPG, etc., but we're expecting PNG as per the frontend)
+    const allowedTypes = ['image/png'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      throw new Error('نوع الصورة غير مدعوم، يرجى رفع صورة بصيغة PNG');
+    }
 
-  if (!response.ok) {
-    throw new Error(`فشل في رفع الصورة إلى imgbb: ${response.status} ${response.statusText}`);
-  }
+    const formData = new FormData();
+    formData.append('image', file.data, file.name);
+    formData.append('key', IMGBB_API_KEY);
 
-  const result = await response.json();
-  if (result.success) {
+    console.log('📤 Uploading image to imgbb...');
+    const response = await axios.post('https://api.imgbb.com/1/upload', formData, {
+      headers: {
+        ...formData.getHeaders(),
+      },
+    });
+
+    console.log('📥 imgbb response:', response.data);
+
+    if (response.status !== 200 || !response.data.success) {
+      throw new Error(`فشل في رفع الصورة إلى imgbb: ${response.data.error?.message || 'خطأ غير معروف'}`);
+    }
+
     return {
-      url: result.data.url,
-      deleteUrl: result.data.delete_url,
+      url: response.data.data.url,
+      deleteUrl: response.data.data.delete_url,
     };
-  } else {
-    throw new Error('فشل في رفع الصورة إلى imgbb');
+  } catch (err) {
+    console.error('❌ Error uploading to imgbb:', err.message);
+    throw err; // Re-throw the error to be handled by the caller
   }
 }
 
-// Function to delete image from imgbb
+// Function to delete image from imgbb using axios
 async function deleteFromImgbb(deleteUrl) {
   if (!deleteUrl) return;
 
   try {
-    const response = await fetch(deleteUrl, {
-      method: 'DELETE',
-    });
-
-    if (!response.ok) {
+    const response = await axios.delete(deleteUrl);
+    if (response.status !== 200) {
       console.error(`فشل في حذف الصورة من imgbb: ${response.status} ${response.statusText}`);
     } else {
       console.log('تم حذف الصورة القديمة بنجاح من imgbb');
@@ -125,15 +139,19 @@ exports.updateChatPage = async (req, res) => {
     let logoDeleteUrl = chatPage.logoDeleteUrl;
 
     if (req.files && req.files.logo) {
-      // Delete the old image from imgbb if it exists
-      if (logoDeleteUrl) {
-        await deleteFromImgbb(logoDeleteUrl);
-      }
+      try {
+        // Delete the old image from imgbb if it exists
+        if (logoDeleteUrl) {
+          await deleteFromImgbb(logoDeleteUrl);
+        }
 
-      // Upload the new image to imgbb
-      const uploadResult = await uploadToImgbb(req.files.logo);
-      logoUrl = uploadResult.url;
-      logoDeleteUrl = uploadResult.deleteUrl;
+        // Upload the new image to imgbb
+        const uploadResult = await uploadToImgbb(req.files.logo);
+        logoUrl = uploadResult.url;
+        logoDeleteUrl = uploadResult.deleteUrl;
+      } catch (err) {
+        return res.status(500).json({ message: `فشل في رفع الشعار: ${err.message}` });
+      }
     }
 
     // Update chat page
@@ -152,7 +170,7 @@ exports.updateChatPage = async (req, res) => {
     res.status(200).json({ message: 'Chat page settings updated successfully', logoUrl: chatPage.logoUrl });
   } catch (err) {
     console.error('Error updating chat page:', err);
-    res.status(500).json({ message: 'Server error while updating chat page' });
+    res.status(500).json({ message: `Server error while updating chat page: ${err.message}` });
   }
 };
 
