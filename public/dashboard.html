@@ -6,48 +6,42 @@
   <title>لوحة التحكم</title>
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <link rel="manifest" href="/manifest.json">
 </head>
 <body>
   <div class="sidebar">
-    <button class="nav-item bots-btn"><i class="fas fa-robot"></i> إدارة البوتات</button>
-    <button class="nav-item rules-btn"><i class="fas fa-book"></i> إدارة القواعد</button>
-    <button class="nav-item chat-page-btn"><i class="fas fa-comment"></i> تخصيص الدردشة</button>
-    <button class="nav-item analytics-btn"><i class="fas fa-chart-bar"></i> التحليلات</button>
-    <button class="nav-item logout-btn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+    <h2>لوحة التحكم</h2>
+    <button class="nav-item bots-btn" title="إدارة البوتات"><i class="fas fa-robot"></i> البوتات</button>
+    <button class="nav-item rules-btn" title="إدارة القواعد"><i class="fas fa-book"></i> القواعد</button>
+    <button class="nav-item chat-page-btn" title="تخصيص صفحة الدردشة"><i class="fas fa-comments"></i> صفحة الدردشة</button>
+    <button class="nav-item analytics-btn" title="عرض التحليلات"><i class="fas fa-chart-line"></i> التحليلات</button>
+    <button class="nav-item logout-btn" title="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
   </div>
+
   <div class="dashboard-container">
+    <button id="themeToggle" style="position: absolute; top: 10px; left: 10px;">
+      <i class="fas fa-sun"></i>
+    </button>
     <h1>لوحة التحكم</h1>
     <div id="content"></div>
   </div>
-  <nav class="bottom-nav">
-    <button class="nav-item bots-btn"><i class="fas fa-robot"></i> البوتات</button>
-    <button class="nav-item rules-btn"><i class="fas fa-book"></i> القواعد</button>
-    <button class="nav-item chat-page-btn"><i class="fas fa-comment"></i> الدردشة</button>
-    <button class="nav-item analytics-btn"><i class="fas fa-chart-bar"></i> التحليلات</button>
-    <button class="nav-item logout-btn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
-  </nav>
-  <script src="/js/bots.js"></script>
-  <script src="/js/rules.js"></script>
-  <script src="/js/chatPage.js"></script>
-  <script src="/js/analytics.js"></script>
-  <script src="/js/users.js"></script>
+
+  <div class="bottom-nav">
+    <button class="nav-item bots-btn" title="إدارة البوتات"><i class="fas fa-robot"></i> البوتات</button>
+    <button class="nav-item rules-btn" title="إدارة القواعد"><i class="fas fa-book"></i> القواعد</button>
+    <button class="nav-item chat-page-btn" title="تخصيص صفحة الدردشة"><i class="fas fa-comments"></i> صفحة الدردشة</button>
+    <button class="nav-item analytics-btn" title="عرض التحليلات"><i class="fas fa-chart-line"></i> التحليلات</button>
+    <button class="nav-item logout-btn" title="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+  </div>
+
   <script src="/js/dashboard.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then(() => console.log('Service Worker Registered'))
-        .catch((err) => console.error('Service Worker Error:', err));
-    }
-    // Toggle light/dark mode
-    document.addEventListener('DOMContentLoaded', () => {
-      const theme = localStorage.getItem('theme') || 'dark';
-      document.body.classList.toggle('light', theme === 'light');
-      document.getElementById('themeToggle')?.addEventListener('click', () => {
-        document.body.classList.toggle('light');
-        localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(registration => console.log('Service Worker Registered'))
+          .catch(err => console.error('Service Worker Registration Failed:', err));
       });
-    });
+    }
   </script>
 </body>
 </html>
