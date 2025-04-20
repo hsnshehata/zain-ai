@@ -304,12 +304,8 @@ async function loadChatPage() {
               const pickerContainer = document.createElement('div');
               pickerContainer.className = 'color-picker-container';
               pickerContainer.style.position = 'absolute';
-              pickerContainer.style.zIndex = '1001';
+              pickerContainer.style.zIndex = '1002';
               pickerContainer.style.display = 'none';
-              pickerContainer.style.background = 'var(--card-bg)';
-              pickerContainer.style.borderRadius = '8px';
-              pickerContainer.style.padding = '10px';
-              pickerContainer.style.boxShadow = 'var(--shadow)';
               preview.parentNode.appendChild(pickerContainer);
 
               // Initialize iro.js color picker
@@ -326,7 +322,8 @@ async function loadChatPage() {
 
               // Show/hide color picker on click
               preview.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent the document click handler from hiding the picker immediately
+                e.stopPropagation();
+                console.log(`Color preview clicked: ${colorId}`); // Debug
                 const isVisible = pickerContainer.style.display === 'block';
                 // Hide all other pickers
                 Object.values(colorPickers).forEach(({ container }) => {
@@ -336,9 +333,15 @@ async function loadChatPage() {
                 if (!isVisible) {
                   pickerContainer.style.display = 'block';
                   const rect = preview.getBoundingClientRect();
-                  // Position the picker below the preview
-                  pickerContainer.style.top = `${rect.bottom + window.scrollY + 5}px`;
-                  pickerContainer.style.left = `${Math.min(rect.left + window.scrollX, window.innerWidth - 170)}px`; // Ensure picker stays within viewport
+                  const scrollY = window.scrollY || window.pageYOffset;
+                  const scrollX = window.scrollX || window.pageXOffset;
+                  // Position below the preview, ensure within viewport
+                  pickerContainer.style.top = `${rect.bottom + scrollY + 5}px`;
+                  pickerContainer.style.left = `${Math.max(10, Math.min(rect.left + scrollX, window.innerWidth - 170))}px`;
+                  console.log(`Showing picker at top: ${pickerContainer.style.top}, left: ${pickerContainer.style.left}`); // Debug
+                } else {
+                  pickerContainer.style.display = 'none';
+                  console.log(`Hiding picker for: ${colorId}`); // Debug
                 }
               });
 
@@ -346,12 +349,14 @@ async function loadChatPage() {
               colorPicker.on('color:change', (color) => {
                 colorValues[colorId] = color.hexString;
                 updatePreviewStyles();
+                console.log(`Color changed for ${colorId}: ${color.hexString}`); // Debug
               });
 
               // Hide picker when clicking outside
               document.addEventListener('click', (event) => {
                 if (!pickerContainer.contains(event.target) && !preview.contains(event.target)) {
                   pickerContainer.style.display = 'none';
+                  console.log(`Document click: Hiding picker for ${colorId}`); // Debug
                 }
               }, { capture: true });
             });
@@ -395,7 +400,7 @@ async function loadChatPage() {
             try {
               await navigator.clipboard.writeText(linkInput.value);
               alert('تم نسخ الرابط بنجاح!');
-              console.log(`Link copied: ${linkInput.value}`);
+              console.log(`Link invaded: ${linkInput.value}`);
             } catch (err) {
               console.error('خطأ في نسخ الرابط:', err);
               alert('فشل في نسخ الرابط، حاول مرة أخرى');
