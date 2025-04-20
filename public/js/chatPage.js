@@ -201,7 +201,9 @@ async function loadChatPage() {
                 btn.style.backgroundColor = document.getElementById('buttonColor').value;
               });
               userMessage.style.backgroundColor = document.getElementById('userMessageBackgroundColor').value;
+              userMessage.style.color = '#ffffff'; // Ensure user message text is readable
               botMessage.style.backgroundColor = document.getElementById('botMessageBackgroundColor').value;
+              botMessage.style.color = '#000000'; // Ensure bot message text is readable
             }
 
             // Add event listeners for real-time preview updates
@@ -539,7 +541,9 @@ async function loadChatPage() {
             btn.style.backgroundColor = document.getElementById('buttonColor').value;
           });
           userMessage.style.backgroundColor = document.getElementById('userMessageBackgroundColor').value;
+          userMessage.style.color = '#ffffff'; // Ensure user message text is readable
           botMessage.style.backgroundColor = document.getElementById('botMessageBackgroundColor').value;
+          botMessage.style.color = '#000000'; // Ensure bot message text is readable
         }
 
         document.getElementById('titleColor').addEventListener('input', updatePreviewStyles);
