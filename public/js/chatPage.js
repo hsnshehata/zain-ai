@@ -59,14 +59,8 @@ async function loadChatPage() {
   const chatPageSettings = document.getElementById('chatPageSettings');
 
   if (botIdSelect) {
-    // Automatically select the first bot if available
-    if (userBots.length > 0) {
-      botIdSelect.value = userBots[0]._id;
-      botIdSelect.dispatchEvent(new Event('change')); // Trigger the change event
-    }
-
-    botIdSelect.addEventListener('change', async () => {
-      const selectedBotId = botIdSelect.value;
+    // Function to load chat page settings based on selected bot
+    async function loadChatPageSettings(selectedBotId) {
       if (!selectedBotId) {
         chatPageSettings.innerHTML = '';
         return;
@@ -538,8 +532,8 @@ async function loadChatPage() {
                   throw new Error(`فشل في إنشاء صفحة الدردشة: ${response.status} ${response.statusText}`);
                 }
 
-                // After creating the chat page, trigger the change event to reload settings
-                botIdSelect.dispatchEvent(new Event('change'));
+                // After creating the chat page, reload settings
+                loadChatPageSettings(selectedBotId);
               } catch (err) {
                 console.error('خطأ في إنشاء صفحة الدردشة:', err);
                 chatPageSettings.innerHTML = `
@@ -555,6 +549,18 @@ async function loadChatPage() {
           <p style="color: red;">تعذر جلب صفحة الدردشة، حاول مرة أخرى لاحقًا.</p>
         `;
       }
+    }
+
+    // Automatically load settings for the first bot if available
+    if (userBots.length > 0) {
+      botIdSelect.value = userBots[0]._id;
+      await loadChatPageSettings(userBots[0]._id); // Directly call the function
+    }
+
+    // Add change event listener to reload settings when a different bot is selected
+    botIdSelect.addEventListener('change', async () => {
+      const selectedBotId = botIdSelect.value;
+      await loadChatPageSettings(selectedBotId);
     });
   } else {
     console.error('botId select element not found in DOM');
