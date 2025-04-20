@@ -1,4 +1,4 @@
-export async function loadChatPage() {
+async function loadChatPage() {
   // Load the iro.js library from CDN
   const iroScript = document.createElement('script');
   iroScript.src = 'https://cdn.jsdelivr.net/npm/@jaames/iro@5';
