@@ -11,9 +11,12 @@ const chatPageSchema = new mongoose.Schema({
     background: { type: String, default: '#f8f9fa' },
     text: { type: String, default: '#333333' },
     button: { type: String, default: '#007bff' },
-    botMessageBackground: { type: String, default: '#e9ecef' }, // New field for bot message background
-    userMessageBackground: { type: String, default: '#007bff' }, // New field for user message background
-    chatAreaBackground: { type: String, default: '#ffffff' }, // New field for chat area background
+    botMessageBackground: { type: String, default: '#e9ecef' },
+    userMessageBackground: { type: String, default: '#007bff' },
+    chatAreaBackground: { type: String, default: '#ffffff' },
+    inputTextColor: { type: String, default: '#333333' }, // New field for input text color
+    userMessageTextColor: { type: String, default: '#ffffff' }, // New field for user message text color
+    botMessageTextColor: { type: String, default: '#000000' }, // New field for bot message text color
   },
   logoUrl: { type: String },
   suggestedQuestionsEnabled: { type: Boolean, default: false },
