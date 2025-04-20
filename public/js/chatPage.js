@@ -68,12 +68,59 @@ async function loadChatPage() {
 
         if (response.ok) {
           const data = await response.json();
+          // Generate HTML code for floating support button
+          const floatingButtonCode = `
+<div id="supportButtonContainer" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+  <button id="supportButton" style="background-color: #007bff; color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 16px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
+    دعم
+  </button>
+</div>
+<div id="chatIframeContainer" style="display: none; position: fixed; bottom: 90px; right: 20px; z-index: 1000;">
+  <div style="position: relative; width: 400px; height: 600px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); background: white;">
+    <button id="closeChatIframe" style="position: absolute; top: 10px; right: 10px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer;">✕</button>
+    <iframe src="${data.link}" style="width: 100%; height: 100%; border: none; border-radius: 8px;"></iframe>
+  </div>
+</div>
+<script>
+  const supportButton = document.getElementById('supportButton');
+  const chatIframeContainer = document.getElementById('chatIframeContainer');
+  const closeChatIframe = document.getElementById('closeChatIframe');
+  supportButton.addEventListener('click', () => {
+    chatIframeContainer.style.display = chatIframeContainer.style.display === 'none' ? 'block' : 'none';
+    supportButton.style.transform = chatIframeContainer.style.display === 'block' ? 'scale(1.1)' : 'scale(1)';
+  });
+  closeChatIframe.addEventListener('click', () => {
+    chatIframeContainer.style.display = 'none';
+    supportButton.style.transform = 'scale(1)';
+  });
+</script>
+          `.trim();
+
+          // Generate HTML code for full iframe
+          const fullIframeCode = `
+<iframe src="${data.link}" style="width: 100%; height: 100vh; border: none;"></iframe>
+          `.trim();
+
           chatPageSettings.innerHTML = `
             <div class="form-group">
               <label for="chatLink">رابط صفحة الدردشة:</label>
               <div class="input-group">
                 <input type="text" id="chatLink" value="${data.link}" readonly>
                 <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="floatingButtonCode">كود زر الدعم العائم:</label>
+              <div class="input-group">
+                <textarea id="floatingButtonCode" readonly style="width: 100%; height: 150px; resize: none; direction: ltr;">${floatingButtonCode}</textarea>
+                <button id="copyFloatingButtonCodeBtn" class="submit-btn">نسخ</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="fullIframeCode">كود تضمين صفحة الدردشة:</label>
+              <div class="input-group">
+                <textarea id="fullIframeCode" readonly style="width: 100%; height: 100px; resize: none; direction: ltr;">${fullIframeCode}</textarea>
+                <button id="copyFullIframeCodeBtn" class="submit-btn">نسخ</button>
               </div>
             </div>
             <div class="preview-settings-container">
@@ -234,7 +281,7 @@ async function loadChatPage() {
             buttonColor: data.colors.button,
             backgroundColor: data.colors.background,
             inputTextColor: data.colors.inputTextColor || '#333333',
-            sendButtonColor: data.colors.sendButtonColor || '#007bff', // لون زر الإرسال
+            sendButtonColor: data.colors.sendButtonColor || '#007bff',
           };
 
           function updatePreviewStyles() {
@@ -243,7 +290,7 @@ async function loadChatPage() {
             previewChatTitle.style.color = colorValues.titleColor;
             previewChatMessages.style.backgroundColor = colorValues.chatAreaBackgroundColor;
             previewChat.style.color = colorValues.textColor;
-            previewSendMessageBtn.style.backgroundColor = colorValues.sendButtonColor; // Use sendButtonColor
+            previewSendMessageBtn.style.backgroundColor = colorValues.sendButtonColor;
             previewMessageInput.style.color = colorValues.inputTextColor;
             Array.from(previewSuggestedQuestions.children).forEach(btn => {
               btn.style.backgroundColor = colorValues.buttonColor;
@@ -338,6 +385,32 @@ async function loadChatPage() {
             }
           });
 
+          // Copy floating button code
+          document.getElementById('copyFloatingButtonCodeBtn').addEventListener('click', async () => {
+            const floatingButtonCodeInput = document.getElementById('floatingButtonCode');
+            try {
+              await navigator.clipboard.writeText(floatingButtonCodeInput.value);
+              alert('تم نسخ كود زر الدعم العائم بنجاح!');
+              console.log('Floating button code copied');
+            } catch (err) {
+              console.error('خطأ في نسخ كود زر الدعم العائم:', err);
+              alert('فشل في نسخ الكود، حاول مرة أخرى');
+            }
+          });
+
+          // Copy full iframe code
+          document.getElementById('copyFullIframeCodeBtn').addEventListener('click', async () => {
+            const fullIframeCodeInput = document.getElementById('fullIframeCode');
+            try {
+              await navigator.clipboard.writeText(fullIframeCodeInput.value);
+              alert('تم نسخ كود تضمين صفحة الدردشة بنجاح!');
+              console.log('Full iframe code copied');
+            } catch (err) {
+              console.error('خطأ في نسخ كود تضمين صفحة الدردشة:', err);
+              alert('فشل في نسخ الكود، حاول مرة أخرى');
+            }
+          });
+
           // Suggested questions functionality
           const suggestedQuestionsEnabledCheckbox = document.getElementById('suggestedQuestionsEnabled');
           const suggestedQuestionsContainer = document.getElementById('suggestedQuestionsContainer');
@@ -426,7 +499,7 @@ async function loadChatPage() {
               botMessageBackground: colorValues.botMessageBackgroundColor,
               botMessageTextColor: colorValues.botMessageTextColor,
               inputTextColor: colorValues.inputTextColor,
-              sendButtonColor: colorValues.sendButtonColor, // Include sendButtonColor
+              sendButtonColor: colorValues.sendButtonColor,
             }));
             formData.set('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on' ? 'true' : 'false');
             formData.set('suggestedQuestions', JSON.stringify(questions));
