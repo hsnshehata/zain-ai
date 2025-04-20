@@ -54,6 +54,15 @@ async function loadChatPage() {
   const chatPageSettings = document.getElementById('chatPageSettings');
 
   if (botIdSelect) {
+    // Function to show toast messages
+    function showToast(message, type = 'success') {
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = message;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+
     // Function to load chat page settings based on selected bot
     async function loadChatPageSettings(selectedBotId) {
       if (!selectedBotId) {
@@ -266,6 +275,9 @@ async function loadChatPage() {
             document.getElementById('backgroundColorInput').value = colorValues.backgroundColor;
             document.getElementById('inputTextColorInput').value = colorValues.inputTextColor;
             document.getElementById('buttonColorInputInput').value = colorValues.buttonColorInput;
+
+            // Scroll to bottom of chat messages
+            previewChatMessages.scrollTop = previewChatMessages.scrollHeight;
           }
 
           // Handle gear buttons to show/hide settings popups
@@ -330,11 +342,11 @@ async function loadChatPage() {
             const linkInput = document.getElementById('chatLink');
             try {
               await navigator.clipboard.writeText(linkInput.value);
-              alert('تم نسخ الرابط بنجاح!');
+              showToast('تم نسخ الرابط بنجاح!');
               console.log(`Link copied: ${linkInput.value}`);
             } catch (err) {
               console.error('خطأ في نسخ الرابط:', err);
-              alert('فشل في نسخ الرابط، حاول مرة أخرى');
+              showToast('فشل في نسخ الرابط، حاول مرة أخرى', 'error');
             }
           });
 
@@ -357,8 +369,9 @@ async function loadChatPage() {
               newQuestionInput.value = '';
               updateQuestionsList();
               updatePreviewSuggestedQuestions();
+              showToast('تم إضافة السؤال بنجاح!');
             } else {
-              alert('يرجى إدخال سؤال صالح');
+              showToast('يرجى إدخال سؤال صالح', 'error');
             }
           });
 
@@ -391,6 +404,7 @@ async function loadChatPage() {
               questions[index] = newQuestion.trim();
               updateQuestionsList();
               updatePreviewSuggestedQuestions();
+              showToast('تم تعديل السؤال بنجاح!');
             }
           };
 
@@ -399,6 +413,7 @@ async function loadChatPage() {
               questions.splice(index, 1);
               updateQuestionsList();
               updatePreviewSuggestedQuestions();
+              showToast('تم حذف السؤال بنجاح!');
             }
           };
 
@@ -452,10 +467,10 @@ async function loadChatPage() {
                 previewChatLogo.src = result.logoUrl;
                 previewChatLogo.style.display = 'block';
               }
-              alert('تم حفظ الإعدادات بنجاح!');
+              showToast('تم حفظ الإعدادات بنجاح!');
             } catch (err) {
               console.error('خطأ في حفظ الإعدادات:', err);
-              alert('فشل في حفظ الإعدادات، حاول مرة أخرى');
+              showToast('فشل في حفظ الإعدادات، حاول مرة أخرى', 'error');
             }
           });
 
