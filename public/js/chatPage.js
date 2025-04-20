@@ -288,6 +288,12 @@ async function loadChatPage() {
 
           // Wait for iro.js to load before initializing color pickers
           iroScript.onload = () => {
+            if (!window.iro) {
+              console.error('Failed to load iro.js');
+              alert('تعذر تحميل مكتبة الألوان، حاول مرة أخرى لاحقًا');
+              return;
+            }
+
             const colorPickers = {};
 
             document.querySelectorAll('.color-preview').forEach(preview => {
@@ -296,9 +302,14 @@ async function loadChatPage() {
 
               // Create a container for the color picker
               const pickerContainer = document.createElement('div');
+              pickerContainer.className = 'color-picker-container';
               pickerContainer.style.position = 'absolute';
               pickerContainer.style.zIndex = '1001';
               pickerContainer.style.display = 'none';
+              pickerContainer.style.background = 'var(--card-bg)';
+              pickerContainer.style.borderRadius = '8px';
+              pickerContainer.style.padding = '10px';
+              pickerContainer.style.boxShadow = 'var(--shadow)';
               preview.parentNode.appendChild(pickerContainer);
 
               // Initialize iro.js color picker
@@ -315,6 +326,7 @@ async function loadChatPage() {
 
               // Show/hide color picker on click
               preview.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent the document click handler from hiding the picker immediately
                 const isVisible = pickerContainer.style.display === 'block';
                 // Hide all other pickers
                 Object.values(colorPickers).forEach(({ container }) => {
@@ -324,8 +336,9 @@ async function loadChatPage() {
                 if (!isVisible) {
                   pickerContainer.style.display = 'block';
                   const rect = preview.getBoundingClientRect();
-                  pickerContainer.style.top = `${rect.bottom + window.scrollY}px`;
-                  pickerContainer.style.left = `${rect.left + window.scrollX}px`;
+                  // Position the picker below the preview
+                  pickerContainer.style.top = `${rect.bottom + window.scrollY + 5}px`;
+                  pickerContainer.style.left = `${Math.min(rect.left + window.scrollX, window.innerWidth - 170)}px`; // Ensure picker stays within viewport
                 }
               });
 
@@ -340,8 +353,14 @@ async function loadChatPage() {
                 if (!pickerContainer.contains(event.target) && !preview.contains(event.target)) {
                   pickerContainer.style.display = 'none';
                 }
-              });
+              }, { capture: true });
             });
+          };
+
+          // Handle iro.js load failure
+          iroScript.onerror = () => {
+            console.error('Failed to load iro.js from CDN');
+            alert('تعذر تحميل مكتبة الألوان، تحقق من الاتصال بالإنترنت وحاول مرة أخرى');
           };
 
           // Update title in preview
