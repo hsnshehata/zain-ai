@@ -35,7 +35,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       #chatHeader { background-color: ${settings.colors?.header || '#007bff'}; }
       #chatTitle { color: ${settings.titleColor || '#ffffff'}; }
       #chatMessages { background-color: ${settings.colors?.chatAreaBackground || '#ffffff'}; }
-      #sendMessageBtn, .suggested-question { background-color: ${settings.colors?.button || '#007bff'}; }
+      #sendMessageBtn { background-color: ${settings.colors?.sendButtonColor || '#007bff'}; }
+      .suggested-question { background-color: ${settings.colors?.button || '#007bff'}; }
       .user-message { background-color: ${settings.colors?.userMessageBackground || '#007bff'}; color: ${settings.colors?.userMessageTextColor || '#ffffff'}; }
       .bot-message { background-color: ${settings.colors?.botMessageBackground || '#e9ecef'}; color: ${settings.colors?.botMessageTextColor || '#000000'}; }
       #messageInput { color: ${settings.colors?.inputTextColor || '#333333'}; }
