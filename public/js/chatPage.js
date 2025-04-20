@@ -512,17 +512,51 @@ async function loadChatPage() {
 
           // Initial preview update
           updatePreviewStyles();
-        } catch (err) {
-          console.error('خطأ في جلب صفحة الدردشة:', err);
+        } else {
+          // If no chat page exists for the selected bot, show the "Create Chat Page" button
           chatPageSettings.innerHTML = `
-            <p style="color: red;">تعذر جلب صفحة الدردشة، حاول مرة أخرى لاحقًا.</p>
+            <button id="createChatPageBtn" class="submit-btn">إنشاء صفحة دردشة</button>
           `;
+
+          const createChatPageBtn = document.getElementById('createChatPageBtn');
+          if (createChatPageBtn) {
+            createChatPageBtn.addEventListener('click', async () => {
+              try {
+                const response = await fetch('/api/chat-page', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    userId: localStorage.getItem('userId'),
+                    botId: selectedBotId,
+                  }),
+                });
+
+                if (!response.ok) {
+                  throw new Error(`فشل في إنشاء صفحة الدردشة: ${response.status} ${response.statusText}`);
+                }
+
+                // After creating the chat page, trigger the change event to reload settings
+                botIdSelect.dispatchEvent(new Event('change'));
+              } catch (err) {
+                console.error('خطأ في إنشاء صفحة الدردشة:', err);
+                chatPageSettings.innerHTML = `
+                  <p style="color: red;">تعذر إنشاء صفحة الدردشة، حاول مرة أخرى لاحقًا.</p>
+                `;
+              }
+            });
+          }
         }
-      });
-    } else {
-      console.error('botId select element not found in DOM');
-    }
+      } catch (err) {
+        console.error('خطأ في جلب صفحة الدردشة:', err);
+        chatPageSettings.innerHTML = `
+          <p style="color: red;">تعذر جلب صفحة الدردشة، حاول مرة أخرى لاحقًا.</p>
+        `;
+      }
+    });
   } else {
-    console.error('createChatPageBtn not found in DOM');
+    console.error('botId select element not found in DOM');
   }
 }
