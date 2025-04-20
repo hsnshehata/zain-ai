@@ -272,6 +272,7 @@ body.light .color-picker-wrapper label {
   border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
   transition: all 0.3s;
+  z-index: 1003; /* Ensure clickable */
 }
 
 body.light .color-preview {
@@ -285,13 +286,15 @@ body.light .color-preview {
 /* Color Picker Container */
 .color-picker-container {
   position: absolute;
-  z-index: 1002; /* Higher than settings-popup */
+  z-index: 1004; /* Higher than everything */
   background: var(--card-bg);
   backdrop-filter: blur(10px);
   border-radius: 8px;
   padding: 10px;
   box-shadow: var(--shadow);
   display: none; /* Controlled by JS */
+  pointer-events: auto; /* Ensure interactive */
+  min-width: 170px; /* Ensure enough space for picker */
 }
 
 /* Ensure settings-popup doesn't hide color picker */
@@ -309,11 +312,22 @@ body.light .color-preview {
   gap: 8px;
   width: 250px;
   overflow: visible; /* Prevent clipping of color picker */
+  pointer-events: auto; /* Ensure clickable */
 }
 
 body.light .settings-popup {
   background: #fff;
   border: 1px solid #ddd;
+}
+
+/* Prevent parent containers from clipping */
+.chat-page-settings,
+.preview-settings-container,
+.preview-section,
+.chat-preview-container,
+.chat-container,
+.section-with-settings {
+  overflow: visible !important; /* Ensure no clipping of color picker */
 }
 
 /* Checkbox Styling */
@@ -868,6 +882,7 @@ body.light .preview-section {
   font-size: 1em;
   color: var(--text-dark);
   transition: all 0.3s;
+  z-index: 1001; /* Above other elements */
 }
 
 body.light .settings-gear {
