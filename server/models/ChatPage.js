@@ -14,11 +14,12 @@ const chatPageSchema = new mongoose.Schema({
     botMessageBackground: { type: String, default: '#e9ecef' },
     userMessageBackground: { type: String, default: '#007bff' },
     chatAreaBackground: { type: String, default: '#ffffff' },
-    inputTextColor: { type: String, default: '#333333' }, // New field for input text color
-    userMessageTextColor: { type: String, default: '#ffffff' }, // New field for user message text color
-    botMessageTextColor: { type: String, default: '#000000' }, // New field for bot message text color
+    inputTextColor: { type: String, default: '#333333' },
+    userMessageTextColor: { type: String, default: '#ffffff' },
+    botMessageTextColor: { type: String, default: '#000000' },
   },
   logoUrl: { type: String },
+  logoDeleteUrl: { type: String }, // New field to store the delete URL for the logo
   suggestedQuestionsEnabled: { type: Boolean, default: false },
   suggestedQuestions: [{ type: String }],
   imageUploadEnabled: { type: Boolean, default: false },
