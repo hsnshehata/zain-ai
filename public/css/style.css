@@ -282,6 +282,40 @@ body.light .color-preview {
   transform: scale(1.1);
 }
 
+/* Color Picker Container */
+.color-picker-container {
+  position: absolute;
+  z-index: 1002; /* Higher than settings-popup */
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: var(--shadow);
+  display: none; /* Controlled by JS */
+}
+
+/* Ensure settings-popup doesn't hide color picker */
+.settings-popup {
+  position: absolute;
+  right: 0;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 10px;
+  z-index: 1000;
+  display: none;
+  flex-direction: column;
+  gap: 8px;
+  width: 250px;
+  overflow: visible; /* Prevent clipping of color picker */
+}
+
+body.light .settings-popup {
+  background: #fff;
+  border: 1px solid #ddd;
+}
+
 /* Checkbox Styling */
 .checkbox-group {
   margin-bottom: 20px;
@@ -845,26 +879,6 @@ body.light .settings-gear {
   background: var(--primary);
   color: white;
   transform: rotate(90deg);
-}
-
-.settings-popup {
-  position: absolute;
-  right: 0;
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  padding: 10px;
-  z-index: 1000;
-  display: none;
-  flex-direction: column;
-  gap: 8px;
-  width: 250px;
-}
-
-body.light .settings-popup {
-  background: #fff;
-  border: 1px solid #ddd;
 }
 
 /* Adjust popup position for different sections */
