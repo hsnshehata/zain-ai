@@ -68,13 +68,13 @@ async function loadChatPage() {
 
         if (response.ok) {
           const data = await response.json();
-          // Generate HTML code for floating support button with image
+          // Generate HTML code for floating support button with corrected image and smaller iframe width
           const floatingButtonCode = `
 <div id="supportButtonContainer" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-  <img id="supportButton" src="https://i.ibb.co/7JJScM0/Chat-GPT-Image-20-2025-08-04-13.png" alt="دعم العملاء" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
+  <img id="supportButton" src="https://i.ibb.co/7JJScM0Q/Chat-GPT-Image-20-2025-08-04-13.png" alt="دعم العملاء" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
 </div>
 <div id="chatIframeContainer" style="display: none; position: fixed; bottom: 90px; right: 20px; z-index: 1000;">
-  <div style="position: relative; width: 400px; height: 600px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); background: white;">
+  <div style="position: relative; width: 350px; height: 600px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); background: white;">
     <button id="closeChatIframe" style="position: absolute; top: 10px; right: 10px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer;">✕</button>
     <iframe src="${data.link}" style="width: 100%; height: 100%; border: none; border-radius: 8px;"></iframe>
   </div>
