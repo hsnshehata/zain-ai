@@ -92,13 +92,13 @@ async function loadChatPage() {
                           <div id="header-settings" class="settings-popup" style="display: none;">
                             <div class="color-picker-wrapper">
                               <label for="titleColor">لون نص العنوان:</label>
-                              <span class="color-preview" id="titleColorPreview" style="background-color: ${data.titleColor || '#ffffff'};"></span>
-                              <input type="color" id="titleColor" name="titleColor" value="${data.titleColor || '#ffffff'}">
+                              <span class="color-preview" id="titleColorPreview" data-color-id="titleColor" style="background-color: ${data.titleColor || '#ffffff'};"></span>
+                              <input type="color" id="titleColor" name="titleColor" value="${data.titleColor || '#ffffff'}" style="display: none;">
                             </div>
                             <div class="color-picker-wrapper">
                               <label for="headerColor">لون الهيدر:</label>
-                              <span class="color-preview" id="headerColorPreview" style="background-color: ${data.colors.header};"></span>
-                              <input type="color" id="headerColor" name="headerColor" value="${data.colors.header}">
+                              <span class="color-preview" id="headerColorPreview" data-color-id="headerColor" style="background-color: ${data.colors.header};"></span>
+                              <input type="color" id="headerColor" name="headerColor" value="${data.colors.header}" style="display: none;">
                             </div>
                           </div>
                         </div>
@@ -111,33 +111,33 @@ async function loadChatPage() {
                           <div id="messages-settings" class="settings-popup" style="display: none;">
                             <div class="color-picker-wrapper">
                               <label for="chatAreaBackgroundColor">لون خلفية مربع الدردشة:</label>
-                              <span class="color-preview" id="chatAreaBackgroundColorPreview" style="background-color: ${data.colors.chatAreaBackground || '#ffffff'};"></span>
-                              <input type="color" id="chatAreaBackgroundColor" name="chatAreaBackgroundColor" value="${data.colors.chatAreaBackground || '#ffffff'}">
+                              <span class="color-preview" id="chatAreaBackgroundColorPreview" data-color-id="chatAreaBackgroundColor" style="background-color: ${data.colors.chatAreaBackground || '#ffffff'};"></span>
+                              <input type="color" id="chatAreaBackgroundColor" name="chatAreaBackgroundColor" value="${data.colors.chatAreaBackground || '#ffffff'}" style="display: none;">
                             </div>
                             <div class="color-picker-wrapper">
                               <label for="textColor">لون النص العام:</label>
-                              <span class="color-preview" id="textColorPreview" style="background-color: ${data.colors.text};"></span>
-                              <input type="color" id="textColor" name="textColor" value="${data.colors.text}">
+                              <span class="color-preview" id="textColorPreview" data-color-id="textColor" style="background-color: ${data.colors.text};"></span>
+                              <input type="color" id="textColor" name="textColor" value="${data.colors.text}" style="display: none;">
                             </div>
                             <div class="color-picker-wrapper">
                               <label for="userMessageBackgroundColor">لون فقاعة المستخدم:</label>
-                              <span class="color-preview" id="userMessageBackgroundColorPreview" style="background-color: ${data.colors.userMessageBackground || '#007bff'};"></span>
-                              <input type="color" id="userMessageBackgroundColor" name="userMessageBackgroundColor" value="${data.colors.userMessageBackground || '#007bff'}">
+                              <span class="color-preview" id="userMessageBackgroundColorPreview" data-color-id="userMessageBackgroundColor" style="background-color: ${data.colors.userMessageBackground || '#007bff'};"></span>
+                              <input type="color" id="userMessageBackgroundColor" name="userMessageBackgroundColor" value="${data.colors.userMessageBackground || '#007bff'}" style="display: none;">
                             </div>
                             <div class="color-picker-wrapper">
                               <label for="userMessageTextColor">لون نص المستخدم:</label>
-                              <span class="color-preview" id="userMessageTextColorPreview" style="background-color: ${data.colors.userMessageTextColor || '#ffffff'};"></span>
-                              <input type="color" id="userMessageTextColor" name="userMessageTextColor" value="${data.colors.userMessageTextColor || '#ffffff'}">
+                              <span class="color-preview" id="userMessageTextColorPreview" data-color-id="userMessageTextColor" style="background-color: ${data.colors.userMessageTextColor || '#ffffff'};"></span>
+                              <input type="color" id="userMessageTextColor" name="userMessageTextColor" value="${data.colors.userMessageTextColor || '#ffffff'}" style="display: none;">
                             </div>
                             <div class="color-picker-wrapper">
                               <label for="botMessageBackgroundColor">لون فقاعة البوت:</label>
-                              <span class="color-preview" id="botMessageBackgroundColorPreview" style="background-color: ${data.colors.botMessageBackground || '#e9ecef'};"></span>
-                              <input type="color" id="botMessageBackgroundColor" name="botMessageBackgroundColor" value="${data.colors.botMessageBackground || '#e9ecef'}">
+                              <span class="color-preview" id="botMessageBackgroundColorPreview" data-color-id="botMessageBackgroundColor" style="background-color: ${data.colors.botMessageBackground || '#e9ecef'};"></span>
+                              <input type="color" id="botMessageBackgroundColor" name="botMessageBackgroundColor" value="${data.colors.botMessageBackground || '#e9ecef'}" style="display: none;">
                             </div>
                             <div class="color-picker-wrapper">
                               <label for="botMessageTextColor">لون نص البوت:</label>
-                              <span class="color-preview" id="botMessageTextColorPreview" style="background-color: ${data.colors.botMessageTextColor || '#000000'};"></span>
-                              <input type="color" id="botMessageTextColor" name="botMessageTextColor" value="${data.colors.botMessageTextColor || '#000000'}">
+                              <span class="color-preview" id="botMessageTextColorPreview" data-color-id="botMessageTextColor" style="background-color: ${data.colors.botMessageTextColor || '#000000'};"></span>
+                              <input type="color" id="botMessageTextColor" name="botMessageTextColor" value="${data.colors.botMessageTextColor || '#000000'}" style="display: none;">
                             </div>
                           </div>
                         </div>
@@ -149,8 +149,8 @@ async function loadChatPage() {
                           <div id="suggested-questions-settings" class="settings-popup" style="display: none;">
                             <div class="color-picker-wrapper">
                               <label for="buttonColor">لون الأزرار المقترحة:</label>
-                              <span class="color-preview" id="buttonColorPreview" style="background-color: ${data.colors.button};"></span>
-                              <input type="color" id="buttonColor" name="buttonColor" value="${data.colors.button}">
+                              <span class="color-preview" id="buttonColorPreview" data-color-id="buttonColor" style="background-color: ${data.colors.button};"></span>
+                              <input type="color" id="buttonColor" name="buttonColor" value="${data.colors.button}" style="display: none;">
                             </div>
                           </div>
                         </div>
@@ -164,18 +164,18 @@ async function loadChatPage() {
                           <div id="input-settings" class="settings-popup" style="display: none;">
                             <div class="color-picker-wrapper">
                               <label for="backgroundColor">لون الخلفية:</label>
-                              <span class="color-preview" id="backgroundColorPreview" style="background-color: ${data.colors.background};"></span>
-                              <input type="color" id="backgroundColor" name="backgroundColor" value="${data.colors.background}">
+                              <span class="color-preview" id="backgroundColorPreview" data-color-id="backgroundColor" style="background-color: ${data.colors.background};"></span>
+                              <input type="color" id="backgroundColor" name="backgroundColor" value="${data.colors.background}" style="display: none;">
                             </div>
                             <div class="color-picker-wrapper">
                               <label for="inputTextColor">لون نص مربع الإدخال:</label>
-                              <span class="color-preview" id="inputTextColorPreview" style="background-color: ${data.colors.inputTextColor || '#333333'};"></span>
-                              <input type="color" id="inputTextColor" name="inputTextColor" value="${data.colors.inputTextColor || '#333333'}">
+                              <span class="color-preview" id="inputTextColorPreview" data-color-id="inputTextColor" style="background-color: ${data.colors.inputTextColor || '#333333'};"></span>
+                              <input type="color" id="inputTextColor" name="inputTextColor" value="${data.colors.inputTextColor || '#333333'}" style="display: none;">
                             </div>
                             <div class="color-picker-wrapper">
                               <label for="buttonColorInput">لون زر الإرسال:</label>
-                              <span class="color-preview" id="buttonColorInputPreview" style="background-color: ${data.colors.button};"></span>
-                              <input type="color" id="buttonColorInput" name="buttonColor" value="${data.colors.button}">
+                              <span class="color-preview" id="buttonColorInputPreview" data-color-id="buttonColorInput" style="background-color: ${data.colors.button};"></span>
+                              <input type="color" id="buttonColorInput" name="buttonColor" value="${data.colors.button}" style="display: none;">
                             </div>
                           </div>
                         </div>
@@ -283,7 +283,8 @@ async function loadChatPage() {
             // Handle color preview clicks to open color picker
             document.querySelectorAll('.color-preview').forEach(preview => {
               preview.addEventListener('click', () => {
-                const input = preview.nextElementSibling; // The color input
+                const inputId = preview.getAttribute('data-color-id');
+                const input = document.getElementById(inputId);
                 input.click(); // Trigger the color picker
               });
             });
@@ -527,13 +528,13 @@ async function loadChatPage() {
                       <div id="header-settings" class="settings-popup" style="display: none;">
                         <div class="color-picker-wrapper">
                           <label for="titleColor">لون نص العنوان:</label>
-                          <span class="color-preview" id="titleColorPreview" style="background-color: #ffffff;"></span>
-                          <input type="color" id="titleColor" name="titleColor" value="#ffffff">
+                          <span class="color-preview" id="titleColorPreview" data-color-id="titleColor" style="background-color: #ffffff;"></span>
+                          <input type="color" id="titleColor" name="titleColor" value="#ffffff" style="display: none;">
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="headerColor">لون الهيدر:</label>
-                          <span class="color-preview" id="headerColorPreview" style="background-color: #007bff;"></span>
-                          <input type="color" id="headerColor" name="headerColor" value="#007bff">
+                          <span class="color-preview" id="headerColorPreview" data-color-id="headerColor" style="background-color: #007bff;"></span>
+                          <input type="color" id="headerColor" name="headerColor" value="#007bff" style="display: none;">
                         </div>
                       </div>
                     </div>
@@ -546,33 +547,33 @@ async function loadChatPage() {
                       <div id="messages-settings" class="settings-popup" style="display: none;">
                         <div class="color-picker-wrapper">
                           <label for="chatAreaBackgroundColor">لون خلفية مربع الدردشة:</label>
-                          <span class="color-preview" id="chatAreaBackgroundColorPreview" style="background-color: #ffffff;"></span>
-                          <input type="color" id="chatAreaBackgroundColor" name="chatAreaBackgroundColor" value="#ffffff">
+                          <span class="color-preview" id="chatAreaBackgroundColorPreview" data-color-id="chatAreaBackgroundColor" style="background-color: #ffffff;"></span>
+                          <input type="color" id="chatAreaBackgroundColor" name="chatAreaBackgroundColor" value="#ffffff" style="display: none;">
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="textColor">لون النص العام:</label>
-                          <span class="color-preview" id="textColorPreview" style="background-color: #333333;"></span>
-                          <input type="color" id="textColor" name="textColor" value="#333333">
+                          <span class="color-preview" id="textColorPreview" data-color-id="textColor" style="background-color: #333333;"></span>
+                          <input type="color" id="textColor" name="textColor" value="#333333" style="display: none;">
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="userMessageBackgroundColor">لون فقاعة المستخدم:</label>
-                          <span class="color-preview" id="userMessageBackgroundColorPreview" style="background-color: #007bff;"></span>
-                          <input type="color" id="userMessageBackgroundColor" name="userMessageBackgroundColor" value="#007bff">
+                          <span class="color-preview" id="userMessageBackgroundColorPreview" data-color-id="userMessageBackgroundColor" style="background-color: #007bff;"></span>
+                          <input type="color" id="userMessageBackgroundColor" name="userMessageBackgroundColor" value="#007bff" style="display: none;">
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="userMessageTextColor">لون نص المستخدم:</label>
-                          <span class="color-preview" id="userMessageTextColorPreview" style="background-color: #ffffff;"></span>
-                          <input type="color" id="userMessageTextColor" name="userMessageTextColor" value="#ffffff">
+                          <span class="color-preview" id="userMessageTextColorPreview" data-color-id="userMessageTextColor" style="background-color: #ffffff;"></span>
+                          <input type="color" id="userMessageTextColor" name="userMessageTextColor" value="#ffffff" style="display: none;">
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="botMessageBackgroundColor">لون فقاعة البوت:</label>
-                          <span class="color-preview" id="botMessageBackgroundColorPreview" style="background-color: #e9ecef;"></span>
-                          <input type="color" id="botMessageBackgroundColor" name="botMessageBackgroundColor" value="#e9ecef">
+                          <span class="color-preview" id="botMessageBackgroundColorPreview" data-color-id="botMessageBackgroundColor" style="background-color: #e9ecef;"></span>
+                          <input type="color" id="botMessageBackgroundColor" name="botMessageBackgroundColor" value="#e9ecef" style="display: none;">
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="botMessageTextColor">لون نص البوت:</label>
-                          <span class="color-preview" id="botMessageTextColorPreview" style="background-color: #000000;"></span>
-                          <input type="color" id="botMessageTextColor" name="botMessageTextColor" value="#000000">
+                          <span class="color-preview" id="botMessageTextColorPreview" data-color-id="botMessageTextColor" style="background-color: #000000;"></span>
+                          <input type="color" id="botMessageTextColor" name="botMessageTextColor" value="#000000" style="display: none;">
                         </div>
                       </div>
                     </div>
@@ -582,8 +583,8 @@ async function loadChatPage() {
                       <div id="suggested-questions-settings" class="settings-popup" style="display: none;">
                         <div class="color-picker-wrapper">
                           <label for="buttonColor">لون الأزرار المقترحة:</label>
-                          <span class="color-preview" id="buttonColorPreview" style="background-color: #007bff;"></span>
-                          <input type="color" id="buttonColor" name="buttonColor" value="#007bff">
+                          <span class="color-preview" id="buttonColorPreview" data-color-id="buttonColor" style="background-color: #007bff;"></span>
+                          <input type="color" id="buttonColor" name="buttonColor" value="#007bff" style="display: none;">
                         </div>
                       </div>
                     </div>
@@ -597,18 +598,18 @@ async function loadChatPage() {
                       <div id="input-settings" class="settings-popup" style="display: none;">
                         <div class="color-picker-wrapper">
                           <label for="backgroundColor">لون الخلفية:</label>
-                          <span class="color-preview" id="backgroundColorPreview" style="background-color: #f8f9fa;"></span>
-                          <input type="color" id="backgroundColor" name="backgroundColor" value="#f8f9fa">
+                          <span class="color-preview" id="backgroundColorPreview" data-color-id="backgroundColor" style="background-color: #f8f9fa;"></span>
+                          <input type="color" id="backgroundColor" name="backgroundColor" value="#f8f9fa" style="display: none;">
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="inputTextColor">لون نص مربع الإدخال:</label>
-                          <span class="color-preview" id="inputTextColorPreview" style="background-color: #333333;"></span>
-                          <input type="color" id="inputTextColor" name="inputTextColor" value="#333333">
+                          <span class="color-preview" id="inputTextColorPreview" data-color-id="inputTextColor" style="background-color: #333333;"></span>
+                          <input type="color" id="inputTextColor" name="inputTextColor" value="#333333" style="display: none;">
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="buttonColorInput">لون زر الإرسال:</label>
-                          <span class="color-preview" id="buttonColorInputPreview" style="background-color: #007bff;"></span>
-                          <input type="color" id="buttonColorInput" name="buttonColor" value="#007bff">
+                          <span class="color-preview" id="buttonColorInputPreview" data-color-id="buttonColorInput" style="background-color: #007bff;"></span>
+                          <input type="color" id="buttonColorInput" name="buttonColor" value="#007bff" style="display: none;">
                         </div>
                       </div>
                     </div>
@@ -709,7 +710,8 @@ async function loadChatPage() {
 
         document.querySelectorAll('.color-preview').forEach(preview => {
           preview.addEventListener('click', () => {
-            const input = preview.nextElementSibling;
+            const inputId = preview.getAttribute('data-color-id');
+            const input = document.getElementById(inputId);
             input.click();
           });
         });
