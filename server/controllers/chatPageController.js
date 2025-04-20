@@ -2,6 +2,56 @@ const { v4: uuidv4 } = require('uuid');
 const ChatPage = require('../models/ChatPage');
 const path = require('path');
 const fs = require('fs');
+const fetch = require('node-fetch'); // Import node-fetch for making HTTP requests
+
+// Load environment variables
+require('dotenv').config();
+const IMGBB_API_KEY = process.env.IMGBB_API_KEY;
+
+// Function to upload image to imgbb
+async function uploadToImgbb(file) {
+  const formData = new FormData();
+  formData.append('image', file.data, file.name); // Use file data and name
+  formData.append('key', IMGBB_API_KEY);
+
+  const response = await fetch('https://api.imgbb.com/1/upload', {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`فشل في رفع الصورة إلى imgbb: ${response.status} ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  if (result.success) {
+    return {
+      url: result.data.url,
+      deleteUrl: result.data.delete_url,
+    };
+  } else {
+    throw new Error('فشل في رفع الصورة إلى imgbb');
+  }
+}
+
+// Function to delete image from imgbb
+async function deleteFromImgbb(deleteUrl) {
+  if (!deleteUrl) return;
+
+  try {
+    const response = await fetch(deleteUrl, {
+      method: 'DELETE',
+    });
+
+    if (!response.ok) {
+      console.error(`فشل في حذف الصورة من imgbb: ${response.status} ${response.statusText}`);
+    } else {
+      console.log('تم حذف الصورة القديمة بنجاح من imgbb');
+    }
+  } catch (err) {
+    console.error('خطأ أثناء حذف الصورة من imgbb:', err);
+  }
+}
 
 // Create a new chat page
 exports.createChatPage = async (req, res) => {
@@ -70,22 +120,20 @@ exports.updateChatPage = async (req, res) => {
     const imageUploadEnabled = req.body.imageUploadEnabled === 'true' ? true : req.body.imageUploadEnabled === 'false' ? false : chatPage.imageUploadEnabled;
     const darkModeEnabled = req.body.darkModeEnabled === 'true' ? true : req.body.darkModeEnabled === 'false' ? false : chatPage.darkModeEnabled;
 
-    // Handle logo upload
+    // Handle logo upload to imgbb
     let logoUrl = chatPage.logoUrl;
-    if (req.files && req.files.logo) {
-      const logo = req.files.logo;
-      const uploadDir = path.join(__dirname, '../../public/uploads');
-      const logoName = `${Date.now()}-${logo.name}`;
-      const logoPath = path.join(uploadDir, logoName);
+    let logoDeleteUrl = chatPage.logoDeleteUrl;
 
-      // Ensure uploads directory exists
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
+    if (req.files && req.files.logo) {
+      // Delete the old image from imgbb if it exists
+      if (logoDeleteUrl) {
+        await deleteFromImgbb(logoDeleteUrl);
       }
 
-      // Move the uploaded file to the uploads directory
-      await logo.mv(logoPath);
-      logoUrl = `/uploads/${logoName}`;
+      // Upload the new image to imgbb
+      const uploadResult = await uploadToImgbb(req.files.logo);
+      logoUrl = uploadResult.url;
+      logoDeleteUrl = uploadResult.deleteUrl;
     }
 
     // Update chat page
@@ -93,6 +141,7 @@ exports.updateChatPage = async (req, res) => {
     chatPage.titleColor = titleColor;
     chatPage.colors = colors;
     chatPage.logoUrl = logoUrl;
+    chatPage.logoDeleteUrl = logoDeleteUrl;
     chatPage.suggestedQuestionsEnabled = suggestedQuestionsEnabled;
     chatPage.suggestedQuestions = suggestedQuestions;
     chatPage.imageUploadEnabled = imageUploadEnabled;
