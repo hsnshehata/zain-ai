@@ -56,11 +56,38 @@ body.light {
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 769px) {
   .dashboard-container {
     margin-left: 270px; /* Offset for Sidebar */
     padding-bottom: 20px; /* No Bottom Navigation on Desktop */
   }
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  height: 100%;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  box-shadow: var(--shadow);
+  z-index: 1000;
+}
+
+.sidebar .nav-item {
+  display: block;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.sidebar .nav-item:hover {
+  background: var(--primary);
+  color: white;
 }
 
 /* Bottom Navigation */
@@ -100,32 +127,29 @@ body.light {
   margin-bottom: 5px;
 }
 
-@media (min-width: 1024px) {
-  .bottom-nav {
-    display: none !important; /* Ensure Bottom Navigation is hidden on desktop */
-  }
+/* Media Queries for Responsive Design */
+@media (max-width: 768px) {
   .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 250px;
-    height: 100%;
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    padding: 20px;
-    box-shadow: var(--shadow);
-    z-index: 1000;
+    display: none !important; /* Hide Sidebar on Mobile */
   }
-  .sidebar .nav-item {
-    display: block;
-    padding: 15px;
-    margin: 10px 0;
-    border-radius: 8px;
-    cursor: pointer;
+
+  .bottom-nav {
+    display: flex !important; /* Ensure Bottom Navigation is visible on Mobile */
   }
-  .sidebar .nav-item:hover {
-    background: var(--primary);
-    color: white;
+
+  .dashboard-container {
+    margin-left: 0; /* Remove Sidebar offset on Mobile */
+    padding-bottom: 80px; /* Space for Bottom Navigation */
+  }
+}
+
+@media (min-width: 769px) {
+  .sidebar {
+    display: block !important; /* Show Sidebar on Desktop */
+  }
+
+  .bottom-nav {
+    display: none !important; /* Hide Bottom Navigation on Desktop */
   }
 }
 
@@ -526,7 +550,7 @@ body.light .rule-card {
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 769px) {
   .admin-actions {
     display: flex;
   }
@@ -689,7 +713,7 @@ body.light .chat-page-settings {
   gap: 20px;
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 769px) {
   .preview-settings-container {
     flex-direction: row;
     align-items: flex-start;
