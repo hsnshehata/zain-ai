@@ -170,7 +170,7 @@ async function loadChatPage() {
               </div>
               <div class="settings-section">
                 <form id="customizationForm" class="settings-group" enctype="multipart/form-data">
-                  ㄷ<div class="form-group">
+                  <div class="form-group">
                     <label for="title">عنوان الصفحة:</label>
                     <input type="text" id="title" name="title" value="${data.title}" required placeholder="أدخل عنوان الصفحة">
                   </div>
@@ -441,7 +441,8 @@ async function loadChatPage() {
               });
 
               if (!response.ok) {
-                throw new Error(`فشل في حفظ الإعدادات: ${response.status} ${response.statusText}`);
+                const errorData = await response.json();
+                throw new Error(errorData.message || `فشل في حفظ الإعدادات: ${response.status}`);
               }
 
               const result = await response.json();
@@ -455,7 +456,7 @@ async function loadChatPage() {
               alert('تم حفظ الإعدادات بنجاح!');
             } catch (err) {
               console.error('خطأ في حفظ الإعدادات:', err);
-              alert('فشل في حفظ الإعدادات، حاول مرة أخرى');
+              alert(err.message || 'فشل في حفظ الإعدادات، حاول مرة أخرى');
             }
           });
 
