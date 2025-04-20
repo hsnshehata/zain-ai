@@ -222,7 +222,7 @@ async function loadChatPage() {
           const botMessage = document.querySelector('#previewChatMessages .bot-message');
 
           // Object to store color values
-          const colorValues = {
+          let colorValues = {
             titleColor: data.titleColor || '#ffffff',
             headerColor: data.colors.header,
             chatAreaBackgroundColor: data.colors.chatAreaBackground || '#ffffff',
@@ -420,7 +420,7 @@ async function loadChatPage() {
               background: colorValues.backgroundColor,
               chatAreaBackground: colorValues.chatAreaBackgroundColor,
               text: colorValues.textColor,
-              button: colorValues.buttonColor,
+              button: colorValues.buttonColor, // Include buttonColor
               userMessageBackground: colorValues.userMessageBackgroundColor,
               userMessageTextColor: colorValues.userMessageTextColor,
               botMessageBackground: colorValues.botMessageBackgroundColor,
@@ -452,6 +452,23 @@ async function loadChatPage() {
                 logoPreview.style.display = 'block';
                 previewChatLogo.src = result.logoUrl;
                 previewChatLogo.style.display = 'block';
+              }
+              // Update colorValues with the new values from the server response
+              if (result.colors) {
+                colorValues.headerColor = result.colors.header || colorValues.headerColor;
+                colorValues.backgroundColor = result.colors.background || colorValues.backgroundColor;
+                colorValues.chatAreaBackgroundColor = result.colors.chatAreaBackground || colorValues.chatAreaBackgroundColor;
+                colorValues.textColor = result.colors.text || colorValues.textColor;
+                colorValues.buttonColor = result.colors.button || colorValues.buttonColor; // Update buttonColor
+                colorValues.userMessageBackgroundColor = result.colors.userMessageBackground || colorValues.userMessageBackgroundColor;
+                colorValues.userMessageTextColor = result.colors.userMessageTextColor || colorValues.userMessageTextColor;
+                colorValues.botMessageBackgroundColor = result.colors.botMessageBackground || colorValues.botMessageBackgroundColor;
+                colorValues.botMessageTextColor = result.colors.botMessageTextColor || colorValues.botMessageTextColor;
+                colorValues.inputTextColor = result.colors.inputTextColor || colorValues.inputTextColor;
+                colorValues.buttonColorInput = result.colors.button || colorValues.buttonColorInput;
+
+                // Update the preview with the new values
+                updatePreviewStyles();
               }
               alert('تم حفظ الإعدادات بنجاح!');
             } catch (err) {
