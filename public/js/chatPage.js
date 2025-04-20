@@ -160,8 +160,8 @@ async function loadChatPage() {
                           <input type="color" class="color-input" id="inputTextColorInput" data-color-id="inputTextColor" value="${data.colors.inputTextColor || '#333333'}">
                         </div>
                         <div class="color-picker-wrapper">
-                          <label for="buttonColorInput">لون زر الإرسال:</label>
-                          <input type="color" class="color-input" id="buttonColorInputInput" data-color-id="buttonColorInput" value="${data.colors.button}">
+                          <label for="sendButtonColor">لون زر الإرسال:</label>
+                          <input type="color" class="color-input" id="sendButtonColorInput" data-color-id="sendButtonColor" value="${data.colors.sendButtonColor || '#007bff'}">
                         </div>
                       </div>
                     </div>
@@ -234,7 +234,7 @@ async function loadChatPage() {
             buttonColor: data.colors.button,
             backgroundColor: data.colors.background,
             inputTextColor: data.colors.inputTextColor || '#333333',
-            buttonColorInput: data.colors.button,
+            sendButtonColor: data.colors.sendButtonColor || '#007bff', // لون زر الإرسال
           };
 
           function updatePreviewStyles() {
@@ -243,7 +243,7 @@ async function loadChatPage() {
             previewChatTitle.style.color = colorValues.titleColor;
             previewChatMessages.style.backgroundColor = colorValues.chatAreaBackgroundColor;
             previewChat.style.color = colorValues.textColor;
-            previewSendMessageBtn.style.backgroundColor = colorValues.buttonColorInput;
+            previewSendMessageBtn.style.backgroundColor = colorValues.sendButtonColor; // Use sendButtonColor
             previewMessageInput.style.color = colorValues.inputTextColor;
             Array.from(previewSuggestedQuestions.children).forEach(btn => {
               btn.style.backgroundColor = colorValues.buttonColor;
@@ -265,7 +265,7 @@ async function loadChatPage() {
             document.getElementById('buttonColorInput').value = colorValues.buttonColor;
             document.getElementById('backgroundColorInput').value = colorValues.backgroundColor;
             document.getElementById('inputTextColorInput').value = colorValues.inputTextColor;
-            document.getElementById('buttonColorInputInput').value = colorValues.buttonColorInput;
+            document.getElementById('sendButtonColorInput').value = colorValues.sendButtonColor;
           }
 
           // Handle gear buttons to show/hide settings popups
@@ -420,12 +420,13 @@ async function loadChatPage() {
               background: colorValues.backgroundColor,
               chatAreaBackground: colorValues.chatAreaBackgroundColor,
               text: colorValues.textColor,
-              button: colorValues.buttonColor, // Include buttonColor
+              button: colorValues.buttonColor,
               userMessageBackground: colorValues.userMessageBackgroundColor,
               userMessageTextColor: colorValues.userMessageTextColor,
               botMessageBackground: colorValues.botMessageBackgroundColor,
               botMessageTextColor: colorValues.botMessageTextColor,
               inputTextColor: colorValues.inputTextColor,
+              sendButtonColor: colorValues.sendButtonColor, // Include sendButtonColor
             }));
             formData.set('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on' ? 'true' : 'false');
             formData.set('suggestedQuestions', JSON.stringify(questions));
@@ -459,13 +460,13 @@ async function loadChatPage() {
                 colorValues.backgroundColor = result.colors.background || colorValues.backgroundColor;
                 colorValues.chatAreaBackgroundColor = result.colors.chatAreaBackground || colorValues.chatAreaBackgroundColor;
                 colorValues.textColor = result.colors.text || colorValues.textColor;
-                colorValues.buttonColor = result.colors.button || colorValues.buttonColor; // Update buttonColor
+                colorValues.buttonColor = result.colors.button || colorValues.buttonColor;
                 colorValues.userMessageBackgroundColor = result.colors.userMessageBackground || colorValues.userMessageBackgroundColor;
                 colorValues.userMessageTextColor = result.colors.userMessageTextColor || colorValues.userMessageTextColor;
                 colorValues.botMessageBackgroundColor = result.colors.botMessageBackground || colorValues.botMessageBackgroundColor;
                 colorValues.botMessageTextColor = result.colors.botMessageTextColor || colorValues.botMessageTextColor;
                 colorValues.inputTextColor = result.colors.inputTextColor || colorValues.inputTextColor;
-                colorValues.buttonColorInput = result.colors.button || colorValues.buttonColorInput;
+                colorValues.sendButtonColor = result.colors.sendButtonColor || colorValues.sendButtonColor;
 
                 // Update the preview with the new values
                 updatePreviewStyles();
