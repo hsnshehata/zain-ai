@@ -264,66 +264,42 @@ body.light .color-picker-wrapper label {
   color: var(--text-light);
 }
 
-/* Color Preview */
-.color-preview {
+/* Color Input (HTML5 Color Picker) */
+.color-input {
   width: 30px;
   height: 30px;
-  border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s;
-  z-index: 1003; /* Ensure clickable */
+  padding: 0;
+  background: none;
+  z-index: 1003;
 }
 
-body.light .color-preview {
+body.light .color-input {
   border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
-.color-preview:hover {
-  transform: scale(1.1);
+/* Remove default appearance for better styling */
+.color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
 }
 
-/* Color Picker Container */
-.color-picker-container {
-  position: absolute;
-  z-index: 1004; /* Higher than everything */
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  border-radius: 8px;
-  padding: 10px;
-  box-shadow: var(--shadow);
-  display: none; /* Controlled by JS */
-  pointer-events: auto; /* Ensure interactive */
-  min-width: 170px; /* Ensure enough space for picker */
+.color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 6px;
 }
 
-/* Vanilla Picker Styles */
-.vanillapicker {
-  background: #fff;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  box-shadow: var(--shadow);
-  z-index: 1005;
-}
-
-.vanillapicker-panel {
-  padding: 10px;
-}
-
-.vanillapicker-color {
-  border: none !important;
-}
-
-.vanillapicker-preview {
-  border: 1px solid #ddd !important;
-  border-radius: 4px;
+.color-input::-moz-color-swatch {
+  border: none;
+  border-radius: 6px;
 }
 
 /* Ensure settings-popup doesn't hide color picker */
 .settings-popup {
   position: absolute;
   right: 0;
-  background: var(--card-bg);
+  background: rgba(255, 255, 255, 0.8); /* More opaque background for visibility */
   backdrop-filter: blur(10px);
   border-radius: 8px;
   box-shadow: var(--shadow);
@@ -333,17 +309,17 @@ body.light .color-preview {
   flex-direction: column;
   gap: 8px;
   width: 250px;
-  overflow: visible; /* Prevent clipping of color picker */
+  overflow: visible; /* Prevent clipping */
   pointer-events: auto; /* Ensure clickable */
 }
 
-/* Change text color in settings-popup to dark for visibility */
+/* Change text color and background in settings-popup for better visibility */
 .settings-popup label {
   color: #333 !important; /* Dark color for better visibility */
 }
 
 body.light .settings-popup {
-  background: #fff;
+  background: rgba(255, 255, 255, 0.9); /* More opaque in light mode */
   border: 1px solid #ddd;
 }
 
@@ -358,7 +334,7 @@ body.light .settings-popup label {
 .chat-preview-container,
 .chat-container,
 .section-with-settings {
-  overflow: visible !important; /* Ensure no clipping of color picker */
+  overflow: visible !important; /* Ensure no clipping */
 }
 
 /* Checkbox Styling */
@@ -971,7 +947,7 @@ body.light .settings-gear {
     font-size: 0.8em;
   }
 
-  .color-preview {
+  .color-input {
     width: 25px;
     height: 25px;
   }
