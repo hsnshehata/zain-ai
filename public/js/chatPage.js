@@ -275,7 +275,9 @@ async function loadChatPage() {
 
           // Handle gear buttons to show/hide settings popups
           document.querySelectorAll('.settings-gear').forEach(gear => {
-            gear.addEventListener('click', () => {
+            gear.addEventListener('click', (e) => {
+              e.stopPropagation(); // Prevent document click from hiding immediately
+              console.log('Settings gear clicked:', gear.getAttribute('data-target')); // Debug
               const targetId = gear.getAttribute('data-target');
               const popup = document.getElementById(targetId);
               const isVisible = popup.style.display === 'block';
@@ -283,82 +285,95 @@ async function loadChatPage() {
               document.querySelectorAll('.settings-popup').forEach(p => p.style.display = 'none');
               // Toggle the clicked popup
               popup.style.display = isVisible ? 'none' : 'block';
+              console.log(`Toggled popup ${targetId} to ${popup.style.display}`); // Debug
             });
           });
 
           // Wait for iro.js to load before initializing color pickers
           iroScript.onload = () => {
             if (!window.iro) {
-              console.error('Failed to load iro.js');
+              console.error('Failed to load iro.js: window.iro is undefined');
               alert('تعذر تحميل مكتبة الألوان، حاول مرة أخرى لاحقًا');
               return;
             }
+            console.log('iro.js loaded successfully'); // Debug
 
             const colorPickers = {};
 
-            document.querySelectorAll('.color-preview').forEach(preview => {
+            const previews = document.querySelectorAll('.color-preview');
+            console.log(`Found ${previews.length} color-preview elements`); // Debug
+            previews.forEach(preview => {
               const colorId = preview.getAttribute('data-color-id');
               const initialColor = colorValues[colorId];
+              console.log(`Initializing color picker for ${colorId} with initial color ${initialColor}`); // Debug
 
               // Create a container for the color picker
               const pickerContainer = document.createElement('div');
               pickerContainer.className = 'color-picker-container';
               pickerContainer.style.position = 'absolute';
-              pickerContainer.style.zIndex = '1002';
+              pickerContainer.style.zIndex = '1004';
               pickerContainer.style.display = 'none';
               preview.parentNode.appendChild(pickerContainer);
+              console.log(`Created pickerContainer for ${colorId}`); // Debug
 
               // Initialize iro.js color picker
-              const colorPicker = new iro.ColorPicker(pickerContainer, {
-                width: 150,
-                color: initialColor,
-                layout: [
-                  { component: iro.ui.Wheel },
-                  { component: iro.ui.Slider, options: { sliderType: 'value' } },
-                ],
-              });
-
-              colorPickers[colorId] = { picker: colorPicker, container: pickerContainer };
-
-              // Show/hide color picker on click
-              preview.addEventListener('click', (e) => {
-                e.stopPropagation();
-                console.log(`Color preview clicked: ${colorId}`); // Debug
-                const isVisible = pickerContainer.style.display === 'block';
-                // Hide all other pickers
-                Object.values(colorPickers).forEach(({ container }) => {
-                  container.style.display = 'none';
+              try {
+                const colorPicker = new iro.ColorPicker(pickerContainer, {
+                  width: 150,
+                  color: initialColor,
+                  layout: [
+                    { component: iro.ui.Wheel },
+                    { component: iro.ui.Slider, options: { sliderType: 'value' } },
+                  ],
                 });
-                // Toggle the clicked picker
-                if (!isVisible) {
-                  pickerContainer.style.display = 'block';
-                  const rect = preview.getBoundingClientRect();
-                  const scrollY = window.scrollY || window.pageYOffset;
-                  const scrollX = window.scrollX || window.pageXOffset;
-                  // Position below the preview, ensure within viewport
-                  pickerContainer.style.top = `${rect.bottom + scrollY + 5}px`;
-                  pickerContainer.style.left = `${Math.max(10, Math.min(rect.left + scrollX, window.innerWidth - 170))}px`;
-                  console.log(`Showing picker at top: ${pickerContainer.style.top}, left: ${pickerContainer.style.left}`); // Debug
-                } else {
-                  pickerContainer.style.display = 'none';
-                  console.log(`Hiding picker for: ${colorId}`); // Debug
-                }
-              });
 
-              // Update color value when changed
-              colorPicker.on('color:change', (color) => {
-                colorValues[colorId] = color.hexString;
-                updatePreviewStyles();
-                console.log(`Color changed for ${colorId}: ${color.hexString}`); // Debug
-              });
+                colorPickers[colorId] = { picker: colorPicker, container: pickerContainer };
+                console.log(`Color picker initialized for ${colorId}`); // Debug
 
-              // Hide picker when clicking outside
-              document.addEventListener('click', (event) => {
-                if (!pickerContainer.contains(event.target) && !preview.contains(event.target)) {
-                  pickerContainer.style.display = 'none';
-                  console.log(`Document click: Hiding picker for ${colorId}`); // Debug
-                }
-              }, { capture: true });
+                // Show/hide color picker on click
+                preview.addEventListener('click', (e) => {
+                  e.stopPropagation();
+                  console.log(`Color preview clicked: ${colorId}`); // Debug
+                  const isVisible = pickerContainer.style.display === 'block';
+                  // Hide all other pickers
+                  Object.values(colorPickers).forEach(({ container }) => {
+                    container.style.display = 'none';
+                  });
+                  // Toggle the clicked picker
+                  if (!isVisible) {
+                    pickerContainer.style.display = 'block';
+                    const rect = preview.getBoundingClientRect();
+                    const scrollY = window.scrollY || window.pageYOffset;
+                    const scrollX = window.scrollX || window.pageXOffset;
+                    // Position below the preview, ensure within viewport
+                    const top = rect.bottom + scrollY + 5;
+                    const left = Math.max(10, Math.min(rect.left + scrollX, window.innerWidth - 170));
+                    pickerContainer.style.top = `${top}px`;
+                    pickerContainer.style.left = `${left}px`;
+                    console.log(`Showing picker for ${colorId} at top: ${top}px, left: ${left}px`); // Debug
+                  } else {
+                    pickerContainer.style.display = 'none';
+                    console.log(`Hiding picker for ${colorId}`); // Debug
+                  }
+                });
+
+                // Update color value when changed
+                colorPicker.on('color:change', (color) => {
+                  colorValues[colorId] = color.hexString;
+                  updatePreviewStyles();
+                  console.log(`Color changed for ${colorId}: ${color.hexString}`); // Debug
+                });
+
+                // Hide picker when clicking outside
+                document.addEventListener('click', (event) => {
+                  if (!pickerContainer.contains(event.target) && !preview.contains(event.target)) {
+                    pickerContainer.style.display = 'none';
+                    console.log(`Document click: Hiding picker for ${colorId}`); // Debug
+                  }
+                }, { capture: true });
+              } catch (err) {
+                console.error(`Failed to initialize color picker for ${colorId}:`, err);
+              }
             });
           };
 
@@ -400,7 +415,7 @@ async function loadChatPage() {
             try {
               await navigator.clipboard.writeText(linkInput.value);
               alert('تم نسخ الرابط بنجاح!');
-              console.log(`Link invaded: ${linkInput.value}`);
+              console.log(`Link copied: ${linkInput.value}`);
             } catch (err) {
               console.error('خطأ في نسخ الرابط:', err);
               alert('فشل في نسخ الرابط، حاول مرة أخرى');
