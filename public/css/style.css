@@ -224,34 +224,10 @@ body.light .color-picker-wrapper label {
   color: var(--text-light);
 }
 
-.form-group input[type="color"] {
-  width: 30px;
-  height: 30px;
-  padding: 0;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  opacity: 0; /* Hide the default color picker */
-  position: absolute;
-}
-
-.color-picker-btn {
-  width: 40px;
-  height: 40px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.color-picker-btn:hover {
-  transform: scale(1.1);
-}
-
 /* Color Preview */
 .color-preview {
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
@@ -283,7 +259,9 @@ body.light .checkbox-group {
   border: 1px solid #ddd;
 }
 
-.checkbox-label {
+.checkbox
+
+-label {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -852,10 +830,17 @@ body.light .settings-popup {
 }
 
 /* Adjust popup position for different sections */
-#previewChatHeader + .settings-gear + #header-settings,
-#previewChatMessages + .settings-gear + #messages-settings,
-#previewSuggestedQuestions + .settings-gear + #suggested-questions-settings {
+#previewChatHeader + .settings-gear + #header-settings {
   top: 40px;
+}
+
+#previewChatMessages + .settings-gear + #messages-settings {
+  top: 40px;
+}
+
+#previewSuggestedQuestions + .settings-gear + #suggested-questions-settings {
+  bottom: 40px; /* Show above the suggested questions section */
+  top: auto;
 }
 
 #previewChat .chat-input + .settings-gear + #input-settings {
@@ -869,11 +854,11 @@ body.light .settings-popup {
   }
 
   #previewChatHeader + .settings-gear + #header-settings,
-  #previewChatMessages + .settings-gear + #messages-settings,
-  #previewSuggestedQuestions + .settings-gear + #suggested-questions-settings {
+  #previewChatMessages + .settings-gear + #messages-settings {
     top: 35px;
   }
 
+  #previewSuggestedQuestions + .settings-gear + #suggested-questions-settings,
   #previewChat .chat-input + .settings-gear + #input-settings {
     bottom: 35px;
   }
@@ -888,14 +873,9 @@ body.light .settings-popup {
     font-size: 0.8em;
   }
 
-  .form-group input[type="color"] {
-    width: 25px;
-    height: 25px;
-  }
-
   .color-preview {
-    width: 25px;
-    height: 25px;
+    width: 35px;
+    height: 35px;
   }
 }
 
