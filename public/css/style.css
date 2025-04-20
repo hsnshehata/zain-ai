@@ -231,6 +231,8 @@ body.light .color-picker-wrapper label {
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  opacity: 0; /* Hide the default color picker */
+  position: absolute;
 }
 
 .color-picker-btn {
@@ -243,6 +245,24 @@ body.light .color-picker-wrapper label {
 }
 
 .color-picker-btn:hover {
+  transform: scale(1.1);
+}
+
+/* Color Preview */
+.color-preview {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+body.light .color-preview {
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.color-preview:hover {
   transform: scale(1.1);
 }
 
@@ -813,7 +833,6 @@ body.light .settings-gear {
 
 .settings-popup {
   position: absolute;
-  top: 40px;
   right: 0;
   background: var(--card-bg);
   backdrop-filter: blur(10px);
@@ -832,10 +851,31 @@ body.light .settings-popup {
   border: 1px solid #ddd;
 }
 
+/* Adjust popup position for different sections */
+#previewChatHeader + .settings-gear + #header-settings,
+#previewChatMessages + .settings-gear + #messages-settings,
+#previewSuggestedQuestions + .settings-gear + #suggested-questions-settings {
+  top: 40px;
+}
+
+#previewChat .chat-input + .settings-gear + #input-settings {
+  bottom: 40px; /* Show above the input section */
+  top: auto;
+}
+
 @media (max-width: 600px) {
   .settings-popup {
     width: 200px;
+  }
+
+  #previewChatHeader + .settings-gear + #header-settings,
+  #previewChatMessages + .settings-gear + #messages-settings,
+  #previewSuggestedQuestions + .settings-gear + #suggested-questions-settings {
     top: 35px;
+  }
+
+  #previewChat .chat-input + .settings-gear + #input-settings {
+    bottom: 35px;
   }
 
   .settings-gear {
@@ -849,6 +889,11 @@ body.light .settings-popup {
   }
 
   .form-group input[type="color"] {
+    width: 25px;
+    height: 25px;
+  }
+
+  .color-preview {
     width: 25px;
     height: 25px;
   }
