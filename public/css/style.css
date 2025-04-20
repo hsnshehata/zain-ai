@@ -215,15 +215,6 @@ body.light select {
   background: url('data:image/svg+xml;utf8,<svg fill="%23000000" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 10px center;
 }
 
-select option {
-  color: #000;
-}
-
-.form-group input[type="checkbox"] {
-  margin-right: 10px;
-  width: auto;
-}
-
 /* Bot Selector */
 .bot-selector {
   margin-bottom: 20px;
@@ -240,12 +231,6 @@ body.light .bot-selector {
 }
 
 /* Color Picker Buttons */
-.color-picker-section {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
 .color-picker-wrapper {
   display: flex;
   align-items: center;
@@ -278,21 +263,6 @@ body.light .color-picker-wrapper label {
 
 body.light .color-input {
   border: 1px solid rgba(0, 0, 0, 0.2);
-}
-
-/* Remove default appearance for better styling */
-.color-input::-webkit-color-swatch-wrapper {
-  padding: 0;
-}
-
-.color-input::-webkit-color-swatch {
-  border: none;
-  border-radius: 6px;
-}
-
-.color-input::-moz-color-swatch {
-  border: none;
-  border-radius: 6px;
 }
 
 /* Ensure settings-popup doesn't hide color picker */
@@ -358,7 +328,7 @@ body.light .checkbox-group {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--text-dark);
+  color: var(--を提供-dark);
   padding: 5px 0;
 }
 
@@ -903,38 +873,9 @@ body.light .settings-gear {
   transform: rotate(90deg);
 }
 
-/* Adjust popup position for different sections */
-#previewChatHeader + .settings-gear + #header-settings {
-  top: 40px;
-}
-
-#previewChatMessages + .settings-gear + #messages-settings {
-  top: 40px;
-}
-
-#previewSuggestedQuestions + .settings-gear + #suggested-questions-settings {
-  bottom: 40px; /* Show above the suggested questions section */
-  top: auto;
-}
-
-#previewChat .chat-input + .settings-gear + #input-settings {
-  bottom: 40px; /* Show above the input section */
-  top: auto;
-}
-
 @media (max-width: 600px) {
   .settings-popup {
     width: 200px;
-  }
-
-  #previewChatHeader + .settings-gear + #header-settings,
-  #previewChatMessages + .settings-gear + #messages-settings {
-    top: 35px;
-  }
-
-  #previewSuggestedQuestions + .settings-gear + #suggested-questions-settings,
-  #previewChat .chat-input + .settings-gear + #input-settings {
-    bottom: 35px;
   }
 
   .settings-gear {
