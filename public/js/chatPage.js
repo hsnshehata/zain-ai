@@ -1,4 +1,4 @@
-async function loadChatPage() {
+export async function loadChatPage() {
   // Load the iro.js library from CDN
   const iroScript = document.createElement('script');
   iroScript.src = 'https://cdn.jsdelivr.net/npm/@jaames/iro@5';
@@ -58,153 +58,116 @@ async function loadChatPage() {
   const botIdSelect = document.getElementById('botId');
   const chatPageSettings = document.getElementById('chatPageSettings');
 
-  // Object to store color values
-  let colorValues = {
-    titleColor: '#ffffff',
-    headerColor: '#007bff',
-    chatAreaBackgroundColor: '#ffffff',
-    textColor: '#333333',
-    userMessageBackgroundColor: '#007bff',
-    userMessageTextColor: '#ffffff',
-    botMessageBackgroundColor: '#e9ecef',
-    botMessageTextColor: '#000000',
-    buttonColor: '#007bff',
-    backgroundColor: '#f8f9fa',
-    inputTextColor: '#333333',
-    buttonColorInput: '#007bff',
-  };
+  if (botIdSelect) {
+    // Function to load chat page settings based on selected bot
+    async function loadChatPageSettings(selectedBotId) {
+      if (!selectedBotId) {
+        chatPageSettings.innerHTML = '';
+        return;
+      }
 
-  // Initialize color pickers once when the page loads
-  let colorPickers = {};
+      try {
+        const response = await fetch(`/api/chat-page/bot/${selectedBotId}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
 
-  iroScript.onload = () => {
-    // This will be called once iro.js is loaded
-    console.log('iro.js loaded successfully');
-  };
-
-  async function loadChatPageSettings(selectedBotId) {
-    if (!selectedBotId) {
-      chatPageSettings.innerHTML = '';
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/chat-page/bot/${selectedBotId}`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Update color values based on the fetched data
-        colorValues = {
-          titleColor: data.titleColor || '#ffffff',
-          headerColor: data.colors.header,
-          chatAreaBackgroundColor: data.colors.chatAreaBackground || '#ffffff',
-          textColor: data.colors.text,
-          userMessageBackgroundColor: data.colors.userMessageBackground || '#007bff',
-          userMessageTextColor: data.colors.userMessageTextColor || '#ffffff',
-          botMessageBackgroundColor: data.colors.botMessageBackground || '#e9ecef',
-          botMessageTextColor: data.colors.botMessageTextColor || '#000000',
-          buttonColor: data.colors.button,
-          backgroundColor: data.colors.background,
-          inputTextColor: data.colors.inputTextColor || '#333333',
-          buttonColorInput: data.colors.button,
-        };
-
-        chatPageSettings.innerHTML = `
-          <div class="form-group">
-            <label for="chatLink">رابط صفحة الدردشة:</label>
-            <div class="input-group">
-              <input type="text" id="chatLink" value="${data.link}" readonly>
-              <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
+        if (response.ok) {
+          const data = await response.json();
+          chatPageSettings.innerHTML = `
+            <div class="form-group">
+              <label for="chatLink">رابط صفحة الدردشة:</label>
+              <div class="input-group">
+                <input type="text" id="chatLink" value="${data.link}" readonly>
+                <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
+              </div>
             </div>
-          </div>
-          <div class="preview-settings-container">
-            <div class="preview-section">
-              <h3>معاينة صفحة الدردشة</h3>
-              <div class="chat-preview-container">
-                <div id="previewChat" class="chat-container">
-                  <div class="section-with-settings">
-                    <div id="previewChatHeader" class="chat-header">
-                      <img id="previewChatLogo" class="chat-logo" style="display: ${data.logoUrl ? 'block' : 'none'};" src="${data.logoUrl || ''}" alt="Logo">
-                      <h1 id="previewChatTitle" class="chat-title">${data.title}</h1>
-                    </div>
-                    <button class="settings-gear" data-target="header-settings">⚙️</button>
-                    <div id="header-settings" class="settings-popup" style="display: none;">
-                      <div class="color-picker-wrapper">
-                        <label for="titleColor">لون نص العنوان:</label>
-                        <span class="color-preview" id="titleColorPreview" data-color-id="titleColor" style="background-color: ${data.titleColor || '#ffffff'};"></span>
+            <div class="preview-settings-container">
+              <div class="preview-section">
+                <h3>معاينة صفحة الدردشة</h3>
+                <div class="chat-preview-container">
+                  <div id="previewChat" class="chat-container">
+                    <div class="section-with-settings">
+                      <div id="previewChatHeader" class="chat-header">
+                        <img id="previewChatLogo" class="chat-logo" style="display: ${data.logoUrl ? 'block' : 'none'};" src="${data.logoUrl || ''}" alt="Logo">
+                        <h1 id="previewChatTitle" class="chat-title">${data.title}</h1>
                       </div>
-                      <div class="color-picker-wrapper">
-                        <label for="headerColor">لون الهيدر:</label>
-                        <span class="color-preview" id="headerColorPreview" data-color-id="headerColor" style="background-color: ${data.colors.header};"></span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="section-with-settings">
-                    <div id="previewChatMessages" class="chat-messages">
-                      <div class="message user-message">رسالة المستخدم</div>
-                      <div class="message bot-message">رد البوت</div>
-                    </div>
-                    <button class="settings-gear" data-target="messages-settings">⚙️</button>
-                    <div id="messages-settings" class="settings-popup" style="display: none;">
-                      <div class="color-picker-wrapper">
-                        <label for="chatAreaBackgroundColor">لون خلفية مربع الدردشة:</label>
-                        <span class="color-preview" id="chatAreaBackgroundColorPreview" data-color-id="chatAreaBackgroundColor" style="background-color: ${data.colors.chatAreaBackground || '#ffffff'};"></span>
-                      </div>
-                      <div class="color-picker-wrapper">
-                        <label for="textColor">لون النص العام:</label>
-                        <span class="color-preview" id="textColorPreview" data-color-id="textColor" style="background-color: ${data.colors.text};"></span>
-                      </div>
-                      <div class="color-picker-wrapper">
-                        <label for="userMessageBackgroundColor">لون فقاعة المستخدم:</label>
-                        <span class="color-preview" id="userMessageBackgroundColorPreview" data-color-id="userMessageBackgroundColor" style="background-color: ${data.colors.userMessageBackground || '#007bff'};"></span>
-                      </div>
-                      <div class="color-picker-wrapper">
-                        <label for="userMessageTextColor">لون نص المستخدم:</label>
-                        <span class="color-preview" id="userMessageTextColorPreview" data-color-id="userMessageTextColor" style="background-color: ${data.colors.userMessageTextColor || '#ffffff'};"></span>
-                      </div>
-                      <div class="color-picker-wrapper">
-                        <label for="botMessageBackgroundColor">لون فقاعة البوت:</label>
-                        <span class="color-preview" id="botMessageBackgroundColorPreview" data-color-id="botMessageBackgroundColor" style="background-color: ${data.colors.botMessageBackground || '#e9ecef'};"></span>
-                      </div>
-                      <div class="color-picker-wrapper">
-                        <label for="botMessageTextColor">لون نص البوت:</label>
-                        <span class="color-preview" id="botMessageTextColorPreview" data-color-id="botMessageTextColor" style="background-color: ${data.colors.botMessageTextColor || '#000000'};"></span>
+                      <button class="settings-gear" data-target="header-settings">⚙️</button>
+                      <div id="header-settings" class="settings-popup" style="display: none;">
+                        <div class="color-picker-wrapper">
+                          <label for="titleColor">لون نص العنوان:</label>
+                          <span class="color-preview" id="titleColorPreview" data-color-id="titleColor" style="background-color: ${data.titleColor || '#ffffff'};"></span>
+                        </div>
+                        <div class="color-picker-wrapper">
+                          <label for="headerColor">لون الهيدر:</label>
+                          <span class="color-preview" id="headerColorPreview" data-color-id="headerColor" style="background-color: ${data.colors.header};"></span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div class="section-with-settings">
-                    <div id="previewSuggestedQuestions" class="suggested-questions" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
-                      ${data.suggestedQuestions?.map(q => `<button class="suggested-question">${q}</button>`).join('') || ''}
-                    </div>
-                    <button class="settings-gear" data-target="suggested-questions-settings" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};" id="suggestedQuestionsGear">⚙️</button>
-                    <div id="suggested-questions-settings" class="settings-popup" style="display: none;">
-                      <div class="color-picker-wrapper">
-                        <label for="buttonColor">لون الأزرار المقترحة:</label>
-                        <span class="color-preview" id="buttonColorPreview" data-color-id="buttonColor" style="background-color: ${data.colors.button};"></span>
+                    <div class="section-with-settings">
+                      <div id="previewChatMessages" class="chat-messages">
+                        <div class="message user-message">رسالة المستخدم</div>
+                        <div class="message bot-message">رد البوت</div>
+                      </div>
+                      <button class="settings-gear" data-target="messages-settings">⚙️</button>
+                      <div id="messages-settings" class="settings-popup" style="display: none;">
+                        <div class="color-picker-wrapper">
+                          <label for="chatAreaBackgroundColor">لون خلفية مربع الدردشة:</label>
+                          <span class="color-preview" id="chatAreaBackgroundColorPreview" data-color-id="chatAreaBackgroundColor" style="background-color: ${data.colors.chatAreaBackground || '#ffffff'};"></span>
+                        </div>
+                        <div class="color-picker-wrapper">
+                          <label for="textColor">لون النص العام:</label>
+                          <span class="color-preview" id="textColorPreview" data-color-id="textColor" style="background-color: ${data.colors.text};"></span>
+                        </div>
+                        <div class="color-picker-wrapper">
+                          <label for="userMessageBackgroundColor">لون فقاعة المستخدم:</label>
+                          <span class="color-preview" id="userMessageBackgroundColorPreview" data-color-id="userMessageBackgroundColor" style="background-color: ${data.colors.userMessageBackground || '#007bff'};"></span>
+                        </div>
+                        <div class="color-picker-wrapper">
+                          <label for="userMessageTextColor">لون نص المستخدم:</label>
+                          <span class="color-preview" id="userMessageTextColorPreview" data-color-id="userMessageTextColor" style="background-color: ${data.colors.userMessageTextColor || '#ffffff'};"></span>
+                        </div>
+                        <div class="color-picker-wrapper">
+                          <label for="botMessageBackgroundColor">لون فقاعة البوت:</label>
+                          <span class="color-preview" id="botMessageBackgroundColorPreview" data-color-id="botMessageBackgroundColor" style="background-color: ${data.colors.botMessageBackground || '#e9ecef'};"></span>
+                        </div>
+                        <div class="color-picker-wrapper">
+                          <label for="botMessageTextColor">لون نص البوت:</label>
+                          <span class="color-preview" id="botMessageTextColorPreview" data-color-id="botMessageTextColor" style="background-color: ${data.colors.botMessageTextColor || '#000000'};"></span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div class="section-with-settings">
-                    <div class="chat-input">
-                      <input type="text" id="previewMessageInput" placeholder="اكتب رسالتك...">
-                      <input type="file" id="previewImageInput" accept="image/*" style="display: ${data.imageUploadEnabled ? 'block' : 'none'};">
-                      <button id="previewSendMessageBtn">إرسال</button>
+                    <div class="section-with-settings">
+                      <div id="previewSuggestedQuestions" class="suggested-questions" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
+                        ${data.suggestedQuestions?.map(q => `<button class="suggested-question">${q}</button>`).join('') || ''}
+                      </div>
+                      <button class="settings-gear" data-target="suggested-questions-settings" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};" id="suggestedQuestionsGear">⚙️</button>
+                      <div id="suggested-questions-settings" class="settings-popup" style="display: none;">
+                        <div class="color-picker-wrapper">
+                          <label for="buttonColor">لون الأزرار المقترحة:</label>
+                          <span class="color-preview" id="buttonColorPreview" data-color-id="buttonColor" style="background-color: ${data.colors.button};"></span>
+                        </div>
+                      </div>
                     </div>
-                    <button class="settings-gear" data-target="input-settings">⚙️</button>
-                    <div id="input-settings" class="settings-popup" style="display: none;">
-                      <div class="color-picker-wrapper">
-                        <label for="backgroundColor">لون الخلفية:</label>
-                        <span class="color-preview" id="backgroundColorPreview" data-color-id="backgroundColor" style="background-color: ${data.colors.background};"></span>
+                    <div class="section-with-settings">
+                      <div class="chat-input">
+                        <input type="text" id="previewMessageInput" placeholder="اكتب رسالتك...">
+                        <input type="file" id="previewImageInput" accept="image/*" style="display: ${data.imageUploadEnabled ? 'block' : 'none'};">
+                        <button id="previewSendMessageBtn">إرسال</button>
                       </div>
-                      <div class="color-picker-wrapper">
-                        <label for="inputTextColor">لون نص مربع الإدخال:</label>
-                        <span class="color-preview" id="inputTextColorPreview" data-color-id="inputTextColor" style="background-color: ${data.colors.inputTextColor || '#333333'};"></span>
-                      </div>
-                      <div class="color-picker-wrapper">
-                        <label for="buttonColorInput">لون زر الإرسال:</label>
-                        <span class="color-preview" id="buttonColorInputPreview" data-color-id="buttonColorInput" style="background-color: ${data.colors.button};"></span>
+                      <button class="settings-gear" data-target="input-settings">⚙️</button>
+                      <div id="input-settings" class="settings-popup" style="display: none;">
+                        <div class="color-picker-wrapper">
+                          <label for="backgroundColor">لون الخلفية:</label>
+                          <span class="color-preview" id="backgroundColorPreview" data-color-id="backgroundColor" style="background-color: ${data.colors.background};"></span>
+                        </div>
+                        <div class="color-picker-wrapper">
+                          <label for="inputTextColor">لون نص مربع الإدخال:</label>
+                          <span class="color-preview" id="inputTextColorPreview" data-color-id="inputTextColor" style="background-color: ${data.colors.inputTextColor || '#333333'};"></span>
+                        </div>
+                        <div class="color-picker-wrapper">
+                          <label for="buttonColorInput">لون زر الإرسال:</label>
+                          <span class="color-preview" id="buttonColorInputPreview" data-color-id="buttonColorInput" style="background-color: ${data.colors.button};"></span>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -251,6 +214,7 @@ async function loadChatPage() {
             </div>
           `;
 
+          // Apply initial styles to the preview
           const previewChat = document.getElementById('previewChat');
           const previewChatHeader = document.getElementById('previewChatHeader');
           const previewChatTitle = document.getElementById('previewChatTitle');
@@ -261,6 +225,22 @@ async function loadChatPage() {
           const previewImageInput = document.getElementById('previewImageInput');
           const userMessage = document.querySelector('#previewChatMessages .user-message');
           const botMessage = document.querySelector('#previewChatMessages .bot-message');
+
+          // Object to store color values
+          const colorValues = {
+            titleColor: data.titleColor || '#ffffff',
+            headerColor: data.colors.header,
+            chatAreaBackgroundColor: data.colors.chatAreaBackground || '#ffffff',
+            textColor: data.colors.text,
+            userMessageBackgroundColor: data.colors.userMessageBackground || '#007bff',
+            userMessageTextColor: data.colors.userMessageTextColor || '#ffffff',
+            botMessageBackgroundColor: data.colors.botMessageBackground || '#e9ecef',
+            botMessageTextColor: data.colors.botMessageTextColor || '#000000',
+            buttonColor: data.colors.button,
+            backgroundColor: data.colors.background,
+            inputTextColor: data.colors.inputTextColor || '#333333',
+            buttonColorInput: data.colors.button,
+          };
 
           function updatePreviewStyles() {
             previewChat.style.backgroundColor = colorValues.backgroundColor;
@@ -279,26 +259,18 @@ async function loadChatPage() {
             botMessage.style.color = colorValues.botMessageTextColor;
 
             // Update color previews
-            const previews = {
-              titleColor: document.getElementById('titleColorPreview'),
-              headerColor: document.getElementById('headerColorPreview'),
-              chatAreaBackgroundColor: document.getElementById('chatAreaBackgroundColorPreview'),
-              textColor: document.getElementById('textColorPreview'),
-              userMessageBackgroundColor: document.getElementById('userMessageBackgroundColorPreview'),
-              userMessageTextColor: document.getElementById('userMessageTextColorPreview'),
-              botMessageBackgroundColor: document.getElementById('botMessageBackgroundColorPreview'),
-              botMessageTextColor: document.getElementById('botMessageTextColorPreview'),
-              buttonColor: document.getElementById('buttonColorPreview'),
-              backgroundColor: document.getElementById('backgroundColorPreview'),
-              inputTextColor: document.getElementById('inputTextColorPreview'),
-              buttonColorInput: document.getElementById('buttonColorInputPreview'),
-            };
-
-            for (const [key, preview] of Object.entries(previews)) {
-              if (preview) {
-                preview.style.backgroundColor = colorValues[key];
-              }
-            }
+            document.getElementById('titleColorPreview').style.backgroundColor = colorValues.titleColor;
+            document.getElementById('headerColorPreview').style.backgroundColor = colorValues.headerColor;
+            document.getElementById('chatAreaBackgroundColorPreview').style.backgroundColor = colorValues.chatAreaBackgroundColor;
+            document.getElementById('textColorPreview').style.backgroundColor = colorValues.textColor;
+            document.getElementById('userMessageBackgroundColorPreview').style.backgroundColor = colorValues.userMessageBackgroundColor;
+            document.getElementById('userMessageTextColorPreview').style.backgroundColor = colorValues.userMessageTextColor;
+            document.getElementById('botMessageBackgroundColorPreview').style.backgroundColor = colorValues.botMessageBackgroundColor;
+            document.getElementById('botMessageTextColorPreview').style.backgroundColor = colorValues.botMessageTextColor;
+            document.getElementById('buttonColorPreview').style.backgroundColor = colorValues.buttonColor;
+            document.getElementById('backgroundColorPreview').style.backgroundColor = colorValues.backgroundColor;
+            document.getElementById('inputTextColorPreview').style.backgroundColor = colorValues.inputTextColor;
+            document.getElementById('buttonColorInputPreview').style.backgroundColor = colorValues.buttonColorInput;
           }
 
           // Handle gear buttons to show/hide settings popups
@@ -307,31 +279,32 @@ async function loadChatPage() {
               const targetId = gear.getAttribute('data-target');
               const popup = document.getElementById(targetId);
               const isVisible = popup.style.display === 'block';
+              // Hide all popups first
               document.querySelectorAll('.settings-popup').forEach(p => p.style.display = 'none');
+              // Toggle the clicked popup
               popup.style.display = isVisible ? 'none' : 'block';
             });
           });
 
-          // Update existing color pickers with new color values
-          for (const [colorId, { picker }] of Object.entries(colorPickers)) {
-            if (picker) {
-              picker.color.hexString = colorValues[colorId];
-            }
-          }
+          // Wait for iro.js to load before initializing color pickers
+          iroScript.onload = () => {
+            const colorPickers = {};
 
-          // Initialize color pickers for newly added elements
-          document.querySelectorAll('.color-preview').forEach(preview => {
-            const colorId = preview.getAttribute('data-color-id');
-            if (!colorPickers[colorId]) {
+            document.querySelectorAll('.color-preview').forEach(preview => {
+              const colorId = preview.getAttribute('data-color-id');
+              const initialColor = colorValues[colorId];
+
+              // Create a container for the color picker
               const pickerContainer = document.createElement('div');
               pickerContainer.style.position = 'absolute';
               pickerContainer.style.zIndex = '1001';
               pickerContainer.style.display = 'none';
               preview.parentNode.appendChild(pickerContainer);
 
+              // Initialize iro.js color picker
               const colorPicker = new iro.ColorPicker(pickerContainer, {
                 width: 150,
-                color: colorValues[colorId],
+                color: initialColor,
                 layout: [
                   { component: iro.ui.Wheel },
                   { component: iro.ui.Slider, options: { sliderType: 'value' } },
@@ -340,11 +313,14 @@ async function loadChatPage() {
 
               colorPickers[colorId] = { picker: colorPicker, container: pickerContainer };
 
+              // Show/hide color picker on click
               preview.addEventListener('click', (e) => {
                 const isVisible = pickerContainer.style.display === 'block';
+                // Hide all other pickers
                 Object.values(colorPickers).forEach(({ container }) => {
                   container.style.display = 'none';
                 });
+                // Toggle the clicked picker
                 if (!isVisible) {
                   pickerContainer.style.display = 'block';
                   const rect = preview.getBoundingClientRect();
@@ -353,23 +329,27 @@ async function loadChatPage() {
                 }
               });
 
+              // Update color value when changed
               colorPicker.on('color:change', (color) => {
                 colorValues[colorId] = color.hexString;
                 updatePreviewStyles();
               });
 
+              // Hide picker when clicking outside
               document.addEventListener('click', (event) => {
                 if (!pickerContainer.contains(event.target) && !preview.contains(event.target)) {
                   pickerContainer.style.display = 'none';
                 }
               });
-            }
-          });
+            });
+          };
 
+          // Update title in preview
           document.getElementById('title').addEventListener('input', (e) => {
             previewChatTitle.textContent = e.target.value || 'صفحة الدردشة';
           });
 
+          // Logo upload preview
           const logoInput = document.getElementById('logo');
           const logoPreview = document.getElementById('logoPreview');
           const previewChatLogo = document.getElementById('previewChatLogo');
@@ -390,6 +370,7 @@ async function loadChatPage() {
             }
           });
 
+          // Copy link functionality
           document.getElementById('copyLinkBtn').addEventListener('click', async () => {
             const linkInput = document.getElementById('chatLink');
             try {
@@ -402,6 +383,7 @@ async function loadChatPage() {
             }
           });
 
+          // Suggested questions functionality
           const suggestedQuestionsEnabledCheckbox = document.getElementById('suggestedQuestionsEnabled');
           const suggestedQuestionsContainer = document.getElementById('suggestedQuestionsContainer');
           const suggestedQuestionsGear = document.getElementById('suggestedQuestionsGear');
@@ -467,10 +449,12 @@ async function loadChatPage() {
 
           updateQuestionsList();
 
+          // Image upload toggle
           document.getElementById('imageUploadEnabled').addEventListener('change', (e) => {
             previewImageInput.style.display = e.target.checked ? 'block' : 'none';
           });
 
+          // Form submission
           document.getElementById('customizationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const formData = new FormData(e.target);
@@ -520,8 +504,10 @@ async function loadChatPage() {
             }
           });
 
+          // Initial preview update
           updatePreviewStyles();
         } else {
+          // If no chat page exists for the selected bot, show the "Create Chat Page" button
           chatPageSettings.innerHTML = `
             <button id="createChatPageBtn" class="submit-btn">إنشاء صفحة دردشة</button>
           `;
@@ -546,6 +532,7 @@ async function loadChatPage() {
                   throw new Error(`فشل في إنشاء صفحة الدردشة: ${response.status} ${response.statusText}`);
                 }
 
+                // After creating the chat page, reload settings
                 loadChatPageSettings(selectedBotId);
               } catch (err) {
                 console.error('خطأ في إنشاء صفحة الدردشة:', err);
@@ -564,11 +551,13 @@ async function loadChatPage() {
       }
     }
 
+    // Automatically load settings for the first bot if available
     if (userBots.length > 0) {
       botIdSelect.value = userBots[0]._id;
-      await loadChatPageSettings(userBots[0]._id);
+      await loadChatPageSettings(userBots[0]._id); // Directly call the function
     }
 
+    // Add change event listener to reload settings when a different bot is selected
     botIdSelect.addEventListener('change', async () => {
       const selectedBotId = botIdSelect.value;
       await loadChatPageSettings(selectedBotId);
