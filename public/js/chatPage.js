@@ -1,4 +1,9 @@
 async function loadChatPage() {
+  // Load the iro.js library from CDN
+  const iroScript = document.createElement('script');
+  iroScript.src = 'https://cdn.jsdelivr.net/npm/@jaames/iro@5';
+  document.head.appendChild(iroScript);
+
   const content = document.getElementById('content');
   const role = localStorage.getItem('role');
   const userId = localStorage.getItem('userId');
@@ -31,7 +36,7 @@ async function loadChatPage() {
   }
 
   let html = `
-    <div class="form-group">
+    <div class="form-group bot-selector">
       <label for="botId">اختر البوت:</label>
       <select id="botId" name="botId" required>
         <option value="">اختر بوت</option>
@@ -45,468 +50,36 @@ async function loadChatPage() {
   html += `
       </select>
     </div>
-    <button id="createChatPageBtn" class="submit-btn" style="display: none;">إنشاء صفحة دردشة</button>
+    <div id="chatPageSettings" class="chat-page-settings-content"></div>
   `;
 
   chatPageContent.innerHTML = html;
 
   const botIdSelect = document.getElementById('botId');
-  const createChatPageBtn = document.getElementById('createChatPageBtn');
+  const chatPageSettings = document.getElementById('chatPageSettings');
 
   if (botIdSelect) {
+    // Automatically select the first bot if available
+    if (userBots.length > 0) {
+      botIdSelect.value = userBots[0]._id;
+      botIdSelect.dispatchEvent(new Event('change')); // Trigger the change event
+    }
+
     botIdSelect.addEventListener('change', async () => {
       const selectedBotId = botIdSelect.value;
-      createChatPageBtn.style.display = selectedBotId ? 'block' : 'none';
-      createChatPageBtn.disabled = !selectedBotId;
-      console.log(`Selected bot ID: ${selectedBotId}`);
-
-      if (selectedBotId) {
-        try {
-          const response = await fetch(`/api/chat-page/bot/${selectedBotId}`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
-
-          if (response.ok) {
-            const data = await response.json();
-            content.innerHTML = `
-              <h2>تخصيص صفحة الدردشة</h2>
-              <div class="chat-page-settings">
-                <div class="form-group">
-                  <label for="chatLink">رابط صفحة الدردشة:</label>
-                  <div class="input-group">
-                    <input type="text" id="chatLink" value="${data.link}" readonly>
-                    <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
-                  </div>
-                </div>
-                <div class="preview-settings-container">
-                  <div class="preview-section">
-                    <h3>معاينة صفحة الدردشة</h3>
-                    <div class="chat-preview-container">
-                      <div id="previewChat" class="chat-container">
-                        <div class="section-with-settings">
-                          <div id="previewChatHeader" class="chat-header">
-                            <img id="previewChatLogo" class="chat-logo" style="display: ${data.logoUrl ? 'block' : 'none'};" src="${data.logoUrl || ''}" alt="Logo">
-                            <h1 id="previewChatTitle" class="chat-title">${data.title}</h1>
-                          </div>
-                          <button class="settings-gear" data-target="header-settings">⚙️</button>
-                          <div id="header-settings" class="settings-popup" style="display: none;">
-                            <div class="color-picker-wrapper">
-                              <label for="titleColor">لون نص العنوان:</label>
-                              <span class="color-preview" id="titleColorPreview" data-color-id="titleColor" style="background-color: ${data.titleColor || '#ffffff'};"></span>
-                              <input type="color" id="titleColor" name="titleColor" value="${data.titleColor || '#ffffff'}" style="display: none;">
-                            </div>
-                            <div class="color-picker-wrapper">
-                              <label for="headerColor">لون الهيدر:</label>
-                              <span class="color-preview" id="headerColorPreview" data-color-id="headerColor" style="background-color: ${data.colors.header};"></span>
-                              <input type="color" id="headerColor" name="headerColor" value="${data.colors.header}" style="display: none;">
-                            </div>
-                          </div>
-                        </div>
-                        <div class="section-with-settings">
-                          <div id="previewChatMessages" class="chat-messages">
-                            <div class="message user-message">رسالة المستخدم</div>
-                            <div class="message bot-message">رد البوت</div>
-                          </div>
-                          <button class="settings-gear" data-target="messages-settings">⚙️</button>
-                          <div id="messages-settings" class="settings-popup" style="display: none;">
-                            <div class="color-picker-wrapper">
-                              <label for="chatAreaBackgroundColor">لون خلفية مربع الدردشة:</label>
-                              <span class="color-preview" id="chatAreaBackgroundColorPreview" data-color-id="chatAreaBackgroundColor" style="background-color: ${data.colors.chatAreaBackground || '#ffffff'};"></span>
-                              <input type="color" id="chatAreaBackgroundColor" name="chatAreaBackgroundColor" value="${data.colors.chatAreaBackground || '#ffffff'}" style="display: none;">
-                            </div>
-                            <div class="color-picker-wrapper">
-                              <label for="textColor">لون النص العام:</label>
-                              <span class="color-preview" id="textColorPreview" data-color-id="textColor" style="background-color: ${data.colors.text};"></span>
-                              <input type="color" id="textColor" name="textColor" value="${data.colors.text}" style="display: none;">
-                            </div>
-                            <div class="color-picker-wrapper">
-                              <label for="userMessageBackgroundColor">لون فقاعة المستخدم:</label>
-                              <span class="color-preview" id="userMessageBackgroundColorPreview" data-color-id="userMessageBackgroundColor" style="background-color: ${data.colors.userMessageBackground || '#007bff'};"></span>
-                              <input type="color" id="userMessageBackgroundColor" name="userMessageBackgroundColor" value="${data.colors.userMessageBackground || '#007bff'}" style="display: none;">
-                            </div>
-                            <div class="color-picker-wrapper">
-                              <label for="userMessageTextColor">لون نص المستخدم:</label>
-                              <span class="color-preview" id="userMessageTextColorPreview" data-color-id="userMessageTextColor" style="background-color: ${data.colors.userMessageTextColor || '#ffffff'};"></span>
-                              <input type="color" id="userMessageTextColor" name="userMessageTextColor" value="${data.colors.userMessageTextColor || '#ffffff'}" style="display: none;">
-                            </div>
-                            <div class="color-picker-wrapper">
-                              <label for="botMessageBackgroundColor">لون فقاعة البوت:</label>
-                              <span class="color-preview" id="botMessageBackgroundColorPreview" data-color-id="botMessageBackgroundColor" style="background-color: ${data.colors.botMessageBackground || '#e9ecef'};"></span>
-                              <input type="color" id="botMessageBackgroundColor" name="botMessageBackgroundColor" value="${data.colors.botMessageBackground || '#e9ecef'}" style="display: none;">
-                            </div>
-                            <div class="color-picker-wrapper">
-                              <label for="botMessageTextColor">لون نص البوت:</label>
-                              <span class="color-preview" id="botMessageTextColorPreview" data-color-id="botMessageTextColor" style="background-color: ${data.colors.botMessageTextColor || '#000000'};"></span>
-                              <input type="color" id="botMessageTextColor" name="botMessageTextColor" value="${data.colors.botMessageTextColor || '#000000'}" style="display: none;">
-                            </div>
-                          </div>
-                        </div>
-                        <div class="section-with-settings">
-                          <div id="previewSuggestedQuestions" class="suggested-questions" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
-                            ${data.suggestedQuestions?.map(q => `<button class="suggested-question">${q}</button>`).join('') || ''}
-                          </div>
-                          <button class="settings-gear" data-target="suggested-questions-settings" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};" id="suggestedQuestionsGear">⚙️</button>
-                          <div id="suggested-questions-settings" class="settings-popup" style="display: none;">
-                            <div class="color-picker-wrapper">
-                              <label for="buttonColor">لون الأزرار المقترحة:</label>
-                              <span class="color-preview" id="buttonColorPreview" data-color-id="buttonColor" style="background-color: ${data.colors.button};"></span>
-                              <input type="color" id="buttonColor" name="buttonColor" value="${data.colors.button}" style="display: none;">
-                            </div>
-                          </div>
-                        </div>
-                        <div class="section-with-settings">
-                          <div class="chat-input">
-                            <input type="text" id="previewMessageInput" placeholder="اكتب رسالتك...">
-                            <input type="file" id="previewImageInput" accept="image/*" style="display: ${data.imageUploadEnabled ? 'block' : 'none'};">
-                            <button id="previewSendMessageBtn">إرسال</button>
-                          </div>
-                          <button class="settings-gear" data-target="input-settings">⚙️</button>
-                          <div id="input-settings" class="settings-popup" style="display: none;">
-                            <div class="color-picker-wrapper">
-                              <label for="backgroundColor">لون الخلفية:</label>
-                              <span class="color-preview" id="backgroundColorPreview" data-color-id="backgroundColor" style="background-color: ${data.colors.background};"></span>
-                              <input type="color" id="backgroundColor" name="backgroundColor" value="${data.colors.background}" style="display: none;">
-                            </div>
-                            <div class="color-picker-wrapper">
-                              <label for="inputTextColor">لون نص مربع الإدخال:</label>
-                              <span class="color-preview" id="inputTextColorPreview" data-color-id="inputTextColor" style="background-color: ${data.colors.inputTextColor || '#333333'};"></span>
-                              <input type="color" id="inputTextColor" name="inputTextColor" value="${data.colors.inputTextColor || '#333333'}" style="display: none;">
-                            </div>
-                            <div class="color-picker-wrapper">
-                              <label for="buttonColorInput">لون زر الإرسال:</label>
-                              <span class="color-preview" id="buttonColorInputPreview" data-color-id="buttonColorInput" style="background-color: ${data.colors.button};"></span>
-                              <input type="color" id="buttonColorInput" name="buttonColor" value="${data.colors.button}" style="display: none;">
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="settings-section">
-                    <form id="customizationForm" class="settings-group" enctype="multipart/form-data">
-                      <div class="form-group">
-                        <label for="title">عنوان الصفحة:</label>
-                        <input type="text" id="title" name="title" value="${data.title}" required placeholder="أدخل عنوان الصفحة">
-                      </div>
-                      <div class="form-group logo-section">
-                        <label for="logo">شعار الصفحة (PNG):</label>
-                        <input type="file" id="logo" name="logo" accept="image/png">
-                        <div class="logo-preview-container">
-                          <p style="font-size: 0.8em; margin-bottom: 5px;">الشعار الحالي:</p>
-                          ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo Preview" class="logo-preview-img" />` : '<p style="font-size: 0.8em;">لا يوجد</p>'}
-                        </div>
-                        <img id="logoPreview" class="logo-preview-img" style="display: none;" alt="Logo Preview" />
-                      </div>
-                      <div class="form-group checkbox-group">
-                        <label class="checkbox-label">
-                          <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled" ${data.suggestedQuestionsEnabled ? 'checked' : ''}>
-                          تفعيل الأسئلة المقترحة
-                        </label>
-                        <div id="suggestedQuestionsContainer" class="suggested-questions-container" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
-                          <h3>إدارة الأسئلة المقترحة</h3>
-                          <div class="question-input-group">
-                            <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
-                            <button type="button" id="addQuestionBtn" class="submit-btn">إضافة سؤال</button>
-                          </div>
-                          <ul id="questionsList" class="questions-list"></ul>
-                        </div>
-                      </div>
-                      <div class="form-group checkbox-group">
-                        <label class="checkbox-label">
-                          <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled" ${data.imageUploadEnabled ? 'checked' : ''}>
-                          تفعيل إرفاق الصور
-                        </label>
-                      </div>
-                      <button type="submit" class="submit-btn">حفظ الإعدادات</button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            `;
-
-            // Apply initial styles to the preview
-            const previewChat = document.getElementById('previewChat');
-            const previewChatHeader = document.getElementById('previewChatHeader');
-            const previewChatTitle = document.getElementById('previewChatTitle');
-            const previewChatMessages = document.getElementById('previewChatMessages');
-            const previewSuggestedQuestions = document.getElementById('previewSuggestedQuestions');
-            const previewSendMessageBtn = document.getElementById('previewSendMessageBtn');
-            const previewMessageInput = document.getElementById('previewMessageInput');
-            const previewImageInput = document.getElementById('previewImageInput');
-            const userMessage = document.querySelector('#previewChatMessages .user-message');
-            const botMessage = document.querySelector('#previewChatMessages .bot-message');
-
-            function updatePreviewStyles() {
-              previewChat.style.backgroundColor = document.getElementById('backgroundColor').value;
-              previewChatHeader.style.backgroundColor = document.getElementById('headerColor').value;
-              previewChatTitle.style.color = document.getElementById('titleColor').value;
-              previewChatMessages.style.backgroundColor = document.getElementById('chatAreaBackgroundColor').value;
-              previewChat.style.color = document.getElementById('textColor').value;
-              previewSendMessageBtn.style.backgroundColor = document.getElementById('buttonColorInput').value;
-              previewMessageInput.style.color = document.getElementById('inputTextColor').value;
-              Array.from(previewSuggestedQuestions.children).forEach(btn => {
-                btn.style.backgroundColor = document.getElementById('buttonColor').value;
-              });
-              userMessage.style.backgroundColor = document.getElementById('userMessageBackgroundColor').value;
-              userMessage.style.color = document.getElementById('userMessageTextColor').value;
-              botMessage.style.backgroundColor = document.getElementById('botMessageBackgroundColor').value;
-              botMessage.style.color = document.getElementById('botMessageTextColor').value;
-
-              // Update color previews
-              document.getElementById('titleColorPreview').style.backgroundColor = document.getElementById('titleColor').value;
-              document.getElementById('headerColorPreview').style.backgroundColor = document.getElementById('headerColor').value;
-              document.getElementById('chatAreaBackgroundColorPreview').style.backgroundColor = document.getElementById('chatAreaBackgroundColor').value;
-              document.getElementById('textColorPreview').style.backgroundColor = document.getElementById('textColor').value;
-              document.getElementById('userMessageBackgroundColorPreview').style.backgroundColor = document.getElementById('userMessageBackgroundColor').value;
-              document.getElementById('userMessageTextColorPreview').style.backgroundColor = document.getElementById('userMessageTextColor').value;
-              document.getElementById('botMessageBackgroundColorPreview').style.backgroundColor = document.getElementById('botMessageBackgroundColor').value;
-              document.getElementById('botMessageTextColorPreview').style.backgroundColor = document.getElementById('botMessageTextColor').value;
-              document.getElementById('buttonColorPreview').style.backgroundColor = document.getElementById('buttonColor').value;
-              document.getElementById('backgroundColorPreview').style.backgroundColor = document.getElementById('backgroundColor').value;
-              document.getElementById('inputTextColorPreview').style.backgroundColor = document.getElementById('inputTextColor').value;
-              document.getElementById('buttonColorInputPreview').style.backgroundColor = document.getElementById('buttonColorInput').value;
-            }
-
-            // Handle gear buttons to show/hide settings popups
-            document.querySelectorAll('.settings-gear').forEach(gear => {
-              gear.addEventListener('click', () => {
-                const targetId = gear.getAttribute('data-target');
-                const popup = document.getElementById(targetId);
-                const isVisible = popup.style.display === 'block';
-                // Hide all popups first
-                document.querySelectorAll('.settings-popup').forEach(p => p.style.display = 'none');
-                // Toggle the clicked popup
-                popup.style.display = isVisible ? 'none' : 'block';
-              });
-            });
-
-            // Handle color preview clicks to open color picker
-            document.querySelectorAll('.color-preview').forEach(preview => {
-              preview.addEventListener('click', () => {
-                const inputId = preview.getAttribute('data-color-id');
-                const input = document.getElementById(inputId);
-                input.click(); // Trigger the color picker
-              });
-            });
-
-            // Add event listeners for real-time preview updates
-            document.getElementById('titleColor').addEventListener('input', updatePreviewStyles);
-            document.getElementById('headerColor').addEventListener('input', updatePreviewStyles);
-            document.getElementById('backgroundColor').addEventListener('input', updatePreviewStyles);
-            document.getElementById('chatAreaBackgroundColor').addEventListener('input', updatePreviewStyles);
-            document.getElementById('textColor').addEventListener('input', updatePreviewStyles);
-            document.getElementById('buttonColor').addEventListener('input', updatePreviewStyles);
-            document.getElementById('buttonColorInput').addEventListener('input', updatePreviewStyles);
-            document.getElementById('userMessageBackgroundColor').addEventListener('input', updatePreviewStyles);
-            document.getElementById('userMessageTextColor').addEventListener('input', updatePreviewStyles);
-            document.getElementById('botMessageBackgroundColor').addEventListener('input', updatePreviewStyles);
-            document.getElementById('botMessageTextColor').addEventListener('input', updatePreviewStyles);
-            document.getElementById('inputTextColor').addEventListener('input', updatePreviewStyles);
-
-            // Update title in preview
-            document.getElementById('title').addEventListener('input', (e) => {
-              previewChatTitle.textContent = e.target.value || 'صفحة الدردشة';
-            });
-
-            // Logo upload preview
-            const logoInput = document.getElementById('logo');
-            const logoPreview = document.getElementById('logoPreview');
-            const previewChatLogo = document.getElementById('previewChatLogo');
-            logoInput.addEventListener('change', () => {
-              const file = logoInput.files[0];
-              if (file) {
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                  logoPreview.src = e.target.result;
-                  logoPreview.style.display = 'block';
-                  previewChatLogo.src = e.target.result;
-                  previewChatLogo.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
-              } else {
-                logoPreview.style.display = 'none';
-                previewChatLogo.style.display = 'none';
-              }
-            });
-
-            // Copy link functionality
-            document.getElementById('copyLinkBtn').addEventListener('click', async () => {
-              const linkInput = document.getElementById('chatLink');
-              try {
-                await navigator.clipboard.writeText(linkInput.value);
-                alert('تم نسخ الرابط بنجاح!');
-                console.log(`Link copied: ${linkInput.value}`);
-              } catch (err) {
-                console.error('خطأ في نسخ الرابط:', err);
-                alert('فشل في نسخ الرابط، حاول مرة أخرى');
-              }
-            });
-
-            // Suggested questions functionality
-            const suggestedQuestionsEnabledCheckbox = document.getElementById('suggestedQuestionsEnabled');
-            const suggestedQuestionsContainer = document.getElementById('suggestedQuestionsContainer');
-            const suggestedQuestionsGear = document.getElementById('suggestedQuestionsGear');
-            suggestedQuestionsEnabledCheckbox.addEventListener('change', () => {
-              suggestedQuestionsContainer.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
-              previewSuggestedQuestions.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
-              suggestedQuestionsGear.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
-            });
-
-            let questions = data.suggestedQuestions || [];
-            document.getElementById('addQuestionBtn').addEventListener('click', () => {
-              const newQuestionInput = document.getElementById('newQuestion');
-              const question = newQuestionInput.value.trim();
-              if (question) {
-                questions.push(question);
-                newQuestionInput.value = '';
-                updateQuestionsList();
-                updatePreviewSuggestedQuestions();
-              } else {
-                alert('يرجى إدخال سؤال صالح');
-              }
-            });
-
-            function updateQuestionsList() {
-              const questionsList = document.getElementById('questionsList');
-              questionsList.innerHTML = '';
-              questions.forEach((question, index) => {
-                const li = document.createElement('li');
-                li.innerHTML = `
-                  ${question}
-                  <div class="question-actions">
-                    <button type="button" onclick="editQuestion(${index})">تعديل</button>
-                    <button type="button" onclick="deleteQuestion(${index})">حذف</button>
-                  </div>
-                `;
-                questionsList.appendChild(li);
-              });
-            }
-
-            function updatePreviewSuggestedQuestions() {
-              previewSuggestedQuestions.innerHTML = questions.map(q => `<button class="suggested-question">${q}</button>`).join('');
-              Array.from(previewSuggestedQuestions.children).forEach(btn => {
-                btn.style.backgroundColor = document.getElementById('buttonColor').value;
-              });
-            }
-
-            window.editQuestion = (index) => {
-              const newQuestion = prompt('أدخل السؤال الجديد:', questions[index]);
-              if (newQuestion && newQuestion.trim()) {
-                questions[index] = newQuestion.trim();
-                updateQuestionsList();
-                updatePreviewSuggestedQuestions();
-              }
-            };
-
-            window.deleteQuestion = (index) => {
-              if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
-                questions.splice(index, 1);
-                updateQuestionsList();
-                updatePreviewSuggestedQuestions();
-              }
-            };
-
-            updateQuestionsList();
-
-            // Image upload toggle
-            document.getElementById('imageUploadEnabled').addEventListener('change', (e) => {
-              previewImageInput.style.display = e.target.checked ? 'block' : 'none';
-            });
-
-            // Form submission
-            document.getElementById('customizationForm').addEventListener('submit', async (e) => {
-              e.preventDefault();
-              const formData = new FormData(e.target);
-              formData.set('title', formData.get('title'));
-              formData.set('titleColor', document.getElementById('titleColor').value);
-              formData.set('colors', JSON.stringify({
-                header: document.getElementById('headerColor').value,
-                background: document.getElementById('backgroundColor').value,
-                chatAreaBackground: document.getElementById('chatAreaBackgroundColor').value,
-                text: document.getElementById('textColor').value,
-                button: document.getElementById('buttonColor').value || document.getElementById('buttonColorInput').value,
-                userMessageBackground: document.getElementById('userMessageBackgroundColor').value,
-                userMessageTextColor: document.getElementById('userMessageTextColor').value,
-                botMessageBackground: document.getElementById('botMessageBackgroundColor').value,
-                botMessageTextColor: document.getElementById('botMessageTextColor').value,
-                inputTextColor: document.getElementById('inputTextColor').value,
-              }));
-              formData.set('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on' ? 'true' : 'false');
-              formData.set('suggestedQuestions', JSON.stringify(questions));
-              formData.set('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on' ? 'true' : 'false');
-
-              try {
-                const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
-                  method: 'PUT',
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                  },
-                  body: formData,
-                });
-
-                if (!response.ok) {
-                  throw new Error(`فشل في حفظ الإعدادات: ${response.status} ${response.statusText}`);
-                }
-
-                const result = await response.json();
-                if (result.logoUrl) {
-                  document.querySelector('.logo-preview-container p').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" class="logo-preview-img" />`;
-                  logoPreview.src = result.logoUrl;
-                  logoPreview.style.display = 'block';
-                  previewChatLogo.src = result.logoUrl;
-                  previewChatLogo.style.display = 'block';
-                }
-                alert('تم حفظ الإعدادات بنجاح!');
-              } catch (err) {
-                console.error('خطأ في حفظ الإعدادات:', err);
-                alert('فشل في حفظ الإعدادات، حاول مرة أخرى');
-              }
-            });
-
-            // Initial preview update
-            updatePreviewStyles();
-          } else {
-            createChatPageBtn.style.display = 'block';
-          }
-        } catch (err) {
-          console.error('خطأ في جلب صفحة الدردشة:', err);
-          createChatPageBtn.style.display = 'block';
-        }
-      }
-    });
-  } else {
-    console.error('botId select element not found in DOM');
-  }
-
-  if (createChatPageBtn) {
-    createChatPageBtn.addEventListener('click', async () => {
-      const selectedBotId = botIdSelect.value;
       if (!selectedBotId) {
-        alert('يرجى اختيار بوت أولاً');
+        chatPageSettings.innerHTML = '';
         return;
       }
 
       try {
-        const response = await fetch('/api/chat-page', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId: localStorage.getItem('userId'),
-            botId: selectedBotId,
-          }),
+        const response = await fetch(`/api/chat-page/bot/${selectedBotId}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
         });
 
-        if (!response.ok) {
-          throw new Error(`فشل في إنشاء صفحة الدردشة: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        content.innerHTML = `
-          <h2>تخصيص صفحة الدردشة</h2>
-          <div class="chat-page-settings">
+        if (response.ok) {
+          const data = await response.json();
+          chatPageSettings.innerHTML = `
             <div class="form-group">
               <label for="chatLink">رابط صفحة الدردشة:</label>
               <div class="input-group">
@@ -521,20 +94,18 @@ async function loadChatPage() {
                   <div id="previewChat" class="chat-container">
                     <div class="section-with-settings">
                       <div id="previewChatHeader" class="chat-header">
-                        <img id="previewChatLogo" class="chat-logo" style="display: none;" alt="Logo">
-                        <h1 id="previewChatTitle" class="chat-title">صفحة دردشة</h1>
+                        <img id="previewChatLogo" class="chat-logo" style="display: ${data.logoUrl ? 'block' : 'none'};" src="${data.logoUrl || ''}" alt="Logo">
+                        <h1 id="previewChatTitle" class="chat-title">${data.title}</h1>
                       </div>
                       <button class="settings-gear" data-target="header-settings">⚙️</button>
                       <div id="header-settings" class="settings-popup" style="display: none;">
                         <div class="color-picker-wrapper">
                           <label for="titleColor">لون نص العنوان:</label>
-                          <span class="color-preview" id="titleColorPreview" data-color-id="titleColor" style="background-color: #ffffff;"></span>
-                          <input type="color" id="titleColor" name="titleColor" value="#ffffff" style="display: none;">
+                          <span class="color-preview" id="titleColorPreview" data-color-id="titleColor" style="background-color: ${data.titleColor || '#ffffff'};"></span>
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="headerColor">لون الهيدر:</label>
-                          <span class="color-preview" id="headerColorPreview" data-color-id="headerColor" style="background-color: #007bff;"></span>
-                          <input type="color" id="headerColor" name="headerColor" value="#007bff" style="display: none;">
+                          <span class="color-preview" id="headerColorPreview" data-color-id="headerColor" style="background-color: ${data.colors.header};"></span>
                         </div>
                       </div>
                     </div>
@@ -547,69 +118,61 @@ async function loadChatPage() {
                       <div id="messages-settings" class="settings-popup" style="display: none;">
                         <div class="color-picker-wrapper">
                           <label for="chatAreaBackgroundColor">لون خلفية مربع الدردشة:</label>
-                          <span class="color-preview" id="chatAreaBackgroundColorPreview" data-color-id="chatAreaBackgroundColor" style="background-color: #ffffff;"></span>
-                          <input type="color" id="chatAreaBackgroundColor" name="chatAreaBackgroundColor" value="#ffffff" style="display: none;">
+                          <span class="color-preview" id="chatAreaBackgroundColorPreview" data-color-id="chatAreaBackgroundColor" style="background-color: ${data.colors.chatAreaBackground || '#ffffff'};"></span>
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="textColor">لون النص العام:</label>
-                          <span class="color-preview" id="textColorPreview" data-color-id="textColor" style="background-color: #333333;"></span>
-                          <input type="color" id="textColor" name="textColor" value="#333333" style="display: none;">
+                          <span class="color-preview" id="textColorPreview" data-color-id="textColor" style="background-color: ${data.colors.text};"></span>
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="userMessageBackgroundColor">لون فقاعة المستخدم:</label>
-                          <span class="color-preview" id="userMessageBackgroundColorPreview" data-color-id="userMessageBackgroundColor" style="background-color: #007bff;"></span>
-                          <input type="color" id="userMessageBackgroundColor" name="userMessageBackgroundColor" value="#007bff" style="display: none;">
+                          <span class="color-preview" id="userMessageBackgroundColorPreview" data-color-id="userMessageBackgroundColor" style="background-color: ${data.colors.userMessageBackground || '#007bff'};"></span>
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="userMessageTextColor">لون نص المستخدم:</label>
-                          <span class="color-preview" id="userMessageTextColorPreview" data-color-id="userMessageTextColor" style="background-color: #ffffff;"></span>
-                          <input type="color" id="userMessageTextColor" name="userMessageTextColor" value="#ffffff" style="display: none;">
+                          <span class="color-preview" id="userMessageTextColorPreview" data-color-id="userMessageTextColor" style="background-color: ${data.colors.userMessageTextColor || '#ffffff'};"></span>
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="botMessageBackgroundColor">لون فقاعة البوت:</label>
-                          <span class="color-preview" id="botMessageBackgroundColorPreview" data-color-id="botMessageBackgroundColor" style="background-color: #e9ecef;"></span>
-                          <input type="color" id="botMessageBackgroundColor" name="botMessageBackgroundColor" value="#e9ecef" style="display: none;">
+                          <span class="color-preview" id="botMessageBackgroundColorPreview" data-color-id="botMessageBackgroundColor" style="background-color: ${data.colors.botMessageBackground || '#e9ecef'};"></span>
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="botMessageTextColor">لون نص البوت:</label>
-                          <span class="color-preview" id="botMessageTextColorPreview" data-color-id="botMessageTextColor" style="background-color: #000000;"></span>
-                          <input type="color" id="botMessageTextColor" name="botMessageTextColor" value="#000000" style="display: none;">
+                          <span class="color-preview" id="botMessageTextColorPreview" data-color-id="botMessageTextColor" style="background-color: ${data.colors.botMessageTextColor || '#000000'};"></span>
                         </div>
                       </div>
                     </div>
                     <div class="section-with-settings">
-                      <div id="previewSuggestedQuestions" class="suggested-questions" style="display: none;"></div>
-                      <button class="settings-gear" data-target="suggested-questions-settings" style="display: none;" id="suggestedQuestionsGear">⚙️</button>
+                      <div id="previewSuggestedQuestions" class="suggested-questions" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
+                        ${data.suggestedQuestions?.map(q => `<button class="suggested-question">${q}</button>`).join('') || ''}
+                      </div>
+                      <button class="settings-gear" data-target="suggested-questions-settings" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};" id="suggestedQuestionsGear">⚙️</button>
                       <div id="suggested-questions-settings" class="settings-popup" style="display: none;">
                         <div class="color-picker-wrapper">
                           <label for="buttonColor">لون الأزرار المقترحة:</label>
-                          <span class="color-preview" id="buttonColorPreview" data-color-id="buttonColor" style="background-color: #007bff;"></span>
-                          <input type="color" id="buttonColor" name="buttonColor" value="#007bff" style="display: none;">
+                          <span class="color-preview" id="buttonColorPreview" data-color-id="buttonColor" style="background-color: ${data.colors.button};"></span>
                         </div>
                       </div>
                     </div>
                     <div class="section-with-settings">
                       <div class="chat-input">
                         <input type="text" id="previewMessageInput" placeholder="اكتب رسالتك...">
-                        <input type="file" id="previewImageInput" accept="image/*" style="display: none;">
+                        <input type="file" id="previewImageInput" accept="image/*" style="display: ${data.imageUploadEnabled ? 'block' : 'none'};">
                         <button id="previewSendMessageBtn">إرسال</button>
                       </div>
                       <button class="settings-gear" data-target="input-settings">⚙️</button>
                       <div id="input-settings" class="settings-popup" style="display: none;">
                         <div class="color-picker-wrapper">
                           <label for="backgroundColor">لون الخلفية:</label>
-                          <span class="color-preview" id="backgroundColorPreview" data-color-id="backgroundColor" style="background-color: #f8f9fa;"></span>
-                          <input type="color" id="backgroundColor" name="backgroundColor" value="#f8f9fa" style="display: none;">
+                          <span class="color-preview" id="backgroundColorPreview" data-color-id="backgroundColor" style="background-color: ${data.colors.background};"></span>
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="inputTextColor">لون نص مربع الإدخال:</label>
-                          <span class="color-preview" id="inputTextColorPreview" data-color-id="inputTextColor" style="background-color: #333333;"></span>
-                          <input type="color" id="inputTextColor" name="inputTextColor" value="#333333" style="display: none;">
+                          <span class="color-preview" id="inputTextColorPreview" data-color-id="inputTextColor" style="background-color: ${data.colors.inputTextColor || '#333333'};"></span>
                         </div>
                         <div class="color-picker-wrapper">
                           <label for="buttonColorInput">لون زر الإرسال:</label>
-                          <span class="color-preview" id="buttonColorInputPreview" data-color-id="buttonColorInput" style="background-color: #007bff;"></span>
-                          <input type="color" id="buttonColorInput" name="buttonColor" value="#007bff" style="display: none;">
+                          <span class="color-preview" id="buttonColorInputPreview" data-color-id="buttonColorInput" style="background-color: ${data.colors.button};"></span>
                         </div>
                       </div>
                     </div>
@@ -620,22 +183,23 @@ async function loadChatPage() {
                 <form id="customizationForm" class="settings-group" enctype="multipart/form-data">
                   <div class="form-group">
                     <label for="title">عنوان الصفحة:</label>
-                    <input type="text" id="title" name="title" value="صفحة دردشة" required placeholder="أدخل عنوان الصفحة">
+                    <input type="text" id="title" name="title" value="${data.title}" required placeholder="أدخل عنوان الصفحة">
                   </div>
                   <div class="form-group logo-section">
                     <label for="logo">شعار الصفحة (PNG):</label>
                     <input type="file" id="logo" name="logo" accept="image/png">
                     <div class="logo-preview-container">
-                      <p style="font-size: 0.8em; margin-bottom: 5px;">يفضل شعار بدون خلفية أو بنفس خلفية الهيدر</p>
+                      <p style="font-size: 0.8em; margin-bottom: 5px;">الشعار الحالي:</p>
+                      ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo Preview" class="logo-preview-img" />` : '<p style="font-size: 0.8em;">لا يوجد</p>'}
                     </div>
                     <img id="logoPreview" class="logo-preview-img" style="display: none;" alt="Logo Preview" />
                   </div>
                   <div class="form-group checkbox-group">
                     <label class="checkbox-label">
-                      <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled">
+                      <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled" ${data.suggestedQuestionsEnabled ? 'checked' : ''}>
                       تفعيل الأسئلة المقترحة
                     </label>
-                    <div id="suggestedQuestionsContainer" class="suggested-questions-container" style="display: none;">
+                    <div id="suggestedQuestionsContainer" class="suggested-questions-container" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
                       <h3>إدارة الأسئلة المقترحة</h3>
                       <div class="question-input-group">
                         <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
@@ -646,7 +210,7 @@ async function loadChatPage() {
                   </div>
                   <div class="form-group checkbox-group">
                     <label class="checkbox-label">
-                      <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled">
+                      <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled" ${data.imageUploadEnabled ? 'checked' : ''}>
                       تفعيل إرفاق الصور
                     </label>
                   </div>
@@ -654,241 +218,310 @@ async function loadChatPage() {
                 </form>
               </div>
             </div>
-          </div>
-        `;
+          `;
 
-        const previewChat = document.getElementById('previewChat');
-        const previewChatHeader = document.getElementById('previewChatHeader');
-        const previewChatTitle = document.getElementById('previewChatTitle');
-        const previewChatMessages = document.getElementById('previewChatMessages');
-        const previewSuggestedQuestions = document.getElementById('previewSuggestedQuestions');
-        const previewSendMessageBtn = document.getElementById('previewSendMessageBtn');
-        const previewMessageInput = document.getElementById('previewMessageInput');
-        const previewImageInput = document.getElementById('previewImageInput');
-        const userMessage = document.querySelector('#previewChatMessages .user-message');
-        const botMessage = document.querySelector('#previewChatMessages .bot-message');
+          // Apply initial styles to the preview
+          const previewChat = document.getElementById('previewChat');
+          const previewChatHeader = document.getElementById('previewChatHeader');
+          const previewChatTitle = document.getElementById('previewChatTitle');
+          const previewChatMessages = document.getElementById('previewChatMessages');
+          const previewSuggestedQuestions = document.getElementById('previewSuggestedQuestions');
+          const previewSendMessageBtn = document.getElementById('previewSendMessageBtn');
+          const previewMessageInput = document.getElementById('previewMessageInput');
+          const previewImageInput = document.getElementById('previewImageInput');
+          const userMessage = document.querySelector('#previewChatMessages .user-message');
+          const botMessage = document.querySelector('#previewChatMessages .bot-message');
 
-        function updatePreviewStyles() {
-          previewChat.style.backgroundColor = document.getElementById('backgroundColor').value;
-          previewChatHeader.style.backgroundColor = document.getElementById('headerColor').value;
-          previewChatTitle.style.color = document.getElementById('titleColor').value;
-          previewChatMessages.style.backgroundColor = document.getElementById('chatAreaBackgroundColor').value;
-          previewChat.style.color = document.getElementById('textColor').value;
-          previewSendMessageBtn.style.backgroundColor = document.getElementById('buttonColorInput').value;
-          previewMessageInput.style.color = document.getElementById('inputTextColor').value;
-          Array.from(previewSuggestedQuestions.children).forEach(btn => {
-            btn.style.backgroundColor = document.getElementById('buttonColor').value;
-          });
-          userMessage.style.backgroundColor = document.getElementById('userMessageBackgroundColor').value;
-          userMessage.style.color = document.getElementById('userMessageTextColor').value;
-          botMessage.style.backgroundColor = document.getElementById('botMessageBackgroundColor').value;
-          botMessage.style.color = document.getElementById('botMessageTextColor').value;
+          // Object to store color values
+          const colorValues = {
+            titleColor: data.titleColor || '#ffffff',
+            headerColor: data.colors.header,
+            chatAreaBackgroundColor: data.colors.chatAreaBackground || '#ffffff',
+            textColor: data.colors.text,
+            userMessageBackgroundColor: data.colors.userMessageBackground || '#007bff',
+            userMessageTextColor: data.colors.userMessageTextColor || '#ffffff',
+            botMessageBackgroundColor: data.colors.botMessageBackground || '#e9ecef',
+            botMessageTextColor: data.colors.botMessageTextColor || '#000000',
+            buttonColor: data.colors.button,
+            backgroundColor: data.colors.background,
+            inputTextColor: data.colors.inputTextColor || '#333333',
+            buttonColorInput: data.colors.button,
+          };
 
-          document.getElementById('titleColorPreview').style.backgroundColor = document.getElementById('titleColor').value;
-          document.getElementById('headerColorPreview').style.backgroundColor = document.getElementById('headerColor').value;
-          document.getElementById('chatAreaBackgroundColorPreview').style.backgroundColor = document.getElementById('chatAreaBackgroundColor').value;
-          document.getElementById('textColorPreview').style.backgroundColor = document.getElementById('textColor').value;
-          document.getElementById('userMessageBackgroundColorPreview').style.backgroundColor = document.getElementById('userMessageBackgroundColor').value;
-          document.getElementById('userMessageTextColorPreview').style.backgroundColor = document.getElementById('userMessageTextColor').value;
-          document.getElementById('botMessageBackgroundColorPreview').style.backgroundColor = document.getElementById('botMessageBackgroundColor').value;
-          document.getElementById('botMessageTextColorPreview').style.backgroundColor = document.getElementById('botMessageTextColor').value;
-          document.getElementById('buttonColorPreview').style.backgroundColor = document.getElementById('buttonColor').value;
-          document.getElementById('backgroundColorPreview').style.backgroundColor = document.getElementById('backgroundColor').value;
-          document.getElementById('inputTextColorPreview').style.backgroundColor = document.getElementById('inputTextColor').value;
-          document.getElementById('buttonColorInputPreview').style.backgroundColor = document.getElementById('buttonColorInput').value;
-        }
-
-        document.querySelectorAll('.settings-gear').forEach(gear => {
-          gear.addEventListener('click', () => {
-            const targetId = gear.getAttribute('data-target');
-            const popup = document.getElementById(targetId);
-            const isVisible = popup.style.display === 'block';
-            document.querySelectorAll('.settings-popup').forEach(p => p.style.display = 'none');
-            popup.style.display = isVisible ? 'none' : 'block';
-          });
-        });
-
-        document.querySelectorAll('.color-preview').forEach(preview => {
-          preview.addEventListener('click', () => {
-            const inputId = preview.getAttribute('data-color-id');
-            const input = document.getElementById(inputId);
-            input.click();
-          });
-        });
-
-        document.getElementById('titleColor').addEventListener('input', updatePreviewStyles);
-        document.getElementById('headerColor').addEventListener('input', updatePreviewStyles);
-        document.getElementById('backgroundColor').addEventListener('input', updatePreviewStyles);
-        document.getElementById('chatAreaBackgroundColor').addEventListener('input', updatePreviewStyles);
-        document.getElementById('textColor').addEventListener('input', updatePreviewStyles);
-        document.getElementById('buttonColor').addEventListener('input', updatePreviewStyles);
-        document.getElementById('buttonColorInput').addEventListener('input', updatePreviewStyles);
-        document.getElementById('userMessageBackgroundColor').addEventListener('input', updatePreviewStyles);
-        document.getElementById('userMessageTextColor').addEventListener('input', updatePreviewStyles);
-        document.getElementById('botMessageBackgroundColor').addEventListener('input', updatePreviewStyles);
-        document.getElementById('botMessageTextColor').addEventListener('input', updatePreviewStyles);
-        document.getElementById('inputTextColor').addEventListener('input', updatePreviewStyles);
-
-        document.getElementById('title').addEventListener('input', (e) => {
-          previewChatTitle.textContent = e.target.value || 'صفحة الدردشة';
-        });
-
-        const logoInput = document.getElementById('logo');
-        const logoPreview = document.getElementById('logoPreview');
-        const previewChatLogo = document.getElementById('previewChatLogo');
-        logoInput.addEventListener('change', () => {
-          const file = logoInput.files[0];
-          if (file) {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              logoPreview.src = e.target.result;
-              logoPreview.style.display = 'block';
-              previewChatLogo.src = e.target.result;
-              previewChatLogo.style.display = 'block';
-            };
-            reader.readAsDataURL(file);
-          } else {
-            logoPreview.style.display = 'none';
-            previewChatLogo.style.display = 'none';
-          }
-        });
-
-        document.getElementById('copyLinkBtn').addEventListener('click', async () => {
-          const linkInput = document.getElementById('chatLink');
-          try {
-            await navigator.clipboard.writeText(linkInput.value);
-            alert('تم نسخ الرابط بنجاح!');
-            console.log(`Link copied: ${linkInput.value}`);
-          } catch (err) {
-            console.error('خطأ في نسخ الرابط:', err);
-            alert('فشل في نسخ الرابط، حاول مرة أخرى');
-          }
-        });
-
-        const suggestedQuestionsEnabledCheckbox = document.getElementById('suggestedQuestionsEnabled');
-        const suggestedQuestionsContainer = document.getElementById('suggestedQuestionsContainer');
-        const suggestedQuestionsGear = document.getElementById('suggestedQuestionsGear');
-        suggestedQuestionsEnabledCheckbox.addEventListener('change', () => {
-          suggestedQuestionsContainer.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
-          previewSuggestedQuestions.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
-          suggestedQuestionsGear.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
-        });
-
-        let questions = [];
-        document.getElementById('addQuestionBtn').addEventListener('click', () => {
-          const newQuestionInput = document.getElementById('newQuestion');
-          const question = newQuestionInput.value.trim();
-          if (question) {
-            questions.push(question);
-            newQuestionInput.value = '';
-            updateQuestionsList();
-            updatePreviewSuggestedQuestions();
-          } else {
-            alert('يرجى إدخال سؤال صالح');
-          }
-        });
-
-        function updateQuestionsList() {
-          const questionsList = document.getElementById('questionsList');
-          questionsList.innerHTML = '';
-          questions.forEach((question, index) => {
-            const li = document.createElement('li');
-            li.innerHTML = `
-              ${question}
-              <div class="question-actions">
-                <button type="button" onclick="editQuestion(${index})">تعديل</button>
-                <button type="button" onclick="deleteQuestion(${index})">حذف</button>
-              </div>
-            `;
-            questionsList.appendChild(li);
-          });
-        }
-
-        function updatePreviewSuggestedQuestions() {
-          previewSuggestedQuestions.innerHTML = questions.map(q => `<button class="suggested-question">${q}</button>`).join('');
-          Array.from(previewSuggestedQuestions.children).forEach(btn => {
-            btn.style.backgroundColor = document.getElementById('buttonColor').value;
-          });
-        }
-
-        window.editQuestion = (index) => {
-          const newQuestion = prompt('أدخل السؤال الجديد:', questions[index]);
-          if (newQuestion && newQuestion.trim()) {
-            questions[index] = newQuestion.trim();
-            updateQuestionsList();
-            updatePreviewSuggestedQuestions();
-          }
-        };
-
-        window.deleteQuestion = (index) => {
-          if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
-            questions.splice(index, 1);
-            updateQuestionsList();
-            updatePreviewSuggestedQuestions();
-          }
-        };
-
-        document.getElementById('imageUploadEnabled').addEventListener('change', (e) => {
-          previewImageInput.style.display = e.target.checked ? 'block' : 'none';
-        });
-
-        document.getElementById('customizationForm').addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const formData = new FormData(e.target);
-          formData.set('title', formData.get('title'));
-          formData.set('titleColor', document.getElementById('titleColor').value);
-          formData.set('colors', JSON.stringify({
-            header: document.getElementById('headerColor').value,
-            background: document.getElementById('backgroundColor').value,
-            chatAreaBackground: document.getElementById('chatAreaBackgroundColor').value,
-            text: document.getElementById('textColor').value,
-            button: document.getElementById('buttonColor').value || document.getElementById('buttonColorInput').value,
-            userMessageBackground: document.getElementById('userMessageBackgroundColor').value,
-            userMessageTextColor: document.getElementById('userMessageTextColor').value,
-            botMessageBackground: document.getElementById('botMessageBackgroundColor').value,
-            botMessageTextColor: document.getElementById('botMessageTextColor').value,
-            inputTextColor: document.getElementById('inputTextColor').value,
-          }));
-          formData.set('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on' ? 'true' : 'false');
-          formData.set('suggestedQuestions', JSON.stringify(questions));
-          formData.set('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on' ? 'true' : 'false');
-
-          try {
-            const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
-              method: 'PUT',
-              headers: {
-                'Authorization': `Bearer ${token}`,
-              },
-              body: formData,
+          function updatePreviewStyles() {
+            previewChat.style.backgroundColor = colorValues.backgroundColor;
+            previewChatHeader.style.backgroundColor = colorValues.headerColor;
+            previewChatTitle.style.color = colorValues.titleColor;
+            previewChatMessages.style.backgroundColor = colorValues.chatAreaBackgroundColor;
+            previewChat.style.color = colorValues.textColor;
+            previewSendMessageBtn.style.backgroundColor = colorValues.buttonColorInput;
+            previewMessageInput.style.color = colorValues.inputTextColor;
+            Array.from(previewSuggestedQuestions.children).forEach(btn => {
+              btn.style.backgroundColor = colorValues.buttonColor;
             });
+            userMessage.style.backgroundColor = colorValues.userMessageBackgroundColor;
+            userMessage.style.color = colorValues.userMessageTextColor;
+            botMessage.style.backgroundColor = colorValues.botMessageBackgroundColor;
+            botMessage.style.color = colorValues.botMessageTextColor;
 
-            if (!response.ok) {
-              throw new Error(`فشل في حفظ الإعدادات: ${response.status} ${response.statusText}`);
-            }
-
-            const result = await response.json();
-            if (result.logoUrl) {
-              document.querySelector('.logo-preview-container p').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" class="logo-preview-img" />`;
-              logoPreview.src = result.logoUrl;
-              logoPreview.style.display = 'block';
-              previewChatLogo.src = result.logoUrl;
-              previewChatLogo.style.display = 'block';
-            }
-            alert('تم حفظ الإعدادات بنجاح!');
-          } catch (err) {
-            console.error('خطأ في حفظ الإعدادات:', err);
-            alert('فشل في حفظ الإعدادات، حاول مرة أخرى');
+            // Update color previews
+            document.getElementById('titleColorPreview').style.backgroundColor = colorValues.titleColor;
+            document.getElementById('headerColorPreview').style.backgroundColor = colorValues.headerColor;
+            document.getElementById('chatAreaBackgroundColorPreview').style.backgroundColor = colorValues.chatAreaBackgroundColor;
+            document.getElementById('textColorPreview').style.backgroundColor = colorValues.textColor;
+            document.getElementById('userMessageBackgroundColorPreview').style.backgroundColor = colorValues.userMessageBackgroundColor;
+            document.getElementById('userMessageTextColorPreview').style.backgroundColor = colorValues.userMessageTextColor;
+            document.getElementById('botMessageBackgroundColorPreview').style.backgroundColor = colorValues.botMessageBackgroundColor;
+            document.getElementById('botMessageTextColorPreview').style.backgroundColor = colorValues.botMessageTextColor;
+            document.getElementById('buttonColorPreview').style.backgroundColor = colorValues.buttonColor;
+            document.getElementById('backgroundColorPreview').style.backgroundColor = colorValues.backgroundColor;
+            document.getElementById('inputTextColorPreview').style.backgroundColor = colorValues.inputTextColor;
+            document.getElementById('buttonColorInputPreview').style.backgroundColor = colorValues.buttonColorInput;
           }
-        });
 
-        updatePreviewStyles();
-      } catch (err) {
-        console.error('خطأ في إنشاء صفحة الدردشة:', err);
-        content.innerHTML = `
-          <p style="color: red;">تعذر إنشاء صفحة الدردشة، حاول مرة أخرى لاحقًا.</p>
-        `;
-      }
-    });
+          // Handle gear buttons to show/hide settings popups
+          document.querySelectorAll('.settings-gear').forEach(gear => {
+            gear.addEventListener('click', () => {
+              const targetId = gear.getAttribute('data-target');
+              const popup = document.getElementById(targetId);
+              const isVisible = popup.style.display === 'block';
+              // Hide all popups first
+              document.querySelectorAll('.settings-popup').forEach(p => p.style.display = 'none');
+              // Toggle the clicked popup
+              popup.style.display = isVisible ? 'none' : 'block';
+            });
+          });
+
+          // Wait for iro.js to load before initializing color pickers
+          iroScript.onload = () => {
+            const colorPickers = {};
+
+            document.querySelectorAll('.color-preview').forEach(preview => {
+              const colorId = preview.getAttribute('data-color-id');
+              const initialColor = colorValues[colorId];
+
+              // Create a container for the color picker
+              const pickerContainer = document.createElement('div');
+              pickerContainer.style.position = 'absolute';
+              pickerContainer.style.zIndex = '1001';
+              pickerContainer.style.display = 'none';
+              preview.parentNode.appendChild(pickerContainer);
+
+              // Initialize iro.js color picker
+              const colorPicker = new iro.ColorPicker(pickerContainer, {
+                width: 150,
+                color: initialColor,
+                layout: [
+                  { component: iro.ui.Wheel },
+                  { component: iro.ui.Slider, options: { sliderType: 'value' } },
+                ],
+              });
+
+              colorPickers[colorId] = { picker: colorPicker, container: pickerContainer };
+
+              // Show/hide color picker on click
+              preview.addEventListener('click', (e) => {
+                const isVisible = pickerContainer.style.display === 'block';
+                // Hide all other pickers
+                Object.values(colorPickers).forEach(({ container }) => {
+                  container.style.display = 'none';
+                });
+                // Toggle the clicked picker
+                if (!isVisible) {
+                  pickerContainer.style.display = 'block';
+                  const rect = preview.getBoundingClientRect();
+                  pickerContainer.style.top = `${rect.bottom + window.scrollY}px`;
+                  pickerContainer.style.left = `${rect.left + window.scrollX}px`;
+                }
+              });
+
+              // Update color value when changed
+              colorPicker.on('color:change', (color) => {
+                colorValues[colorId] = color.hexString;
+                updatePreviewStyles();
+              });
+
+              // Hide picker when clicking outside
+              document.addEventListener('click', (event) => {
+                if (!pickerContainer.contains(event.target) && !preview.contains(event.target)) {
+                  pickerContainer.style.display = 'none';
+                }
+              });
+            });
+          };
+
+          // Update title in preview
+          document.getElementById('title').addEventListener('input', (e) => {
+            previewChatTitle.textContent = e.target.value || 'صفحة الدردشة';
+          });
+
+          // Logo upload preview
+          const logoInput = document.getElementById('logo');
+          const logoPreview = document.getElementById('logoPreview');
+          const previewChatLogo = document.getElementById('previewChatLogo');
+          logoInput.addEventListener('change', () => {
+            const file = logoInput.files[0];
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (e) => {
+                logoPreview.src = e.target.result;
+                logoPreview.style.display = 'block';
+                previewChatLogo.src = e.target.result;
+                previewChatLogo.style.display = 'block';
+              };
+              reader.readAsDataURL(file);
+            } else {
+              logoPreview.style.display = 'none';
+              previewChatLogo.style.display = 'none';
+            }
+          });
+
+          // Copy link functionality
+          document.getElementById('copyLinkBtn').addEventListener('click', async () => {
+            const linkInput = document.getElementById('chatLink');
+            try {
+              await navigator.clipboard.writeText(linkInput.value);
+              alert('تم نسخ الرابط بنجاح!');
+              console.log(`Link copied: ${linkInput.value}`);
+            } catch (err) {
+              console.error('خطأ في نسخ الرابط:', err);
+              alert('فشل في نسخ الرابط، حاول مرة أخرى');
+            }
+          });
+
+          // Suggested questions functionality
+          const suggestedQuestionsEnabledCheckbox = document.getElementById('suggestedQuestionsEnabled');
+          const suggestedQuestionsContainer = document.getElementById('suggestedQuestionsContainer');
+          const suggestedQuestionsGear = document.getElementById('suggestedQuestionsGear');
+          suggestedQuestionsEnabledCheckbox.addEventListener('change', () => {
+            suggestedQuestionsContainer.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
+            previewSuggestedQuestions.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
+            suggestedQuestionsGear.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
+          });
+
+          let questions = data.suggestedQuestions || [];
+          document.getElementById('addQuestionBtn').addEventListener('click', () => {
+            const newQuestionInput = document.getElementById('newQuestion');
+            const question = newQuestionInput.value.trim();
+            if (question) {
+              questions.push(question);
+              newQuestionInput.value = '';
+              updateQuestionsList();
+              updatePreviewSuggestedQuestions();
+            } else {
+              alert('يرجى إدخال سؤال صالح');
+            }
+          });
+
+          function updateQuestionsList() {
+            const questionsList = document.getElementById('questionsList');
+            questionsList.innerHTML = '';
+            questions.forEach((question, index) => {
+              const li = document.createElement('li');
+              li.innerHTML = `
+                ${question}
+                <div class="question-actions">
+                  <button type="button" onclick="editQuestion(${index})">تعديل</button>
+                  <button type="button" onclick="deleteQuestion(${index})">حذف</button>
+                </div>
+              `;
+              questionsList.appendChild(li);
+            });
+          }
+
+          function updatePreviewSuggestedQuestions() {
+            previewSuggestedQuestions.innerHTML = questions.map(q => `<button class="suggested-question">${q}</button>`).join('');
+            Array.from(previewSuggestedQuestions.children).forEach(btn => {
+              btn.style.backgroundColor = colorValues.buttonColor;
+            });
+          }
+
+          window.editQuestion = (index) => {
+            const newQuestion = prompt('أدخل السؤال الجديد:', questions[index]);
+            if (newQuestion && newQuestion.trim()) {
+              questions[index] = newQuestion.trim();
+              updateQuestionsList();
+              updatePreviewSuggestedQuestions();
+            }
+          };
+
+          window.deleteQuestion = (index) => {
+            if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
+              questions.splice(index, 1);
+              updateQuestionsList();
+              updatePreviewSuggestedQuestions();
+            }
+          };
+
+          updateQuestionsList();
+
+          // Image upload toggle
+          document.getElementById('imageUploadEnabled').addEventListener('change', (e) => {
+            previewImageInput.style.display = e.target.checked ? 'block' : 'none';
+          });
+
+          // Form submission
+          document.getElementById('customizationForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            formData.set('title', formData.get('title'));
+            formData.set('titleColor', colorValues.titleColor);
+            formData.set('colors', JSON.stringify({
+              header: colorValues.headerColor,
+              background: colorValues.backgroundColor,
+              chatAreaBackground: colorValues.chatAreaBackgroundColor,
+              text: colorValues.textColor,
+              button: colorValues.buttonColor,
+              userMessageBackground: colorValues.userMessageBackgroundColor,
+              userMessageTextColor: colorValues.userMessageTextColor,
+              botMessageBackground: colorValues.botMessageBackgroundColor,
+              botMessageTextColor: colorValues.botMessageTextColor,
+              inputTextColor: colorValues.inputTextColor,
+            }));
+            formData.set('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on' ? 'true' : 'false');
+            formData.set('suggestedQuestions', JSON.stringify(questions));
+            formData.set('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on' ? 'true' : 'false');
+
+            try {
+              const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
+                method: 'PUT',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                },
+                body: formData,
+              });
+
+              if (!response.ok) {
+                throw new Error(`فشل في حفظ الإعدادات: ${response.status} ${response.statusText}`);
+              }
+
+              const result = await response.json();
+              if (result.logoUrl) {
+                document.querySelector('.logo-preview-container p').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" class="logo-preview-img" />`;
+                logoPreview.src = result.logoUrl;
+                logoPreview.style.display = 'block';
+                previewChatLogo.src = result.logoUrl;
+                previewChatLogo.style.display = 'block';
+              }
+              alert('تم حفظ الإعدادات بنجاح!');
+            } catch (err) {
+              console.error('خطأ في حفظ الإعدادات:', err);
+              alert('فشل في حفظ الإعدادات، حاول مرة أخرى');
+            }
+          });
+
+          // Initial preview update
+          updatePreviewStyles();
+        } catch (err) {
+          console.error('خطأ في جلب صفحة الدردشة:', err);
+          chatPageSettings.innerHTML = `
+            <p style="color: red;">تعذر جلب صفحة الدردشة، حاول مرة أخرى لاحقًا.</p>
+          `;
+        }
+      });
+    } else {
+      console.error('botId select element not found in DOM');
+    }
   } else {
     console.error('createChatPageBtn not found in DOM');
   }
