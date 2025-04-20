@@ -565,8 +565,15 @@ body.light #analyticsData {
 
 /* Chat Page */
 .chat-container {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 20px;
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: var(--shadow);
 }
 
 .chat-page-settings {
@@ -586,6 +593,10 @@ body.light .chat-page-settings {
   padding: 10px;
   text-align: center;
   border-radius: 8px 8px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
 #chatLogo {
@@ -595,7 +606,7 @@ body.light .chat-page-settings {
 
 #chatTitle {
   margin: 0;
-  display: inline;
+  font-size: 1.5em;
 }
 
 #chatMessages {
@@ -603,34 +614,197 @@ body.light .chat-page-settings {
   overflow-y: auto;
   margin-bottom: 20px;
   padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
 }
 
 .message {
   margin: 5px 0;
-  padding: 8px;
-  border-radius: 5px;
+  padding: 10px;
+  border-radius: 8px;
+  max-width: 80%;
+  word-wrap: break-word;
 }
 
 .user-message {
   background-color: #007bff;
   color: white;
-  text-align: right;
+  align-self: flex-end;
+  margin-left: auto;
 }
 
 .bot-message {
   background-color: #e9ecef;
-  text-align: left;
+  align-self: flex-start;
+  margin-right: auto;
 }
 
 .suggested-question {
   margin: 5px;
-  padding: 8px;
+  padding: 8px 16px;
   border: none;
-  border-radius: 5px;
+  border-radius: 20px;
   cursor: pointer;
   color: white;
+  transition: all 0.3s;
+}
+
+.suggested-question:hover {
+  transform: translateY(-2px);
+}
+
+.chat-input {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.chat-input input[type="text"] {
+  flex: 1;
+  min-width: 200px;
+}
+
+.chat-input input[type="file"] {
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Preview Styles */
+.preview-settings-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@media (min-width: 1024px) {
+  .preview-settings-container {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.preview-section {
+  flex: 1;
+  padding: 15px;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+}
+
+body.light .preview-section {
+  background: #fff;
+  border: 1px solid #ddd;
+}
+
+.chat-preview-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 15px;
+}
+
+#previewChat {
+  width: 100%;
+  max-width: 400px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+#previewChatHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px;
+}
+
+#previewChatLogo {
+  max-height: 40px;
+}
+
+#previewChatTitle {
+  font-size: 1.2em;
+  margin: 0;
+}
+
+#previewChatMessages {
+  height: 200px;
+  padding: 10px;
+  overflow-y: auto;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+#previewChatMessages .message {
+  max-width: 80%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  margin: 5px 0;
+}
+
+#previewChatMessages .user-message {
+  margin-left: auto;
+}
+
+#previewChatMessages .bot-message {
+  margin-right: auto;
+}
+
+#previewSuggestedQuestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  justify-content: center;
+}
+
+#previewSuggestedQuestions .suggested-question {
+  padding: 6px 12px;
+  font-size: 0.9em;
+}
+
+#previewMessageInput, #previewImageInput {
+  padding: 8px;
+  font-size: 0.9em;
+}
+
+#previewSendMessageBtn {
+  padding: 8px 16px;
+  font-size: 0.9em;
+}
+
+@media (max-width: 600px) {
+  #previewChat {
+    max-width: 100%;
+  }
+
+  #previewChatMessages {
+    height: 150px;
+  }
+
+  #previewChatTitle {
+    font-size: 1em;
+  }
+
+  #previewChatLogo {
+    max-height: 30px;
+  }
+
+  #previewSuggestedQuestions .suggested-question {
+    padding: 5px 10px;
+    font-size: 0.8em;
+  }
+
+  #previewMessageInput, #previewImageInput {
+    font-size: 0.8em;
+  }
+
+  #previewSendMessageBtn {
+    padding: 6px 12px;
+    font-size: 0.8em;
+  }
 }
 
 /* Spinner */
