@@ -56,7 +56,7 @@ async function loadChatPage() {
   if (botIdSelect) {
     botIdSelect.addEventListener('change', async () => {
       const selectedBotId = botIdSelect.value;
-      createChatPageBtn.style.display = selectedBotId ? 'block' : 'none'; // Show button only if a bot is selected
+      createChatPageBtn.style.display = selectedBotId ? 'block' : 'none';
       createChatPageBtn.disabled = !selectedBotId;
       console.log(`Selected bot ID: ${selectedBotId}`);
 
@@ -78,87 +78,151 @@ async function loadChatPage() {
                     <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
                   </div>
                 </div>
-                <form id="customizationForm" class="settings-group" enctype="multipart/form-data">
-                  <div class="form-group">
-                    <label for="title">عنوان الصفحة:</label>
-                    <input type="text" id="title" name="title" value="${data.title}" required placeholder="أدخل عنوان الصفحة">
-                  </div>
-                  <div class="form-group color-picker-section">
-                    <label for="titleColor">لون نص العنوان:</label>
-                    <div class="color-picker-wrapper">
-                      <input type="color" id="titleColor" name="titleColor" value="${data.titleColor || '#ffffff'}">
-                    </div>
-                  </div>
-                  <div class="form-group color-picker-section">
-                    <h3>إعدادات الألوان:</h3>
-                    <div class="color-picker-wrapper">
-                      <label for="headerColor">لون الهيدر:</label>
-                      <input type="color" id="headerColor" name="headerColor" value="${data.colors.header}">
-                    </div>
-                    <div class="color-picker-wrapper">
-                      <label for="backgroundColor">لون الخلفية:</label>
-                      <input type="color" id="backgroundColor" name="backgroundColor" value="${data.colors.background}">
-                    </div>
-                    <div class="color-picker-wrapper">
-                      <label for="textColor">لون النص:</label>
-                      <input type="color" id="textColor" name="textColor" value="${data.colors.text}">
-                    </div>
-                    <div class="color-picker-wrapper">
-                      <label for="buttonColor">لون الأزرار:</label>
-                      <input type="color" id="buttonColor" name="buttonColor" value="${data.colors.button}">
-                    </div>
-                  </div>
-                  <div class="form-group logo-section">
-                    <label for="logo">شعار الصفحة (PNG):</label>
-                    <input type="file" id="logo" name="logo" accept="image/png">
-                    <div class="logo-preview-container">
-                      <p style="font-size: 0.8em; margin-bottom: 5px;">الشعار الحالي:</p>
-                      ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo Preview" class="logo-preview-img" />` : '<p style="font-size: 0.8em;">لا يوجد</p>'}
-                    </div>
-                    <img id="logoPreview" class="logo-preview-img" style="display: none;" alt="Logo Preview" />
-                  </div>
-                  <div class="form-group checkbox-group">
-                    <label class="checkbox-label">
-                      <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled" ${data.suggestedQuestionsEnabled ? 'checked' : ''}>
-                      تفعيل الأسئلة المقترحة
-                    </label>
-                    <div id="suggestedQuestionsContainer" class="suggested-questions-container" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
-                      <h3>إدارة الأسئلة المقترحة</h3>
-                      <div class="question-input-group">
-                        <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
-                        <button type="button" id="addQuestionBtn" class="submit-btn">إضافة سؤال</button>
+                <div class="preview-settings-container">
+                  <div class="preview-section">
+                    <h3>معاينة صفحة الدردشة</h3>
+                    <div class="chat-preview-container">
+                      <div id="previewChat" class="chat-container">
+                        <div id="previewChatHeader" class="chat-header">
+                          <img id="previewChatLogo" class="chat-logo" style="display: ${data.logoUrl ? 'block' : 'none'};" src="${data.logoUrl || ''}" alt="Logo">
+                          <h1 id="previewChatTitle" class="chat-title">${data.title}</h1>
+                        </div>
+                        <div id="previewChatMessages" class="chat-messages">
+                          <div class="message user-message">رسالة المستخدم</div>
+                          <div class="message bot-message">رد البوت</div>
+                        </div>
+                        <div id="previewSuggestedQuestions" class="suggested-questions" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
+                          ${data.suggestedQuestions?.map(q => `<button class="suggested-question">${q}</button>`).join('') || ''}
+                        </div>
+                        <div class="chat-input">
+                          <input type="text" id="previewMessageInput" placeholder="اكتب رسالتك...">
+                          <input type="file" id="previewImageInput" accept="image/*" style="display: ${data.imageUploadEnabled ? 'block' : 'none'};">
+                          <button id="previewSendMessageBtn">إرسال</button>
+                        </div>
                       </div>
-                      <ul id="questionsList" class="questions-list"></ul>
                     </div>
                   </div>
-                  <div class="form-group checkbox-group">
-                    <label class="checkbox-label">
-                      <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled" ${data.imageUploadEnabled ? 'checked' : ''}>
-                      تفعيل إرفاق الصور
-                    </label>
+                  <div class="settings-section">
+                    <form id="customizationForm" class="settings-group" enctype="multipart/form-data">
+                      <div class="form-group">
+                        <label for="title">عنوان الصفحة:</label>
+                        <input type="text" id="title" name="title" value="${data.title}" required placeholder="أدخل عنوان الصفحة">
+                      </div>
+                      <div class="form-group color-picker-section">
+                        <h3>إعدادات الألوان:</h3>
+                        <div class="color-picker-wrapper">
+                          <label for="titleColor">لون نص العنوان:</label>
+                          <input type="color" id="titleColor" name="titleColor" value="${data.titleColor || '#ffffff'}">
+                        </div>
+                        <div class="color-picker-wrapper">
+                          <label for="headerColor">لون الهيدر:</label>
+                          <input type="color" id="headerColor" name="headerColor" value="${data.colors.header}">
+                        </div>
+                        <div class="color-picker-wrapper">
+                          <label for="backgroundColor">لون الخلفية:</label>
+                          <input type="color" id="backgroundColor" name="backgroundColor" value="${data.colors.background}">
+                        </div>
+                        <div class="color-picker-wrapper">
+                          <label for="chatAreaBackgroundColor">لون خلفية مربع الدردشة:</label>
+                          <input type="color" id="chatAreaBackgroundColor" name="chatAreaBackgroundColor" value="${data.colors.chatAreaBackground || '#ffffff'}">
+                        </div>
+                        <div class="color-picker-wrapper">
+                          <label for="textColor">لون النص:</label>
+                          <input type="color" id="textColor" name="textColor" value="${data.colors.text}">
+                        </div>
+                        <div class="color-picker-wrapper">
+                          <label for="buttonColor">لون الأزرار:</label>
+                          <input type="color" id="buttonColor" name="buttonColor" value="${data.colors.button}">
+                        </div>
+                        <div class="color-picker-wrapper">
+                          <label for="userMessageBackgroundColor">لون فقاعة المستخدم:</label>
+                          <input type="color" id="userMessageBackgroundColor" name="userMessageBackgroundColor" value="${data.colors.userMessageBackground || '#007bff'}">
+                        </div>
+                        <div class="color-picker-wrapper">
+                          <label for="botMessageBackgroundColor">لون فقاعة البوت:</label>
+                          <input type="color" id="botMessageBackgroundColor" name="botMessageBackgroundColor" value="${data.colors.botMessageBackground || '#e9ecef'}">
+                        </div>
+                      </div>
+                      <div class="form-group logo-section">
+                        <label for="logo">شعار الصفحة (PNG):</label>
+                        <input type="file" id="logo" name="logo" accept="image/png">
+                        <div class="logo-preview-container">
+                          <p style="font-size: 0.8em; margin-bottom: 5px;">الشعار الحالي:</p>
+                          ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo Preview" class="logo-preview-img" />` : '<p style="font-size: 0.8em;">لا يوجد</p>'}
+                        </div>
+                        <img id="logoPreview" class="logo-preview-img" style="display: none;" alt="Logo Preview" />
+                      </div>
+                      <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                          <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled" ${data.suggestedQuestionsEnabled ? 'checked' : ''}>
+                          تفعيل الأسئلة المقترحة
+                        </label>
+                        <div id="suggestedQuestionsContainer" class="suggested-questions-container" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
+                          <h3>إدارة الأسئلة المقترحة</h3>
+                          <div class="question-input-group">
+                            <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
+                            <button type="button" id="addQuestionBtn" class="submit-btn">إضافة سؤال</button>
+                          </div>
+                          <ul id="questionsList" class="questions-list"></ul>
+                        </div>
+                      </div>
+                      <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                          <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled" ${data.imageUploadEnabled ? 'checked' : ''}>
+                          تفعيل إرفاق الصور
+                        </label>
+                      </div>
+                      <button type="submit" class="submit-btn">حفظ الإعدادات</button>
+                    </form>
                   </div>
-                  <div class="form-group checkbox-group">
-                    <label class="checkbox-label">
-                      <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled" ${data.darkModeEnabled ? 'checked' : ''}>
-                      تفعيل الوضع الليلي
-                    </label>
-                  </div>
-                  <button type="submit" class="submit-btn">حفظ الإعدادات</button>
-                </form>
-                <p style="font-size: 0.8em;">جميع الحقوق محفوظة © ghazal bost</p>
+                </div>
               </div>
             `;
 
-            const darkModeEnabledCheckbox = document.getElementById('darkModeEnabled');
-            if (darkModeEnabledCheckbox) {
-              document.body.classList.toggle('light', !data.darkModeEnabled);
-              darkModeEnabledCheckbox.addEventListener('change', () => {
-                document.body.classList.toggle('light', !darkModeEnabledCheckbox.checked);
+            // Apply initial styles to the preview
+            const previewChat = document.getElementById('previewChat');
+            const previewChatHeader = document.getElementById('previewChatHeader');
+            const previewChatTitle = document.getElementById('previewChatTitle');
+            const previewChatMessages = document.getElementById('previewChatMessages');
+            const previewSuggestedQuestions = document.getElementById('previewSuggestedQuestions');
+            const previewSendMessageBtn = document.getElementById('previewSendMessageBtn');
+            const previewImageInput = document.getElementById('previewImageInput');
+            const userMessage = document.querySelector('#previewChatMessages .user-message');
+            const botMessage = document.querySelector('#previewChatMessages .bot-message');
+
+            function updatePreviewStyles() {
+              previewChat.style.backgroundColor = document.getElementById('backgroundColor').value;
+              previewChatHeader.style.backgroundColor = document.getElementById('headerColor').value;
+              previewChatTitle.style.color = document.getElementById('titleColor').value;
+              previewChatMessages.style.backgroundColor = document.getElementById('chatAreaBackgroundColor').value;
+              previewChat.style.color = document.getElementById('textColor').value;
+              previewSendMessageBtn.style.backgroundColor = document.getElementById('buttonColor').value;
+              Array.from(previewSuggestedQuestions.children).forEach(btn => {
+                btn.style.backgroundColor = document.getElementById('buttonColor').value;
               });
+              userMessage.style.backgroundColor = document.getElementById('userMessageBackgroundColor').value;
+              botMessage.style.backgroundColor = document.getElementById('botMessageBackgroundColor').value;
             }
 
+            // Add event listeners for real-time preview updates
+            document.getElementById('titleColor').addEventListener('input', updatePreviewStyles);
+            document.getElementById('headerColor').addEventListener('input', updatePreviewStyles);
+            document.getElementById('backgroundColor').addEventListener('input', updatePreviewStyles);
+            document.getElementById('chatAreaBackgroundColor').addEventListener('input', updatePreviewStyles);
+            document.getElementById('textColor').addEventListener('input', updatePreviewStyles);
+            document.getElementById('buttonColor').addEventListener('input', updatePreviewStyles);
+            document.getElementById('userMessageBackgroundColor').addEventListener('input', updatePreviewStyles);
+            document.getElementById('botMessageBackgroundColor').addEventListener('input', updatePreviewStyles);
+
+            // Update title in preview
+            document.getElementById('title').addEventListener('input', (e) => {
+              previewChatTitle.textContent = e.target.value || 'صفحة الدردشة';
+            });
+
+            // Logo upload preview
             const logoInput = document.getElementById('logo');
             const logoPreview = document.getElementById('logoPreview');
+            const previewChatLogo = document.getElementById('previewChatLogo');
             logoInput.addEventListener('change', () => {
               const file = logoInput.files[0];
               if (file) {
@@ -166,13 +230,17 @@ async function loadChatPage() {
                 reader.onload = (e) => {
                   logoPreview.src = e.target.result;
                   logoPreview.style.display = 'block';
+                  previewChatLogo.src = e.target.result;
+                  previewChatLogo.style.display = 'block';
                 };
                 reader.readAsDataURL(file);
               } else {
                 logoPreview.style.display = 'none';
+                previewChatLogo.style.display = 'none';
               }
             });
 
+            // Copy link functionality
             document.getElementById('copyLinkBtn').addEventListener('click', async () => {
               const linkInput = document.getElementById('chatLink');
               try {
@@ -185,10 +253,12 @@ async function loadChatPage() {
               }
             });
 
+            // Suggested questions functionality
             const suggestedQuestionsEnabledCheckbox = document.getElementById('suggestedQuestionsEnabled');
             const suggestedQuestionsContainer = document.getElementById('suggestedQuestionsContainer');
             suggestedQuestionsEnabledCheckbox.addEventListener('change', () => {
               suggestedQuestionsContainer.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
+              previewSuggestedQuestions.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
             });
 
             let questions = data.suggestedQuestions || [];
@@ -199,6 +269,7 @@ async function loadChatPage() {
                 questions.push(question);
                 newQuestionInput.value = '';
                 updateQuestionsList();
+                updatePreviewSuggestedQuestions();
               } else {
                 alert('يرجى إدخال سؤال صالح');
               }
@@ -220,11 +291,19 @@ async function loadChatPage() {
               });
             }
 
+            function updatePreviewSuggestedQuestions() {
+              previewSuggestedQuestions.innerHTML = questions.map(q => `<button class="suggested-question">${q}</button>`).join('');
+              Array.from(previewSuggestedQuestions.children).forEach(btn => {
+                btn.style.backgroundColor = document.getElementById('buttonColor').value;
+              });
+            }
+
             window.editQuestion = (index) => {
               const newQuestion = prompt('أدخل السؤال الجديد:', questions[index]);
               if (newQuestion && newQuestion.trim()) {
                 questions[index] = newQuestion.trim();
                 updateQuestionsList();
+                updatePreviewSuggestedQuestions();
               }
             };
 
@@ -232,11 +311,18 @@ async function loadChatPage() {
               if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
                 questions.splice(index, 1);
                 updateQuestionsList();
+                updatePreviewSuggestedQuestions();
               }
             };
 
             updateQuestionsList();
 
+            // Image upload toggle
+            document.getElementById('imageUploadEnabled').addEventListener('change', (e) => {
+              previewImageInput.style.display = e.target.checked ? 'block' : 'none';
+            });
+
+            // Form submission
             document.getElementById('customizationForm').addEventListener('submit', async (e) => {
               e.preventDefault();
               const formData = new FormData(e.target);
@@ -245,13 +331,15 @@ async function loadChatPage() {
               formData.set('colors', JSON.stringify({
                 header: formData.get('headerColor'),
                 background: formData.get('backgroundColor'),
+                chatAreaBackground: formData.get('chatAreaBackgroundColor'),
                 text: formData.get('textColor'),
                 button: formData.get('buttonColor'),
+                userMessageBackground: formData.get('userMessageBackgroundColor'),
+                botMessageBackground: formData.get('botMessageBackgroundColor'),
               }));
               formData.set('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on' ? 'true' : 'false');
               formData.set('suggestedQuestions', JSON.stringify(questions));
               formData.set('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on' ? 'true' : 'false');
-              formData.set('darkModeEnabled', formData.get('darkModeEnabled') === 'on' ? 'true' : 'false');
 
               try {
                 const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
@@ -271,6 +359,8 @@ async function loadChatPage() {
                   document.querySelector('.logo-preview-container p').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" class="logo-preview-img" />`;
                   logoPreview.src = result.logoUrl;
                   logoPreview.style.display = 'block';
+                  previewChatLogo.src = result.logoUrl;
+                  previewChatLogo.style.display = 'block';
                 }
                 alert('تم حفظ الإعدادات بنجاح!');
               } catch (err) {
@@ -278,6 +368,9 @@ async function loadChatPage() {
                 alert('فشل في حفظ الإعدادات، حاول مرة أخرى');
               }
             });
+
+            // Initial preview update
+            updatePreviewStyles();
           } else {
             createChatPageBtn.style.display = 'block';
           }
@@ -327,86 +420,144 @@ async function loadChatPage() {
                 <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
               </div>
             </div>
-            <form id="customizationForm" class="settings-group" enctype="multipart/form-data">
-              <div class="form-group">
-                <label for="title">عنوان الصفحة:</label>
-                <input type="text" id="title" name="title" value="صفحة دردشة" required placeholder="أدخل عنوان الصفحة">
-              </div>
-              <div class="form-group color-picker-section">
-                <label for="titleColor">لون نص العنوان:</label>
-                <div class="color-picker-wrapper">
-                  <input type="color" id="titleColor" name="titleColor" value="#ffffff">
-                </div>
-              </div>
-              <div class="form-group color-picker-section">
-                <h3>إعدادات الألوان:</h3>
-                <div class="color-picker-wrapper">
-                  <label for="headerColor">لون الهيدر:</label>
-                  <input type="color" id="headerColor" name="headerColor" value="#007bff">
-                </div>
-                <div class="color-picker-wrapper">
-                  <label for="backgroundColor">لون الخلفية:</label>
-                  <input type="color" id="backgroundColor" name="backgroundColor" value="#f8f9fa">
-                </div>
-                <div class="color-picker-wrapper">
-                  <label for="textColor">لون النص:</label>
-                  <input type="color" id="textColor" name="textColor" value="#333333">
-                </div>
-                <div class="color-picker-wrapper">
-                  <label for="buttonColor">لون الأزرار:</label>
-                  <input type="color" id="buttonColor" name="buttonColor" value="#007bff">
-                </div>
-              </div>
-              <div class="form-group logo-section">
-                <label for="logo">شعار الصفحة (PNG):</label>
-                <input type="file" id="logo" name="logo" accept="image/png">
-                <div class="logo-preview-container">
-                  <p style="font-size: 0.8em; margin-bottom: 5px;">يفضل شعار بدون خلفية أو بنفس خلفية الهيدر</p>
-                </div>
-                <img id="logoPreview" class="logo-preview-img" style="display: none;" alt="Logo Preview" />
-              </div>
-              <div class="form-group checkbox-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled">
-                  تفعيل الأسئلة المقترحة
-                </label>
-                <div id="suggestedQuestionsContainer" class="suggested-questions-container" style="display: none;">
-                  <h3>إدارة الأسئلة المقترحة</h3>
-                  <div class="question-input-group">
-                    <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
-                    <button type="button" id="addQuestionBtn" class="submit-btn">إضافة سؤال</button>
+            <div class="preview-settings-container">
+              <div class="preview-section">
+                <h3>معاينة صفحة الدردشة</h3>
+                <div class="chat-preview-container">
+                  <div id="previewChat" class="chat-container">
+                    <div id="previewChatHeader" class="chat-header">
+                      <img id="previewChatLogo" class="chat-logo" style="display: none;" alt="Logo">
+                      <h1 id="previewChatTitle" class="chat-title">صفحة دردشة</h1>
+                    </div>
+                    <div id="previewChatMessages" class="chat-messages">
+                      <div class="message user-message">رسالة المستخدم</div>
+                      <div class="message bot-message">رد البوت</div>
+                    </div>
+                    <div id="previewSuggestedQuestions" class="suggested-questions" style="display: none;"></div>
+                    <div class="chat-input">
+                      <input type="text" id="previewMessageInput" placeholder="اكتب رسالتك...">
+                      <input type="file" id="previewImageInput" accept="image/*" style="display: none;">
+                      <button id="previewSendMessageBtn">إرسال</button>
+                    </div>
                   </div>
-                  <ul id="questionsList" class="questions-list"></ul>
                 </div>
               </div>
-              <div class="form-group checkbox-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled">
-                  تفعيل إرفاق الصور
-                </label>
+              <div class="settings-section">
+                <form id="customizationForm" class="settings-group" enctype="multipart/form-data">
+                  <div class="form-group">
+                    <label for="title">عنوان الصفحة:</label>
+                    <input type="text" id="title" name="title" value="صفحة دردشة" required placeholder="أدخل عنوان الصفحة">
+                  </div>
+                  <div class="form-group color-picker-section">
+                    <h3>إعدادات الألوان:</h3>
+                    <div class="color-picker-wrapper">
+                      <label for="titleColor">لون نص العنوان:</label>
+                      <input type="color" id="titleColor" name="titleColor" value="#ffffff">
+                    </div>
+                    <div class="color-picker-wrapper">
+                      <label for="headerColor">لون الهيدر:</label>
+                      <input type="color" id="headerColor" name="headerColor" value="#007bff">
+                    </div>
+                    <div class="color-picker-wrapper">
+                      <label for="backgroundColor">لون الخلفية:</label>
+                      <input type="color" id="backgroundColor" name="backgroundColor" value="#f8f9fa">
+                    </div>
+                    <div class="color-picker-wrapper">
+                      <label for="chatAreaBackgroundColor">لون خلفية مربع الدردشة:</label>
+                      <input type="color" id="chatAreaBackgroundColor" name="chatAreaBackgroundColor" value="#ffffff">
+                    </div>
+                    <div class="color-picker-wrapper">
+                      <label for="textColor">لون النص:</label>
+                      <input type="color" id="textColor" name="textColor" value="#333333">
+                    </div>
+                    <div class="color-picker-wrapper">
+                      <label for="buttonColor">لون الأزرار:</label>
+                      <input type="color" id="buttonColor" name="buttonColor" value="#007bff">
+                    </div>
+                    <div class="color-picker-wrapper">
+                      <label for="userMessageBackgroundColor">لون فقاعة المستخدم:</label>
+                      <input type="color" id="userMessageBackgroundColor" name="userMessageBackgroundColor" value="#007bff">
+                    </div>
+                    <div class="color-picker-wrapper">
+                      <label for="botMessageBackgroundColor">لون فقاعة البوت:</label>
+                      <input type="color" id="botMessageBackgroundColor" name="botMessageBackgroundColor" value="#e9ecef">
+                    </div>
+                  </div>
+                  <div class="form-group logo-section">
+                    <label for="logo">شعار الصفحة (PNG):</label>
+                    <input type="file" id="logo" name="logo" accept="image/png">
+                    <div class="logo-preview-container">
+                      <p style="font-size: 0.8em; margin-bottom: 5px;">يفضل شعار بدون خلفية أو بنفس خلفية الهيدر</p>
+                    </div>
+                    <img id="logoPreview" class="logo-preview-img" style="display: none;" alt="Logo Preview" />
+                  </div>
+                  <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled">
+                      تفعيل الأسئلة المقترحة
+                    </label>
+                    <div id="suggestedQuestionsContainer" class="suggested-questions-container" style="display: none;">
+                      <h3>إدارة الأسئلة المقترحة</h3>
+                      <div class="question-input-group">
+                        <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
+                        <button type="button" id="addQuestionBtn" class="submit-btn">إضافة سؤال</button>
+                      </div>
+                      <ul id="questionsList" class="questions-list"></ul>
+                    </div>
+                  </div>
+                  <div class="form-group checkbox-group">
+                    <label class="checkbox-label">
+                      <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled">
+                      تفعيل إرفاق الصور
+                    </label>
+                  </div>
+                  <button type="submit" class="submit-btn">حفظ الإعدادات</button>
+                </form>
               </div>
-              <div class="form-group checkbox-group">
-                <label class="checkbox-label">
-                  <input type="checkbox" id="darkModeEnabled" name="darkModeEnabled">
-                  تفعيل الوضع الليلي
-                </label>
-              </div>
-              <button type="submit" class="submit-btn">حفظ الإعدادات</button>
-            </form>
-            <p style="font-size: 0.8em;">جميع الحقوق محفوظة © ghazal bost</p>
+            </div>
           </div>
         `;
 
-        const darkModeEnabledCheckbox = document.getElementById('darkModeEnabled');
-        if (darkModeEnabledCheckbox) {
-          document.body.classList.toggle('light', !darkModeEnabledCheckbox.checked);
-          darkModeEnabledCheckbox.addEventListener('change', () => {
-            document.body.classList.toggle('light', !darkModeEnabledCheckbox.checked);
+        const previewChat = document.getElementById('previewChat');
+        const previewChatHeader = document.getElementById('previewChatHeader');
+        const previewChatTitle = document.getElementById('previewChatTitle');
+        const previewChatMessages = document.getElementById('previewChatMessages');
+        const previewSuggestedQuestions = document.getElementById('previewSuggestedQuestions');
+        const previewSendMessageBtn = document.getElementById('previewSendMessageBtn');
+        const previewImageInput = document.getElementById('previewImageInput');
+        const userMessage = document.querySelector('#previewChatMessages .user-message');
+        const botMessage = document.querySelector('#previewChatMessages .bot-message');
+
+        function updatePreviewStyles() {
+          previewChat.style.backgroundColor = document.getElementById('backgroundColor').value;
+          previewChatHeader.style.backgroundColor = document.getElementById('headerColor').value;
+          previewChatTitle.style.color = document.getElementById('titleColor').value;
+          previewChatMessages.style.backgroundColor = document.getElementById('chatAreaBackgroundColor').value;
+          previewChat.style.color = document.getElementById('textColor').value;
+          previewSendMessageBtn.style.backgroundColor = document.getElementById('buttonColor').value;
+          Array.from(previewSuggestedQuestions.children).forEach(btn => {
+            btn.style.backgroundColor = document.getElementById('buttonColor').value;
           });
+          userMessage.style.backgroundColor = document.getElementById('userMessageBackgroundColor').value;
+          botMessage.style.backgroundColor = document.getElementById('botMessageBackgroundColor').value;
         }
+
+        document.getElementById('titleColor').addEventListener('input', updatePreviewStyles);
+        document.getElementById('headerColor').addEventListener('input', updatePreviewStyles);
+        document.getElementById('backgroundColor').addEventListener('input', updatePreviewStyles);
+        document.getElementById('chatAreaBackgroundColor').addEventListener('input', updatePreviewStyles);
+        document.getElementById('textColor').addEventListener('input', updatePreviewStyles);
+        document.getElementById('buttonColor').addEventListener('input', updatePreviewStyles);
+        document.getElementById('userMessageBackgroundColor').addEventListener('input', updatePreviewStyles);
+        document.getElementById('botMessageBackgroundColor').addEventListener('input', updatePreviewStyles);
+
+        document.getElementById('title').addEventListener('input', (e) => {
+          previewChatTitle.textContent = e.target.value || 'صفحة الدردشة';
+        });
 
         const logoInput = document.getElementById('logo');
         const logoPreview = document.getElementById('logoPreview');
+        const previewChatLogo = document.getElementById('previewChatLogo');
         logoInput.addEventListener('change', () => {
           const file = logoInput.files[0];
           if (file) {
@@ -414,10 +565,13 @@ async function loadChatPage() {
             reader.onload = (e) => {
               logoPreview.src = e.target.result;
               logoPreview.style.display = 'block';
+              previewChatLogo.src = e.target.result;
+              previewChatLogo.style.display = 'block';
             };
             reader.readAsDataURL(file);
           } else {
             logoPreview.style.display = 'none';
+            previewChatLogo.style.display = 'none';
           }
         });
 
@@ -437,6 +591,7 @@ async function loadChatPage() {
         const suggestedQuestionsContainer = document.getElementById('suggestedQuestionsContainer');
         suggestedQuestionsEnabledCheckbox.addEventListener('change', () => {
           suggestedQuestionsContainer.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
+          previewSuggestedQuestions.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
         });
 
         let questions = [];
@@ -447,6 +602,7 @@ async function loadChatPage() {
             questions.push(question);
             newQuestionInput.value = '';
             updateQuestionsList();
+            updatePreviewSuggestedQuestions();
           } else {
             alert('يرجى إدخال سؤال صالح');
           }
@@ -468,11 +624,19 @@ async function loadChatPage() {
           });
         }
 
+        function updatePreviewSuggestedQuestions() {
+          previewSuggestedQuestions.innerHTML = questions.map(q => `<button class="suggested-question">${q}</button>`).join('');
+          Array.from(previewSuggestedQuestions.children).forEach(btn => {
+            btn.style.backgroundColor = document.getElementById('buttonColor').value;
+          });
+        }
+
         window.editQuestion = (index) => {
           const newQuestion = prompt('أدخل السؤال الجديد:', questions[index]);
           if (newQuestion && newQuestion.trim()) {
             questions[index] = newQuestion.trim();
             updateQuestionsList();
+            updatePreviewSuggestedQuestions();
           }
         };
 
@@ -480,8 +644,13 @@ async function loadChatPage() {
           if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
             questions.splice(index, 1);
             updateQuestionsList();
+            updatePreviewSuggestedQuestions();
           }
         };
+
+        document.getElementById('imageUploadEnabled').addEventListener('change', (e) => {
+          previewImageInput.style.display = e.target.checked ? 'block' : 'none';
+        });
 
         document.getElementById('customizationForm').addEventListener('submit', async (e) => {
           e.preventDefault();
@@ -491,13 +660,15 @@ async function loadChatPage() {
           formData.set('colors', JSON.stringify({
             header: formData.get('headerColor'),
             background: formData.get('backgroundColor'),
+            chatAreaBackground: formData.get('chatAreaBackgroundColor'),
             text: formData.get('textColor'),
             button: formData.get('buttonColor'),
+            userMessageBackground: formData.get('userMessageBackgroundColor'),
+            botMessageBackground: formData.get('botMessageBackgroundColor'),
           }));
           formData.set('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on' ? 'true' : 'false');
           formData.set('suggestedQuestions', JSON.stringify(questions));
           formData.set('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on' ? 'true' : 'false');
-          formData.set('darkModeEnabled', formData.get('darkModeEnabled') === 'on' ? 'true' : 'false');
 
           try {
             const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
@@ -517,6 +688,8 @@ async function loadChatPage() {
               document.querySelector('.logo-preview-container p').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" class="logo-preview-img" />`;
               logoPreview.src = result.logoUrl;
               logoPreview.style.display = 'block';
+              previewChatLogo.src = result.logoUrl;
+              previewChatLogo.style.display = 'block';
             }
             alert('تم حفظ الإعدادات بنجاح!');
           } catch (err) {
@@ -524,6 +697,8 @@ async function loadChatPage() {
             alert('فشل في حفظ الإعدادات، حاول مرة أخرى');
           }
         });
+
+        updatePreviewStyles();
       } catch (err) {
         console.error('خطأ في إنشاء صفحة الدردشة:', err);
         content.innerHTML = `
