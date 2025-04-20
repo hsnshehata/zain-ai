@@ -117,6 +117,7 @@ body.light {
   padding: 5px;
   transition: color 0.3s;
   cursor: pointer;
+  position: relative; /* For tooltips */
 }
 
 .nav-item:hover, .nav-item.active {
@@ -125,6 +126,22 @@ body.light {
 
 .nav-item i {
   margin-bottom: 5px;
+}
+
+/* Tooltips for nav items */
+.nav-item:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--primary);
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 0.8em;
+  white-space: nowrap;
+  z-index: 1001;
 }
 
 /* Media Queries for Responsive Design */
@@ -508,6 +525,25 @@ button:active {
   transform: translateY(0);
 }
 
+.submit-btn {
+  background: var(--primary);
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.submit-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.submit-btn:active {
+  transform: scale(0.95);
+}
+
 .rule-type-btn {
   background: var(--glass-bg);
   color: var(--text-dark);
@@ -826,6 +862,7 @@ body.light .preview-section {
   overflow-y: auto;
   border-radius: 0;
   box-shadow: none;
+  scroll-behavior: smooth; /* Smooth scrolling for chat */
 }
 
 #previewChatMessages .message {
@@ -988,7 +1025,7 @@ body.light .settings-gear {
 
 /* Spinner */
 .spinner {
-  display: none;
+  display: flex; /* Changed to flex to show spinner */
   justify-content: center;
   align-items: center;
   height: 100px;
@@ -1026,6 +1063,51 @@ body.light .settings-gear {
 .input-group input {
   flex: 1;
   min-width: 200px;
+}
+
+/* Toast Messages */
+.toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 10px 20px;
+  border-radius: 5px;
+  color: white;
+  z-index: 1002;
+  animation: slideIn 0.3s ease;
+}
+
+.toast-success {
+  background: var(--primary);
+}
+
+.toast-error {
+  background: #dc3545;
+}
+
+@keyframes slideIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+/* Theme Toggle Button */
+#themeToggle {
+  background: var(--glass-bg);
+  border: none;
+  color: var(--text-dark);
+  padding: 8px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+#themeToggle:hover {
+  background: var(--primary);
+  color: white;
+}
+
+body.light #themeToggle {
+  color: var(--text-light);
 }
 
 /* Responsive Design */
