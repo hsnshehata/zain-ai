@@ -75,7 +75,7 @@ connectDB();
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error('❌ Server error:', err.message, err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
+  res.status(500).json({ message: err.message || 'Something went wrong!' });
 });
 
 const PORT = process.env.PORT || 5000;
