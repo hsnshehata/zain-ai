@@ -297,6 +297,28 @@ body.light .color-preview {
   min-width: 170px; /* Ensure enough space for picker */
 }
 
+/* Vanilla Picker Styles */
+.vanillapicker {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  z-index: 1005;
+}
+
+.vanillapicker-panel {
+  padding: 10px;
+}
+
+.vanillapicker-color {
+  border: none !important;
+}
+
+.vanillapicker-preview {
+  border: 1px solid #ddd !important;
+  border-radius: 4px;
+}
+
 /* Ensure settings-popup doesn't hide color picker */
 .settings-popup {
   position: absolute;
@@ -315,9 +337,18 @@ body.light .color-preview {
   pointer-events: auto; /* Ensure clickable */
 }
 
+/* Change text color in settings-popup to dark for visibility */
+.settings-popup label {
+  color: #333 !important; /* Dark color for better visibility */
+}
+
 body.light .settings-popup {
   background: #fff;
   border: 1px solid #ddd;
+}
+
+body.light .settings-popup label {
+  color: #333 !important; /* Ensure dark color in light mode */
 }
 
 /* Prevent parent containers from clipping */
