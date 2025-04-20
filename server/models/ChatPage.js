@@ -10,16 +10,17 @@ const chatPageSchema = new mongoose.Schema({
     header: { type: String, default: '#007bff' },
     background: { type: String, default: '#f8f9fa' },
     text: { type: String, default: '#333333' },
-    button: { type: String, default: '#007bff' },
+    button: { type: String, default: '#007bff' }, // لون الأزرار المقترحة
     botMessageBackground: { type: String, default: '#e9ecef' },
     userMessageBackground: { type: String, default: '#007bff' },
     chatAreaBackground: { type: String, default: '#ffffff' },
     inputTextColor: { type: String, default: '#333333' },
     userMessageTextColor: { type: String, default: '#ffffff' },
     botMessageTextColor: { type: String, default: '#000000' },
+    sendButtonColor: { type: String, default: '#007bff' }, // لون زر الإرسال
   },
   logoUrl: { type: String },
-  logoDeleteUrl: { type: String }, // New field to store the delete URL for the logo
+  logoDeleteUrl: { type: String },
   suggestedQuestionsEnabled: { type: Boolean, default: false },
   suggestedQuestions: [{ type: String }],
   imageUploadEnabled: { type: Boolean, default: false },
