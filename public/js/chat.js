@@ -34,8 +34,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       .chat-container { background-color: ${settings.colors?.background || '#f8f9fa'}; color: ${settings.colors?.text || '#333333'}; }
       #chatHeader { background-color: ${settings.colors?.header || '#007bff'}; }
       #chatTitle { color: ${settings.titleColor || '#ffffff'}; }
+      #chatMessages { background-color: ${settings.colors?.chatAreaBackground || '#ffffff'}; }
       #sendMessageBtn, .suggested-question { background-color: ${settings.colors?.button || '#007bff'}; }
-      ${settings.darkModeEnabled ? 'body { background-color: #333; color: #fff; }' : ''}
+      .user-message { background-color: ${settings.colors?.userMessageBackground || '#007bff'}; }
+      .bot-message { background-color: ${settings.colors?.botMessageBackground || '#e9ecef'}; }
     `;
 
     // Show suggested questions if enabled
