@@ -50,10 +50,12 @@ async function loadFeedbackPage() {
 
     if (botSelect.options.length > 0) {
       loadFeedback(botSelect.options[0].value);
+    } else {
+      content.innerHTML += `<p style="color: #dc3545; text-align: center;">لا توجد بوتات متاحة لعرض تقييماتها.</p>`;
     }
   } catch (err) {
     console.error('خطأ في جلب البوتات:', err);
-    content.innerHTML = `<p style="color: red;">تعذر تحميل البيانات، حاول مرة أخرى لاحقًا.</p>`;
+    content.innerHTML = `<p style="color: #dc3545; text-align: center;">تعذر تحميل البيانات، حاول مرة أخرى لاحقًا.</p>`;
   }
 }
 
@@ -72,11 +74,9 @@ async function loadFeedback(botId) {
     }
     const feedback = await res.json();
 
-    // تصفية التقييمات إلى إيجابية وسلبية
     const positiveFeedback = feedback.filter(item => item.feedback === 'positive');
     const negativeFeedback = feedback.filter(item => item.feedback === 'negative');
 
-    // عرض التقييمات الإيجابية
     positiveFeedbackList.innerHTML = '';
     if (positiveFeedback.length === 0) {
       positiveFeedbackList.innerHTML = '<div class="feedback-card"><p>لا توجد تقييمات إيجابية.</p></div>';
@@ -94,7 +94,6 @@ async function loadFeedback(botId) {
       });
     }
 
-    // عرض التقييمات السلبية
     negativeFeedbackList.innerHTML = '';
     if (negativeFeedback.length === 0) {
       negativeFeedbackList.innerHTML = '<div class="feedback-card"><p>لا توجد تقييمات سلبية.</p></div>';
@@ -113,12 +112,16 @@ async function loadFeedback(botId) {
     }
   } catch (err) {
     console.error('خطأ في جلب التقييمات:', err);
-    positiveFeedbackList.innerHTML = '<div class="feedback-card"><p style="color: red;">تعذر تحميل التقييمات.</p></div>';
-    negativeFeedbackList.innerHTML = '<div class="feedback-card"><p style="color: red;">تعذر تحميل التقييمات.</p></div>';
+    positiveFeedbackList.innerHTML = '<div class="feedback-card"><p style="color: #dc3545;">تعذر تحميل التقييمات.</p></div>';
+    negativeFeedbackList.innerHTML = '<div class="feedback-card"><p style="color: #dc3545;">تعذر تحميل التقييمات.</p></div>';
   }
 }
 
 async function deleteFeedback(feedbackId, botId) {
+  if (!botId) {
+    alert('يرجى اختيار بوت أولاً.');
+    return;
+  }
   if (confirm('هل أنت متأكد من حذف هذا التقييم؟')) {
     try {
       const res = await fetch(`/api/bots/${botId}/feedback/${feedbackId}`, {
@@ -126,19 +129,24 @@ async function deleteFeedback(feedbackId, botId) {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       if (!res.ok) {
-        throw new Error('فشل في حذف التقييم');
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'فشل في حذف التقييم');
       }
       alert('تم حذف التقييم بنجاح');
       loadFeedback(botId);
     } catch (err) {
       console.error('خطأ في حذف التقييم:', err);
-      alert('فشل في حذف التقييم');
+      alert(err.message || 'فشل في حذف التقييم، حاول مرة أخرى');
     }
   }
 }
 
 async function clearFeedback(type) {
   const botId = document.getElementById('botSelectFeedback').value;
+  if (!botId) {
+    alert('يرجى اختيار بوت أولاً.');
+    return;
+  }
   if (confirm(`هل أنت متأكد من مسح جميع التقييمات ${type === 'positive' ? 'الإيجابية' : 'السلبية'}؟`)) {
     try {
       const res = await fetch(`/api/bots/${botId}/feedback/clear/${type}`, {
@@ -146,19 +154,24 @@ async function clearFeedback(type) {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
       if (!res.ok) {
-        throw new Error('فشل في مسح التقييمات');
+        const errorData = await res.json();
+        throw new Error(errorData.message || 'فشل في مسح التقييمات');
       }
       alert('تم مسح التقييمات بنجاح');
       loadFeedback(botId);
     } catch (err) {
       console.error('خطأ في مسح التقييمات:', err);
-      alert('فشل في مسح التقييمات');
+      alert(err.message || 'فشل في مسح التقييمات، حاول مرة أخرى');
     }
   }
 }
 
 async function downloadFeedback(type) {
   const botId = document.getElementById('botSelectFeedback').value;
+  if (!botId) {
+    alert('يرجى اختيار بوت أولاً.');
+    return;
+  }
   try {
     const res = await fetch(`/api/bots/${botId}/feedback`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
@@ -174,9 +187,8 @@ async function downloadFeedback(type) {
       return;
     }
 
-    // تحويل البيانات إلى CSV مع دعم اللغة العربية
     const csvContent = [
-      '\ufeff', // BOM لدعم اللغة العربية في Excel
+      '\ufeff',
       'المستخدم,رد البوت,التقييم,التاريخ\n',
       ...filteredFeedback.map(item => 
         `"${item.username || item.userId}","${(item.messageContent || 'غير متوفر').replace(/"/g, '""')}","${item.feedback === 'positive' ? 'إيجابي' : 'سلبي'}","${new Date(item.timestamp).toLocaleString('ar-EG')}"`
@@ -190,6 +202,6 @@ async function downloadFeedback(type) {
     link.click();
   } catch (err) {
     console.error('خطأ في تنزيل التقييمات:', err);
-    alert('فشل في تنزيل التقييمات');
+    alert('فشل في تنزيل التقييمات، حاول مرة أخرى');
   }
 }
