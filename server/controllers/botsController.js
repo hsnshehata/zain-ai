@@ -62,21 +62,12 @@ router.get('/:id/feedback', authenticate, async (req, res) => {
   }
 });
 
-// حذف تقييم معين
+// حذف تقييم معين (بدون الاعتماد على وجود البوت)
 router.delete('/:id/feedback/:feedbackId', authenticate, async (req, res) => {
   try {
-    const botId = req.params.id;
     const feedbackId = req.params.feedbackId;
-    const bot = await Bot.findById(botId);
-    if (!bot) {
-      return res.status(404).json({ message: 'البوت غير موجود' });
-    }
 
-    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'غير مصرح لك بحذف تقييمات هذا البوت' });
-    }
-
-    const feedback = await Feedback.findOne({ _id: feedbackId, botId });
+    const feedback = await Feedback.findById(feedbackId);
     if (!feedback) {
       return res.status(404).json({ message: 'التقييم غير موجود' });
     }
@@ -89,19 +80,11 @@ router.delete('/:id/feedback/:feedbackId', authenticate, async (req, res) => {
   }
 });
 
-// حذف جميع التقييمات (إيجابية أو سلبية) دفعة واحدة
+// حذف جميع التقييمات (إيجابية أو سلبية) دفعة واحدة (بدون الاعتماد على وجود البوت)
 router.delete('/:id/feedback/clear/:type', authenticate, async (req, res) => {
   try {
     const botId = req.params.id;
     const type = req.params.type; // 'positive' or 'negative'
-    const bot = await Bot.findById(botId);
-    if (!bot) {
-      return res.status(404).json({ message: 'البوت غير موجود' });
-    }
-
-    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'غير مصرح لك بحذف تقييمات هذا البوت' });
-    }
 
     await Feedback.deleteMany({ botId, feedback: type });
     res.status(200).json({ message: 'تم مسح التقييمات بنجاح' });
