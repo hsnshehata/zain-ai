@@ -434,7 +434,7 @@ body.light .suggested-questions-container {
 
 .questions-list li {
   display: flex;
-  justify-content: space-between;
+  justify-content kspace-between;
   align-items: center;
   padding: 8px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -985,7 +985,6 @@ body.light .settings-gear {
   }
 }
 
-
 /* Custom File Input Styling */
 .chat-input input[type="file"] {
   background: var(--glass-bg);
@@ -1037,19 +1036,31 @@ body.light .chat-input input[type="file"] {
   display: flex;
   gap: 20px;
   margin-top: 20px;
+  flex-wrap: wrap; /* للتأكد من التوافق في الشاشات الصغيرة */
 }
 
 .feedback-column {
   flex: 1;
-  background: #f9f9f9;
+  min-width: 300px; /* للتأكد من أن العمود مش هيضغط أوي في الشاشات الصغيرة */
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
   padding: 15px;
   border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
+}
+
+body.light .feedback-column {
+  background: #fff;
+  border: 1px solid #ddd;
 }
 
 .feedback-column h3 {
   margin-top: 0;
-  color: #333;
+  color: var(--text-dark);
+}
+
+body.light .feedback-column h3 {
+  color: var(--text-light);
 }
 
 .feedback-grid {
@@ -1058,20 +1069,32 @@ body.light .chat-input input[type="file"] {
 }
 
 .feedback-card {
-  background: #fff;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
   padding: 15px;
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow);
+}
+
+body.light .feedback-card {
+  background: #fff;
+  border: 1px solid #ddd;
 }
 
 .feedback-card p {
   margin: 5px 0;
+  color: var(--text-dark);
+}
+
+body.light .feedback-card p {
+  color: var(--text-light);
 }
 
 .feedback-actions {
   margin-top: 15px;
   display: flex;
   gap: 10px;
+  justify-content: center;
 }
 
 .clear-btn,
@@ -1081,7 +1104,7 @@ body.light .chat-input input[type="file"] {
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, transform 0.3s;
 }
 
 .clear-btn {
@@ -1091,6 +1114,7 @@ body.light .chat-input input[type="file"] {
 
 .clear-btn:hover {
   background-color: #c82333;
+  transform: translateY(-2px);
 }
 
 .download-btn {
@@ -1100,6 +1124,7 @@ body.light .chat-input input[type="file"] {
 
 .download-btn:hover {
   background-color: #218838;
+  transform: translateY(-2px);
 }
 
 .delete-btn {
@@ -1109,13 +1134,19 @@ body.light .chat-input input[type="file"] {
 
 .delete-btn:hover {
   background-color: #e65a5a;
+  transform: translateY(-2px);
 }
 
 .feedback-note {
   margin-top: 20px;
   font-style: italic;
-  color: #666;
+  color: var(--text-dark);
+  opacity: 0.8;
   text-align: center;
+}
+
+body.light .feedback-note {
+  color: var(--text-light);
 }
 
 /* Ensure proper direction for Arabic */
