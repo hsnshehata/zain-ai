@@ -46,6 +46,8 @@ const handleMessage = async (req, res) => {
             userId: senderPsid,
             messages: [],
           });
+          await conversation.save();
+          console.log(`📋 Created new conversation for bot ${bot._id} and user ${senderPsid}`);
         }
 
         // Handle Feedback (Good/Bad Response)
@@ -56,32 +58,56 @@ const handleMessage = async (req, res) => {
 
           console.log(`📊 Feedback received from ${senderPsid}: ${feedback} for message ID: ${mid}`);
 
-          const message = conversation.messages.find(msg => msg.messageId === mid);
-          if (!message) {
-            console.log(`❌ Message with ID ${mid} not found in conversation`);
-          } else {
-            const feedbackEntry = new Feedback({
+          // Refresh the conversation from the database to ensure we have the latest messages
+          conversation = await Conversation.findOne({
+            botId: bot._id,
+            userId: senderPsid,
+          });
+
+          if (!conversation) {
+            console.log(`❌ Conversation not found for bot ${bot._id} and user ${senderPsid}`);
+            // Create a new conversation if it doesn't exist
+            conversation = new Conversation({
               botId: bot._id,
               userId: senderPsid,
-              messageId: mid,
-              feedback: feedback === 'Good response' ? 'positive' : 'negative',
-              messageContent: message.content,
-              timestamp: new Date(webhookEvent.timestamp * 1000),
+              messages: [],
             });
-
-            await feedbackEntry.save();
-            console.log(`✅ Feedback saved: ${feedback} for message ID: ${mid}`);
+            await conversation.save();
           }
+
+          const message = conversation.messages.find(msg => msg.messageId === mid);
+          let messageContent = 'رسالة غير معروفة';
+          if (message) {
+            messageContent = message.content;
+            console.log(`✅ Found message with ID ${mid}: ${messageContent}`);
+          } else {
+            console.log(`⚠️ Message with ID ${mid} not found in conversation. Saving feedback without message content.`);
+          }
+
+          const feedbackEntry = new Feedback({
+            botId: bot._id,
+            userId: senderPsid,
+            messageId: mid,
+            feedback: feedback === 'Good response' ? 'positive' : 'negative',
+            messageContent: message ? message.content : undefined, // Optional field
+            timestamp: new Date(webhookEvent.timestamp * 1000),
+          });
+
+          await feedbackEntry.save();
+          console.log(`✅ Feedback saved: ${feedback} for message ID: ${mid}`);
         }
 
         // Handle Messages (Existing Logic)
         if (webhookEvent.message) {
           const message = webhookEvent.message;
+          const mid = message.mid || `temp_${Date.now()}`; // Fallback if mid is not provided
+
+          console.log(`📝 Storing message with mid: ${mid}`);
 
           conversation.messages.push({
             role: 'user',
             content: message.text || 'رسالة غير نصية',
-            messageId: message.mid,
+            messageId: mid,
           });
 
           let responseText = '';
@@ -109,10 +135,11 @@ const handleMessage = async (req, res) => {
           conversation.messages.push({
             role: 'assistant',
             content: responseText,
-            messageId: message.mid,
+            messageId: mid,
           });
 
           await conversation.save();
+          console.log(`📋 Conversation updated with new message and response`);
 
           await sendMessage(senderPsid, responseText, bot.facebookApiKey);
         } else if (!webhookEvent.response_feedback) {
@@ -202,7 +229,6 @@ const sendMessage = (senderPsid, responseText, facebookApiKey) => {
         }
         if (res.statusCode !== 200) {
           console.error('❌ Failed to send message to Facebook:', body);
-          // Check if the error is due to an expired token
           if (body.error && body.error.code === 190 && body.error.error_subcode === 463) {
             console.error('⚠️ Facebook Access Token has expired. Please update the token for this bot.');
             return reject(new Error('Facebook Access Token has expired. Please update the token.'));
