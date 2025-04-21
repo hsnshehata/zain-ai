@@ -328,7 +328,7 @@ body.light .checkbox-group {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--を提供-dark);
+  color: var(--text-dark);
   padding: 5px 0;
 }
 
@@ -571,13 +571,20 @@ body.light .rule-card {
 
 @media (max-width: 600px) {
   .admin-actions {
-    display: none;
+    flex-direction: column; /* Stack buttons vertically on mobile */
+    align-items: stretch; /* Make buttons full-width */
+  }
+  .admin-actions button {
+    width: 100%; /* Full-width buttons */
+    padding: 10px; /* Adjust padding for mobile */
+    font-size: 0.9em; /* Slightly smaller font for mobile */
   }
 }
 
 @media (min-width: 769px) {
   .admin-actions {
     display: flex;
+    flex-direction: row; /* Keep buttons in a row on desktop */
   }
 }
 
@@ -964,35 +971,10 @@ body.light .settings-gear {
   flex-wrap: wrap;
 }
 
-.input-group input {
-  flex: 1;
-  min-width: 200px;
-}
-
 /* Responsive Design */
 @media (max-width: 600px) {
   .rules-grid, .users-grid {
     grid-template-columns: 1fr;
-  }
-  .admin-actions {
-    display: none;
-  }
-  .bottom-nav {
-    height: 60px;
-  }
-  .color-picker-wrapper {
-    flex-direction: row;
-    align-items: center;
-  }
-  .color-picker-wrapper label {
-    margin-bottom: 0;
-  }
-  .question-input-group {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .question-input-group input {
-    min-width: 100%;
   }
   .input-group {
     flex-direction: column;
