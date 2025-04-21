@@ -4,7 +4,7 @@ const Bot = require('../models/Bot');
 const User = require('../models/User');
 const Feedback = require('../models/Feedback');
 const authenticate = require('../middleware/authenticate');
-const axios = require('axios'); // Add axios for making HTTP requests to Facebook Graph API
+const axios = require('axios');
 
 // جلب كل البوتات
 router.get('/', authenticate, async (req, res) => {
@@ -32,12 +32,10 @@ router.get('/:id/feedback', authenticate, async (req, res) => {
 
     const feedback = await Feedback.find({ botId }).sort({ timestamp: -1 });
 
-    // جلب أسماء المستخدمين من فيسبوك
     const feedbackWithUsernames = await Promise.all(
       feedback.map(async (item) => {
-        let username = item.userId; // Default to userId if we can't fetch the name
+        let username = item.userId;
         try {
-          // فقط إذا كان userId من فيسبوك (مش من صفحة الدردشة)
           if (!item.userId.startsWith('web_')) {
             const response = await axios.get(
               `https://graph.facebook.com/${item.userId}?fields=name&access_token=${bot.facebookApiKey}`
@@ -52,7 +50,7 @@ router.get('/:id/feedback', authenticate, async (req, res) => {
 
         return {
           ...item._doc,
-          username, // نضيف حقل جديد للاسم
+          username,
         };
       })
     );
@@ -60,6 +58,55 @@ router.get('/:id/feedback', authenticate, async (req, res) => {
     res.status(200).json(feedbackWithUsernames);
   } catch (err) {
     console.error('❌ خطأ في جلب التقييمات:', err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر' });
+  }
+});
+
+// حذف تقييم معين
+router.delete('/:id/feedback/:feedbackId', authenticate, async (req, res) => {
+  try {
+    const botId = req.params.id;
+    const feedbackId = req.params.feedbackId;
+    const bot = await Bot.findById(botId);
+    if (!bot) {
+      return res.status(404).json({ message: 'البوت غير موجود' });
+    }
+
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف تقييمات هذا البوت' });
+    }
+
+    const feedback = await Feedback.findOne({ _id: feedbackId, botId });
+    if (!feedback) {
+      return res.status(404).json({ message: 'التقييم غير موجود' });
+    }
+
+    await Feedback.deleteOne({ _id: feedbackId });
+    res.status(200).json({ message: 'تم حذف التقييم بنجاح' });
+  } catch (err) {
+    console.error('❌ خطأ في حذف التقييم:', err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر' });
+  }
+});
+
+// حذف جميع التقييمات (إيجابية أو سلبية) دفعة واحدة
+router.delete('/:id/feedback/clear/:type', authenticate, async (req, res) => {
+  try {
+    const botId = req.params.id;
+    const type = req.params.type; // 'positive' or 'negative'
+    const bot = await Bot.findById(botId);
+    if (!bot) {
+      return res.status(404).json({ message: 'البوت غير موجود' });
+    }
+
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف تقييمات هذا البوت' });
+    }
+
+    await Feedback.deleteMany({ botId, feedback: type });
+    res.status(200).json({ message: 'تم مسح التقييمات بنجاح' });
+  } catch (err) {
+    console.error('❌ خطأ في مسح التقييمات:', err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 });
