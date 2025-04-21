@@ -1,7 +1,5 @@
 const { v4: uuidv4 } = require('uuid');
 const ChatPage = require('../models/ChatPage');
-const path = require('path');
-const fs = require('fs');
 const axios = require('axios');
 const FormData = require('form-data');
 
@@ -25,7 +23,7 @@ async function uploadToImgbb(file) {
     }
 
     const formData = new FormData();
-    formData.append('image', file.data, file.name);
+    formData.append('image', file.buffer, file.originalname);
     formData.append('key', IMGBB_API_KEY);
 
     console.log('📤 Uploading image to imgbb...');
@@ -138,7 +136,7 @@ exports.updateChatPage = async (req, res) => {
     let logoUrl = chatPage.logoUrl;
     let logoDeleteUrl = chatPage.logoDeleteUrl;
 
-    if (req.files && req.files.logo) {
+    if (req.file) { // Using multer's req.file instead of req.files.logo
       try {
         // Delete the old image from imgbb if it exists
         if (logoDeleteUrl) {
@@ -146,7 +144,7 @@ exports.updateChatPage = async (req, res) => {
         }
 
         // Upload the new image to imgbb
-        const uploadResult = await uploadToImgbb(req.files.logo);
+        const uploadResult = await uploadToImgbb(req.file);
         logoUrl = uploadResult.url;
         logoDeleteUrl = uploadResult.deleteUrl;
       } catch (err) {
