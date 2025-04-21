@@ -2,7 +2,7 @@ const request = require('request');
 const Bot = require('../models/Bot');
 const { processMessage } = require('../botEngine');
 const Conversation = require('../models/Conversation');
-const Feedback = require('../models/Feedback'); // استيراد السكيما الجديدة للتقييمات
+const Feedback = require('../models/Feedback');
 
 const handleMessage = async (req, res) => {
   try {
@@ -52,23 +52,21 @@ const handleMessage = async (req, res) => {
         if (webhookEvent.response_feedback) {
           const feedbackData = webhookEvent.response_feedback;
           const mid = feedbackData.mid;
-          const feedback = feedbackData.feedback; // "Good response" or "Bad response"
+          const feedback = feedbackData.feedback;
 
           console.log(`📊 Feedback received from ${senderPsid}: ${feedback} for message ID: ${mid}`);
 
-          // Find the message in the conversation using mid
           const message = conversation.messages.find(msg => msg.messageId === mid);
           if (!message) {
             console.log(`❌ Message with ID ${mid} not found in conversation`);
           } else {
-            // Store the feedback in MongoDB
             const feedbackEntry = new Feedback({
               botId: bot._id,
               userId: senderPsid,
               messageId: mid,
               feedback: feedback === 'Good response' ? 'positive' : 'negative',
               messageContent: message.content,
-              timestamp: new Date(webhookEvent.timestamp * 1000), // Convert timestamp to Date
+              timestamp: new Date(webhookEvent.timestamp * 1000),
             });
 
             await feedbackEntry.save();
@@ -83,7 +81,7 @@ const handleMessage = async (req, res) => {
           conversation.messages.push({
             role: 'user',
             content: message.text || 'رسالة غير نصية',
-            messageId: message.mid, // Store the message ID from Facebook
+            messageId: message.mid,
           });
 
           let responseText = '';
@@ -111,7 +109,7 @@ const handleMessage = async (req, res) => {
           conversation.messages.push({
             role: 'assistant',
             content: responseText,
-            messageId: message.mid, // Associate the assistant message with the same mid
+            messageId: message.mid,
           });
 
           await conversation.save();
@@ -204,6 +202,11 @@ const sendMessage = (senderPsid, responseText, facebookApiKey) => {
         }
         if (res.statusCode !== 200) {
           console.error('❌ Failed to send message to Facebook:', body);
+          // Check if the error is due to an expired token
+          if (body.error && body.error.code === 190 && body.error.error_subcode === 463) {
+            console.error('⚠️ Facebook Access Token has expired. Please update the token for this bot.');
+            return reject(new Error('Facebook Access Token has expired. Please update the token.'));
+          }
           return reject(new Error('Failed to send message to Facebook'));
         }
         console.log(`✅ Message sent to ${senderPsid}: ${responseText}`);
@@ -234,6 +237,10 @@ const replyToComment = (commentId, responseText, facebookApiKey) => {
         }
         if (res.statusCode !== 200) {
           console.error('❌ Failed to reply to comment on Facebook:', body);
+          if (body.error && body.error.code === 190 && body.error.error_subcode === 463) {
+            console.error('⚠️ Facebook Access Token has expired. Please update the token for this bot.');
+            return reject(new Error('Facebook Access Token has expired. Please update the token.'));
+          }
           return reject(new Error('Failed to reply to comment on Facebook'));
         }
         console.log(`✅ Replied to comment ${commentId}: ${responseText}`);
