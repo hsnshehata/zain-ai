@@ -31,18 +31,32 @@ document.addEventListener('DOMContentLoaded', async () => {
       chatLogo.style.display = 'none';
     }
     customStyles.textContent = `
-      .chat-container { background-color: ${settings.colors?.background || '#f8f9fa'}; color: ${settings.colors?.text || '#333333'}; }
-      #chatHeader { background-color: ${settings.colors?.header || '#007bff'}; }
-      #chatTitle { color: ${settings.colors?..ADMIN || '#ffffff'}; }
-      #chatMessages { background-color: ${settings.colors?.chatAreaBackground || '#ffffff'}; }
-      #sendMessageBtn { background-color: ${settings.colors?.sendButtonColor || '#007bff'}; }
-      .suggested-question { background-color: ${settings.colors?.button || '#007bff'}; }
-      .user-message { background-color: ${settings.colors?.userMessageBackground || '#007bff'}; color: ${settings.colors?.userMessageTextColor || '#ffffff'}; }
-      .bot-message { background-color: ${settings.colors?.botMessageBackground || '#e9ecef'}; color: ${settings.colors?.botMessageTextColor || '#000000'}; }
-      #messageInput { color: ${settings.colors?.inputTextColor || '#333333'}; }
-      #imageInput::file-selector-button { background-color: ${settings.colors?.sendButtonColor || '#007bff'}; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
-      #imageInput::file-selector-button:hover { background-color: #0056b3; transform: translateY(-2px); }
+      .chat-container { background-color: ${settings?.colors?.background || '#f8f9fa'}; color: ${settings?.colors?.text || '#333333'}; }
+      #chatHeader { background-color: ${settings?.colors?.header || '#007bff'}; }
+      #chatTitle { color: ${settings?.titleColor || '#ffffff'}; }
+      #chatMessages { background-color: ${settings?.colors?.chatAreaBackground || '#ffffff'}; }
+      #sendMessageBtn { background-color: ${settings?.colors?.sendButtonColor || '#007bff'}; }
+      .suggested-question { background-color: ${settings?.colors?.button || '#007bff'}; }
+      .user-message { background-color: ${settings?.colors?.userMessageBackground || '#007bff'}; color: ${settings?.colors?.userMessageTextColor || '#ffffff'}; }
+      .bot-message { background-color: ${settings?.colors?.botMessageBackground || '#e9ecef'}; color: ${settings?.colors?.botMessageTextColor || '#000000'}; }
+      #messageInput { color: ${settings?.colors?.inputTextColor || '#333333'}; }
+      #imageInput::file-selector-button { background-color: ${settings?.colors?.sendButtonColor || '#007bff'}; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
+      #imageInput::file-selector-button:hover { background-color: ${settings?.colors?.sendButtonColor ? darkenColor(settings.colors.sendButtonColor, 10) : '#0056b3'}; transform: translateY(-2px); }
     `;
+
+    // Function to darken a hex color by a percentage
+    function darkenColor(hex, percent) {
+      let r = parseInt(hex.slice(1, 3), 16);
+      let g = parseInt(hex.slice(3, 5), 16);
+      let b = parseInt(hex.slice(5, 7), 16);
+      r = Math.floor(r * (100 - percent) / 100);
+      g = Math.floor(g * (100 - percent) / 100);
+      b = Math.floor(b * (100 - percent) / 100);
+      r = r < 0 ? 0 : r;
+      g = g < 0 ? 0 : g;
+      b = b < 0 ? 0 : b;
+      return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+    }
 
     // Show suggested questions if enabled
     if (settings.suggestedQuestionsEnabled && settings.suggestedQuestions?.length > 0) {
