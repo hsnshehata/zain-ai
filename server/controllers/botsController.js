@@ -86,7 +86,11 @@ router.delete('/:id/feedback/clear/:type', authenticate, async (req, res) => {
     const botId = req.params.id;
     const type = req.params.type; // 'positive' or 'negative'
 
-    await Feedback.deleteMany({ botId, feedback: type });
+    const deleted = await Feedback.deleteMany({ botId, feedback: type });
+    if (deleted.deletedCount === 0) {
+      return res.status(404).json({ message: 'لا توجد تقييمات للحذف' });
+    }
+
     res.status(200).json({ message: 'تم مسح التقييمات بنجاح' });
   } catch (err) {
     console.error('❌ خطأ في مسح التقييمات:', err.message, err.stack);
