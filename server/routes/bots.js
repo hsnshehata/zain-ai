@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Bot = require('../models/Bot');
 const User = require('../models/User');
+const Feedback = require('../models/Feedback');
 const authenticate = require('../middleware/authenticate');
 
 // جلب كل البوتات
@@ -11,6 +12,27 @@ router.get('/', authenticate, async (req, res) => {
     res.status(200).json(bots);
   } catch (err) {
     console.error('❌ خطأ في جلب البوتات:', err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر' });
+  }
+});
+
+// جلب التقييمات بناءً على botId
+router.get('/:id/feedback', authenticate, async (req, res) => {
+  try {
+    const botId = req.params.id;
+    const bot = await Bot.findById(botId);
+    if (!bot) {
+      return res.status(404).json({ message: 'البوت غير موجود' });
+    }
+
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'غير مصرح لك بعرض تقييمات هذا البوت' });
+    }
+
+    const feedback = await Feedback.find({ botId }).sort({ timestamp: -1 });
+    res.status(200).json(feedback);
+  } catch (err) {
+    console.error('❌ خطأ في جلب التقييمات:', err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 });
@@ -35,7 +57,6 @@ router.post('/', authenticate, async (req, res) => {
     const bot = new Bot({ name, userId, facebookApiKey, facebookPageId });
     await bot.save();
 
-    // إضافة البوت للمستخدم
     await User.findByIdAndUpdate(userId, { $push: { bots: bot._id } });
 
     res.status(201).json(bot);
@@ -83,7 +104,6 @@ router.delete('/:id', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
-    // إزالة البوت من المستخدم
     await User.findByIdAndUpdate(bot.userId, { $pull: { bots: bot._id } });
 
     await Bot.deleteOne({ _id: req.params.id });
