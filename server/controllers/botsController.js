@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 const Bot = require('../models/Bot');
 const User = require('../models/User');
-const Feedback = require('../models/Feedback'); // استيراد السكيما الجديدة
+const Feedback = require('../models/Feedback');
 const authenticate = require('../middleware/authenticate');
+const axios = require('axios'); // Add axios for making HTTP requests to Facebook Graph API
 
 // جلب كل البوتات
 router.get('/', authenticate, async (req, res) => {
@@ -16,7 +17,7 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-// جلب التقييمات بناءً على botId
+// جلب التقييمات بناءً على botId مع اسم المستخدم من فيسبوك
 router.get('/:id/feedback', authenticate, async (req, res) => {
   try {
     const botId = req.params.id;
@@ -25,13 +26,38 @@ router.get('/:id/feedback', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
-    // Check if the user is authorized to view this bot's feedback
     if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.id) {
       return res.status(403).json({ message: 'غير مصرح لك بعرض تقييمات هذا البوت' });
     }
 
     const feedback = await Feedback.find({ botId }).sort({ timestamp: -1 });
-    res.status(200).json(feedback);
+
+    // جلب أسماء المستخدمين من فيسبوك
+    const feedbackWithUsernames = await Promise.all(
+      feedback.map(async (item) => {
+        let username = item.userId; // Default to userId if we can't fetch the name
+        try {
+          // فقط إذا كان userId من فيسبوك (مش من صفحة الدردشة)
+          if (!item.userId.startsWith('web_')) {
+            const response = await axios.get(
+              `https://graph.facebook.com/${item.userId}?fields=name&access_token=${bot.facebookApiKey}`
+            );
+            if (response.data.name) {
+              username = response.data.name;
+            }
+          }
+        } catch (err) {
+          console.error(`❌ خطأ في جلب اسم المستخدم ${item.userId} من فيسبوك:`, err.message);
+        }
+
+        return {
+          ...item._doc,
+          username, // نضيف حقل جديد للاسم
+        };
+      })
+    );
+
+    res.status(200).json(feedbackWithUsernames);
   } catch (err) {
     console.error('❌ خطأ في جلب التقييمات:', err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
