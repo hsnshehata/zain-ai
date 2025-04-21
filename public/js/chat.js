@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let botId = '';
   let settings = {};
+  let messageCounter = 0; // لتوليد معرفات فريدة للرسائل
 
   // Fetch chat page settings
   try {
@@ -42,9 +43,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       #messageInput { color: ${settings?.colors?.inputTextColor || '#333333'}; }
       #imageInput::file-selector-button { background-color: ${settings?.colors?.sendButtonColor || '#007bff'}; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
       #imageInput::file-selector-button:hover { background-color: ${settings?.colors?.sendButtonColor ? darkenColor(settings.colors.sendButtonColor, 10) : '#0056b3'}; transform: translateY(-2px); }
+      .feedback-buttons { margin-top: 5px; }
+      .feedback-btn { margin: 0 5px; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; }
+      .feedback-btn.good { background-color: #28a745; color: white; }
+      .feedback-btn.bad { background-color: #dc3545; color: white; }
     `;
 
-    // Function to darken a hex color by a percentage
     function darkenColor(hex, percent) {
       let r = parseInt(hex.slice(1, 3), 16);
       let g = parseInt(hex.slice(3, 5), 16);
@@ -58,7 +62,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
     }
 
-    // Show suggested questions if enabled
     if (settings.suggestedQuestionsEnabled && settings.suggestedQuestions?.length > 0) {
       suggestedQuestions.style.display = 'block';
       settings.suggestedQuestions.forEach(question => {
@@ -72,7 +75,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       suggestedQuestions.style.display = 'none';
     }
 
-    // Show image upload if enabled
     if (settings.imageUploadEnabled) {
       imageInput.style.display = 'block';
     } else {
@@ -106,10 +108,35 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  async function submitFeedback(messageId, messageContent, feedback) {
+    try {
+      const response = await fetch('/api/chat-page/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          botId,
+          userId: `web_${linkId}_${Date.now()}`, // معرف فريد للمستخدم في الشات
+          messageId,
+          feedback,
+          messageContent,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`فشل في إرسال التقييم: ${response.status} ${response.statusText}`);
+      }
+
+      console.log(`✅ Feedback submitted: ${feedback} for message ID: ${messageId}`);
+    } catch (err) {
+      console.error('خطأ في إرسال التقييم:', err);
+    }
+  }
+
   async function sendMessage(message, isImage = false, imageData = null) {
     if (!message && !isImage) return;
 
-    // Display user message
     const userMessageDiv = document.createElement('div');
     userMessageDiv.className = 'message user-message';
     if (isImage && imageData) {
@@ -142,11 +169,35 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       const data = await response.json();
+      const messageId = `msg_${messageCounter++}`; // معرف فريد للرسالة
       const botMessageDiv = document.createElement('div');
       botMessageDiv.className = 'message bot-message';
+      botMessageDiv.setAttribute('data-message-id', messageId);
       botMessageDiv.textContent = data.reply || 'رد البوت';
+
+      // إضافة أزرار التقييم
+      const feedbackButtons = document.createElement('div');
+      feedbackButtons.className = 'feedback-buttons';
+      feedbackButtons.innerHTML = `
+        <button class="feedback-btn good" data-message-id="${messageId}" data-message-content="${data.reply || 'رد البوت'}">👍 إيجابي</button>
+        <button class="feedback-btn bad" data-message-id="${messageId}" data-message-content="${data.reply || 'رد البوت'}">👎 سلبي</button>
+      `;
+      botMessageDiv.appendChild(feedbackButtons);
+
       chatMessages.appendChild(botMessageDiv);
       chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      // إضافة مستمعات الأحداث لأزرار التقييم
+      feedbackButtons.querySelectorAll('.feedback-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const messageId = e.target.getAttribute('data-message-id');
+          const messageContent = e.target.getAttribute('data-message-content');
+          const feedback = e.target.classList.contains('good') ? 'positive' : 'negative';
+          await submitFeedback(messageId, messageContent, feedback);
+          // تعطيل الأزرار بعد التقييم
+          feedbackButtons.querySelectorAll('.feedback-btn').forEach(b => b.disabled = true);
+        });
+      });
     } catch (err) {
       console.error('خطأ في إرسال الرسالة:', err);
       const errorMessageDiv = document.createElement('div');
