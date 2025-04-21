@@ -60,9 +60,15 @@ async function loadFeedbackPage() {
 }
 
 async function loadFeedback(botId) {
-  console.log(`📋 Loading feedback for botId: ${botId}`); // تسجيل الـ botId
+  console.log(`📋 Loading feedback for botId: ${botId}`);
   const positiveFeedbackList = document.getElementById('positiveFeedbackList');
   const negativeFeedbackList = document.getElementById('negativeFeedbackList');
+
+  if (!positiveFeedbackList || !negativeFeedbackList) {
+    console.error('عناصر التقييمات غير موجودة في الـ DOM');
+    return;
+  }
+
   positiveFeedbackList.innerHTML = '<div class="spinner"><div class="loader"></div></div>';
   negativeFeedbackList.innerHTML = '<div class="spinner"><div class="loader"></div></div>';
 
@@ -114,13 +120,15 @@ async function loadFeedback(botId) {
     }
   } catch (err) {
     console.error('خطأ في جلب التقييمات:', err);
-    positiveFeedbackList.innerHTML = '<div class="feedback-card"><p style="color: #dc3545;">تعذر تحميل التقييمات: ' + err.message + '</p></div>';
-    negativeFeedbackList.innerHTML = '<div class="feedback-card"><p style="color: #dc3545;">تعذر تحميل التقييمات: ' + err.message + '</p></div>';
+    if (positiveFeedbackList && negativeFeedbackList) {
+      positiveFeedbackList.innerHTML = '<div class="feedback-card"><p style="color: #dc3545;">تعذر تحميل التقييمات: ' + err.message + '</p></div>';
+      negativeFeedbackList.innerHTML = '<div class="feedback-card"><p style="color: #dc3545;">تعذر تحميل التقييمات: ' + err.message + '</p></div>';
+    }
   }
 }
 
 async function deleteFeedback(feedbackId, botId) {
-  console.log(`🗑️ Attempting to delete feedback with ID: ${feedbackId} for botId: ${botId}`); // تسجيل الـ feedbackId و botId
+  console.log(`🗑️ Attempting to delete feedback with ID: ${feedbackId} for botId: ${botId}`);
   if (!botId) {
     alert('يرجى اختيار بوت أولاً.');
     return;
@@ -146,7 +154,7 @@ async function deleteFeedback(feedbackId, botId) {
 
 async function clearFeedback(type) {
   const botId = document.getElementById('botSelectFeedback').value;
-  console.log(`🗑️ Attempting to clear ${type} feedback for botId: ${botId}`); // تسجيل الـ botId و type
+  console.log(`🗑️ Attempting to clear ${type} feedback for botId: ${botId}`);
   if (!botId) {
     alert('يرجى اختيار بوت أولاً.');
     return;
