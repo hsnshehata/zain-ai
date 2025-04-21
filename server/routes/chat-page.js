@@ -1,13 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { createChatPage, updateChatPage, getChatPageByLinkId, getChatPageByBotId } = require('../controllers/chatPageController');
+const { createChatPage, updateChatPage, getChatPageByLinkId, getChatPageByBotId, submitFeedback } = require('../controllers/chatPageController');
 
-// إعداد Multer لاستقبال الصور في الذاكرة
 const storage = multer.memoryStorage();
 const upload = multer({
   storage,
-  limits: { fileSize: 32 * 1024 * 1024 }, // 32MB max (imgbb limit)
+  limits: { fileSize: 32 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowedTypes = ['image/png'];
     if (!allowedTypes.includes(file.mimetype)) {
@@ -19,8 +18,9 @@ const upload = multer({
 
 // Routes
 router.post('/', createChatPage);
-router.put('/:id', upload.single('logo'), updateChatPage); // Use multer for logo upload
+router.put('/:id', upload.single('logo'), updateChatPage);
 router.get('/:linkId', getChatPageByLinkId);
 router.get('/bot/:botId', getChatPageByBotId);
+router.post('/feedback', submitFeedback); // API جديد لتسجيل التقييمات
 
 module.exports = router;
