@@ -60,6 +60,7 @@ async function loadFeedbackPage() {
 }
 
 async function loadFeedback(botId) {
+  console.log(`📋 Loading feedback for botId: ${botId}`); // تسجيل الـ botId
   const positiveFeedbackList = document.getElementById('positiveFeedbackList');
   const negativeFeedbackList = document.getElementById('negativeFeedbackList');
   positiveFeedbackList.innerHTML = '<div class="spinner"><div class="loader"></div></div>';
@@ -70,7 +71,8 @@ async function loadFeedback(botId) {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
     if (!res.ok) {
-      throw new Error('فشل في جلب التقييمات');
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'فشل في جلب التقييمات');
     }
     const feedback = await res.json();
 
@@ -112,12 +114,13 @@ async function loadFeedback(botId) {
     }
   } catch (err) {
     console.error('خطأ في جلب التقييمات:', err);
-    positiveFeedbackList.innerHTML = '<div class="feedback-card"><p style="color: #dc3545;">تعذر تحميل التقييمات.</p></div>';
-    negativeFeedbackList.innerHTML = '<div class="feedback-card"><p style="color: #dc3545;">تعذر تحميل التقييمات.</p></div>';
+    positiveFeedbackList.innerHTML = '<div class="feedback-card"><p style="color: #dc3545;">تعذر تحميل التقييمات: ' + err.message + '</p></div>';
+    negativeFeedbackList.innerHTML = '<div class="feedback-card"><p style="color: #dc3545;">تعذر تحميل التقييمات: ' + err.message + '</p></div>';
   }
 }
 
 async function deleteFeedback(feedbackId, botId) {
+  console.log(`🗑️ Attempting to delete feedback with ID: ${feedbackId} for botId: ${botId}`); // تسجيل الـ feedbackId و botId
   if (!botId) {
     alert('يرجى اختيار بوت أولاً.');
     return;
@@ -143,6 +146,7 @@ async function deleteFeedback(feedbackId, botId) {
 
 async function clearFeedback(type) {
   const botId = document.getElementById('botSelectFeedback').value;
+  console.log(`🗑️ Attempting to clear ${type} feedback for botId: ${botId}`); // تسجيل الـ botId و type
   if (!botId) {
     alert('يرجى اختيار بوت أولاً.');
     return;
@@ -177,7 +181,8 @@ async function downloadFeedback(type) {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
     if (!res.ok) {
-      throw new Error('فشل في جلب التقييمات');
+      const errorData = await res.json();
+      throw new Error(errorData.message || 'فشل في جلب التقييمات');
     }
     const feedback = await res.json();
 
@@ -202,6 +207,6 @@ async function downloadFeedback(type) {
     link.click();
   } catch (err) {
     console.error('خطأ في تنزيل التقييمات:', err);
-    alert('فشل في تنزيل التقييمات، حاول مرة أخرى');
+    alert(err.message || 'فشل في تنزيل التقييمات، حاول مرة أخرى');
   }
 }
