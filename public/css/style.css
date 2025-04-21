@@ -1027,3 +1027,102 @@ body.light .chat-input input[type="file"] {
   border-radius: 8px;
   margin-top: 5px;
 }
+
+/* Feedback page styles */
+.feedback-container {
+  margin-top: 20px;
+}
+
+.feedback-sections {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.feedback-column {
+  flex: 1;
+  background: #f9f9f9;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.feedback-column h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.feedback-grid {
+  display: grid;
+  gap: 15px;
+}
+
+.feedback-card {
+  background: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.feedback-card p {
+  margin: 5px 0;
+}
+
+.feedback-actions {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+}
+
+.clear-btn,
+.download-btn,
+.delete-btn {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.clear-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.clear-btn:hover {
+  background-color: #c82333;
+}
+
+.download-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.download-btn:hover {
+  background-color: #218838;
+}
+
+.delete-btn {
+  background-color: #ff6b6b;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #e65a5a;
+}
+
+.feedback-note {
+  margin-top: 20px;
+  font-style: italic;
+  color: #666;
+  text-align: center;
+}
+
+/* Ensure proper direction for Arabic */
+.feedback-container,
+.feedback-column,
+.feedback-card,
+.feedback-actions,
+.feedback-note {
+  direction: rtl;
+}
