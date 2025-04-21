@@ -76,11 +76,17 @@ async function loadFeedback(botId) {
     const res = await fetch(`/api/bots/${botId}/feedback`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'فشل في جلب التقييمات');
+
+    let feedback;
+    try {
+      feedback = await res.json();
+    } catch (jsonErr) {
+      throw new Error('فشل في تحليل البيانات: رد السيرفر غير متوقع');
     }
-    const feedback = await res.json();
+
+    if (!res.ok) {
+      throw new Error(feedback.message || 'فشل في جلب التقييمات');
+    }
 
     const positiveFeedback = feedback.filter(item => item.feedback === 'positive');
     const negativeFeedback = feedback.filter(item => item.feedback === 'negative');
@@ -139,10 +145,18 @@ async function deleteFeedback(feedbackId, botId) {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'فشل في حذف التقييم');
+
+      let responseData;
+      try {
+        responseData = await res.json();
+      } catch (jsonErr) {
+        throw new Error('فشل في تحليل البيانات: رد السيرفر غير متوقع');
       }
+
+      if (!res.ok) {
+        throw new Error(responseData.message || 'فشل في حذف التقييم');
+      }
+
       alert('تم حذف التقييم بنجاح');
       loadFeedback(botId);
     } catch (err) {
@@ -165,10 +179,18 @@ async function clearFeedback(type) {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'فشل في مسح التقييمات');
+
+      let responseData;
+      try {
+        responseData = await res.json();
+      } catch (jsonErr) {
+        throw new Error('فشل في تحليل البيانات: رد السيرفر غير متوقع');
       }
+
+      if (!res.ok) {
+        throw new Error(responseData.message || 'فشل في مسح التقييمات');
+      }
+
       alert('تم مسح التقييمات بنجاح');
       loadFeedback(botId);
     } catch (err) {
@@ -188,11 +210,17 @@ async function downloadFeedback(type) {
     const res = await fetch(`/api/bots/${botId}/feedback`, {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.message || 'فشل في جلب التقييمات');
+
+    let feedback;
+    try {
+      feedback = await res.json();
+    } catch (jsonErr) {
+      throw new Error('فشل في تحليل البيانات: رد السيرفر غير متوقع');
     }
-    const feedback = await res.json();
+
+    if (!res.ok) {
+      throw new Error(feedback.message || 'فشل في جلب التقييمات');
+    }
 
     const filteredFeedback = feedback.filter(item => item.feedback === type);
     if (filteredFeedback.length === 0) {
