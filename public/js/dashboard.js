@@ -11,6 +11,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const rulesBtn = document.querySelectorAll('.rules-btn');
   const chatPageBtn = document.querySelectorAll('.chat-page-btn');
   const analyticsBtn = document.querySelectorAll('.analytics-btn');
+  const feedbackBtn = document.querySelectorAll('.feedback-btn');
   const logoutBtn = document.querySelectorAll('.logout-btn');
 
   // Debug: Log the buttons to ensure they are selected
@@ -18,18 +19,21 @@ document.addEventListener('DOMContentLoaded', () => {
   console.log('Rules Buttons:', rulesBtn);
   console.log('Chat Page Buttons:', chatPageBtn);
   console.log('Analytics Buttons:', analyticsBtn);
+  console.log('Feedback Buttons:', feedbackBtn);
   console.log('Logout Buttons:', logoutBtn);
 
-  // Show/hide bots button based on role
+  // Show/hide bots and feedback buttons based on role
   if (role !== 'superadmin') {
     botsBtn.forEach(btn => btn.style.display = 'none');
+    feedbackBtn.forEach(btn => btn.style.display = 'none');
   } else {
     botsBtn.forEach(btn => btn.style.display = 'inline-block');
+    feedbackBtn.forEach(btn => btn.style.display = 'inline-block');
   }
 
   // Function to set active button
   const setActiveButton = (hash) => {
-    const buttons = [botsBtn, rulesBtn, chatPageBtn, analyticsBtn, logoutBtn];
+    const buttons = [botsBtn, rulesBtn, chatPageBtn, analyticsBtn, feedbackBtn, logoutBtn];
     buttons.forEach(btnGroup => {
       btnGroup.forEach(btn => btn.classList.remove('active'));
     });
@@ -46,6 +50,9 @@ document.addEventListener('DOMContentLoaded', () => {
         break;
       case '#analytics':
         analyticsBtn.forEach(btn => btn.classList.add('active'));
+        break;
+      case '#feedback':
+        feedbackBtn.forEach(btn => btn.classList.add('active'));
         break;
     }
   };
@@ -71,6 +78,11 @@ document.addEventListener('DOMContentLoaded', () => {
     analyticsBtn.forEach(btn => {
       btn.removeEventListener('click', analyticsBtnClickHandler);
       btn.addEventListener('click', analyticsBtnClickHandler);
+    });
+
+    feedbackBtn.forEach(btn => {
+      btn.removeEventListener('click', feedbackBtnClickHandler);
+      btn.addEventListener('click', feedbackBtnClickHandler);
     });
 
     logoutBtn.forEach(btn => {
@@ -101,6 +113,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const analyticsBtnClickHandler = () => {
     console.log('Analytics Button Clicked');
     window.location.hash = 'analytics';
+    loadPageBasedOnHash();
+  };
+
+  const feedbackBtnClickHandler = () => {
+    console.log('Feedback Button Clicked');
+    window.location.hash = 'feedback';
     loadPageBasedOnHash();
   };
 
@@ -159,6 +177,13 @@ document.addEventListener('DOMContentLoaded', () => {
       loadChatPage();
     } else if (hash === '#analytics') {
       loadAnalyticsPage();
+    } else if (hash === '#feedback') {
+      if (userRole === 'superadmin') {
+        loadFeedbackPage(); // استدعاء الدالة من feedback.js
+      } else {
+        window.location.hash = 'rules';
+        loadRulesPage();
+      }
     } else {
       if (userRole === 'superadmin') {
         window.location.hash = 'bots';
