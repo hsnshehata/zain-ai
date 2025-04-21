@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require('uuid');
 const ChatPage = require('../models/ChatPage');
+const Feedback = require('../models/Feedback');
 const axios = require('axios');
 const FormData = require('form-data');
 
@@ -10,13 +11,11 @@ const IMGBB_API_KEY = process.env.IMGBB_API_KEY;
 // Function to upload image to imgbb using axios
 async function uploadToImgbb(file) {
   try {
-    // Validate file size (imgbb max size is 32MB)
     const maxSizeInBytes = 32 * 1024 * 1024; // 32MB in bytes
     if (file.size > maxSizeInBytes) {
       throw new Error('حجم الصورة أكبر من الحد الأقصى المسموح (32 ميجابايت)');
     }
 
-    // Validate file type (imgbb accepts PNG, JPG, etc., but we're expecting PNG as per the frontend)
     const allowedTypes = ['image/png'];
     if (!allowedTypes.includes(file.mimetype)) {
       throw new Error('نوع الصورة غير مدعوم، يرجى رفع صورة بصيغة PNG');
@@ -73,7 +72,6 @@ exports.createChatPage = async (req, res) => {
       return res.status(400).json({ message: 'User ID and Bot ID are required' });
     }
 
-    // Check if a chat page already exists for this bot
     const existingPage = await ChatPage.findOne({ botId });
     if (existingPage) {
       const chatLink = `${process.env.APP_URL || 'https://zain-ai-a06a.onrender.com'}/chat/${existingPage.linkId}`;
@@ -94,7 +92,7 @@ exports.createChatPage = async (req, res) => {
     res.status(201).json({ link: chatLink, chatPageId: chatPage._id, exists: false });
   } catch (err) {
     console.error('Error creating chat page:', err);
-    throw err; // Let the global error handler catch it
+    throw err;
   }
 };
 
@@ -107,7 +105,6 @@ exports.updateChatPage = async (req, res) => {
       return res.status(404).json({ message: 'Chat page not found' });
     }
 
-    // Parse FormData fields safely
     const title = req.body.title || chatPage.title;
     const titleColor = req.body.titleColor || chatPage.titleColor;
     let colors = chatPage.colors;
@@ -132,18 +129,15 @@ exports.updateChatPage = async (req, res) => {
     const imageUploadEnabled = req.body.imageUploadEnabled === 'true' ? true : req.body.imageUploadEnabled === 'false' ? false : chatPage.imageUploadEnabled;
     const darkModeEnabled = req.body.darkModeEnabled === 'true' ? true : req.body.darkModeEnabled === 'false' ? false : chatPage.darkModeEnabled;
 
-    // Handle logo upload to imgbb
     let logoUrl = chatPage.logoUrl;
     let logoDeleteUrl = chatPage.logoDeleteUrl;
 
-    if (req.file) { // Using multer's req.file instead of req.files.logo
+    if (req.file) {
       try {
-        // Delete the old image from imgbb if it exists
         if (logoDeleteUrl) {
           await deleteFromImgbb(logoDeleteUrl);
         }
 
-        // Upload the new image to imgbb
         const uploadResult = await uploadToImgbb(req.file);
         logoUrl = uploadResult.url;
         logoDeleteUrl = uploadResult.deleteUrl;
@@ -152,7 +146,6 @@ exports.updateChatPage = async (req, res) => {
       }
     }
 
-    // Update chat page
     chatPage.title = title;
     chatPage.titleColor = titleColor;
     chatPage.colors = colors;
@@ -168,11 +161,11 @@ exports.updateChatPage = async (req, res) => {
     res.status(200).json({
       message: 'Chat page settings updated successfully',
       logoUrl: chatPage.logoUrl,
-      colors: chatPage.colors, // Return the updated colors object
+      colors: chatPage.colors,
     });
   } catch (err) {
     console.error('Error updating chat page:', err);
-    throw err; // Let the global error handler catch it
+    throw err;
   }
 };
 
@@ -197,7 +190,7 @@ exports.getChatPageByLinkId = async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching chat page:', err);
-    throw err; // Let the global error handler catch it
+    throw err;
   }
 };
 
@@ -224,6 +217,31 @@ exports.getChatPageByBotId = async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching chat page by botId:', err);
-    throw err; // Let the global error handler catch it
+    throw err;
+  }
+};
+
+// Submit feedback from chat page
+exports.submitFeedback = async (req, res) => {
+  try {
+    const { botId, userId, messageId, feedback, messageContent } = req.body;
+    if (!botId || !userId || !messageId || !feedback || !messageContent) {
+      return res.status(400).json({ message: 'جميع الحقول مطلوبة' });
+    }
+
+    const feedbackEntry = new Feedback({
+      botId,
+      userId,
+      messageId,
+      feedback,
+      messageContent,
+      timestamp: new Date(),
+    });
+
+    await feedbackEntry.save();
+    res.status(201).json({ message: 'تم تسجيل التقييم بنجاح' });
+  } catch (err) {
+    console.error('❌ خطأ في تسجيل التقييم:', err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
