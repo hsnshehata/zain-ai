@@ -2,6 +2,7 @@ const request = require('request');
 const Bot = require('../models/Bot');
 const { processMessage } = require('../botEngine');
 const Conversation = require('../models/Conversation');
+const Feedback = require('../models/Feedback'); // استيراد السكيما الجديدة للتقييمات
 
 const handleMessage = async (req, res) => {
   try {
@@ -24,7 +25,7 @@ const handleMessage = async (req, res) => {
         continue;
       }
 
-      // Handle Messaging Events (Existing logic for messages)
+      // Handle Messaging Events
       if (entry.messaging && entry.messaging.length > 0) {
         const webhookEvent = entry.messaging[0];
         const senderPsid = webhookEvent.sender?.id;
@@ -47,12 +48,42 @@ const handleMessage = async (req, res) => {
           });
         }
 
+        // Handle Feedback (Good/Bad Response)
+        if (webhookEvent.response_feedback) {
+          const feedbackData = webhookEvent.response_feedback;
+          const mid = feedbackData.mid;
+          const feedback = feedbackData.feedback; // "Good response" or "Bad response"
+
+          console.log(`📊 Feedback received from ${senderPsid}: ${feedback} for message ID: ${mid}`);
+
+          // Find the message in the conversation using mid
+          const message = conversation.messages.find(msg => msg.messageId === mid);
+          if (!message) {
+            console.log(`❌ Message with ID ${mid} not found in conversation`);
+          } else {
+            // Store the feedback in MongoDB
+            const feedbackEntry = new Feedback({
+              botId: bot._id,
+              userId: senderPsid,
+              messageId: mid,
+              feedback: feedback === 'Good response' ? 'positive' : 'negative',
+              messageContent: message.content,
+              timestamp: new Date(webhookEvent.timestamp * 1000), // Convert timestamp to Date
+            });
+
+            await feedbackEntry.save();
+            console.log(`✅ Feedback saved: ${feedback} for message ID: ${mid}`);
+          }
+        }
+
+        // Handle Messages (Existing Logic)
         if (webhookEvent.message) {
           const message = webhookEvent.message;
 
           conversation.messages.push({
             role: 'user',
             content: message.text || 'رسالة غير نصية',
+            messageId: message.mid, // Store the message ID from Facebook
           });
 
           let responseText = '';
@@ -80,17 +111,18 @@ const handleMessage = async (req, res) => {
           conversation.messages.push({
             role: 'assistant',
             content: responseText,
+            messageId: message.mid, // Associate the assistant message with the same mid
           });
 
           await conversation.save();
 
           await sendMessage(senderPsid, responseText, bot.facebookApiKey);
-        } else {
-          console.log('❌ No message found in webhook event:', webhookEvent);
+        } else if (!webhookEvent.response_feedback) {
+          console.log('❌ No message or feedback found in webhook event:', webhookEvent);
         }
       }
 
-      // Handle Feed Events (New logic for comments)
+      // Handle Feed Events (Comments)
       if (entry.changes && entry.changes.length > 0) {
         for (const change of entry.changes) {
           if (change.field === 'feed' && change.value.item === 'comment' && change.value.verb === 'add') {
@@ -108,7 +140,6 @@ const handleMessage = async (req, res) => {
 
             console.log(`💬 Comment received on post ${postId} from ${commenterName} (${commenterId}): ${message}`);
 
-            // Find or create a conversation for the commenter
             let conversation = await Conversation.findOne({
               botId: bot._id,
               userId: commenterId,
@@ -122,16 +153,13 @@ const handleMessage = async (req, res) => {
               });
             }
 
-            // Add the comment to the conversation
             conversation.messages.push({
               role: 'user',
               content: message,
             });
 
-            // Process the comment using the same bot engine
             const responseText = await processMessage(bot._id, commenterId, message);
 
-            // Add the bot's response to the conversation
             conversation.messages.push({
               role: 'assistant',
               content: responseText,
@@ -139,7 +167,6 @@ const handleMessage = async (req, res) => {
 
             await conversation.save();
 
-            // Reply to the comment using Graph API
             await replyToComment(commentId, responseText, bot.facebookApiKey);
           } else {
             console.log('❌ Not a comment event or not an "add" verb:', change);
@@ -155,7 +182,7 @@ const handleMessage = async (req, res) => {
   }
 };
 
-// Function to send a message via Messenger (Existing function)
+// Function to send a message via Messenger
 const sendMessage = (senderPsid, responseText, facebookApiKey) => {
   return new Promise((resolve, reject) => {
     const requestBody = {
