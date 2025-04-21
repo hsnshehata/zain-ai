@@ -33,13 +33,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     customStyles.textContent = `
       .chat-container { background-color: ${settings.colors?.background || '#f8f9fa'}; color: ${settings.colors?.text || '#333333'}; }
       #chatHeader { background-color: ${settings.colors?.header || '#007bff'}; }
-      #chatTitle { color: ${settings.titleColor || '#ffffff'}; }
+      #chatTitle { color: ${settings.colors?..ADMIN || '#ffffff'}; }
       #chatMessages { background-color: ${settings.colors?.chatAreaBackground || '#ffffff'}; }
       #sendMessageBtn { background-color: ${settings.colors?.sendButtonColor || '#007bff'}; }
       .suggested-question { background-color: ${settings.colors?.button || '#007bff'}; }
       .user-message { background-color: ${settings.colors?.userMessageBackground || '#007bff'}; color: ${settings.colors?.userMessageTextColor || '#ffffff'}; }
       .bot-message { background-color: ${settings.colors?.botMessageBackground || '#e9ecef'}; color: ${settings.colors?.botMessageTextColor || '#000000'}; }
       #messageInput { color: ${settings.colors?.inputTextColor || '#333333'}; }
+      #imageInput::file-selector-button { background-color: ${settings.colors?.sendButtonColor || '#007bff'}; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
+      #imageInput::file-selector-button:hover { background-color: #0056b3; transform: translateY(-2px); }
     `;
 
     // Show suggested questions if enabled
@@ -68,13 +70,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  async function sendMessage(message, isImage = false) {
+  async function uploadImage(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`فشل في رفع الصورة: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return { imageUrl: data.imageUrl, thumbUrl: data.thumbUrl };
+    } catch (err) {
+      console.error('خطأ في رفع الصورة:', err);
+      throw err;
+    }
+  }
+
+  async function sendMessage(message, isImage = false, imageData = null) {
     if (!message && !isImage) return;
 
     // Display user message
     const userMessageDiv = document.createElement('div');
     userMessageDiv.className = 'message user-message';
-    userMessageDiv.textContent = message || 'صورة مرفقة';
+    if (isImage && imageData) {
+      const img = document.createElement('img');
+      img.src = imageData.thumbUrl;
+      img.style.maxWidth = '100px';
+      img.style.borderRadius = '8px';
+      userMessageDiv.appendChild(img);
+    } else {
+      userMessageDiv.textContent = message;
+    }
     chatMessages.appendChild(userMessageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
@@ -86,7 +118,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
         body: JSON.stringify({
           botId,
-          message: isImage ? 'صورة مرفقة' : message,
+          message: isImage ? imageData.imageUrl : message,
           isImage,
         }),
       });
@@ -125,11 +157,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  imageInput.addEventListener('change', () => {
+  imageInput.addEventListener('change', async () => {
     const file = imageInput.files[0];
     if (file) {
-      sendMessage(null, true);
-      imageInput.value = '';
+      try {
+        const imageData = await uploadImage(file);
+        sendMessage(null, true, imageData);
+        imageInput.value = '';
+      } catch (err) {
+        console.error('خطأ في معالجة الصورة:', err);
+        const errorMessageDiv = document.createElement('div');
+        errorMessageDiv.className = 'message bot-message';
+        errorMessageDiv.textContent = 'عذرًا، حدث خطأ أثناء معالجة الصورة.';
+        chatMessages.appendChild(errorMessageDiv);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
     }
   });
 });
