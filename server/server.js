@@ -12,6 +12,7 @@ const botRoutes = require('./routes/bot');
 const analyticsRoutes = require('./routes/analytics');
 const chatPageRoutes = require('./routes/chat-page');
 const indexRoutes = require('./routes/index');
+const uploadRoutes = require('./routes/upload'); // New route for image uploads
 const connectDB = require('./db');
 
 const app = express();
@@ -20,7 +21,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(fileUpload());
+app.use(fileUpload()); // Keep express-fileupload for existing functionality
 app.use(express.static(path.join(__dirname, '../public'))); // Serve static files from ../public like old system
 
 // Routes
@@ -33,6 +34,7 @@ app.use('/api/rules', rulesRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/chat-page', chatPageRoutes);
+app.use('/api/upload', uploadRoutes); // New route for image uploads
 app.use('/', indexRoutes); // Use indexRoutes for root like old system
 
 // Route for dashboard
