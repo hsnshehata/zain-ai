@@ -12,9 +12,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   let botId = '';
   let settings = {};
-  let messageCounter = 0; // لتوليد معرفات فريدة للرسائل
+  let messageCounter = 0;
+  let lastFeedbackButtons = null; // لتتبع أزرار التقييم لآخر رد
 
-  // Fetch chat page settings
   try {
     const response = await fetch(`/api/chat-page/${linkId}`);
     if (!response.ok) {
@@ -23,7 +23,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     settings = await response.json();
     botId = settings.botId;
 
-    // Apply custom settings
     chatTitle.textContent = settings.title || 'صفحة الدردشة';
     if (settings.logoUrl) {
       chatLogo.src = settings.logoUrl;
@@ -43,10 +42,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       #messageInput { color: ${settings?.colors?.inputTextColor || '#333333'}; }
       #imageInput::file-selector-button { background-color: ${settings?.colors?.sendButtonColor || '#007bff'}; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
       #imageInput::file-selector-button:hover { background-color: ${settings?.colors?.sendButtonColor ? darkenColor(settings.colors.sendButtonColor, 10) : '#0056b3'}; transform: translateY(-2px); }
-      .feedback-buttons { margin-top: 5px; }
-      .feedback-btn { margin: 0 5px; padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; }
-      .feedback-btn.good { background-color: #28a745; color: white; }
-      .feedback-btn.bad { background-color: #dc3545; color: white; }
+      .feedback-buttons { margin-top: 5px; display: flex; gap: 10px; }
+      .feedback-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; }
     `;
 
     function darkenColor(hex, percent) {
@@ -117,7 +114,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
         body: JSON.stringify({
           botId,
-          userId: `web_${linkId}_${Date.now()}`, // معرف فريد للمستخدم في الشات
+          userId: `web_${linkId}_${Date.now()}`,
           messageId,
           feedback,
           messageContent,
@@ -134,8 +131,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  function hidePreviousFeedbackButtons() {
+    if (lastFeedbackButtons) {
+      lastFeedbackButtons.style.display = 'none';
+      lastFeedbackButtons = null;
+    }
+  }
+
   async function sendMessage(message, isImage = false, imageData = null) {
     if (!message && !isImage) return;
+
+    // إخفاء أزرار التقييم السابقة لما المستخدم يبعت رسالة جديدة
+    hidePreviousFeedbackButtons();
 
     const userMessageDiv = document.createElement('div');
     userMessageDiv.className = 'message user-message';
@@ -169,7 +176,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       const data = await response.json();
-      const messageId = `msg_${messageCounter++}`; // معرف فريد للرسالة
+      const messageId = `msg_${messageCounter++}`;
       const botMessageDiv = document.createElement('div');
       botMessageDiv.className = 'message bot-message';
       botMessageDiv.setAttribute('data-message-id', messageId);
@@ -179,13 +186,16 @@ document.addEventListener('DOMContentLoaded', async () => {
       const feedbackButtons = document.createElement('div');
       feedbackButtons.className = 'feedback-buttons';
       feedbackButtons.innerHTML = `
-        <button class="feedback-btn good" data-message-id="${messageId}" data-message-content="${data.reply || 'رد البوت'}">👍 إيجابي</button>
-        <button class="feedback-btn bad" data-message-id="${messageId}" data-message-content="${data.reply || 'رد البوت'}">👎 سلبي</button>
+        <button class="feedback-btn good" data-message-id="${messageId}" data-message-content="${data.reply || 'رد البوت'}">👍</button>
+        <button class="feedback-btn bad" data-message-id="${messageId}" data-message-content="${data.reply || 'رد البوت'}">👎</button>
       `;
       botMessageDiv.appendChild(feedbackButtons);
 
       chatMessages.appendChild(botMessageDiv);
       chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      // تحديث أزرار التقييم لآخر رد
+      lastFeedbackButtons = feedbackButtons;
 
       // إضافة مستمعات الأحداث لأزرار التقييم
       feedbackButtons.querySelectorAll('.feedback-btn').forEach(btn => {
@@ -194,8 +204,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           const messageContent = e.target.getAttribute('data-message-content');
           const feedback = e.target.classList.contains('good') ? 'positive' : 'negative';
           await submitFeedback(messageId, messageContent, feedback);
-          // تعطيل الأزرار بعد التقييم
-          feedbackButtons.querySelectorAll('.feedback-btn').forEach(b => b.disabled = true);
+          // إخفاء الأزرار بعد التقييم
+          feedbackButtons.style.display = 'none';
+          lastFeedbackButtons = null;
         });
       });
     } catch (err) {
