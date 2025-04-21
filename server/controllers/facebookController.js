@@ -66,7 +66,6 @@ const handleMessage = async (req, res) => {
 
           if (!conversation) {
             console.log(`❌ Conversation not found for bot ${bot._id} and user ${senderPsid}`);
-            // Create a new conversation if it doesn't exist
             conversation = new Conversation({
               botId: bot._id,
               userId: senderPsid,
@@ -75,32 +74,39 @@ const handleMessage = async (req, res) => {
             await conversation.save();
           }
 
-          const message = conversation.messages.find(msg => msg.messageId === mid);
+          // Find the last message from the bot (role: 'assistant')
+          const lastBotMessage = [...conversation.messages]
+            .reverse()
+            .find(msg => msg.role === 'assistant');
+
           let messageContent = 'رسالة غير معروفة';
-          if (message) {
-            messageContent = message.content;
-            console.log(`✅ Found message with ID ${mid}: ${messageContent}`);
+          let messageIdToUse = mid;
+
+          if (lastBotMessage) {
+            messageContent = lastBotMessage.content;
+            messageIdToUse = lastBotMessage.messageId || mid; // Use the last bot message's ID if available, otherwise fall back to the mid
+            console.log(`✅ Linked feedback to last bot message: ${messageContent} (ID: ${messageIdToUse})`);
           } else {
-            console.log(`⚠️ Message with ID ${mid} not found in conversation. Saving feedback without message content.`);
+            console.log(`⚠️ No previous bot message found for user ${senderPsid}. Saving feedback with provided mid.`);
           }
 
           const feedbackEntry = new Feedback({
             botId: bot._id,
             userId: senderPsid,
-            messageId: mid,
+            messageId: messageIdToUse,
             feedback: feedback === 'Good response' ? 'positive' : 'negative',
-            messageContent: message ? message.content : undefined, // Optional field
+            messageContent: lastBotMessage ? lastBotMessage.content : undefined,
             timestamp: new Date(webhookEvent.timestamp * 1000),
           });
 
           await feedbackEntry.save();
-          console.log(`✅ Feedback saved: ${feedback} for message ID: ${mid}`);
+          console.log(`✅ Feedback saved: ${feedback} for message ID: ${messageIdToUse}`);
         }
 
         // Handle Messages (Existing Logic)
         if (webhookEvent.message) {
           const message = webhookEvent.message;
-          const mid = message.mid || `temp_${Date.now()}`; // Fallback if mid is not provided
+          const mid = message.mid || `temp_${Date.now()}`;
 
           console.log(`📝 Storing message with mid: ${mid}`);
 
