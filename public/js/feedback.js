@@ -63,7 +63,7 @@ async function loadFeedback(botId) {
       card.className = 'feedback-card';
       card.innerHTML = `
         <p><strong>المستخدم:</strong> ${item.userId}</p>
-        <p><strong>الرسالة:</strong> ${item.messageContent}</p>
+        <p><strong>الرسالة:</strong> ${item.messageContent || 'غير متوفر'}</p>
         <p><strong>التقييم:</strong> ${item.feedback === 'positive' ? 'إيجابي' : 'سلبي'}</p>
         <p><strong>التاريخ:</strong> ${new Date(item.timestamp).toLocaleString('ar-EG')}</p>
       `;
