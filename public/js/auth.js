@@ -1,51 +1,94 @@
-const express = require('express');
-const router = express.Router();
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+// public/js/auth.js
+document.addEventListener('DOMContentLoaded', () => {
+  const loginForm = document.querySelector('#loginForm');
+  const logoutButtons = document.querySelectorAll('.logout-btn');
 
-// تسجيل الدخول
-router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+  // Handle login form submission
+  if (loginForm) {
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-  try {
-    // التحقق من وجود المستخدم
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(400).json({ message: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
-    }
+      const username = document.querySelector('#username').value.trim();
+      const password = document.querySelector('#password').value.trim();
+      const errorDiv = document.querySelector('#error');
 
-    // التحقق من كلمة المرور
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
-    }
+      if (!username || !password) {
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = 'من فضلك أدخل اسم المستخدم وكلمة المرور';
+        return;
+      }
 
-    // إنشاء توكن
-    const token = jwt.sign(
-      { userId: user._id, role: user.role, username: user.username },
-      process.env.JWT_SECRET || 'your_jwt_secret',
-      { expiresIn: '24h' } // تغيير إلى 24 ساعة
-    );
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password }),
+        });
 
-    res.status(200).json({ token, role: user.role, userId: user._id, username: user.username, success: true });
-  } catch (err) {
-    console.error('❌ خطأ في تسجيل الدخول:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر' });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'فشل تسجيل الدخول');
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          // Store user data in localStorage
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('role', data.role);
+          localStorage.setItem('userId', data.userId);
+          localStorage.setItem('username', data.username);
+
+          // Redirect to dashboard
+          window.location.href = '/dashboard';
+        } else {
+          throw new Error(data.message || 'فشل تسجيل الدخول');
+        }
+      } catch (err) {
+        console.error('❌ Error during login:', err);
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = err.message || 'حدث خطأ أثناء تسجيل الدخول، حاول مرة أخرى';
+      }
+    });
   }
+
+  // Handle logout buttons
+  logoutButtons.forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const username = localStorage.getItem('username');
+      const errorDiv = document.querySelector('#error');
+
+      try {
+        const response = await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username }),
+        });
+
+        const data = await response.json();
+        if (response.ok && data.success) {
+          // Clear localStorage
+          localStorage.removeItem('token');
+          localStorage.removeItem('role');
+          localStorage.removeItem('userId');
+          localStorage.removeItem('username');
+          console.log('✅ Logout successful, localStorage cleared');
+          window.location.href = '/';
+        } else {
+          throw new Error(data.message || 'فشل تسجيل الخروج');
+        }
+      } catch (err) {
+        console.error('❌ Error during logout:', err);
+        if (errorDiv) {
+          errorDiv.style.display = 'block';
+          errorDiv.textContent = err.message || 'حدث خطأ أثناء تسجيل الخروج';
+        } else {
+          alert('حدث خطأ أثناء تسجيل الخروج، حاول مرة أخرى');
+        }
+      }
+    });
+  });
 });
-
-// تسجيل الخروج
-router.post('/logout', (req, res) => {
-  const { username } = req.body;
-
-  if (!username) {
-    return res.status(400).json({ message: 'اسم المستخدم مطلوب', success: false });
-  }
-
-  // هنا ممكن تضيف أي منطق إضافي لتسجيل الخروج (مثل إبطال التوكن إذا كنت بتستخدم blacklist)
-  console.log(`✅ User ${username} logged out successfully`);
-  res.status(200).json({ message: 'تم تسجيل الخروج بنجاح', success: true });
-});
-
-module.exports = router;
