@@ -15,7 +15,7 @@ async function loadFeedbackPage() {
           <h3>التقييمات الإيجابية</h3>
           <div id="positiveFeedbackList" class="feedback-grid"></div>
           <div class="feedback-actions">
-            <button onclick="clearFeedback('positive')" class="clear-btn">إخفاء الكل</button>
+            <button onclick="clearFeedback('positive')" class="clear-btn">حذف الكل</button>
             <button onclick="downloadFeedback('positive')" class="download-btn">تنزيل</button>
           </div>
         </div>
@@ -23,7 +23,7 @@ async function loadFeedbackPage() {
           <h3>التقييمات السلبية</h3>
           <div id="negativeFeedbackList" class="feedback-grid"></div>
           <div class="feedback-actions">
-            <button onclick="clearFeedback('negative')" class="clear-btn">إخفاء الكل</button>
+            <button onclick="clearFeedback('negative')" class="clear-btn">حذف الكل</button>
             <button onclick="downloadFeedback('negative')" class="download-btn">تنزيل</button>
           </div>
         </div>
@@ -120,7 +120,7 @@ async function loadFeedback(botId) {
           <p><strong>المستخدم:</strong> ${item.username || item.userId}</p>
           <p><strong>رد البوت:</strong> ${item.messageContent || 'غير متوفر'}</p>
           <p><strong>التاريخ:</strong> ${new Date(item.timestamp).toLocaleString('ar-EG')}</p>
-          <button onclick="deleteFeedback('${item._id}', '${botId}')" class="delete-btn">إخفاء</button>
+          <button onclick="deleteFeedback('${item._id}', '${botId}')" class="delete-btn">حذف</button>
         `;
         positiveFeedbackList.appendChild(card);
       });
@@ -141,7 +141,7 @@ async function loadFeedback(botId) {
           <p><strong>المستخدم:</strong> ${item.username || item.userId}</p>
           <p><strong>رد البوت:</strong> ${item.messageContent || 'غير متوفر'}</p>
           <p><strong>التاريخ:</strong> ${new Date(item.timestamp).toLocaleString('ar-EG')}</p>
-          <button onclick="deleteFeedback('${item._id}', '${botId}')" class="delete-btn">إخفاء</button>
+          <button onclick="deleteFeedback('${item._id}', '${botId}')" class="delete-btn">حذف</button>
         `;
         negativeFeedbackList.appendChild(card);
       });
@@ -165,7 +165,7 @@ async function deleteFeedback(feedbackId, botId) {
     alert('معرف التقييم غير صالح.');
     return;
   }
-  if (confirm('هل أنت متأكد من إخفاء هذا التقييم؟')) {
+  if (confirm('هل أنت متأكد من حذف هذا التقييم؟')) {
     try {
       const spinner = document.createElement('div');
       spinner.className = 'spinner';
@@ -193,14 +193,14 @@ async function deleteFeedback(feedbackId, botId) {
 
       if (!res.ok) {
         console.error('❌ رد السيرفر:', responseData);
-        throw new Error(responseData.message || 'فشل في إخفاء التقييم');
+        throw new Error(responseData.message || 'فشل في حذف التقييم');
       }
 
-      alert('تم إخفاء التقييم بنجاح');
+      alert('تم حذف التقييم بنجاح');
       await loadFeedback(botId);
     } catch (err) {
-      console.error('❌ خطأ في إخفاء التقييم:', err);
-      alert(err.message || 'فشل في إخفاء التقييم، حاول مرة أخرى');
+      console.error('❌ خطأ في حذف التقييم:', err);
+      alert(err.message || 'فشل في حذف التقييم، حاول مرة أخرى');
     } finally {
       const spinner = document.querySelector('.spinner');
       if (spinner) spinner.remove();
@@ -215,7 +215,7 @@ async function clearFeedback(type) {
     alert('يرجى اختيار بوت أولاً.');
     return;
   }
-  if (confirm(`هل أنت متأكد من إخفاء جميع التقييمات ${type === 'positive' ? 'الإيجابية' : 'السلبية'}؟`)) {
+  if (confirm(`هل أنت متأكد من حذف جميع التقييمات ${type === 'positive' ? 'الإيجابية' : 'السلبية'}؟`)) {
     try {
       const spinner = document.createElement('div');
       spinner.className = 'spinner';
@@ -243,14 +243,14 @@ async function clearFeedback(type) {
 
       if (!res.ok) {
         console.error('❌ رد السيرفر:', responseData);
-        throw new Error(responseData.message || 'فشل في إخفاء التقييمات');
+        throw new Error(responseData.message || 'فشل في حذف التقييمات');
       }
 
-      alert('تم إخفاء التقييمات بنجاح');
+      alert('تم حذف التقييمات بنجاح');
       await loadFeedback(botId);
     } catch (err) {
-      console.error('❌ خطأ في إخفاء التقييمات:', err);
-      alert(err.message || 'فشل في إخفاء التقييمات، حاول مرة أخرى');
+      console.error('❌ خطأ في حذف التقييمات:', err);
+      alert(err.message || 'فشل في حذف التقييمات، حاول مرة أخرى');
     } finally {
       const spinner = document.querySelector('.spinner');
       if (spinner) spinner.remove();
