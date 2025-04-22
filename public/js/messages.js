@@ -35,17 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button id="applyFilterBtn">تطبيق الفلتر</button>
               </div>
             </div>
-            <div class="form-group">
-              <label>البحث في الرسائل:</label>
-              <div class="search-filter">
-                <input type="text" id="searchMessagesInput" placeholder="ابحث في الرسائل..." />
-                <button id="searchMessagesBtn">بحث</button>
-              </div>
-            </div>
-          </div>
-          <div class="action-buttons">
-            <button id="downloadMessagesBtn" class="download-btn">تنزيل جميع الرسائل</button>
-            <button id="deleteAllConversationsBtn" class="delete-btn">حذف كل المحادثات</button>
           </div>
         </div>
         <div class="users-list-container">
@@ -53,6 +42,11 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="loader"></div>
           </div>
           <div id="usersList" class="users-grid"></div>
+          <div id="pagination" class="pagination"></div>
+        </div>
+        <div class="action-buttons">
+          <button id="downloadMessagesBtn" class="download-btn">تنزيل جميع الرسائل</button>
+          <button id="deleteAllConversationsBtn" class="delete-btn">حذف كل المحادثات</button>
         </div>
         <div id="userMessages" class="chat-container" style="display: none;"></div>
       </div>
@@ -68,11 +62,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const usersList = document.getElementById('usersList');
     const usersLoadingSpinner = document.getElementById('usersLoadingSpinner');
     const userMessages = document.getElementById('userMessages');
+    const pagination = document.getElementById('pagination');
     const startDateFilter = document.getElementById('startDateFilter');
     const endDateFilter = document.getElementById('endDateFilter');
     const applyFilterBtn = document.getElementById('applyFilterBtn');
-    const searchMessagesInput = document.getElementById('searchMessagesInput');
-    const searchMessagesBtn = document.getElementById('searchMessagesBtn');
     const downloadMessagesBtn = document.getElementById('downloadMessagesBtn');
     const deleteAllConversationsBtn = document.getElementById('deleteAllConversationsBtn');
     const errorDiv = document.getElementById('error');
@@ -84,7 +77,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let conversations = [];
     let userNamesCache = {}; // Cache for Facebook user names
     let webUserCounter = 1; // Counter for web user names
-    let filteredMessages = []; // To store filtered messages
+    let currentPage = 1;
+    const cardsPerPage = 30;
 
     // Fetch bots
     let bots = [];
@@ -148,6 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
     botSelect.addEventListener('change', async () => {
       currentBotId = botSelect.value;
       if (currentBotId) {
+        currentPage = 1; // Reset to first page
         await loadConversations(currentBotId);
       } else {
         messagesContent.style.display = 'none';
@@ -162,6 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
       webMessagesTab.classList.remove('active');
       whatsappMessagesTab.classList.remove('active');
       currentTab = 'facebook';
+      currentPage = 1; // Reset to first page
       loadConversations(currentBotId);
     });
 
@@ -170,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
       facebookMessagesTab.classList.remove('active');
       whatsappMessagesTab.classList.remove('active');
       currentTab = 'web';
+      currentPage = 1; // Reset to first page
       loadConversations(currentBotId);
     });
 
@@ -178,41 +175,14 @@ document.addEventListener('DOMContentLoaded', () => {
       facebookMessagesTab.classList.remove('active');
       webMessagesTab.classList.remove('active');
       currentTab = 'whatsapp';
+      currentPage = 1; // Reset to first page
       loadConversations(currentBotId);
     });
 
     // Filter messages by date
     applyFilterBtn.addEventListener('click', () => {
+      currentPage = 1; // Reset to first page
       loadConversations(currentBotId);
-    });
-
-    // Search messages
-    searchMessagesBtn.addEventListener('click', () => {
-      const searchTerm = searchMessagesInput.value.trim().toLowerCase();
-      if (currentUserId) {
-        const userConversations = conversations.filter(conv => conv.userId === currentUserId);
-        if (userConversations.length > 0) {
-          filteredMessages = userConversations[0].messages.filter(msg =>
-            msg.content.toLowerCase().includes(searchTerm)
-          );
-          const userName = document.querySelector('.chat-header h3').textContent;
-          loadUserMessages(currentUserId, userName, filteredMessages);
-        }
-      }
-    });
-
-    // Clear search on input change
-    searchMessagesInput.addEventListener('input', () => {
-      if (!searchMessagesInput.value.trim()) {
-        filteredMessages = [];
-        if (currentUserId) {
-          const userConversations = conversations.filter(conv => conv.userId === currentUserId);
-          if (userConversations.length > 0) {
-            const userName = document.querySelector('.chat-header h3').textContent;
-            loadUserMessages(currentUserId, userName);
-          }
-        }
-      }
     });
 
     // Delete all conversations
@@ -228,6 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
             throw new Error('فشل في حذف المحادثات');
           }
 
+          currentPage = 1; // Reset to first page
           await loadConversations(currentBotId);
         } catch (err) {
           errorDiv.style.display = 'block';
@@ -291,12 +262,18 @@ document.addEventListener('DOMContentLoaded', () => {
         usersList.style.display = 'grid';
         messagesContent.style.display = 'block';
 
-        // Display users
+        // Display users with pagination
         usersList.innerHTML = '';
         const userIds = [...new Set(conversations.map(conv => conv.userId))];
         webUserCounter = 1; // Reset counter for web users
 
-        for (const userId of userIds) {
+        // Pagination logic
+        const totalPages = Math.ceil(userIds.length / cardsPerPage);
+        const startIndex = (currentPage - 1) * cardsPerPage;
+        const endIndex = startIndex + cardsPerPage;
+        const paginatedUserIds = userIds.slice(startIndex, endIndex);
+
+        for (const userId of paginatedUserIds) {
           const userConversations = conversations.filter(conv => conv.userId === userId);
           let userName = userId;
           let isWebUser = userId === 'anonymous'; // الشرط الجديد: فقط userId === 'anonymous' يعتبر ويب
@@ -306,12 +283,6 @@ document.addEventListener('DOMContentLoaded', () => {
           if (currentTab === 'facebook' && (isWebUser || isWhatsAppUser)) continue; // Skip web and WhatsApp users in Facebook tab
           if (currentTab === 'web' && !isWebUser) continue; // Skip non-anonymous users in Web tab
           if (currentTab === 'whatsapp' && !isWhatsAppUser) continue; // Skip non-WhatsApp users in WhatsApp tab
-
-          // Calculate stats
-          const messages = userConversations[0].messages;
-          const userMessagesCount = messages.filter(msg => msg.role === 'user').length;
-          const botMessagesCount = messages.filter(msg => msg.role === 'assistant').length;
-          const interactionRate = userMessagesCount > 0 ? ((botMessagesCount / userMessagesCount) * 100).toFixed(2) : 0;
 
           if (currentTab === 'facebook') {
             // Fetch Facebook user name
@@ -343,11 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
           userCard.innerHTML = `
             <h3>${userName}</h3>
             <p>عدد الرسائل: ${userConversations[0].messages.length}</p>
-            <p>رسائل المستخدم: ${userMessagesCount}</p>
-            <p>ردود البوت: ${botMessagesCount}</p>
-            <p>نسبة التفاعل: ${interactionRate}%</p>
             <p>آخر رسالة: ${new Date(userConversations[0].messages[userConversations[0].messages.length - 1].timestamp).toLocaleString('ar-EG')}</p>
-            <button class="delete-btn delete-user-btn" data-user-id="${userId}">حذف المستخدم</button>
           `;
           userCard.addEventListener('click', () => {
             currentUserId = userId;
@@ -356,31 +323,18 @@ document.addEventListener('DOMContentLoaded', () => {
           usersList.appendChild(userCard);
         }
 
-        // Add event listeners for delete user buttons
-        document.querySelectorAll('.delete-user-btn').forEach(btn => {
-          btn.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            const userId = btn.getAttribute('data-user-id');
-            if (confirm('هل أنت متأكد من حذف هذا المستخدم ومحادثاته؟')) {
-              try {
-                const response = await fetch(`/api/messages/delete-user/${currentBotId}/${userId}?type=${currentTab}`, {
-                  method: 'DELETE',
-                  headers: { 'Authorization': `Bearer ${token}` },
-                });
-
-                if (!response.ok) {
-                  throw new Error('فشل في حذف المستخدم');
-                }
-
-                await loadConversations(currentBotId);
-                userMessages.style.display = 'none';
-              } catch (err) {
-                errorDiv.style.display = 'block';
-                errorDiv.textContent = err.message || 'حدث خطأ أثناء حذف المستخدم';
-              }
-            }
+        // Render pagination
+        pagination.innerHTML = '';
+        for (let i = 1; i <= totalPages; i++) {
+          const pageButton = document.createElement('button');
+          pageButton.textContent = i;
+          pageButton.className = i === currentPage ? 'pagination-btn active' : 'pagination-btn';
+          pageButton.addEventListener('click', () => {
+            currentPage = i;
+            loadConversations(currentBotId);
           });
-        });
+          pagination.appendChild(pageButton);
+        }
       } catch (err) {
         console.error('Error loading conversations:', err);
         usersLoadingSpinner.style.display = 'none';
@@ -390,41 +344,77 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    async function loadUserMessages(userId, userName, messagesToShow = null) {
+    async function loadUserMessages(userId, userName) {
       userMessages.innerHTML = `
         <div class="chat-header">
-          <h3>${userName}</h3>
-          <button class="delete-btn delete-conversation-btn" data-user-id="${userId}">حذف المحادثة</button>
+          <div class="chat-header-left">
+            <h3>${userName}</h3>
+            <div class="search-in-chat">
+              <input type="text" id="searchInChatInput" placeholder="ابحث في المحادثة..." />
+              <button id="searchInChatBtn">بحث</button>
+            </div>
+          </div>
+          <button id="closeChatBtn" class="close-btn">إغلاق</button>
         </div>
         <div class="chat-messages"></div>
+        <div class="chat-footer">
+          <button class="delete-btn delete-conversation-btn" data-user-id="${userId}">حذف المحادثة</button>
+        </div>
       `;
       const chatMessages = userMessages.querySelector('.chat-messages');
+      const searchInChatInput = userMessages.querySelector('#searchInChatInput');
+      const searchInChatBtn = userMessages.querySelector('#searchInChatBtn');
       userMessages.style.display = 'block';
 
       const userConversations = conversations.filter(conv => conv.userId === userId);
-      const messages = messagesToShow || userConversations[0].messages;
+      const messages = userConversations[0].messages;
 
-      messages.forEach(msg => {
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${msg.role === 'user' ? 'user-message' : 'bot-message'}`;
-        messageDiv.style.opacity = '0';
-        messageDiv.style.transform = 'translateY(20px)';
-        messageDiv.innerHTML = `
-          <p>${msg.content}</p>
-          <small>${new Date(msg.timestamp).toLocaleString('ar-EG')}</small>
-        `;
-        chatMessages.appendChild(messageDiv);
+      function renderMessages(messagesToShow) {
+        chatMessages.innerHTML = '';
+        messagesToShow.forEach(msg => {
+          const messageDiv = document.createElement('div');
+          messageDiv.className = `message ${msg.role === 'user' ? 'user-message' : 'bot-message'}`;
+          messageDiv.style.opacity = '0';
+          messageDiv.style.transform = 'translateY(20px)';
+          messageDiv.innerHTML = `
+            <p>${msg.content}</p>
+            <small>${new Date(msg.timestamp).toLocaleString('ar-EG')}</small>
+          `;
+          chatMessages.appendChild(messageDiv);
 
-        // Animation
-        setTimeout(() => {
-          messageDiv.style.transition = 'all 0.3s ease';
-          messageDiv.style.opacity = '1';
-          messageDiv.style.transform = 'translateY(0)';
-        }, 100);
+          // Animation
+          setTimeout(() => {
+            messageDiv.style.transition = 'all 0.3s ease';
+            messageDiv.style.opacity = '1';
+            messageDiv.style.transform = 'translateY(0)';
+          }, 100);
+        });
+
+        // Scroll to bottom
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      renderMessages(messages);
+
+      // Search in chat
+      searchInChatBtn.addEventListener('click', () => {
+        const searchTerm = searchInChatInput.value.trim().toLowerCase();
+        const filtered = messages.filter(msg => msg.content.toLowerCase().includes(searchTerm));
+        renderMessages(filtered);
       });
 
-      // Scroll to bottom
-      chatMessages.scrollTop = chatMessages.scrollHeight;
+      searchInChatInput.addEventListener('input', () => {
+        if (!searchInChatInput.value.trim()) {
+          renderMessages(messages);
+        }
+      });
+
+      // Close chat
+      const closeChatBtn = userMessages.querySelector('#closeChatBtn');
+      closeChatBtn.addEventListener('click', () => {
+        userMessages.style.display = 'none';
+        currentUserId = '';
+      });
 
       // Add event listener for delete conversation button
       const deleteConversationBtn = userMessages.querySelector('.delete-conversation-btn');
@@ -440,6 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
               throw new Error('فشل في حذف المحادثة');
             }
 
+            currentPage = 1; // Reset to first page
             await loadConversations(currentBotId);
             userMessages.style.display = 'none';
           } catch (err) {
