@@ -91,6 +91,13 @@ async function loadFeedback(botId) {
       throw new Error('فشل في تحليل البيانات: رد السيرفر غير متوقع');
     }
 
+    if (res.status === 401) {
+      alert('جلسة تسجيل الدخول منتهية. يرجى تسجيل الدخول مرة أخرى.');
+      localStorage.removeItem('token');
+      window.location.href = '/login.html';
+      return;
+    }
+
     if (!res.ok) {
       throw new Error(feedback.message || 'فشل في جلب التقييمات');
     }
@@ -177,6 +184,13 @@ async function deleteFeedback(feedbackId, botId) {
         throw new Error('فشل في تحليل البيانات: رد السيرفر غير متوقع');
       }
 
+      if (res.status === 401) {
+        alert('جلسة تسجيل الدخول منتهية. يرجى تسجيل الدخول مرة أخرى.');
+        localStorage.removeItem('token');
+        window.location.href = '/login.html';
+        return;
+      }
+
       if (!res.ok) {
         console.error('❌ رد السيرفر:', responseData);
         throw new Error(responseData.message || 'فشل في إخفاء التقييم');
@@ -220,6 +234,13 @@ async function clearFeedback(type) {
         throw new Error('فشل في تحليل البيانات: رد السيرفر غير متوقع');
       }
 
+      if (res.status === 401) {
+        alert('جلسة تسجيل الدخول منتهية. يرجى تسجيل الدخول مرة أخرى.');
+        localStorage.removeItem('token');
+        window.location.href = '/login.html';
+        return;
+      }
+
       if (!res.ok) {
         console.error('❌ رد السيرفر:', responseData);
         throw new Error(responseData.message || 'فشل في إخفاء التقييمات');
@@ -253,6 +274,13 @@ async function downloadFeedback(type) {
       feedback = await res.json();
     } catch (jsonErr) {
       throw new Error('فشل في تحليل البيانات: رد السيرفر غير متوقع');
+    }
+
+    if (res.status === 401) {
+      alert('جلسة تسجيل الدخول منتهية. يرجى تسجيل الدخول مرة أخرى.');
+      localStorage.removeItem('token');
+      window.location.href = '/login.html';
+      return;
     }
 
     if (!res.ok) {
