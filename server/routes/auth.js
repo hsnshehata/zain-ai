@@ -25,7 +25,7 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign(
       { userId: user._id, role: user.role, username: user.username },
       process.env.JWT_SECRET || 'your_jwt_secret',
-      { expiresIn: '1h' }
+      { expiresIn: '24h' } // التوكن صالح لمدة 24 ساعة
     );
 
     res.status(200).json({ token, role: user.role, userId: user._id, username: user.username, success: true });
