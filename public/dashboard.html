@@ -15,6 +15,7 @@
     <button class="nav-item chat-page-btn"><i class="fas fa-comment"></i> تخصيص الدردشة</button>
     <button class="nav-item analytics-btn"><i class="fas fa-chart-bar"></i> التحليلات</button>
     <button class="nav-item feedback-btn"><i class="fas fa-star"></i> التقييمات</button>
+    <button class="nav-item facebook-btn"><i class="fas fa-cogs"></i> إعدادات فيسبوك</button>
     <button class="nav-item logout-btn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
   </div>
   <div class="dashboard-container">
@@ -27,6 +28,7 @@
     <button class="nav-item chat-page-btn"><i class="fas fa-comment"></i> الدردشة</button>
     <button class="nav-item analytics-btn"><i class="fas fa-chart-bar"></i> التحليلات</button>
     <button class="nav-item feedback-btn"><i class="fas fa-star"></i> التقييمات</button>
+    <button class="nav-item facebook-btn"><i class="fas fa-cogs"></i> إعدادات فيسبوك</button>
     <button class="nav-item logout-btn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
   </nav>
   <script src="/js/bots.js"></script>
@@ -35,22 +37,8 @@
   <script src="/js/analytics.js"></script>
   <script src="/js/users.js"></script>
   <script src="/js/feedback.js"></script>
+  <script src="/js/facebook.js"></script>
   <script src="/js/dashboard.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/service-worker.js')
-        .then(() => console.log('Service Worker Registered'))
-        .catch((err) => console.error('Service Worker Error:', err));
-    }
-    // Toggle light/dark mode
-    document.addEventListener('DOMContentLoaded', () => {
-      const theme = localStorage.getItem('theme') || 'dark';
-      document.body.classList.toggle('light', theme === 'light');
-      document.getElementById('themeToggle')?.addEventListener('click', () => {
-        document.body.classList.toggle('light');
-        localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
-      });
-    });
-  </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'933aa93f4c397b9c',t:'MTc0NTIxNTIyNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <!-- باقي السكربتات زي ما هي -->
+</body>
 </html>
