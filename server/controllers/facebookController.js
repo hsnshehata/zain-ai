@@ -74,49 +74,12 @@ const handleMessage = async (req, res) => {
         // التعامل مع الـ message_reactions
         if (webhookEvent.reaction && bot.messageReactionsEnabled) {
           const reactionType = webhookEvent.reaction.reaction || 'other';
+          const emoji = webhookEvent.reaction.emoji || '';
           console.log(`😊 Reaction received from ${senderPsid}: ${reactionType}`);
 
-          // تحديد الرد بناءً على نوع الـ reaction
-          let responseText;
-          switch (reactionType) {
-            case 'like':
-              responseText = 'شكرًا على الإعجاب! 😊';
-              break;
-            case 'love':
-              responseText = 'شكرًا على الحب! ❤️';
-              break;
-            case 'haha':
-              responseText = 'سعيد إني أضحكتك! 😂';
-              break;
-            case 'laugh': // 😆
-              responseText = 'سعيد إني أضحكتك! 😆';
-              break;
-            case 'wow':
-              responseText = 'مدهش، أليس كذلك؟ 😮';
-              break;
-            case 'sad':
-              responseText = 'آسف إذا كنت حزين، كيف يمكنني مساعدتك؟ 😢';
-              break;
-            case 'angry':
-              responseText = 'آسف إذا أغضبتك، دعني أساعدك! 😡';
-              break;
-            case 'thankful':
-              responseText = 'شكرًا على تقديرك! 🌸';
-              break;
-            case 'other':
-              // في حالة الـ other، ممكن نستخدم الـ emoji اللي جاي في الـ webhook
-              const emoji = webhookEvent.reaction.emoji || '';
-              if (emoji === '❤') {
-                responseText = 'شكرًا على الحب! ❤️';
-              } else if (emoji === '😡') {
-                responseText = 'آسف إذا أغضبتك، دعني أساعدك! 😡';
-              } else {
-                responseText = `أرى أنك تفاعلت مع الرسالة بـ ${emoji}! كيف يمكنني مساعدتك الآن؟`;
-              }
-              break;
-            default:
-              responseText = 'أرى أنك تفاعلت مع الرسالة! كيف يمكنني مساعدتك الآن؟';
-          }
+          // بناء رسالة ببيانات الـ reaction وتمريرها للذكاء الاصطناعي
+          const reactionMessage = `المستخدم تفاعل مع الرسالة بـ ${reactionType}${emoji ? ` (${emoji})` : ''}`;
+          const responseText = await processMessage(bot._id, senderPsid, reactionMessage);
 
           await sendMessage(senderPsid, responseText, bot.facebookApiKey);
           conversation.messages.push({
@@ -131,7 +94,11 @@ const handleMessage = async (req, res) => {
           const referralSource = webhookEvent.referral.source;
           const referralRef = webhookEvent.referral.ref || 'unknown';
           console.log(`📈 Referral received from ${senderPsid}: Source=${referralSource}, Ref=${referralRef}`);
-          const responseText = `مرحبًا! لقد وصلت إلينا من ${referralSource}. كيف يمكنني مساعدتك؟`;
+
+          // بناء رسالة ببيانات المصدر وتمريرها للذكاء الاصطناعي
+          const referralMessage = `وصلت إلى البوت من مصدر: ${referralSource} (Ref: ${referralRef})`;
+          const responseText = await processMessage(bot._id, senderPsid, referralMessage);
+
           await sendMessage(senderPsid, responseText, bot.facebookApiKey);
           conversation.messages.push({
             role: 'assistant',
@@ -165,18 +132,6 @@ const handleMessage = async (req, res) => {
           // مثال بسيط: إضافة تصنيف "عميل جديد" لكل محادثة جديدة
           console.log(`🏷️ Adding label to conversation for user ${senderPsid}`);
           // ملاحظة: فيسبوك لا يدعم إضافة Labels مباشرة عبر الـ API حاليًا، لكن يمكن استخدام هذا لتخزين التصنيفات داخليًا
-        }
-
-        // التعامل مع الـ send_cart (افتراضيًا، لإرسال سلة تسوق)
-        if (bot.sendCartEnabled && webhookEvent.message && webhookEvent.message.text.toLowerCase().includes('سلة')) {
-          console.log(`🛒 Send cart request received from ${senderPsid}`);
-          const cartMessage = 'إليك سلة التسوق الخاصة بك: (مثال) - منتج 1: 100 ريال، منتج 2: 50 ريال. هل تريد المتابعة للدفع؟';
-          await sendMessage(senderPsid, cartMessage, bot.facebookApiKey);
-          conversation.messages.push({
-            role: 'assistant',
-            content: cartMessage,
-          });
-          await conversation.save();
         }
 
         // باقي المنطق الحالي (التعامل مع الرسائل، التعليقات، التقييمات... إلخ)
