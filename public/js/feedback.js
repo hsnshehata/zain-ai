@@ -15,7 +15,7 @@ async function loadFeedbackPage() {
           <h3>التقييمات الإيجابية</h3>
           <div id="positiveFeedbackList" class="feedback-grid"></div>
           <div class="feedback-actions">
-            <button onclick="clearFeedback('positive')" class="clear-btn">مسح الكل</button>
+            <button onclick="clearFeedback('positive')" class="clear-btn">إخفاء الكل</button>
             <button onclick="downloadFeedback('positive')" class="download-btn">تنزيل</button>
           </div>
         </div>
@@ -23,7 +23,7 @@ async function loadFeedbackPage() {
           <h3>التقييمات السلبية</h3>
           <div id="negativeFeedbackList" class="feedback-grid"></div>
           <div class="feedback-actions">
-            <button onclick="clearFeedback('negative')" class="clear-btn">مسح الكل</button>
+            <button onclick="clearFeedback('negative')" class="clear-btn">إخفاء الكل</button>
             <button onclick="downloadFeedback('negative')" class="download-btn">تنزيل</button>
           </div>
         </div>
@@ -37,10 +37,17 @@ async function loadFeedbackPage() {
     const res = await fetch('/api/bots', {
       headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
     });
-    if (!res.ok) {
-      throw new Error('فشل في جلب البوتات');
+
+    let bots;
+    try {
+      bots = await res.json();
+    } catch (jsonErr) {
+      throw new Error('فشل في تحليل البيانات: رد السيرفر غير متوقع');
     }
-    const bots = await res.json();
+
+    if (!res.ok) {
+      throw new Error(bots.message || 'فشل في جلب البوتات');
+    }
 
     botSelect.innerHTML = '';
     const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
@@ -93,7 +100,7 @@ async function loadFeedback(botId) {
 
     positiveFeedbackList.innerHTML = '';
     if (positiveFeedback.length === 0) {
-      positiveFeedbackList.innerHTML = '<div class="feedback-card"><p>لا توجد تقييمات إيجابية.</p></div>';
+      positiveFeedbackList.innerHTML = '<div class="feedback-card"><p>لا توجد تقييمات إيجابية مرئية.</p></div>';
     } else {
       positiveFeedback.forEach((item) => {
         const card = document.createElement('div');
@@ -102,7 +109,7 @@ async function loadFeedback(botId) {
           <p><strong>المستخدم:</strong> ${item.username || item.userId}</p>
           <p><strong>رد البوت:</strong> ${item.messageContent || 'غير متوفر'}</p>
           <p><strong>التاريخ:</strong> ${new Date(item.timestamp).toLocaleString('ar-EG')}</p>
-          <button onclick="deleteFeedback('${item._id}', '${botId}')" class="delete-btn">حذف</button>
+          <button onclick="deleteFeedback('${item._id}', '${botId}')" class="delete-btn">إخفاء</button>
         `;
         positiveFeedbackList.appendChild(card);
       });
@@ -110,7 +117,7 @@ async function loadFeedback(botId) {
 
     negativeFeedbackList.innerHTML = '';
     if (negativeFeedback.length === 0) {
-      negativeFeedbackList.innerHTML = '<div class="feedback-card"><p>لا توجد تقييمات سلبية.</p></div>';
+      negativeFeedbackList.innerHTML = '<div class="feedback-card"><p>لا توجد تقييمات سلبية مرئية.</p></div>';
     } else {
       negativeFeedback.forEach((item) => {
         const card = document.createElement('div');
@@ -119,7 +126,7 @@ async function loadFeedback(botId) {
           <p><strong>المستخدم:</strong> ${item.username || item.userId}</p>
           <p><strong>رد البوت:</strong> ${item.messageContent || 'غير متوفر'}</p>
           <p><strong>التاريخ:</strong> ${new Date(item.timestamp).toLocaleString('ar-EG')}</p>
-          <button onclick="deleteFeedback('${item._id}', '${botId}')" class="delete-btn">حذف</button>
+          <button onclick="deleteFeedback('${item._id}', '${botId}')" class="delete-btn">إخفاء</button>
         `;
         negativeFeedbackList.appendChild(card);
       });
@@ -134,12 +141,12 @@ async function loadFeedback(botId) {
 }
 
 async function deleteFeedback(feedbackId, botId) {
-  console.log(`🗑️ Attempting to delete feedback with ID: ${feedbackId} for botId: ${botId}`);
+  console.log(`🗑️ Attempting to hide feedback with ID: ${feedbackId} for botId: ${botId}`);
   if (!botId) {
     alert('يرجى اختيار بوت أولاً.');
     return;
   }
-  if (confirm('هل أنت متأكد من حذف هذا التقييم؟')) {
+  if (confirm('هل أنت متأكد من إخفاء هذا التقييم؟')) {
     try {
       const res = await fetch(`/api/bots/${botId}/feedback/${feedbackId}`, {
         method: 'DELETE',
@@ -154,26 +161,26 @@ async function deleteFeedback(feedbackId, botId) {
       }
 
       if (!res.ok) {
-        throw new Error(responseData.message || 'فشل في حذف التقييم');
+        throw new Error(responseData.message || 'فشل في إخفاء التقييم');
       }
 
-      alert('تم حذف التقييم بنجاح');
+      alert('تم إخفاء التقييم بنجاح');
       loadFeedback(botId);
     } catch (err) {
-      console.error('خطأ في حذف التقييم:', err);
-      alert(err.message || 'فشل في حذف التقييم، حاول مرة أخرى');
+      console.error('خطأ في إخفاء التقييم:', err);
+      alert(err.message || 'فشل في إخفاء التقييم، حاول مرة أخرى');
     }
   }
 }
 
 async function clearFeedback(type) {
   const botId = document.getElementById('botSelectFeedback').value;
-  console.log(`🗑️ Attempting to clear ${type} feedback for botId: ${botId}`);
+  console.log(`🗑️ Attempting to hide ${type} feedback for botId: ${botId}`);
   if (!botId) {
     alert('يرجى اختيار بوت أولاً.');
     return;
   }
-  if (confirm(`هل أنت متأكد من مسح جميع التقييمات ${type === 'positive' ? 'الإيجابية' : 'السلبية'}؟`)) {
+  if (confirm(`هل أنت متأكد من إخفاء جميع التقييمات ${type === 'positive' ? 'الإيجابية' : 'السلبية'}؟`)) {
     try {
       const res = await fetch(`/api/bots/${botId}/feedback/clear/${type}`, {
         method: 'DELETE',
@@ -188,14 +195,14 @@ async function clearFeedback(type) {
       }
 
       if (!res.ok) {
-        throw new Error(responseData.message || 'فشل في مسح التقييمات');
+        throw new Error(responseData.message || 'فشل في إخفاء التقييمات');
       }
 
-      alert('تم مسح التقييمات بنجاح');
+      alert('تم إخفاء التقييمات بنجاح');
       loadFeedback(botId);
     } catch (err) {
-      console.error('خطأ في مسح التقييمات:', err);
-      alert(err.message || 'فشل في مسح التقييمات، حاول مرة أخرى');
+      console.error('خطأ في إخفاء التقييمات:', err);
+      alert(err.message || 'فشل في إخفاء التقييمات، حاول مرة أخرى');
     }
   }
 }
@@ -224,7 +231,7 @@ async function downloadFeedback(type) {
 
     const filteredFeedback = feedback.filter(item => item.feedback === type);
     if (filteredFeedback.length === 0) {
-      alert(`لا توجد تقييمات ${type === 'positive' ? 'إيجابية' : 'سلبية'} للتنزيل.`);
+      alert(`لا توجد تقييمات ${type === 'positive' ? 'إيجابية' : 'سلبية'} مرئية للتنزيل.`);
       return;
     }
 
