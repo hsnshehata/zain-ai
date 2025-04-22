@@ -23,18 +23,37 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="messages-tabs">
           <button id="facebookMessagesTab" class="rule-type-btn active">رسائل الفيسبوك</button>
           <button id="webMessagesTab" class="rule-type-btn">رسائل الويب</button>
+          <button id="whatsappMessagesTab" class="rule-type-btn">رسائل الواتساب</button>
         </div>
         <div class="messages-actions">
-          <div class="form-group">
-            <label>فلترة الرسائل حسب الفترة:</label>
-            <input type="date" id="startDateFilter" />
-            <input type="date" id="endDateFilter" />
-            <button id="applyFilterBtn">تطبيق الفلتر</button>
+          <div class="filter-group">
+            <div class="form-group">
+              <label>فلترة الرسائل حسب الفترة:</label>
+              <div class="date-filter">
+                <input type="date" id="startDateFilter" placeholder="من تاريخ" />
+                <input type="date" id="endDateFilter" placeholder="إلى تاريخ" />
+                <button id="applyFilterBtn">تطبيق الفلتر</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>البحث في الرسائل:</label>
+              <div class="search-filter">
+                <input type="text" id="searchMessagesInput" placeholder="ابحث في الرسائل..." />
+                <button id="searchMessagesBtn">بحث</button>
+              </div>
+            </div>
           </div>
-          <button id="downloadMessagesBtn" class="download-btn">تنزيل جميع الرسائل</button>
-          <button id="deleteAllConversationsBtn" class="delete-btn">حذف كل المحادثات</button>
+          <div class="action-buttons">
+            <button id="downloadMessagesBtn" class="download-btn">تنزيل جميع الرسائل</button>
+            <button id="deleteAllConversationsBtn" class="delete-btn">حذف كل المحادثات</button>
+          </div>
         </div>
-        <div id="usersList" class="users-grid"></div>
+        <div class="users-list-container">
+          <div id="usersLoadingSpinner" class="spinner" style="display: none;">
+            <div class="loader"></div>
+          </div>
+          <div id="usersList" class="users-grid"></div>
+        </div>
         <div id="userMessages" class="chat-container" style="display: none;"></div>
       </div>
       <div id="error" style="display: none; text-align: center; margin-top: 10px; color: #dc3545;"></div>
@@ -45,11 +64,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const messagesContent = document.getElementById('messagesContent');
     const facebookMessagesTab = document.getElementById('facebookMessagesTab');
     const webMessagesTab = document.getElementById('webMessagesTab');
+    const whatsappMessagesTab = document.getElementById('whatsappMessagesTab');
     const usersList = document.getElementById('usersList');
+    const usersLoadingSpinner = document.getElementById('usersLoadingSpinner');
     const userMessages = document.getElementById('userMessages');
     const startDateFilter = document.getElementById('startDateFilter');
     const endDateFilter = document.getElementById('endDateFilter');
     const applyFilterBtn = document.getElementById('applyFilterBtn');
+    const searchMessagesInput = document.getElementById('searchMessagesInput');
+    const searchMessagesBtn = document.getElementById('searchMessagesBtn');
     const downloadMessagesBtn = document.getElementById('downloadMessagesBtn');
     const deleteAllConversationsBtn = document.getElementById('deleteAllConversationsBtn');
     const errorDiv = document.getElementById('error');
@@ -61,6 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let conversations = [];
     let userNamesCache = {}; // Cache for Facebook user names
     let webUserCounter = 1; // Counter for web user names
+    let filteredMessages = []; // To store filtered messages
 
     // Fetch bots
     let bots = [];
@@ -136,6 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
     facebookMessagesTab.addEventListener('click', () => {
       facebookMessagesTab.classList.add('active');
       webMessagesTab.classList.remove('active');
+      whatsappMessagesTab.classList.remove('active');
       currentTab = 'facebook';
       loadConversations(currentBotId);
     });
@@ -143,13 +168,51 @@ document.addEventListener('DOMContentLoaded', () => {
     webMessagesTab.addEventListener('click', () => {
       webMessagesTab.classList.add('active');
       facebookMessagesTab.classList.remove('active');
+      whatsappMessagesTab.classList.remove('active');
       currentTab = 'web';
+      loadConversations(currentBotId);
+    });
+
+    whatsappMessagesTab.addEventListener('click', () => {
+      whatsappMessagesTab.classList.add('active');
+      facebookMessagesTab.classList.remove('active');
+      webMessagesTab.classList.remove('active');
+      currentTab = 'whatsapp';
       loadConversations(currentBotId);
     });
 
     // Filter messages by date
     applyFilterBtn.addEventListener('click', () => {
       loadConversations(currentBotId);
+    });
+
+    // Search messages
+    searchMessagesBtn.addEventListener('click', () => {
+      const searchTerm = searchMessagesInput.value.trim().toLowerCase();
+      if (currentUserId) {
+        const userConversations = conversations.filter(conv => conv.userId === currentUserId);
+        if (userConversations.length > 0) {
+          filteredMessages = userConversations[0].messages.filter(msg =>
+            msg.content.toLowerCase().includes(searchTerm)
+          );
+          const userName = document.querySelector('.chat-header h3').textContent;
+          loadUserMessages(currentUserId, userName, filteredMessages);
+        }
+      }
+    });
+
+    // Clear search on input change
+    searchMessagesInput.addEventListener('input', () => {
+      if (!searchMessagesInput.value.trim()) {
+        filteredMessages = [];
+        if (currentUserId) {
+          const userConversations = conversations.filter(conv => conv.userId === currentUserId);
+          if (userConversations.length > 0) {
+            const userName = document.querySelector('.chat-header h3').textContent;
+            loadUserMessages(currentUserId, userName);
+          }
+        }
+      }
     });
 
     // Delete all conversations
@@ -200,7 +263,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function loadConversations(botId) {
-      spinner.style.display = 'flex';
+      usersLoadingSpinner.style.display = 'flex';
+      usersList.style.display = 'none';
       messagesContent.style.display = 'none';
       errorDiv.style.display = 'none';
       userMessages.style.display = 'none';
@@ -223,7 +287,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Show messages content
-        spinner.style.display = 'none';
+        usersLoadingSpinner.style.display = 'none';
+        usersList.style.display = 'grid';
         messagesContent.style.display = 'block';
 
         // Display users
@@ -235,10 +300,18 @@ document.addEventListener('DOMContentLoaded', () => {
           const userConversations = conversations.filter(conv => conv.userId === userId);
           let userName = userId;
           let isWebUser = userId === 'anonymous' || userId.startsWith('web_'); // Check if user is a web user
+          let isWhatsAppUser = userId.startsWith('whatsapp_'); // Check if user is a WhatsApp user
 
           // Apply tab filtering
-          if (currentTab === 'facebook' && isWebUser) continue; // Skip web users in Facebook tab
-          if (currentTab === 'web' && !isWebUser) continue; // Skip non-web users in Web tab
+          if (currentTab === 'facebook' && (isWebUser || isWhatsAppUser)) continue; // Skip web and WhatsApp users in Facebook tab
+          if (currentTab === 'web' && (!isWebUser || isWhatsAppUser)) continue; // Skip non-web users in Web tab
+          if (currentTab === 'whatsapp' && !isWhatsAppUser) continue; // Skip non-WhatsApp users in WhatsApp tab
+
+          // Calculate stats
+          const messages = userConversations[0].messages;
+          const userMessagesCount = messages.filter(msg => msg.role === 'user').length;
+          const botMessagesCount = messages.filter(msg => msg.role === 'assistant').length;
+          const interactionRate = userMessagesCount > 0 ? ((botMessagesCount / userMessagesCount) * 100).toFixed(2) : 0;
 
           if (currentTab === 'facebook') {
             // Fetch Facebook user name
@@ -258,6 +331,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error fetching Facebook user name:', err);
               }
             }
+          } else if (currentTab === 'whatsapp') {
+            userName = `واتساب ${webUserCounter++}`;
           } else {
             // Web users
             userName = `مستخدم ${webUserCounter++}`;
@@ -268,6 +343,9 @@ document.addEventListener('DOMContentLoaded', () => {
           userCard.innerHTML = `
             <h3>${userName}</h3>
             <p>عدد الرسائل: ${userConversations[0].messages.length}</p>
+            <p>رسائل المستخدم: ${userMessagesCount}</p>
+            <p>ردود البوت: ${botMessagesCount}</p>
+            <p>نسبة التفاعل: ${interactionRate}%</p>
             <p>آخر رسالة: ${new Date(userConversations[0].messages[userConversations[0].messages.length - 1].timestamp).toLocaleString('ar-EG')}</p>
             <button class="delete-btn delete-user-btn" data-user-id="${userId}">حذف المستخدم</button>
           `;
@@ -305,14 +383,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       } catch (err) {
         console.error('Error loading conversations:', err);
-        spinner.style.display = 'none';
+        usersLoadingSpinner.style.display = 'none';
         messagesContent.style.display = 'none';
         errorDiv.style.display = 'block';
         errorDiv.textContent = err.message || 'حدث خطأ أثناء تحميل الرسائل، حاول مرة أخرى لاحقًا';
       }
     }
 
-    async function loadUserMessages(userId, userName) {
+    async function loadUserMessages(userId, userName, messagesToShow = null) {
       userMessages.innerHTML = `
         <div class="chat-header">
           <h3>${userName}</h3>
@@ -324,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
       userMessages.style.display = 'block';
 
       const userConversations = conversations.filter(conv => conv.userId === userId);
-      const messages = userConversations[0].messages;
+      const messages = messagesToShow || userConversations[0].messages;
 
       messages.forEach(msg => {
         const messageDiv = document.createElement('div');
