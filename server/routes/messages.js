@@ -12,9 +12,11 @@ router.get('/:botId', authenticate, async (req, res) => {
 
     let query = { botId };
     if (type === 'facebook') {
-      query.userId = { $not: { $regex: '^web_' } };
-    } else {
-      query.userId = { $regex: '^web_' };
+      query.userId = { $nin: ['anonymous', /^whatsapp_/] }; // Exclude anonymous and WhatsApp users
+    } else if (type === 'web') {
+      query.userId = 'anonymous'; // Only include anonymous users
+    } else if (type === 'whatsapp') {
+      query.userId = { $regex: '^whatsapp_' }; // Only include WhatsApp users
     }
 
     if (startDate || endDate) {
@@ -68,9 +70,11 @@ router.delete('/delete-message/:botId/:userId/:messageId', authenticate, async (
 
     let query = { botId, userId };
     if (type === 'facebook') {
-      query.userId = { $not: { $regex: '^web_' } };
-    } else {
-      query.userId = { $regex: '^web_' };
+      query.userId = { $nin: ['anonymous', /^whatsapp_/] };
+    } else if (type === 'web') {
+      query.userId = 'anonymous';
+    } else if (type === 'whatsapp') {
+      query.userId = { $regex: '^whatsapp_' };
     }
 
     const conversation = await Conversation.findOne(query);
@@ -96,9 +100,11 @@ router.delete('/delete-user/:botId/:userId', authenticate, async (req, res) => {
 
     let query = { botId, userId };
     if (type === 'facebook') {
-      query.userId = { $not: { $regex: '^web_' } };
-    } else {
-      query.userId = { $regex: '^web_' };
+      query.userId = { $nin: ['anonymous', /^whatsapp_/] };
+    } else if (type === 'web') {
+      query.userId = 'anonymous';
+    } else if (type === 'whatsapp') {
+      query.userId = { $regex: '^whatsapp_' };
     }
 
     await Conversation.deleteMany(query);
@@ -117,9 +123,11 @@ router.delete('/delete-all/:botId', authenticate, async (req, res) => {
 
     let query = { botId };
     if (type === 'facebook') {
-      query.userId = { $not: { $regex: '^web_' } };
-    } else {
-      query.userId = { $regex: '^web_' };
+      query.userId = { $nin: ['anonymous', /^whatsapp_/] };
+    } else if (type === 'web') {
+      query.userId = 'anonymous';
+    } else if (type === 'whatsapp') {
+      query.userId = { $regex: '^whatsapp_' };
     }
 
     await Conversation.deleteMany(query);
@@ -138,9 +146,11 @@ router.get('/download/:botId', authenticate, async (req, res) => {
 
     let query = { botId };
     if (type === 'facebook') {
-      query.userId = { $not: { $regex: '^web_' } };
-    } else {
-      query.userId = { $regex: '^web_' };
+      query.userId = { $nin: ['anonymous', /^whatsapp_/] };
+    } else if (type === 'web') {
+      query.userId = 'anonymous';
+    } else if (type === 'whatsapp') {
+      query.userId = { $regex: '^whatsapp_' };
     }
 
     const conversations = await Conversation.find(query);
