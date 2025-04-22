@@ -1,6 +1,6 @@
 /* General Styles */
 :root {
-  --primary: #6200EA; /* بنفسجي فخم */
+  --primary: #1E88E5; /* تغيير اللون من بنفسجي إلى أزرق مريح */
   --secondary: #00C4B4; /* تركواز */
   --accent: #FFD700; /* ذهبي */
   --bg-dark: #121212; /* خلفية داكنة */
@@ -225,6 +225,17 @@ select {
 
 body.light select {
   background: url('data:image/svg+xml;utf8,<svg fill="%23000000" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 10px center;
+}
+
+/* Style for select options */
+select option {
+  background: var(--bg-dark); /* خلفية داكنة في الوضع الافتراضي */
+  color: var(--text-dark); /* لون النص فاتح */
+}
+
+body.light select option {
+  background: #fff; /* خلفية بيضاء في الوضع الفاتح */
+  color: #333; /* لون النص داكن */
 }
 
 /* Bot Selector */
@@ -482,7 +493,7 @@ button {
 }
 
 button:hover {
-  background: #4500a1;
+  background: #1565C0; /* تغيير لون الـ hover ليتناسب مع اللون الجديد */
   transform: translateY(-2px);
 }
 
@@ -1018,7 +1029,7 @@ body.light .chat-input input[type="file"] {
 }
 
 .chat-input input[type="file"]::file-selector-button {
-  background: var(--primary); /* لون افتراضي، هيتغيّر ديناميكيًا في chat.js */
+  background: var(--primary); /* اللون الجديد هيتنطبق هنا */
   color: white;
   border: none;
   padding: 8px 16px;
@@ -1133,7 +1144,7 @@ body.light .slider:before {
 }
 
 input:checked + .slider {
-  background-color: var(--primary); /* Use theme primary color */
+  background-color: var(--primary); /* اللون الجديد هيتنطبق هنا */
 }
 
 input:checked + .slider:before {
