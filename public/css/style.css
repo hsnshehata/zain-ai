@@ -434,7 +434,7 @@ body.light .suggested-questions-container {
 
 .questions-list li {
   display: flex;
-  justify-content kspace-between;
+  justify-content: space-between;
   align-items: center;
   padding: 8px 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -861,7 +861,7 @@ body.light .preview-section {
   height: 30px;
   display: flex;
   align-items: center;
-  justify-content: center;
+  javax-content: center;
   cursor: pointer;
   font-size: 1em;
   color: var(--text-dark);
@@ -936,10 +936,14 @@ body.light .settings-gear {
 
 /* Spinner */
 .spinner {
-  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  display: flex;
   justify-content: center;
   align-items: center;
-  height: 100px;
 }
 
 .loader {
