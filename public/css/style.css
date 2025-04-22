@@ -1055,18 +1055,35 @@ body.light .chat-input input[type="file"] {
   justify-content: space-between;
   align-items: center;
   padding: 15px;
-  background-color: #f5f5f5;
-  border-radius: 8px;
+  background: var(--card-bg); /* Use the same background as other cards */
+  backdrop-filter: blur(10px); /* Add glass effect */
+  border-radius: 12px; /* Match the border radius of other cards */
+  box-shadow: var(--shadow); /* Add shadow for consistency */
+}
+
+body.light .setting-item {
+  background: #fff;
+  border: 1px solid #ddd;
 }
 
 .setting-info h3 {
   margin: 0 0 5px;
   font-size: 18px;
+  color: var(--text-dark); /* Match text color with theme */
+}
+
+body.light .setting-info h3 {
+  color: var(--text-light);
 }
 
 .setting-info p {
   margin: 0;
-  color: #666;
+  color: var(--text-dark); /* Match text color with theme */
+  font-size: 14px;
+}
+
+body.light .setting-info p {
+  color: var(--text-light);
 }
 
 /* Toggle Switch */
@@ -1090,8 +1107,8 @@ body.light .chat-input input[type="file"] {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
-  transition: 0.4s;
+  background-color: var(--glass-bg); /* Match the glass effect */
+  transition: background-color 0.4s ease, transform 0.2s ease; /* Smoother transition */
   border-radius: 34px;
 }
 
@@ -1102,13 +1119,21 @@ body.light .chat-input input[type="file"] {
   width: 26px;
   left: 4px;
   bottom: 4px;
-  background-color: white;
-  transition: 0.4s;
+  background-color: var(--text-dark); /* Match text color */
+  transition: transform 0.4s ease;
   border-radius: 50%;
 }
 
+body.light .slider {
+  background-color: #e0e0e0;
+}
+
+body.light .slider:before {
+  background-color: var(--text-light);
+}
+
 input:checked + .slider {
-  background-color: #2196F3;
+  background-color: var(--primary); /* Use theme primary color */
 }
 
 input:checked + .slider:before {
