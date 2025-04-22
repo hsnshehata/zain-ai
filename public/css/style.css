@@ -1313,3 +1313,57 @@ body.light .feedback-note {
 .feedback-note {
   direction: rtl;
 }
+
+/* Messages Page */
+.messages-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.messages-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.messages-actions .form-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.messages-actions input[type="date"] {
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--glass-bg);
+  color: var(--text-dark);
+}
+
+body.light .messages-actions input[type="date"] {
+  background: #fff;
+  border: 1px solid #ddd;
+  color: #000;
+}
+
+.user-messages-container {
+  padding: 15px;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  margin-top: 15px;
+}
+
+body.light .user-messages-container {
+  background: #fff;
+  border: 1px solid #ddd;
+}
+
+/* Animation for Messages */
+.message {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
