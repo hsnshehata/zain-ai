@@ -10,22 +10,25 @@ document.addEventListener('DOMContentLoaded', () => {
   const rulesBtn = document.querySelectorAll('.rules-btn');
   const chatPageBtn = document.querySelectorAll('.chat-page-btn');
   const analyticsBtn = document.querySelectorAll('.analytics-btn');
+  const messagesBtn = document.querySelectorAll('.messages-btn'); // زرار جديد
   const feedbackBtn = document.querySelectorAll('.feedback-btn');
   const facebookBtn = document.querySelectorAll('.facebook-btn');
   const logoutBtn = document.querySelectorAll('.logout-btn');
 
   if (role !== 'superadmin') {
     botsBtn.forEach(btn => btn.style.display = 'none');
+    messagesBtn.forEach(btn => btn.style.display = 'none'); // إخفاء الرسائل لغير الـ superadmin
     feedbackBtn.forEach(btn => btn.style.display = 'none');
     facebookBtn.forEach(btn => btn.style.display = 'none');
   } else {
     botsBtn.forEach(btn => btn.style.display = 'inline-block');
+    messagesBtn.forEach(btn => btn.style.display = 'inline-block');
     feedbackBtn.forEach(btn => btn.style.display = 'inline-block');
     facebookBtn.forEach(btn => btn.style.display = 'inline-block');
   }
 
   const setActiveButton = (hash) => {
-    const buttons = [botsBtn, rulesBtn, chatPageBtn, analyticsBtn, feedbackBtn, facebookBtn, logoutBtn];
+    const buttons = [botsBtn, rulesBtn, chatPageBtn, analyticsBtn, messagesBtn, feedbackBtn, facebookBtn, logoutBtn];
     buttons.forEach(btnGroup => {
       btnGroup.forEach(btn => btn.classList.remove('active'));
     });
@@ -42,6 +45,9 @@ document.addEventListener('DOMContentLoaded', () => {
         break;
       case '#analytics':
         analyticsBtn.forEach(btn => btn.classList.add('active'));
+        break;
+      case '#messages':
+        messagesBtn.forEach(btn => btn.classList.add('active'));
         break;
       case '#feedback':
         feedbackBtn.forEach(btn => btn.classList.add('active'));
@@ -71,6 +77,11 @@ document.addEventListener('DOMContentLoaded', () => {
     analyticsBtn.forEach(btn => {
       btn.removeEventListener('click', analyticsBtnClickHandler);
       btn.addEventListener('click', analyticsBtnClickHandler);
+    });
+
+    messagesBtn.forEach(btn => {
+      btn.removeEventListener('click', messagesBtnClickHandler);
+      btn.addEventListener('click', messagesBtnClickHandler);
     });
 
     feedbackBtn.forEach(btn => {
@@ -110,6 +121,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const analyticsBtnClickHandler = () => {
     console.log('Analytics Button Clicked');
     window.location.hash = 'analytics';
+    loadPageBasedOnHash();
+  };
+
+  const messagesBtnClickHandler = () => {
+    console.log('Messages Button Clicked');
+    window.location.hash = 'messages';
     loadPageBasedOnHash();
   };
 
@@ -179,6 +196,13 @@ document.addEventListener('DOMContentLoaded', () => {
       loadChatPage();
     } else if (hash === '#analytics') {
       loadAnalyticsPage();
+    } else if (hash === '#messages') {
+      if (userRole === 'superadmin') {
+        loadMessagesPage();
+      } else {
+        window.location.hash = 'rules';
+        loadRulesPage();
+      }
     } else if (hash === '#feedback') {
       if (userRole === 'superadmin') {
         loadFeedbackPage();
