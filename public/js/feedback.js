@@ -61,7 +61,7 @@ async function loadFeedbackPage() {
       content.innerHTML += `<p style="color: #dc3545; text-align: center;">لا توجد بوتات متاحة لعرض تقييماتها.</p>`;
     }
   } catch (err) {
-    console.error('خطأ في جلب البوتات:', err);
+    console.error('❌ خطأ في جلب البوتات:', err);
     content.innerHTML = `<p style="color: #dc3545; text-align: center;">تعذر تحميل البيانات، حاول مرة أخرى لاحقًا.</p>`;
   }
 }
@@ -103,6 +103,10 @@ async function loadFeedback(botId) {
       positiveFeedbackList.innerHTML = '<div class="feedback-card"><p>لا توجد تقييمات إيجابية مرئية.</p></div>';
     } else {
       positiveFeedback.forEach((item) => {
+        if (!item._id) {
+          console.warn('⚠️ تقييم بدون معرف:', item);
+          return;
+        }
         const card = document.createElement('div');
         card.className = 'feedback-card';
         card.innerHTML = `
@@ -120,6 +124,10 @@ async function loadFeedback(botId) {
       negativeFeedbackList.innerHTML = '<div class="feedback-card"><p>لا توجد تقييمات سلبية مرئية.</p></div>';
     } else {
       negativeFeedback.forEach((item) => {
+        if (!item._id) {
+          console.warn('⚠️ تقييم بدون معرف:', item);
+          return;
+        }
         const card = document.createElement('div');
         card.className = 'feedback-card';
         card.innerHTML = `
@@ -132,7 +140,7 @@ async function loadFeedback(botId) {
       });
     }
   } catch (err) {
-    console.error('خطأ في جلب التقييمات:', err);
+    console.error('❌ خطأ في جلب التقييمات:', err);
     if (positiveFeedbackList && negativeFeedbackList) {
       positiveFeedbackList.innerHTML = '<div class="feedback-card"><p style="color: #dc3545;">تعذر تحميل التقييمات: ' + err.message + '</p></div>';
       negativeFeedbackList.innerHTML = '<div class="feedback-card"><p style="color: #dc3545;">تعذر تحميل التقييمات: ' + err.message + '</p></div>';
@@ -146,8 +154,17 @@ async function deleteFeedback(feedbackId, botId) {
     alert('يرجى اختيار بوت أولاً.');
     return;
   }
+  if (!feedbackId) {
+    alert('معرف التقييم غير صالح.');
+    return;
+  }
   if (confirm('هل أنت متأكد من إخفاء هذا التقييم؟')) {
     try {
+      const spinner = document.createElement('div');
+      spinner.className = 'spinner';
+      spinner.innerHTML = '<div class="loader"></div>';
+      document.body.appendChild(spinner);
+
       const res = await fetch(`/api/bots/${botId}/feedback/${feedbackId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
@@ -161,14 +178,18 @@ async function deleteFeedback(feedbackId, botId) {
       }
 
       if (!res.ok) {
+        console.error('❌ رد السيرفر:', responseData);
         throw new Error(responseData.message || 'فشل في إخفاء التقييم');
       }
 
       alert('تم إخفاء التقييم بنجاح');
-      loadFeedback(botId);
+      await loadFeedback(botId);
     } catch (err) {
-      console.error('خطأ في إخفاء التقييم:', err);
+      console.error('❌ خطأ في إخفاء التقييم:', err);
       alert(err.message || 'فشل في إخفاء التقييم، حاول مرة أخرى');
+    } finally {
+      const spinner = document.querySelector('.spinner');
+      if (spinner) spinner.remove();
     }
   }
 }
@@ -182,6 +203,11 @@ async function clearFeedback(type) {
   }
   if (confirm(`هل أنت متأكد من إخفاء جميع التقييمات ${type === 'positive' ? 'الإيجابية' : 'السلبية'}؟`)) {
     try {
+      const spinner = document.createElement('div');
+      spinner.className = 'spinner';
+      spinner.innerHTML = '<div class="loader"></div>';
+      document.body.appendChild(spinner);
+
       const res = await fetch(`/api/bots/${botId}/feedback/clear/${type}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
@@ -195,14 +221,18 @@ async function clearFeedback(type) {
       }
 
       if (!res.ok) {
+        console.error('❌ رد السيرفر:', responseData);
         throw new Error(responseData.message || 'فشل في إخفاء التقييمات');
       }
 
       alert('تم إخفاء التقييمات بنجاح');
-      loadFeedback(botId);
+      await loadFeedback(botId);
     } catch (err) {
-      console.error('خطأ في إخفاء التقييمات:', err);
+      console.error('❌ خطأ في إخفاء التقييمات:', err);
       alert(err.message || 'فشل في إخفاء التقييمات، حاول مرة أخرى');
+    } finally {
+      const spinner = document.querySelector('.spinner');
+      if (spinner) spinner.remove();
     }
   }
 }
@@ -249,7 +279,7 @@ async function downloadFeedback(type) {
     link.download = `تقييمات_${type === 'positive' ? 'إيجابية' : 'سلبية'}_${new Date().toLocaleDateString('ar-EG')}.csv`;
     link.click();
   } catch (err) {
-    console.error('خطأ في تنزيل التقييمات:', err);
+    console.error('❌ خطأ في تنزيل التقييمات:', err);
     alert(err.message || 'فشل في تنزيل التقييمات، حاول مرة أخرى');
   }
 }
