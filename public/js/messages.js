@@ -48,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
           <button id="downloadMessagesBtn" class="download-btn">تنزيل جميع الرسائل</button>
           <button id="deleteAllConversationsBtn" class="delete-btn">حذف كل المحادثات</button>
         </div>
-        <div id="userMessages" class="chat-container" style="display: none;"></div>
       </div>
       <div id="error" style="display: none; text-align: center; margin-top: 10px; color: #dc3545;"></div>
     `;
@@ -61,7 +60,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const whatsappMessagesTab = document.getElementById('whatsappMessagesTab');
     const usersList = document.getElementById('usersList');
     const usersLoadingSpinner = document.getElementById('usersLoadingSpinner');
-    const userMessages = document.getElementById('userMessages');
     const pagination = document.getElementById('pagination');
     const startDateFilter = document.getElementById('startDateFilter');
     const endDateFilter = document.getElementById('endDateFilter');
@@ -238,7 +236,6 @@ document.addEventListener('DOMContentLoaded', () => {
       usersList.style.display = 'none';
       messagesContent.style.display = 'none';
       errorDiv.style.display = 'none';
-      userMessages.style.display = 'none';
 
       try {
         const startDate = startDateFilter.value ? new Date(startDateFilter.value) : null;
@@ -267,25 +264,33 @@ document.addEventListener('DOMContentLoaded', () => {
         const userIds = [...new Set(conversations.map(conv => conv.userId))];
         webUserCounter = 1; // Reset counter for web users
 
+        // Sort users by the timestamp of their latest message (newest first)
+        const sortedUserIds = userIds.sort((a, b) => {
+          const convA = conversations.find(conv => conv.userId === a);
+          const convB = conversations.find(conv => conv.userId === b);
+          const latestMessageA = convA.messages[convA.messages.length - 1].timestamp;
+          const latestMessageB = convB.messages[convB.messages.length - 1].timestamp;
+          return new Date(latestMessageB) - new Date(latestMessageA); // Newest first
+        });
+
         // Pagination logic
-        const totalPages = Math.ceil(userIds.length / cardsPerPage);
+        const totalPages = Math.ceil(sortedUserIds.length / cardsPerPage);
         const startIndex = (currentPage - 1) * cardsPerPage;
         const endIndex = startIndex + cardsPerPage;
-        const paginatedUserIds = userIds.slice(startIndex, endIndex);
+        const paginatedUserIds = sortedUserIds.slice(startIndex, endIndex);
 
         for (const userId of paginatedUserIds) {
           const userConversations = conversations.filter(conv => conv.userId === userId);
           let userName = userId;
-          let isWebUser = userId === 'anonymous'; // الشرط الجديد: فقط userId === 'anonymous' يعتبر ويب
-          let isWhatsAppUser = userId.startsWith('whatsapp_'); // Check if user is a WhatsApp user
+          let isWebUser = userId === 'anonymous';
+          let isWhatsAppUser = userId.startsWith('whatsapp_');
 
           // Apply tab filtering
-          if (currentTab === 'facebook' && (isWebUser || isWhatsAppUser)) continue; // Skip web and WhatsApp users in Facebook tab
-          if (currentTab === 'web' && !isWebUser) continue; // Skip non-anonymous users in Web tab
-          if (currentTab === 'whatsapp' && !isWhatsAppUser) continue; // Skip non-WhatsApp users in WhatsApp tab
+          if (currentTab === 'facebook' && (isWebUser || isWhatsAppUser)) continue;
+          if (currentTab === 'web' && !isWebUser) continue;
+          if (currentTab === 'whatsapp' && !isWhatsAppUser) continue;
 
           if (currentTab === 'facebook') {
-            // Fetch Facebook user name
             if (userNamesCache[userId]) {
               userName = userNamesCache[userId];
             } else {
@@ -305,7 +310,6 @@ document.addEventListener('DOMContentLoaded', () => {
           } else if (currentTab === 'whatsapp') {
             userName = `واتساب ${webUserCounter++}`;
           } else {
-            // Web users (anonymous)
             userName = `مستخدم ${webUserCounter++}`;
           }
 
@@ -315,25 +319,40 @@ document.addEventListener('DOMContentLoaded', () => {
             <h3>${userName}</h3>
             <p>عدد الرسائل: ${userConversations[0].messages.length}</p>
             <p>آخر رسالة: ${new Date(userConversations[0].messages[userConversations[0].messages.length - 1].timestamp).toLocaleString('ar-EG')}</p>
+            <div class="chat-container" id="chat-${userId}" style="display: none;"></div>
           `;
           userCard.addEventListener('click', () => {
-            currentUserId = userId;
-            loadUserMessages(userId, userName);
+            // Toggle chat visibility
+            const chatContainer = userCard.querySelector(`#chat-${userId}`);
+            const isVisible = chatContainer.style.display === 'block';
+            document.querySelectorAll('.chat-container').forEach(container => {
+              container.style.display = 'none';
+            });
+            if (!isVisible) {
+              chatContainer.style.display = 'block';
+              currentUserId = userId;
+              loadUserMessages(userId, userName, chatContainer);
+            }
           });
           usersList.appendChild(userCard);
         }
 
-        // Render pagination
+        // Render pagination only if there are more than 1 page
         pagination.innerHTML = '';
-        for (let i = 1; i <= totalPages; i++) {
-          const pageButton = document.createElement('button');
-          pageButton.textContent = i;
-          pageButton.className = i === currentPage ? 'pagination-btn active' : 'pagination-btn';
-          pageButton.addEventListener('click', () => {
-            currentPage = i;
-            loadConversations(currentBotId);
-          });
-          pagination.appendChild(pageButton);
+        if (totalPages > 1) {
+          pagination.style.display = 'flex';
+          for (let i = 1; i <= totalPages; i++) {
+            const pageButton = document.createElement('button');
+            pageButton.textContent = i;
+            pageButton.className = i === currentPage ? 'pagination-btn active' : 'pagination-btn';
+            pageButton.addEventListener('click', () => {
+              currentPage = i;
+              loadConversations(currentBotId);
+            });
+            pagination.appendChild(pageButton);
+          }
+        } else {
+          pagination.style.display = 'none';
         }
       } catch (err) {
         console.error('Error loading conversations:', err);
@@ -344,27 +363,26 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    async function loadUserMessages(userId, userName) {
-      userMessages.innerHTML = `
+    async function loadUserMessages(userId, userName, chatContainer) {
+      chatContainer.innerHTML = `
         <div class="chat-header">
           <div class="chat-header-left">
             <h3>${userName}</h3>
             <div class="search-in-chat">
-              <input type="text" id="searchInChatInput" placeholder="ابحث في المحادثة..." />
-              <button id="searchInChatBtn">بحث</button>
+              <input type="text" id="searchInChatInput-${userId}" placeholder="ابحث في المحادثة..." />
+              <button id="searchInChatBtn-${userId}">بحث</button>
             </div>
           </div>
-          <button id="closeChatBtn" class="close-btn">إغلاق</button>
+          <button id="closeChatBtn-${userId}" class="close-btn">إغلاق</button>
         </div>
         <div class="chat-messages"></div>
         <div class="chat-footer">
           <button class="delete-btn delete-conversation-btn" data-user-id="${userId}">حذف المحادثة</button>
         </div>
       `;
-      const chatMessages = userMessages.querySelector('.chat-messages');
-      const searchInChatInput = userMessages.querySelector('#searchInChatInput');
-      const searchInChatBtn = userMessages.querySelector('#searchInChatBtn');
-      userMessages.style.display = 'block';
+      const chatMessages = chatContainer.querySelector('.chat-messages');
+      const searchInChatInput = chatContainer.querySelector(`#searchInChatInput-${userId}`);
+      const searchInChatBtn = chatContainer.querySelector(`#searchInChatBtn-${userId}`);
 
       const userConversations = conversations.filter(conv => conv.userId === userId);
       const messages = userConversations[0].messages;
@@ -410,14 +428,14 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       // Close chat
-      const closeChatBtn = userMessages.querySelector('#closeChatBtn');
+      const closeChatBtn = chatContainer.querySelector(`#closeChatBtn-${userId}`);
       closeChatBtn.addEventListener('click', () => {
-        userMessages.style.display = 'none';
+        chatContainer.style.display = 'none';
         currentUserId = '';
       });
 
       // Add event listener for delete conversation button
-      const deleteConversationBtn = userMessages.querySelector('.delete-conversation-btn');
+      const deleteConversationBtn = chatContainer.querySelector('.delete-conversation-btn');
       deleteConversationBtn.addEventListener('click', async () => {
         if (confirm('هل أنت متأكد من حذف هذه المحادثة؟')) {
           try {
@@ -432,7 +450,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             currentPage = 1; // Reset to first page
             await loadConversations(currentBotId);
-            userMessages.style.display = 'none';
           } catch (err) {
             errorDiv.style.display = 'block';
             errorDiv.textContent = err.message || 'حدث خطأ أثناء حذف المحادثة';
