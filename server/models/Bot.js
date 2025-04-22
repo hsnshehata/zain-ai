@@ -6,6 +6,12 @@ const botSchema = new mongoose.Schema({
   facebookApiKey: { type: String },
   facebookPageId: { type: String },
   createdAt: { type: Date, default: Date.now },
+  messagingOptinsEnabled: { type: Boolean, default: false },
+  messageReactionsEnabled: { type: Boolean, default: false },
+  messagingReferralsEnabled: { type: Boolean, default: false },
+  messageEditsEnabled: { type: Boolean, default: false },
+  inboxLabelsEnabled: { type: Boolean, default: false },
+  sendCartEnabled: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model('Bot', botSchema);
