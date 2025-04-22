@@ -23,7 +23,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public'))); // Serve static files from ../public like old system
 
 // Routes
-app.use('/api/facebook', facebookRoutes);
+app.use('/api/facebook', facebookRoutes); // For Webhook routes
+app.use('/api/bots', facebookRoutes); // For settings routes (getSettings, updateSettings)
 app.use('/api/webhook', webhookRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/bots', botsRoutes);
