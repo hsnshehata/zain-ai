@@ -52,6 +52,23 @@ app.get('/dashboard', (req, res) => {
   }
 });
 
+// Route for messages page
+app.get('/messages', (req, res) => {
+  try {
+    const filePath = path.join(__dirname, '../public/messages.html');
+    console.log('Serving messages.html from:', filePath);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error serving messages.html:', err);
+        res.status(500).json({ message: 'Failed to load messages page' });
+      }
+    });
+  } catch (err) {
+    console.error('Error in messages route:', err);
+    res.status(500).json({ message: 'Something went wrong!' });
+  }
+});
+
 // Route for chat page
 app.get('/chat/:linkId', (req, res) => {
   try {
