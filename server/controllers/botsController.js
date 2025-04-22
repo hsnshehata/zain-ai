@@ -17,7 +17,7 @@ router.get('/', authenticate, async (req, res) => {
   }
 });
 
-// جلب التقييمات بناءً على botId مع اسم المستخدم من فيسبوك
+// جلب التقييمات بناءً على botId مع اسم المستخدم من فيسبوك (التقييمات المرئية فقط)
 router.get('/:id/feedback', authenticate, async (req, res) => {
   try {
     const botId = req.params.id;
@@ -30,7 +30,7 @@ router.get('/:id/feedback', authenticate, async (req, res) => {
       return res.status(403).json({ message: 'غير مصرح لك بعرض تقييمات هذا البوت' });
     }
 
-    const feedback = await Feedback.find({ botId }).sort({ timestamp: -1 });
+    const feedback = await Feedback.find({ botId, isVisible: true }).sort({ timestamp: -1 });
 
     const feedbackWithUsernames = await Promise.all(
       feedback.map(async (item) => {
@@ -62,7 +62,7 @@ router.get('/:id/feedback', authenticate, async (req, res) => {
   }
 });
 
-// حذف تقييم معين (بدون الاعتماد على وجود البوت)
+// إخفاء تقييم معين (بدل الحذف)
 router.delete('/:id/feedback/:feedbackId', authenticate, async (req, res) => {
   try {
     const feedbackId = req.params.feedbackId;
@@ -72,28 +72,35 @@ router.delete('/:id/feedback/:feedbackId', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'التقييم غير موجود' });
     }
 
-    await Feedback.deleteOne({ _id: feedbackId });
-    res.status(200).json({ message: 'تم حذف التقييم بنجاح' });
+    // إخفاء التقييم بدل الحذف
+    feedback.isVisible = false;
+    await feedback.save();
+
+    res.status(200).json({ message: 'تم إخفاء التقييم بنجاح' });
   } catch (err) {
-    console.error('❌ خطأ في حذف التقييم:', err.message, err.stack);
+    console.error('❌ خطأ في إخفاء التقييم:', err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 });
 
-// حذف جميع التقييمات (إيجابية أو سلبية) دفعة واحدة (بدون الاعتماد على وجود البوت)
+// إخفاء جميع التقييمات (إيجابية أو سلبية) دفعة واحدة
 router.delete('/:id/feedback/clear/:type', authenticate, async (req, res) => {
   try {
     const botId = req.params.id;
     const type = req.params.type; // 'positive' or 'negative'
 
-    const deleted = await Feedback.deleteMany({ botId, feedback: type });
-    if (deleted.deletedCount === 0) {
-      return res.status(404).json({ message: 'لا توجد تقييمات للحذف' });
+    const updated = await Feedback.updateMany(
+      { botId, feedback: type, isVisible: true },
+      { $set: { isVisible: false } }
+    );
+
+    if (updated.matchedCount === 0) {
+      return res.status(404).json({ message: 'لا توجد تقييمات مرئية للإخفاء' });
     }
 
-    res.status(200).json({ message: 'تم مسح التقييمات بنجاح' });
+    res.status(200).json({ message: 'تم إخفاء التقييمات بنجاح' });
   } catch (err) {
-    console.error('❌ خطأ في مسح التقييمات:', err.message, err.stack);
+    console.error('❌ خطأ في إخفاء التقييمات:', err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 });
