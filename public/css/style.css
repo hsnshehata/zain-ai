@@ -1323,30 +1323,83 @@ body.light .feedback-note {
 
 .messages-actions {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 15px;
   margin-bottom: 20px;
-  justify-content: space-between;
-  align-items: center;
 }
 
-.messages-actions .form-group {
+.filter-group {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.date-filter, .search-filter {
   display: flex;
   gap: 10px;
   align-items: center;
 }
 
-.messages-actions input[type="date"] {
-  padding: 8px;
+.date-filter input[type="date"],
+.search-filter input[type="text"] {
+  padding: 8px 12px;
   border-radius: 8px;
   background: var(--glass-bg);
   color: var(--text-dark);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s;
 }
 
-body.light .messages-actions input[type="date"] {
+body.light .date-filter input[type="date"],
+body.light .search-filter input[type="text"] {
   background: #fff;
   border: 1px solid #ddd;
   color: #000;
+}
+
+.date-filter input[type="date"]:focus,
+.search-filter input[type="text"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 5px var(--accent);
+}
+
+.date-filter button,
+.search-filter button {
+  padding: 8px 16px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.date-filter button:hover,
+.search-filter button:hover {
+  background: #1565C0;
+  transform: translateY(-2px);
+}
+
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.action-buttons button {
+  width: 200px;
+  padding: 10px;
+  font-size: 1em;
+}
+
+@media (max-width: 600px) {
+  .action-buttons {
+    align-items: stretch;
+  }
+  .action-buttons button {
+    width: 100%;
+  }
 }
 
 .chat-container {
@@ -1395,23 +1448,25 @@ body.light .chat-messages {
 }
 
 .message {
-  margin: 10px 0;
-  padding: 10px 15px;
-  border-radius: 8px;
-  max-width: 80%;
+  margin: 15px 0; /* زيادة التباعد بين الرسائل */
+  padding: 12px 18px; /* زيادة الحشوة داخل الرسالة */
+  border-radius: 12px; /* زيادة border-radius عشان شكل أنيق */
+  max-width: 75%; /* تقليل العرض الأقصى عشان الرسالة تبقى أنيقة */
   word-wrap: break-word;
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .message p {
-  margin: 0 0 5px;
+  margin: 0 0 8px; /* تباعد بين النص والتاريخ */
+  font-size: 1em; /* حجم الخط مناسب */
+  line-height: 1.4; /* تباعد الأسطر */
 }
 
 .message small {
   display: block;
-  font-size: 0.8em;
+  font-size: 0.75em; /* تصغير حجم التاريخ */
   color: var(--text-dark);
-  opacity: 0.7;
+  opacity: 0.6; /* تقليل الشفافية */
 }
 
 body.light .message small {
@@ -1425,10 +1480,11 @@ body.light .message small {
 }
 
 .bot-message {
-  background-color: #e9ecef;
+  background-color: #E9ECEF; /* تغيير اللون من #FFFFFF إلى رمادي فاتح */
   margin-right: auto;
+  color: var(--text-light); /* لون النص داكن عشان يبقى واضح على الخلفية */
 }
 
 body.light .bot-message {
-  background-color: #f0f0f0;
+  background-color: #F0F0F0; /* لون مختلف في الوضع الفاتح */
 }
