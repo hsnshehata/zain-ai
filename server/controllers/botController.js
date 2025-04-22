@@ -14,12 +14,17 @@ exports.getBot = async (req, res) => {
   }
 };
 
-// جلب إعدادات التصاريح
+// جلب إعدادات بوت معين بناءً على الـ botId
 exports.getSettings = async (req, res) => {
   try {
-    const bot = await Bot.findOne({ userId: req.user._id }); // افتراض أن المستخدم ليه بوت واحد
+    const botId = req.params.id; // الحصول على botId من الـ URL
+    const bot = await Bot.findById(botId);
     if (!bot) {
       return res.status(404).json({ message: 'البوت غير موجود' });
+    }
+    // التأكد من إن المستخدم ليه صلاحية للوصول للبوت ده
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'غير مصرح لك بالوصول إلى هذا البوت' });
     }
     res.status(200).json({
       messagingOptinsEnabled: bot.messagingOptinsEnabled,
@@ -35,16 +40,21 @@ exports.getSettings = async (req, res) => {
   }
 };
 
-// تحديث إعدادات التصاريح
+// تحديث إعدادات بوت معين بناءً على الـ botId
 exports.updateSettings = async (req, res) => {
   try {
-    const bot = await Bot.findOne({ userId: req.user._id });
+    const botId = req.params.id; // الحصول على botId من الـ URL
+    const bot = await Bot.findById(botId);
     if (!bot) {
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
+    // التأكد من إن المستخدم ليه صلاحية للوصول للبوت ده
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'غير مصرح لك بالوصول إلى هذا البوت' });
+    }
 
     const updates = req.body;
-    await Bot.updateOne({ _id: bot._id }, { $set: updates });
+    await Bot.updateOne({ _id: botId }, { $set: updates });
 
     res.status(200).json({ message: 'تم تحديث الإعدادات بنجاح' });
   } catch (err) {
