@@ -84,14 +84,19 @@ body.light {
   padding: 20px;
   box-shadow: var(--shadow);
   z-index: 1000;
+  display: flex; /* Ensure vertical stacking */
+  flex-direction: column; /* Stack buttons vertically */
+  gap: 10px; /* Add spacing between buttons */
 }
 
 .sidebar .nav-item {
-  display: block;
+  display: block; /* Ensure each button takes its own line */
+  width: 100%; /* Full width to prevent inline alignment */
   padding: 15px;
-  margin: 10px 0;
+  margin: 0; /* Remove margin to avoid spacing issues */
   border-radius: 8px;
   cursor: pointer;
+  box-sizing: border-box; /* Ensure padding doesn't affect width */
 }
 
 .sidebar .nav-item:hover {
@@ -152,7 +157,7 @@ body.light {
 
 @media (min-width: 769px) {
   .sidebar {
-    display: block !important; /* Show Sidebar on Desktop */
+    display: flex !important; /* Show Sidebar on Desktop with flex for proper stacking */
   }
 
   .bottom-nav {
