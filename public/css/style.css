@@ -1,12 +1,10 @@
 /* General Styles */
 :root {
-  --primary: #1E88E5; /* تغيير اللون من بنفسجي إلى أزرق مريح */
+  --primary: #1E88E5; /* أزرق مريح */
   --secondary: #00C4B4; /* تركواز */
   --accent: #FFD700; /* ذهبي */
   --bg-dark: #121212; /* خلفية داكنة */
-  --bg-light: #F5F7FA; /* خلفية فاتحة */
-  --text-dark: #E0E0E0; /* نص على خلفية داكنة */
-  --text-light: #333; /* نص على خلفية فاتحة */
+  --text-dark: #E0E0E0; /* نص فاتح */
   --card-bg: rgba(255, 255, 255, 0.1); /* خلفية الكروت */
   --glass-bg: rgba(255, 255, 255, 0.05); /* تأثير زجاجي */
   --shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
@@ -20,11 +18,6 @@ body {
   color: var(--text-dark);
   transition: all 0.3s ease;
   overflow-x: hidden; /* Prevent horizontal scroll */
-}
-
-body.light {
-  background-color: var(--bg-light);
-  color: var(--text-light);
 }
 
 /* Containers */
@@ -172,10 +165,6 @@ h1, .form-group h3, .form-group h4 {
   color: var(--text-dark);
 }
 
-body.light h1, body.light .form-group h3, body.light .form-group h4 {
-  color: var(--text-light);
-}
-
 /* Form Elements */
 .form-group {
   margin-bottom: 20px;
@@ -189,10 +178,6 @@ body.light h1, body.light .form-group h3, body.light .form-group h4 {
   font-size: 1em;
 }
 
-body.light .form-group label {
-  color: var(--text-light);
-}
-
 input, textarea, select {
   width: 100%;
   padding: 12px;
@@ -201,12 +186,6 @@ input, textarea, select {
   color: var(--text-dark);
   border-radius: 8px;
   transition: all 0.3s;
-}
-
-body.light input, body.light textarea, body.light select {
-  background: #fff;
-  border: 1px solid #ddd;
-  color: #000;
 }
 
 input:focus, textarea:focus, select:focus {
@@ -223,19 +202,10 @@ select {
   padding-right: 30px;
 }
 
-body.light select {
-  background: url('data:image/svg+xml;utf8,<svg fill="%23000000" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>') no-repeat right 10px center;
-}
-
 /* Style for select options */
 select option {
-  background: var(--bg-dark); /* خلفية داكنة في الوضع الافتراضي */
-  color: var(--text-dark); /* لون النص فاتح */
-}
-
-body.light select option {
-  background: #fff; /* خلفية بيضاء في الوضع الفاتح */
-  color: #333; /* لون النص داكن */
+  background: var(--bg-dark);
+  color: var(--text-dark);
 }
 
 /* Bot Selector */
@@ -246,11 +216,6 @@ body.light select option {
   backdrop-filter: blur(10px);
   border-radius: 8px;
   box-shadow: var(--shadow);
-}
-
-body.light .bot-selector {
-  background: #fff;
-  border: 1px solid #ddd;
 }
 
 /* Color Picker Buttons */
@@ -268,10 +233,6 @@ body.light .bot-selector {
   flex: 1;
 }
 
-body.light .color-picker-wrapper label {
-  color: var(--text-light);
-}
-
 /* Color Input (HTML5 Color Picker) */
 .color-input {
   width: 30px;
@@ -284,15 +245,11 @@ body.light .color-picker-wrapper label {
   z-index: 1003;
 }
 
-body.light .color-input {
-  border: 1px solid rgba(0, 0, 0, 0.2);
-}
-
 /* Ensure settings-popup doesn't hide color picker */
 .settings-popup {
   position: absolute;
   right: 0;
-  background: rgba(255, 255, 255, 0.8); /* More opaque background for visibility */
+  background: rgba(255, 255, 255, 0.8);
   backdrop-filter: blur(10px);
   border-radius: 8px;
   box-shadow: var(--shadow);
@@ -302,22 +259,13 @@ body.light .color-input {
   flex-direction: column;
   gap: 8px;
   width: 250px;
-  overflow: visible; /* Prevent clipping */
-  pointer-events: auto; /* Ensure clickable */
+  overflow: visible;
+  pointer-events: auto;
 }
 
 /* Change text color and background in settings-popup for better visibility */
 .settings-popup label {
-  color: #333 !important; /* Dark color for better visibility */
-}
-
-body.light .settings-popup {
-  background: rgba(255, 255, 255, 0.9); /* More opaque in light mode */
-  border: 1px solid #ddd;
-}
-
-body.light .settings-popup label {
-  color: #333 !important; /* Ensure dark color in light mode */
+  color: #333 !important;
 }
 
 /* Prevent parent containers from clipping */
@@ -327,7 +275,7 @@ body.light .settings-popup label {
 .chat-preview-container,
 .chat-container,
 .section-with-settings {
-  overflow: visible !important; /* Ensure no clipping */
+  overflow: visible !important;
 }
 
 /* Checkbox Styling */
@@ -342,21 +290,12 @@ body.light .settings-popup label {
   gap: 10px;
 }
 
-body.light .checkbox-group {
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
 .checkbox-label {
   display: flex;
   align-items: center;
   gap: 10px;
   color: var(--text-dark);
   padding: 5px 0;
-}
-
-body.light .checkbox-label {
-  color: var(--text-light);
 }
 
 /* Logo and Settings Sections */
@@ -372,11 +311,6 @@ body.light .checkbox-label {
   gap: 10px;
 }
 
-body.light .logo-section, body.light .settings-section {
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
 .logo-section h3, .settings-section h3, .settings-section h4 {
   margin-top: 0;
 }
@@ -387,12 +321,6 @@ body.light .logo-section, body.light .settings-section {
   border-radius: 8px;
   padding: 8px;
   color: var(--text-dark);
-}
-
-body.light .form-group input[type="file"] {
-  background: #fff;
-  border: 1px solid #ddd;
-  color: var(--text-light);
 }
 
 .logo-preview-container {
@@ -427,11 +355,6 @@ body.light .form-group input[type="file"] {
   margin-bottom: 20px;
 }
 
-body.light .suggested-questions-container {
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
 .question-input-group {
   display: flex;
   align-items: center;
@@ -463,10 +386,6 @@ body.light .suggested-questions-container {
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-body.light .questions-list li {
-  border-bottom: 1px solid #ddd;
-}
-
 .questions-list li:last-child {
   border-bottom: none;
 }
@@ -493,7 +412,7 @@ button {
 }
 
 button:hover {
-  background: #1565C0; /* تغيير لون الـ hover ليتناسب مع اللون الجديد */
+  background: #1565C0;
   transform: translateY(-2px);
 }
 
@@ -507,11 +426,6 @@ button:active {
   padding: 10px 20px;
   border-radius: 20px;
   transition: all 0.3s;
-}
-
-body.light .rule-type-btn {
-  background: #e0e0e0;
-  color: var(--text-light);
 }
 
 .rule-type-btn.active {
@@ -549,11 +463,6 @@ body.light .rule-type-btn {
   border-radius: 12px;
   box-shadow: var(--shadow);
   transition: transform 0.3s;
-}
-
-body.light .rule-card {
-  background: #fff;
-  border: 1px solid #ddd;
 }
 
 .rule-card:hover {
@@ -594,20 +503,20 @@ body.light .rule-card {
 
 @media (max-width: 600px) {
   .admin-actions {
-    flex-direction: column; /* Stack buttons vertically on mobile */
-    align-items: stretch; /* Make buttons full-width */
+    flex-direction: column;
+    align-items: stretch;
   }
   .admin-actions button {
-    width: 100%; /* Full-width buttons */
-    padding: 10px; /* Adjust padding for mobile */
-    font-size: 0.9em; /* Slightly smaller font for mobile */
+    width: 100%;
+    padding: 10px;
+    font-size: 0.9em;
   }
 }
 
 @media (min-width: 769px) {
   .admin-actions {
     display: flex;
-    flex-direction: row; /* Keep buttons in a row on desktop */
+    flex-direction: row;
   }
 }
 
@@ -626,11 +535,6 @@ body.light .rule-card {
   transition: transform 0.3s;
 }
 
-body.light .user-card {
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
 .user-card:hover {
   transform: translateY(-5px);
 }
@@ -647,11 +551,6 @@ body.light .user-card {
   padding: 15px;
   border-radius: 12px;
   box-shadow: var(--shadow);
-}
-
-body.light #analyticsData {
-  background: #fff;
-  border: 1px solid #ddd;
 }
 
 /* Chat Page */
@@ -673,11 +572,6 @@ body.light #analyticsData {
   backdrop-filter: blur(10px);
   border-radius: 8px;
   box-shadow: var(--shadow);
-}
-
-body.light .chat-page-settings {
-  background: #fff;
-  border: 1px solid #ddd;
 }
 
 #chatHeader {
@@ -725,9 +619,9 @@ body.light .chat-page-settings {
 }
 
 .bot-message {
-  background-color: #e9ecef;
-  align-self: flex-start;
+  background-color: #2D2D2D; /* لون غامق للوضع الليلي */
   margin-right: auto;
+  color: var(--text-dark);
 }
 
 .suggested-question {
@@ -782,11 +676,6 @@ body.light .chat-page-settings {
   backdrop-filter: blur(10px);
   border-radius: 12px;
   box-shadow: var(--shadow);
-}
-
-body.light .preview-section {
-  background: #fff;
-  border: 1px solid #ddd;
 }
 
 .chat-preview-container {
@@ -889,12 +778,7 @@ body.light .preview-section {
   font-size: 1em;
   color: var(--text-dark);
   transition: all 0.3s;
-  z-index: 1001; /* Above other elements */
-}
-
-body.light .settings-gear {
-  background: #e0e0e0;
-  color: var(--text-light);
+  z-index: 1001;
 }
 
 .settings-gear:hover {
@@ -1022,14 +906,8 @@ body.light .settings-gear {
   cursor: pointer;
 }
 
-body.light .chat-input input[type="file"] {
-  background: #fff;
-  border: 1px solid #ddd;
-  color: var(--text-light);
-}
-
 .chat-input input[type="file"]::file-selector-button {
-  background: var(--primary); /* اللون الجديد هيتنطبق هنا */
+  background: var(--primary);
   color: white;
   border: none;
   padding: 8px 16px;
@@ -1066,35 +944,22 @@ body.light .chat-input input[type="file"] {
   justify-content: space-between;
   align-items: center;
   padding: 15px;
-  background: var(--card-bg); /* Use the same background as other cards */
-  backdrop-filter: blur(10px); /* Add glass effect */
-  border-radius: 12px; /* Match the border radius of other cards */
-  box-shadow: var(--shadow); /* Add shadow for consistency */
-}
-
-body.light .setting-item {
-  background: #fff;
-  border: 1px solid #ddd;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
 }
 
 .setting-info h3 {
   margin: 0 0 5px;
   font-size: 18px;
-  color: var(--text-dark); /* Match text color with theme */
-}
-
-body.light .setting-info h3 {
-  color: var(--text-light);
+  color: var(--text-dark);
 }
 
 .setting-info p {
   margin: 0;
-  color: var(--text-dark); /* Match text color with theme */
+  color: var(--text-dark);
   font-size: 14px;
-}
-
-body.light .setting-info p {
-  color: var(--text-light);
 }
 
 /* Toggle Switch */
@@ -1118,8 +983,8 @@ body.light .setting-info p {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: var(--glass-bg); /* Match the glass effect */
-  transition: background-color 0.4s ease, transform 0.2s ease; /* Smoother transition */
+  background-color: var(--glass-bg);
+  transition: background-color 0.4s ease, transform 0.2s ease;
   border-radius: 34px;
 }
 
@@ -1130,21 +995,13 @@ body.light .setting-info p {
   width: 26px;
   left: 4px;
   bottom: 4px;
-  background-color: var(--text-dark); /* Match text color */
+  background-color: var(--text-dark);
   transition: transform 0.4s ease;
   border-radius: 50%;
 }
 
-body.light .slider {
-  background-color: #e0e0e0;
-}
-
-body.light .slider:before {
-  background-color: var(--text-light);
-}
-
 input:checked + .slider {
-  background-color: var(--primary); /* اللون الجديد هيتنطبق هنا */
+  background-color: var(--primary);
 }
 
 input:checked + .slider:before {
@@ -1192,12 +1049,12 @@ input:checked + .slider:before {
   display: flex;
   gap: 20px;
   margin-top: 20px;
-  flex-wrap: wrap; /* للتأكد من التوافق في الشاشات الصغيرة */
+  flex-wrap: wrap;
 }
 
 .feedback-column {
   flex: 1;
-  min-width: 300px; /* للتأكد من أن العمود مش هيضغط أوي في الشاشات الصغيرة */
+  min-width: 300px;
   background: var(--card-bg);
   backdrop-filter: blur(10px);
   padding: 15px;
@@ -1205,18 +1062,9 @@ input:checked + .slider:before {
   box-shadow: var(--shadow);
 }
 
-body.light .feedback-column {
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
 .feedback-column h3 {
   margin-top: 0;
   color: var(--text-dark);
-}
-
-body.light .feedback-column h3 {
-  color: var(--text-light);
 }
 
 .feedback-grid {
@@ -1232,18 +1080,9 @@ body.light .feedback-column h3 {
   box-shadow: var(--shadow);
 }
 
-body.light .feedback-card {
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
 .feedback-card p {
   margin: 5px 0;
   color: var(--text-dark);
-}
-
-body.light .feedback-card p {
-  color: var(--text-light);
 }
 
 .feedback-actions {
@@ -1301,10 +1140,6 @@ body.light .feedback-card p {
   text-align: center;
 }
 
-body.light .feedback-note {
-  color: var(--text-light);
-}
-
 /* Ensure proper direction for Arabic */
 .feedback-container,
 .feedback-column,
@@ -1348,13 +1183,6 @@ body.light .feedback-note {
   color: var(--text-dark);
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s;
-}
-
-body.light .date-filter input[type="date"],
-body.light .search-filter input[type="text"] {
-  background: #fff;
-  border: 1px solid #ddd;
-  color: #000;
 }
 
 .date-filter input[type="date"]:focus,
@@ -1412,11 +1240,6 @@ body.light .search-filter input[type="text"] {
   margin: 0 auto;
 }
 
-body.light .chat-container {
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
 .chat-header {
   display: flex;
   justify-content: space-between;
@@ -1429,10 +1252,6 @@ body.light .chat-container {
   color: var(--text-dark);
 }
 
-body.light .chat-header h3 {
-  color: var(--text-light);
-}
-
 .chat-messages {
   height: 300px;
   overflow-y: auto;
@@ -1442,35 +1261,26 @@ body.light .chat-header h3 {
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
 }
 
-body.light .chat-messages {
-  background: #fff;
-  border: 1px solid #ddd;
-}
-
 .message {
-  margin: 15px 0; /* زيادة التباعد بين الرسائل */
-  padding: 12px 18px; /* زيادة الحشوة داخل الرسالة */
-  border-radius: 12px; /* زيادة border-radius عشان شكل أنيق */
-  max-width: 75%; /* تقليل العرض الأقصى عشان الرسالة تبقى أنيقة */
+  margin: 15px 0;
+  padding: 12px 18px;
+  border-radius: 12px;
+  max-width: 75%;
   word-wrap: break-word;
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
 .message p {
-  margin: 0 0 8px; /* تباعد بين النص والتاريخ */
-  font-size: 1em; /* حجم الخط مناسب */
-  line-height: 1.4; /* تباعد الأسطر */
+  margin: 0 0 8px;
+  font-size: 1em;
+  line-height: 1.4;
 }
 
 .message small {
   display: block;
-  font-size: 0.75em; /* تصغير حجم التاريخ */
+  font-size: 0.75em;
   color: var(--text-dark);
-  opacity: 0.6; /* تقليل الشفافية */
-}
-
-body.light .message small {
-  color: var(--text-light);
+  opacity: 0.6;
 }
 
 .user-message {
@@ -1480,11 +1290,7 @@ body.light .message small {
 }
 
 .bot-message {
-  background-color: #E9ECEF; /* تغيير اللون من #FFFFFF إلى رمادي فاتح */
+  background-color: #2D2D2D; /* لون غامق للوضع الليلي */
   margin-right: auto;
-  color: var(--text-light); /* لون النص داكن عشان يبقى واضح على الخلفية */
-}
-
-body.light .bot-message {
-  background-color: #F0F0F0; /* لون مختلف في الوضع الفاتح */
+  color: var(--text-dark);
 }
