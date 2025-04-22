@@ -299,12 +299,12 @@ document.addEventListener('DOMContentLoaded', () => {
         for (const userId of userIds) {
           const userConversations = conversations.filter(conv => conv.userId === userId);
           let userName = userId;
-          let isWebUser = userId === 'anonymous' || userId.startsWith('web_'); // Check if user is a web user
+          let isWebUser = userId === 'anonymous'; // الشرط الجديد: فقط userId === 'anonymous' يعتبر ويب
           let isWhatsAppUser = userId.startsWith('whatsapp_'); // Check if user is a WhatsApp user
 
           // Apply tab filtering
           if (currentTab === 'facebook' && (isWebUser || isWhatsAppUser)) continue; // Skip web and WhatsApp users in Facebook tab
-          if (currentTab === 'web' && (!isWebUser || isWhatsAppUser)) continue; // Skip non-web users in Web tab
+          if (currentTab === 'web' && !isWebUser) continue; // Skip non-anonymous users in Web tab
           if (currentTab === 'whatsapp' && !isWhatsAppUser) continue; // Skip non-WhatsApp users in WhatsApp tab
 
           // Calculate stats
@@ -334,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
           } else if (currentTab === 'whatsapp') {
             userName = `واتساب ${webUserCounter++}`;
           } else {
-            // Web users
+            // Web users (anonymous)
             userName = `مستخدم ${webUserCounter++}`;
           }
 
