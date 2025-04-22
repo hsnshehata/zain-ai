@@ -9,14 +9,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial HTML with bot selector and loading spinner
     content.innerHTML = `
       <h2>إعدادات فيسبوك</h2>
-      <div class="form-group bot-selector">
-        <select id="botSelectFacebook" name="botSelectFacebook">
-          <option value="">اختر بوت</option>
-        </select>
-        <label for="botSelectFacebook">اختر البوت</label>
-      </div>
       <div class="spinner">
         <div class="loader"></div>
+      </div>
+      <div id="botSelectorContainer" style="display: none;">
+        <div class="form-group bot-selector">
+          <select id="botSelectFacebook" name="botSelectFacebook">
+            <option value="">اختر بوت</option>
+          </select>
+          <label for="botSelectFacebook">اختر البوت</label>
+        </div>
       </div>
       <div id="facebookSettingsContent" class="facebook-settings" style="display: none;">
         <div class="setting-item">
@@ -84,6 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     const botSelect = document.getElementById('botSelectFacebook');
+    const botSelectorContainer = document.getElementById('botSelectorContainer');
     const facebookSettingsContent = document.getElementById('facebookSettingsContent');
     const errorDiv = document.getElementById('error');
     const spinner = document.querySelector('.spinner');
@@ -102,10 +105,16 @@ document.addEventListener('DOMContentLoaded', () => {
         throw new Error(`فشل في جلب البوتات: ${response.status} ${response.statusText}`);
       }
 
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        throw new Error('الـ response مش JSON، ممكن يكون فيه مشكلة في السيرفر');
+      }
+
       bots = await response.json();
     } catch (err) {
       console.error('❌ Error fetching bots:', err);
       spinner.style.display = 'none';
+      botSelectorContainer.style.display = 'none';
       facebookSettingsContent.style.display = 'none';
       errorDiv.style.display = 'block';
       errorDiv.textContent = err.message || 'تعذر جلب البوتات، حاول مرة أخرى لاحقًا';
@@ -121,16 +130,24 @@ document.addEventListener('DOMContentLoaded', () => {
     botSelect.innerHTML = '<option value="">اختر بوت</option>';
     const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId && bot.userId._id === userId);
     userBots.forEach((bot) => {
-      botSelect.innerHTML += `<option value="${bot._id}">${bot.name}</option>`;
+      const option = document.createElement('option');
+      option.value = bot._id;
+      option.textContent = bot.name;
+      botSelect.appendChild(option);
     });
 
     if (userBots.length === 0) {
       spinner.style.display = 'none';
+      botSelectorContainer.style.display = 'none';
       facebookSettingsContent.style.display = 'none';
       errorDiv.style.display = 'block';
       errorDiv.textContent = 'لا توجد بوتات متاحة لعرض إعداداتها.';
       return;
     }
+
+    // Show bot selector and hide spinner
+    spinner.style.display = 'none';
+    botSelectorContainer.style.display = 'block';
 
     // Automatically load settings for the first bot
     let selectedBotId = userBots[0]._id;
@@ -186,6 +203,21 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('messageEditsToggle').checked = settings.messageEditsEnabled || false;
         document.getElementById('inboxLabelsToggle').checked = settings.inboxLabelsEnabled || false;
         document.getElementById('sendCartToggle').checked = settings.sendCartEnabled || false;
+
+        // Remove previous event listeners to avoid duplicates
+        const toggles = [
+          'messagingOptinsToggle',
+          'messageReactionsToggle',
+          'messagingReferralsToggle',
+          'messageEditsToggle',
+          'inboxLabelsToggle',
+          'sendCartToggle'
+        ];
+        toggles.forEach(toggleId => {
+          const toggle = document.getElementById(toggleId);
+          const newToggle = toggle.cloneNode(true);
+          toggle.parentNode.replaceChild(newToggle, toggle);
+        });
 
         // Add event listeners for toggles
         document.getElementById('messagingOptinsToggle').addEventListener('change', (e) => updateSetting(botId, 'messagingOptinsEnabled', e.target.checked));
