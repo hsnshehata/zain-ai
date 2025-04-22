@@ -6,34 +6,26 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // Select buttons using classes
   const botsBtn = document.querySelectorAll('.bots-btn');
   const rulesBtn = document.querySelectorAll('.rules-btn');
   const chatPageBtn = document.querySelectorAll('.chat-page-btn');
   const analyticsBtn = document.querySelectorAll('.analytics-btn');
   const feedbackBtn = document.querySelectorAll('.feedback-btn');
+  const facebookBtn = document.querySelectorAll('.facebook-btn');
   const logoutBtn = document.querySelectorAll('.logout-btn');
 
-  // Debug: Log the buttons to ensure they are selected
-  console.log('Bots Buttons:', botsBtn);
-  console.log('Rules Buttons:', rulesBtn);
-  console.log('Chat Page Buttons:', chatPageBtn);
-  console.log('Analytics Buttons:', analyticsBtn);
-  console.log('Feedback Buttons:', feedbackBtn);
-  console.log('Logout Buttons:', logoutBtn);
-
-  // Show/hide bots and feedback buttons based on role
   if (role !== 'superadmin') {
     botsBtn.forEach(btn => btn.style.display = 'none');
     feedbackBtn.forEach(btn => btn.style.display = 'none');
+    facebookBtn.forEach(btn => btn.style.display = 'none');
   } else {
     botsBtn.forEach(btn => btn.style.display = 'inline-block');
     feedbackBtn.forEach(btn => btn.style.display = 'inline-block');
+    facebookBtn.forEach(btn => btn.style.display = 'inline-block');
   }
 
-  // Function to set active button
   const setActiveButton = (hash) => {
-    const buttons = [botsBtn, rulesBtn, chatPageBtn, analyticsBtn, feedbackBtn, logoutBtn];
+    const buttons = [botsBtn, rulesBtn, chatPageBtn, analyticsBtn, feedbackBtn, facebookBtn, logoutBtn];
     buttons.forEach(btnGroup => {
       btnGroup.forEach(btn => btn.classList.remove('active'));
     });
@@ -54,12 +46,13 @@ document.addEventListener('DOMContentLoaded', () => {
       case '#feedback':
         feedbackBtn.forEach(btn => btn.classList.add('active'));
         break;
+      case '#facebook':
+        facebookBtn.forEach(btn => btn.classList.add('active'));
+        break;
     }
   };
 
-  // Function to attach event listeners
   const attachEventListeners = () => {
-    // Remove existing event listeners to avoid duplicates
     botsBtn.forEach(btn => {
       btn.removeEventListener('click', botsBtnClickHandler);
       btn.addEventListener('click', botsBtnClickHandler);
@@ -85,13 +78,17 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.addEventListener('click', feedbackBtnClickHandler);
     });
 
+    facebookBtn.forEach(btn => {
+      btn.removeEventListener('click', facebookBtnClickHandler);
+      btn.addEventListener('click', facebookBtnClickHandler);
+    });
+
     logoutBtn.forEach(btn => {
       btn.removeEventListener('click', logoutBtnClickHandler);
       btn.addEventListener('click', logoutBtnClickHandler);
     });
   };
 
-  // Event handler functions
   const botsBtnClickHandler = () => {
     console.log('Bots Button Clicked');
     window.location.hash = 'bots';
@@ -119,6 +116,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const feedbackBtnClickHandler = () => {
     console.log('Feedback Button Clicked');
     window.location.hash = 'feedback';
+    loadPageBasedOnHash();
+  };
+
+  const facebookBtnClickHandler = () => {
+    console.log('Facebook Button Clicked');
+    window.location.hash = 'facebook';
     loadPageBasedOnHash();
   };
 
@@ -152,7 +155,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Attach event listeners initially
   attachEventListeners();
 
   async function loadPageBasedOnHash() {
@@ -179,7 +181,14 @@ document.addEventListener('DOMContentLoaded', () => {
       loadAnalyticsPage();
     } else if (hash === '#feedback') {
       if (userRole === 'superadmin') {
-        loadFeedbackPage(); // استدعاء الدالة من feedback.js
+        loadFeedbackPage();
+      } else {
+        window.location.hash = 'rules';
+        loadRulesPage();
+      }
+    } else if (hash === '#facebook') {
+      if (userRole === 'superadmin') {
+        loadFacebookPage();
       } else {
         window.location.hash = 'rules';
         loadRulesPage();
