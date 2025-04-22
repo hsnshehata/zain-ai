@@ -12,7 +12,13 @@ module.exports = (req, res, next) => {
     req.user = decoded;
     next();
   } catch (err) {
-    console.error('❌ خطأ في التحقق من التوكن:', err.message, err.stack);
-    res.status(401).json({ message: 'التوكن غير صالح' });
+    let errorMessage = 'التوكن غير صالح';
+    if (err.name === 'TokenExpiredError') {
+      errorMessage = 'التوكن منتهي الصلاحية';
+    } else if (err.name === 'JsonWebTokenError') {
+      errorMessage = 'التوكن غير صالح أو توقيع غير صحيح';
+    }
+    console.error(`❌ خطأ في التحقق من التوكن: ${errorMessage}`, err.message, err.stack);
+    res.status(401).json({ message: errorMessage });
   }
 };
