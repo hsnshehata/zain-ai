@@ -522,28 +522,29 @@ button:active {
 
 .users-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* تقليص حجم الكروت */
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 15px;
 }
 
 .user-card {
   background: var(--card-bg);
   backdrop-filter: blur(10px);
-  padding: 10px; /* تقليص الحشوة */
+  padding: 10px;
   border-radius: 12px;
   box-shadow: var(--shadow);
   transition: transform 0.3s;
-  min-height: 80px; /* تقليص الارتفاع */
+  min-height: 80px;
+  position: relative;
 }
 
 .user-card h3 {
   margin: 0 0 5px;
-  font-size: 1em; /* تصغير حجم العنوان */
+  font-size: 1em;
 }
 
 .user-card p {
   margin: 5px 0;
-  font-size: 0.9em; /* تصغير حجم النص */
+  font-size: 0.9em;
 }
 
 .user-card:hover {
@@ -599,8 +600,8 @@ button:active {
   border-radius: 12px;
   box-shadow: var(--shadow);
   padding: 15px;
-  max-width: 600px;
-  margin: 0 auto;
+  margin-top: 10px;
+  width: 100%;
 }
 
 .chat-header {
