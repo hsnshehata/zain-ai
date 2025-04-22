@@ -73,14 +73,51 @@ const handleMessage = async (req, res) => {
 
         // التعامل مع الـ message_reactions
         if (webhookEvent.reaction && bot.messageReactionsEnabled) {
-          const reaction = webhookEvent.reaction.reaction;
-          console.log(`😊 Reaction received from ${senderPsid}: ${reaction}`);
-          let responseText = '';
-          if (reaction === 'smile' || reaction === 'love') {
-            responseText = 'شكرًا على التفاعل! 💖 كيف يمكنني مساعدتك أكثر؟';
-          } else {
-            responseText = 'أرى أنك تفاعلت مع الرسالة! كيف يمكنني مساعدتك الآن؟';
+          const reactionType = webhookEvent.reaction.reaction || 'other';
+          console.log(`😊 Reaction received from ${senderPsid}: ${reactionType}`);
+
+          // تحديد الرد بناءً على نوع الـ reaction
+          let responseText;
+          switch (reactionType) {
+            case 'like':
+              responseText = 'شكرًا على الإعجاب! 😊';
+              break;
+            case 'love':
+              responseText = 'شكرًا على الحب! ❤️';
+              break;
+            case 'haha':
+              responseText = 'سعيد إني أضحكتك! 😂';
+              break;
+            case 'laugh': // 😆
+              responseText = 'سعيد إني أضحكتك! 😆';
+              break;
+            case 'wow':
+              responseText = 'مدهش، أليس كذلك؟ 😮';
+              break;
+            case 'sad':
+              responseText = 'آسف إذا كنت حزين، كيف يمكنني مساعدتك؟ 😢';
+              break;
+            case 'angry':
+              responseText = 'آسف إذا أغضبتك، دعني أساعدك! 😡';
+              break;
+            case 'thankful':
+              responseText = 'شكرًا على تقديرك! 🌸';
+              break;
+            case 'other':
+              // في حالة الـ other، ممكن نستخدم الـ emoji اللي جاي في الـ webhook
+              const emoji = webhookEvent.reaction.emoji || '';
+              if (emoji === '❤') {
+                responseText = 'شكرًا على الحب! ❤️';
+              } else if (emoji === '😡') {
+                responseText = 'آسف إذا أغضبتك، دعني أساعدك! 😡';
+              } else {
+                responseText = `أرى أنك تفاعلت مع الرسالة بـ ${emoji}! كيف يمكنني مساعدتك الآن؟`;
+              }
+              break;
+            default:
+              responseText = 'أرى أنك تفاعلت مع الرسالة! كيف يمكنني مساعدتك الآن؟';
           }
+
           await sendMessage(senderPsid, responseText, bot.facebookApiKey);
           conversation.messages.push({
             role: 'assistant',
