@@ -71,16 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <span class="slider"></span>
           </label>
         </div>
-        <div class="setting-item">
-          <div class="setting-info">
-            <h3>إرسال سلة التسوق</h3>
-            <p>إرسال تفاصيل السلة للمستخدم قبل الدفع. مفيد لتجربة تسوق سلسة داخل الدردشة.</p>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="sendCartToggle">
-            <span class="slider"></span>
-          </label>
-        </div>
       </div>
       <div id="error" style="display: none; text-align: center; margin-top: 10px; color: #dc3545;"></div>
     `;
@@ -202,7 +192,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('messagingReferralsToggle').checked = settings.messagingReferralsEnabled || false;
         document.getElementById('messageEditsToggle').checked = settings.messageEditsEnabled || false;
         document.getElementById('inboxLabelsToggle').checked = settings.inboxLabelsEnabled || false;
-        document.getElementById('sendCartToggle').checked = settings.sendCartEnabled || false;
 
         // Remove previous event listeners to avoid duplicates
         const toggles = [
@@ -210,8 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
           'messageReactionsToggle',
           'messagingReferralsToggle',
           'messageEditsToggle',
-          'inboxLabelsToggle',
-          'sendCartToggle'
+          'inboxLabelsToggle'
         ];
         toggles.forEach(toggleId => {
           const toggle = document.getElementById(toggleId);
@@ -225,7 +213,6 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('messagingReferralsToggle').addEventListener('change', (e) => updateSetting(botId, 'messagingReferralsEnabled', e.target.checked));
         document.getElementById('messageEditsToggle').addEventListener('change', (e) => updateSetting(botId, 'messageEditsEnabled', e.target.checked));
         document.getElementById('inboxLabelsToggle').addEventListener('change', (e) => updateSetting(botId, 'inboxLabelsEnabled', e.target.checked));
-        document.getElementById('sendCartToggle').addEventListener('change', (e) => updateSetting(botId, 'sendCartEnabled', e.target.checked));
       } catch (err) {
         console.error('❌ Error loading settings:', err);
         spinner.style.display = 'none';
