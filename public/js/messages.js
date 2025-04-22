@@ -60,6 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentTab = 'facebook'; // Default tab
     let conversations = [];
     let userNamesCache = {}; // Cache for Facebook user names
+    let webUserCounter = 1; // Counter for web user names
 
     // Fetch bots
     let bots = [];
@@ -228,11 +229,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Display users
         usersList.innerHTML = '';
         const userIds = [...new Set(conversations.map(conv => conv.userId))];
-        let userCounter = 1;
+        webUserCounter = 1; // Reset counter for web users
 
         for (const userId of userIds) {
           const userConversations = conversations.filter(conv => conv.userId === userId);
           let userName = userId;
+          let isWebUser = userId === 'anonymous' || userId.startsWith('web_'); // Check if user is a web user
+
+          // Apply tab filtering
+          if (currentTab === 'facebook' && isWebUser) continue; // Skip web users in Facebook tab
+          if (currentTab === 'web' && !isWebUser) continue; // Skip non-web users in Web tab
 
           if (currentTab === 'facebook') {
             // Fetch Facebook user name
@@ -254,7 +260,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           } else {
             // Web users
-            userName = `مستخدم ${userCounter++}`;
+            userName = `مستخدم ${webUserCounter++}`;
           }
 
           const userCard = document.createElement('div');
@@ -307,7 +313,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadUserMessages(userId, userName) {
-      userMessages.innerHTML = `<h3>${userName}</h3>`;
+      userMessages.innerHTML = `
+        <div class="chat-header">
+          <h3>${userName}</h3>
+          <button class="delete-btn delete-conversation-btn" data-user-id="${userId}">حذف المحادثة</button>
+        </div>
+        <div class="chat-messages"></div>
+      `;
+      const chatMessages = userMessages.querySelector('.chat-messages');
       userMessages.style.display = 'block';
 
       const userConversations = conversations.filter(conv => conv.userId === userId);
@@ -321,9 +334,8 @@ document.addEventListener('DOMContentLoaded', () => {
         messageDiv.innerHTML = `
           <p>${msg.content}</p>
           <small>${new Date(msg.timestamp).toLocaleString('ar-EG')}</small>
-          <button class="delete-btn delete-message-btn" data-message-id="${msg._id}">حذف</button>
         `;
-        userMessages.appendChild(messageDiv);
+        chatMessages.appendChild(messageDiv);
 
         // Animation
         setTimeout(() => {
@@ -334,31 +346,29 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       // Scroll to bottom
-      userMessages.scrollTop = userMessages.scrollHeight;
+      chatMessages.scrollTop = chatMessages.scrollHeight;
 
-      // Add event listeners for delete message buttons
-      document.querySelectorAll('.delete-message-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          const messageId = btn.getAttribute('data-message-id');
-          if (confirm('هل أنت متأكد من حذف هذه الرسالة؟')) {
-            try {
-              const response = await fetch(`/api/messages/delete-message/${currentBotId}/${userId}/${messageId}?type=${currentTab}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` },
-              });
+      // Add event listener for delete conversation button
+      const deleteConversationBtn = userMessages.querySelector('.delete-conversation-btn');
+      deleteConversationBtn.addEventListener('click', async () => {
+        if (confirm('هل أنت متأكد من حذف هذه المحادثة؟')) {
+          try {
+            const response = await fetch(`/api/messages/delete-user/${currentBotId}/${userId}?type=${currentTab}`, {
+              method: 'DELETE',
+              headers: { 'Authorization': `Bearer ${token}` },
+            });
 
-              if (!response.ok) {
-                throw new Error('فشل في حذف الرسالة');
-              }
-
-              await loadConversations(currentBotId);
-              loadUserMessages(userId, userName);
-            } catch (err) {
-              errorDiv.style.display = 'block';
-              errorDiv.textContent = err.message || 'حدث خطأ أثناء حذف الرسالة';
+            if (!response.ok) {
+              throw new Error('فشل في حذف المحادثة');
             }
+
+            await loadConversations(currentBotId);
+            userMessages.style.display = 'none';
+          } catch (err) {
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = err.message || 'حدث خطأ أثناء حذف المحادثة';
           }
-        });
+        }
       });
     }
   }
