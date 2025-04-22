@@ -38,7 +38,23 @@
   <script src="/js/users.js"></script>
   <script src="/js/feedback.js"></script>
   <script src="/js/facebook.js"></script>
+  <script src="/js/auth.js"></script> <!-- الملف الجديد للـ frontend -->
   <script src="/js/dashboard.js"></script>
-  <!-- باقي السكربتات زي ما هي -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.log('Service Worker Registered'))
+        .catch((err) => console.error('Service Worker Error:', err));
+    }
+    // Toggle light/dark mode
+    document.addEventListener('DOMContentLoaded', () => {
+      const theme = localStorage.getItem('theme') || 'dark';
+      document.body.classList.toggle('light', theme === 'light');
+      document.getElementById('themeToggle')?.addEventListener('click', () => {
+        document.body.classList.toggle('light');
+        localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
+      });
+    });
+  </script>
 </body>
 </html>
