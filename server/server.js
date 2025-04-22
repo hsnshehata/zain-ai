@@ -10,6 +10,7 @@ const rulesRoutes = require('./routes/rules');
 const botRoutes = require('./routes/bot');
 const analyticsRoutes = require('./routes/analytics');
 const chatPageRoutes = require('./routes/chat-page');
+const messagesRoutes = require('./routes/messages'); // Route جديد
 const indexRoutes = require('./routes/index');
 const uploadRoutes = require('./routes/upload');
 const connectDB = require('./db');
@@ -20,18 +21,19 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, '../public'))); // Serve static files from ../public like old system
+app.use(express.static(path.join(__dirname, '../public')));
 
 // Routes
-app.use('/api/webhook', webhookRoutes); // For Webhook routes (GET /facebook, POST /facebook)
-app.use('/api/bots', facebookRoutes); // For settings routes (getSettings, updateSettings)
-app.use('/api/bots', botsRoutes); // Existing bots routes
+app.use('/api/webhook', webhookRoutes);
+app.use('/api/bots', facebookRoutes);
+app.use('/api/bots', botsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
 app.use('/api/rules', rulesRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/chat-page', chatPageRoutes);
+app.use('/api/messages', messagesRoutes); // Route جديد
 app.use('/api/upload', uploadRoutes);
 app.use('/', indexRoutes);
 
@@ -48,23 +50,6 @@ app.get('/dashboard', (req, res) => {
     });
   } catch (err) {
     console.error('Error in dashboard route:', err);
-    res.status(500).json({ message: 'Something went wrong!' });
-  }
-});
-
-// Route for messages page
-app.get('/messages', (req, res) => {
-  try {
-    const filePath = path.join(__dirname, '../public/messages.html');
-    console.log('Serving messages.html from:', filePath);
-    res.sendFile(filePath, (err) => {
-      if (err) {
-        console.error('Error serving messages.html:', err);
-        res.status(500).json({ message: 'Failed to load messages page' });
-      }
-    });
-  } catch (err) {
-    console.error('Error in messages route:', err);
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
