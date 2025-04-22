@@ -141,20 +141,21 @@ const handleMessage = async (req, res) => {
         }
 
         // التعامل مع الـ message_edits
-        if (webhookEvent.message && webhookEvent.message.is_edited && bot.messageEditsEnabled) {
-          const editedMessage = webhookEvent.message.text;
+        if (webhookEvent.message_edit && bot.messageEditsEnabled) {
+          const editedMessage = webhookEvent.message_edit.text;
+          const messageId = webhookEvent.message_edit.mid;
           console.log(`✍️ Edited message received from ${senderPsid}: ${editedMessage}`);
           const responseText = await processMessage(bot._id, senderPsid, editedMessage);
           await sendMessage(senderPsid, responseText, bot.facebookApiKey);
           conversation.messages.push({
             role: 'user',
             content: editedMessage,
-            messageId: webhookEvent.message.mid,
+            messageId: messageId,
           });
           conversation.messages.push({
             role: 'assistant',
             content: responseText,
-            messageId: webhookEvent.message.mid,
+            messageId: messageId,
           });
           await conversation.save();
         }
@@ -229,7 +230,7 @@ const handleMessage = async (req, res) => {
           console.log(`✅ Feedback saved: ${feedback} for message ID: ${messageIdToUse}`);
         }
 
-        if (webhookEvent.message && !webhookEvent.message.is_edited) {
+        if (webhookEvent.message && !webhookEvent.message_edit) {
           const message = webhookEvent.message;
           const mid = message.mid || `temp_${Date.now()}`;
 
