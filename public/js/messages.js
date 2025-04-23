@@ -346,15 +346,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
             function renderMessages(messagesToShow) {
               chatMessages.innerHTML = '';
-              messagesToShow.forEach((msg) => {
+              messagesToShow.forEach((msg, index) => {
                 const messageDiv = document.createElement('div');
                 messageDiv.className = `message ${msg.role === 'user' ? 'user-message' : 'bot-message'}`;
                 messageDiv.style.opacity = '0';
                 messageDiv.style.transform = 'translateY(20px)';
-                messageDiv.innerHTML = `
+                let messageContent = `
                   <p>${msg.content}</p>
                   <small>${new Date(msg.timestamp).toLocaleString('ar-EG')}</small>
                 `;
+                // Add edit button for bot messages
+                if (msg.role === 'assistant') {
+                  messageContent += `
+                    <button class="edit-btn" data-message-index="${index}" style="margin-left: 10px; padding: 5px 10px; background-color: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">تعديل</button>
+                  `;
+                }
+                messageDiv.innerHTML = messageContent;
                 chatMessages.appendChild(messageDiv);
 
                 // Animation for showing messages
@@ -363,6 +370,71 @@ document.addEventListener('DOMContentLoaded', () => {
                   messageDiv.style.opacity = '1';
                   messageDiv.style.transform = 'translateY(0)';
                 }, 100);
+
+                // Add event listener for edit button
+                if (msg.role === 'assistant') {
+                  const editBtn = messageDiv.querySelector('.edit-btn');
+                  editBtn.addEventListener('click', () => {
+                    const messageP = messageDiv.querySelector('p');
+                    const originalContent = messageP.textContent;
+                    messageP.innerHTML = `
+                      <textarea class="edit-textarea" style="width: 100%; min-height: 100px;">${originalContent}</textarea>
+                      <button class="save-rule-btn" style="margin-top: 10px; padding: 5px 10px; background-color: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer;">حفظ قاعدة جديدة</button>
+                    `;
+                    editBtn.style.display = 'none';
+
+                    const saveRuleBtn = messageDiv.querySelector('.save-rule-btn');
+                    saveRuleBtn.addEventListener('click', async () => {
+                      const textarea = messageDiv.querySelector('.edit-textarea');
+                      const newContent = textarea.value.trim();
+                      if (!newContent) {
+                        alert('يرجى إدخال محتوى صالح للقاعدة');
+                        return;
+                      }
+
+                      // Find the previous user message as the question
+                      let question = '';
+                      for (let i = index - 1; i >= 0; i--) {
+                        if (messages[i].role === 'user') {
+                          question = messages[i].content;
+                          break;
+                        }
+                      }
+                      if (!question) {
+                        alert('لم يتم العثور على سؤال من المستخدم لهذا الرد');
+                        return;
+                      }
+
+                      // Save the new rule
+                      try {
+                        const response = await fetch('/api/rules', {
+                          method: 'POST',
+                          headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({
+                            botId: currentBotId,
+                            type: 'qa',
+                            content: { question, answer: newContent },
+                          }),
+                        });
+                        if (!response.ok) {
+                          const errorData = await response.json();
+                          throw new Error(errorData.message || 'فشل في حفظ القاعدة');
+                        }
+                        alert('تم حفظ القاعدة بنجاح');
+                        // Restore the message display
+                        messageP.innerHTML = newContent;
+                        editBtn.style.display = 'inline-block';
+                        saveRuleBtn.remove();
+                      } catch (err) {
+                        console.error('خطأ في حفظ القاعدة:', err);
+                        alert(`خطأ في حفظ القاعدة: ${err.message}`);
+                      }
+                    });
+                  });
+                }
               });
 
               // Scroll to bottom
