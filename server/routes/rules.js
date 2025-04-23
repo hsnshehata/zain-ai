@@ -3,10 +3,15 @@ const router = express.Router();
 const Rule = require('../models/Rule');
 const authenticate = require('../middleware/authenticate');
 
-// جلب كل القواعد
+// جلب كل القواعد مع دعم الفلترة والبحث والـ pagination
 router.get('/', authenticate, async (req, res) => {
   try {
     const botId = req.query.botId;
+    const type = req.query.type; // نوع القاعدة (اختياري)
+    const search = req.query.search; // كلمة البحث (اختياري)
+    const page = parseInt(req.query.page) || 1; // رقم الصفحة
+    const limit = parseInt(req.query.limit) || 30; // عدد القواعد لكل صفحة
+
     if (!botId) {
       return res.status(400).json({ message: 'معرف البوت (botId) مطلوب' });
     }
@@ -16,8 +21,33 @@ router.get('/', authenticate, async (req, res) => {
       query = { botId }; // المستخدم العادي يشوف قواعده فقط
     }
 
-    const rules = await Rule.find(query);
-    res.status(200).json(rules);
+    // فلترة حسب نوع القاعدة
+    if (type && type !== 'all') {
+      query = { ...query, type };
+    }
+
+    // البحث في content
+    if (search) {
+      query.$or = [
+        { 'content.question': { $regex: search, $options: 'i' } },
+        { 'content.answer': { $regex: search, $options: 'i' } },
+        { 'content.product': { $regex: search, $options: 'i' } },
+        { 'content.apiKey': { $regex: search, $options: 'i' } },
+        { content: { $regex: search, $options: 'i' } },
+      ];
+    }
+
+    const totalRules = await Rule.countDocuments(query);
+    const rules = await Rule.find(query)
+      .sort({ createdAt: -1 }) // ترتيب تنازلي حسب تاريخ الإنشاء
+      .skip((page - 1) * limit)
+      .limit(limit);
+
+    res.status(200).json({
+      rules,
+      totalPages: Math.ceil(totalRules / limit),
+      currentPage: page,
+    });
   } catch (err) {
     console.error('❌ خطأ في جلب القواعد:', err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر أثناء جلب القواعد', error: err.message });
@@ -173,8 +203,8 @@ router.delete('/:id', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'القاعدة غير موجودة' });
     }
 
-    if (rule.type === 'global' && req.user.role !== 'superadmin') {
-      return res.status(403).json({ message: 'غير مصرح لك بحذف القواعد الموحدة' });
+    if (rule.type === 'Female('global') && req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف følge القواعد الموحدة' });
     }
 
     await Rule.deleteOne({ _id: req.params.id });
@@ -182,6 +212,59 @@ router.delete('/:id', authenticate, async (req, res) => {
   } catch (err) {
     console.error('❌ خطأ في حذف القاعدة:', err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر أثناء حذف القاعدة', error: err.message });
+  }
+});
+
+// تصدير القواعد
+router.get('/export', authenticate, async (req, res) => {
+  try {
+    const botId = req.query.botId;
+    if (!botId) {
+      return res.status(400).json({ message: 'معرف البوت (botId) مطلوب' });
+    }
+
+    let query = { $or: [{ botId }, { type: 'global' }] };
+    if (req.user.role !== 'superadmin') {
+      query = { botId };
+    }
+
+    const rules = await Rule.find(query);
+    res.setHeader('Content-Disposition', `attachment; filename=rules_${botId}.json`);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).json(rules);
+  } catch (err) {
+    console.error('❌ خطأ في تصدير القواعد:', err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر أثناء تصدير القواعد', error: err.message });
+  }
+});
+
+// استيراد القواعد
+router.post('/import', authenticate, async (req, res) => {
+  try {
+    const { botId, rules } = req.body;
+
+    if (!botId || !rules || !Array.isArray(rules)) {
+      return res.status(400).json({ message: 'معرف البوت وقائمة القواعد مطلوبة' });
+    }
+
+    const validTypes = ['general', 'products', 'qa', 'global', 'api'];
+    for (const rule of rules) {
+      if (!validTypes.includes(rule.type) || !rule.content) {
+        return res.status(400).json({ message: 'بيانات القاعدة غير صالحة' });
+      }
+      if (rule.type === 'global' && req.user.role !== 'superadmin') {
+        return res.status(403).json({ message: 'غير مصرح لك باستيراد قواعد موحدة' });
+      }
+      rule.botId = botId;
+      rule.createdAt = new Date();
+    }
+
+    await Rule.insertMany(rules);
+    console.log('✅ تم استيراد القواعد بنجاح:', rules.length);
+    res.status(201).json({ message: `تم استيراد ${rules.length} قاعدة بنجاح` });
+  } catch (err) {
+    console.error('❌ خطأ في استيراد القواعد:', err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر أثناء استيراد القواعد', error: err.message });
   }
 });
 
