@@ -2,6 +2,7 @@ const OpenAI = require('openai');
 const mongoose = require('mongoose');
 const axios = require('axios');
 const FormData = require('form-data');
+const Bot = require('./models/Bot'); // استيراد موديل Bot
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -58,6 +59,10 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
     console.log('📜 Rules found:', rules);
 
+    // جلب مواعيد العمل بتاعت البوت
+    const bot = await Bot.findById(botId);
+    if (!bot) throw new Error('Bot not found');
+
     let systemPrompt = 'أنت بوت ذكي يساعد المستخدمين بناءً على القواعد التالية:\n';
     if (rules.length === 0) {
       systemPrompt += 'لا توجد قواعد محددة، قم بالرد بشكل عام ومفيد.\n';
@@ -92,9 +97,16 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       console.log('💬 Transcribed audio message:', userMessageContent);
     }
 
-    conversation.messages.push({ role: 'user', content: userMessageContent });
+    // إضافة رسالة المستخدم مع الـ timestamp
+    conversation.messages.push({ role: 'user', content: userMessageContent, timestamp: new Date() });
     await conversation.save();
     console.log('💬 User message added to conversation:', userMessageContent);
+
+    // جلب وقت آخر رسالة من المستخدم
+    const lastUserMessage = conversation.messages
+      .filter(msg => msg.role === 'user')
+      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+    const lastMessageTimestamp = lastUserMessage ? new Date(lastUserMessage.timestamp) : new Date();
 
     const messages = [
       { role: 'system', content: systemPrompt },
@@ -119,10 +131,31 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       max_tokens: 700,
     });
 
-    const reply = response.choices[0].message.content;
+    let reply = response.choices[0].message.content;
     console.log('✅ OpenAI reply:', reply);
 
-    conversation.messages.push({ role: 'assistant', content: reply });
+    // استبدال القيم الديناميكية في الرد
+    if (reply.includes('${lastMessageTimestamp.toLocaleString(\'ar-EG\')}')) {
+      reply = reply.replace('${lastMessageTimestamp.toLocaleString(\'ar-EG\')}', lastMessageTimestamp.toLocaleString('ar-EG'));
+    }
+    if (reply.includes('${lastMessageTimestamp.toISOString()}')) {
+      reply = reply.replace('${lastMessageTimestamp.toISOString()}', lastMessageTimestamp.toISOString());
+    }
+    if (reply.includes('${workingHours.start}')) {
+      reply = reply.replace('${workingHours.start}', bot.workingHours.start);
+    }
+    if (reply.includes('${workingHours.end}')) {
+      reply = reply.replace('${workingHours.end}', bot.workingHours.end);
+    }
+    if (reply.includes('${isOpen ? \'إحنا فاتحين دلوقتي!\' : \'للأسف إحنا مغلقين دلوقتي.\'}')) {
+      const now = lastMessageTimestamp;
+      const startTime = new Date(now.toDateString() + ' ' + bot.workingHours.start);
+      const endTime = new Date(now.toDateString() + ' ' + bot.workingHours.end);
+      const isOpen = now >= startTime && now <= endTime;
+      reply = reply.replace('${isOpen ? \'إحنا فاتحين دلوقتي!\' : \'للأسف إحنا مغلقين دلوقتي.\'}', isOpen ? 'إحنا فاتحين دلوقتي!' : 'للأسف إحنا مغلقين دلوقتي.');
+    }
+
+    conversation.messages.push({ role: 'assistant', content: reply, timestamp: new Date() });
     await conversation.save();
     console.log('💬 Assistant reply added to conversation:', reply);
 
