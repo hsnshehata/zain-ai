@@ -366,14 +366,11 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadUserMessages(userId, userName, chatContainer) {
       chatContainer.innerHTML = `
         <div class="chat-header">
-          <div class="chat-header-left">
-            <h3>${userName}</h3>
-            <div class="search-in-chat">
-              <input type="text" id="searchInChatInput-${userId}" placeholder="ابحث في المحادثة..." />
-              <button id="searchInChatBtn-${userId}" class="search-btn">بحث</button>
-            </div>
-          </div>
-          <button id="closeChatBtn-${userId}" class="close-btn">إغلاق</button>
+          <h3>${userName}</h3>
+          <button id="closeChatBtn-${userId}" class="chat-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="chat-search">
+          <input type="text" id="chatSearchInput-${userId}" placeholder="ابحث في الرسائل..." />
         </div>
         <div class="chat-messages" style="max-height: 400px; overflow-y: auto;"></div>
         <div class="chat-footer" style="display: flex; gap: 10px; justify-content: flex-end; padding: 10px;">
@@ -383,8 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       
       const chatMessages = chatContainer.querySelector('.chat-messages');
-      const searchInChatInput = chatContainer.querySelector(`#searchInChatInput-${userId}`);
-      const searchInChatBtn = chatContainer.querySelector(`#searchInChatBtn-${userId}`);
+      const chatSearchInput = chatContainer.querySelector(`#chatSearchInput-${userId}`);
       const closeChatBtn = chatContainer.querySelector(`#closeChatBtn-${userId}`);
       const deleteSelectedMessagesBtn = chatContainer.querySelector(`#deleteSelectedMessagesBtn-${userId}`);
 
@@ -427,29 +423,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
       renderMessages(messages);
 
-      // Remove any previous event listeners to avoid conflicts
-      const newSearchInChatBtn = searchInChatBtn.cloneNode(true);
-      searchInChatBtn.parentNode.replaceChild(newSearchInChatBtn, searchInChatBtn);
-      const newCloseChatBtn = closeChatBtn.cloneNode(true);
-      closeChatBtn.parentNode.replaceChild(newCloseChatBtn, closeChatBtn);
-
       // Search in chat
-      newSearchInChatBtn.addEventListener('click', () => {
-        console.log('Search button clicked'); // Debugging
-        const searchTerm = searchInChatInput.value.trim().toLowerCase();
-        const filtered = messages.filter(msg => msg.content.toLowerCase().includes(searchTerm));
-        renderMessages(filtered);
-      });
-
-      searchInChatInput.addEventListener('input', () => {
-        if (!searchInChatInput.value.trim()) {
+      chatSearchInput.addEventListener('input', () => {
+        const searchTerm = chatSearchInput.value.trim().toLowerCase();
+        if (searchTerm) {
+          const filtered = messages.filter(msg => msg.content.toLowerCase().includes(searchTerm));
+          renderMessages(filtered);
+        } else {
           renderMessages(messages);
         }
       });
 
       // Close chat
-      newCloseChatBtn.addEventListener('click', () => {
-        console.log('Close button clicked'); // Debugging
+      closeChatBtn.addEventListener('click', () => {
         chatContainer.style.display = 'none';
         currentUserId = '';
       });
