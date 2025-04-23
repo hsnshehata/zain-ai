@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const loadMessagesPage = () => {
     console.log('Loading Messages Page...');
     content.innerHTML = ''; // Clear existing content
-    loadMessagesPageContent(content, token, role, userId); // Call the function from messages.js
+    window.loadMessagesPage(); // Call the function from messages.js
   };
 
   attachEventListeners();
