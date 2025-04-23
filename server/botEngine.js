@@ -2,7 +2,7 @@ const OpenAI = require('openai');
 const mongoose = require('mongoose');
 const axios = require('axios');
 const FormData = require('form-data');
-const Bot = require('./models/Bot'); // استيراد موديل Bot
+const Bot = require('./models/Bot');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -58,10 +58,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
     console.log('📜 Rules found:', rules);
-
-    // جلب مواعيد العمل بتاعت البوت
-    const bot = await Bot.findById(botId);
-    if (!bot) throw new Error('Bot not found');
 
     let systemPrompt = 'أنت بوت ذكي يساعد المستخدمين بناءً على القواعد التالية:\n';
     if (rules.length === 0) {
@@ -125,14 +121,58 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     }
 
     console.log('📡 Calling OpenAI API...');
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages,
-      max_tokens: 700,
-    });
+    let reply = '';
 
-    let reply = response.choices[0].message.content;
-    console.log('✅ OpenAI reply:', reply);
+    // التحقق إذا كان السؤال يتعلق بمواعيد العمل
+    if (message.includes('انتوا فاتحين') || message.includes('مواعيد العمل')) {
+      // تحليل القواعد لاستخراج مواعيد العمل باستخدام OpenAI
+      const timePrompt = `
+        أنت بوت ذكي. القواعد التالية تحتوي على معلومات قد تتضمن مواعيد العمل:
+        ${systemPrompt}
+        السؤال: "${message}"
+        حاول استخراج مواعيد العمل (مثل "من 9 الصبح لـ 5 المغرب" أو "من الساعة 8 للساعة 6") من القواعد.
+        لو لقيت مواعيد عمل، رجعها في صيغة: "من HH:MM إلى HH:MM" (بتوقيت 24 ساعة).
+        لو ما لقيتش مواعيد عمل، رجع: "لم أجد مواعيد عمل في القواعد."
+      `;
+
+      const timeResponse = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'system', content: timePrompt }],
+        max_tokens: 100,
+      });
+
+      let workingHoursText = timeResponse.choices[0].message.content;
+      let workingHours = { start: '09:00', end: '17:00' }; // قيم افتراضية لو ما لقيناش مواعيد
+
+      if (workingHoursText !== 'لم أجد مواعيد عمل في القواعد.') {
+        // استخراج مواعيد العمل من النص (مثال: "من 09:00 إلى 17:00")
+        const match = workingHoursText.match(/من (\d{2}:\d{2}) إلى (\d{2}:\d{2})/);
+        if (match) {
+          workingHours.start = match[1];
+          workingHours.end = match[2];
+        }
+      } else {
+        reply = 'لم أجد مواعيد عمل في القواعد. يمكنك إضافتها في القواعد الخاصة بي!';
+      }
+
+      // إذا لقينا مواعيد عمل، نحسب إذا البوت "فاتح" أو "مغلق"
+      if (!reply) {
+        const now = lastMessageTimestamp;
+        const startTime = new Date(now.toDateString() + ' ' + workingHours.start);
+        const endTime = new Date(now.toDateString() + ' ' + workingHours.end);
+        const isOpen = now >= startTime && now <= endTime;
+
+        reply = `مواعيد العمل من ${workingHours.start} إلى ${workingHours.end}. الوقت دلوقتي ${lastMessageTimestamp.toLocaleString('ar-EG')}. ${isOpen ? 'إحنا فاتحين دلوقتي!' : 'للأسف إحنا مغلقين دلوقتي.'}`;
+      }
+    } else {
+      // إذا كان السؤال مش عن مواعيد العمل، نكمل معالجة الرسالة بشكل عادي
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages,
+        max_tokens: 700,
+      });
+      reply = response.choices[0].message.content;
+    }
 
     // استبدال القيم الديناميكية في الرد
     if (reply.includes('${lastMessageTimestamp.toLocaleString(\'ar-EG\')}')) {
@@ -140,19 +180,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     }
     if (reply.includes('${lastMessageTimestamp.toISOString()}')) {
       reply = reply.replace('${lastMessageTimestamp.toISOString()}', lastMessageTimestamp.toISOString());
-    }
-    if (reply.includes('${workingHours.start}')) {
-      reply = reply.replace('${workingHours.start}', bot.workingHours.start);
-    }
-    if (reply.includes('${workingHours.end}')) {
-      reply = reply.replace('${workingHours.end}', bot.workingHours.end);
-    }
-    if (reply.includes('${isOpen ? \'إحنا فاتحين دلوقتي!\' : \'للأسف إحنا مغلقين دلوقتي.\'}')) {
-      const now = lastMessageTimestamp;
-      const startTime = new Date(now.toDateString() + ' ' + bot.workingHours.start);
-      const endTime = new Date(now.toDateString() + ' ' + bot.workingHours.end);
-      const isOpen = now >= startTime && now <= endTime;
-      reply = reply.replace('${isOpen ? \'إحنا فاتحين دلوقتي!\' : \'للأسف إحنا مغلقين دلوقتي.\'}', isOpen ? 'إحنا فاتحين دلوقتي!' : 'للأسف إحنا مغلقين دلوقتي.');
     }
 
     conversation.messages.push({ role: 'assistant', content: reply, timestamp: new Date() });
