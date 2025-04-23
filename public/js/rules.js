@@ -15,6 +15,28 @@ async function loadRulesPage() {
           </select>
           <label for="botId">اختر البوت</label>
         </div>
+        <div class="rules-actions">
+          <div class="form-group">
+            <input type="text" id="searchInput" placeholder="ابحث في القواعد...">
+            <label for="searchInput">البحث</label>
+          </div>
+          <div class="form-group">
+            <select id="typeFilter" name="typeFilter">
+              <option value="all">الكل</option>
+              <option value="general">عامة</option>
+              <option value="products">أسعار</option>
+              <option value="qa">أسئلة</option>
+              <option value="api">مفتاح API</option>
+              ${role === 'superadmin' ? '<option value="global">موحدة</option>' : ''}
+            </select>
+            <label for="typeFilter">فلتر حسب النوع</label>
+          </div>
+          <div class="action-buttons">
+            <button id="exportRulesBtn" class="download-btn">تصدير القواعد</button>
+            <input type="file" id="importRulesInput" accept=".json" style="display: none;">
+            <button id="importRulesBtn" class="download-btn">استيراد القواعد</button>
+          </div>
+        </div>
         <div class="rule-tabs">
           <button class="rule-type-btn active" data-type="general">قواعد عامة</button>
           <button class="rule-type-btn" data-type="products">قائمة الأسعار</button>
@@ -30,6 +52,7 @@ async function loadRulesPage() {
         </div>
         <h3>القواعد الحالية</h3>
         <div id="rulesList" class="rules-grid"></div>
+        <div id="pagination" class="pagination" style="display: none;"></div>
       </div>
     </div>
   `;
@@ -64,6 +87,12 @@ async function loadRulesPage() {
   const ruleFormContainer = document.getElementById('ruleFormContainer');
   const ruleForm = document.getElementById('ruleForm');
   const rulesList = document.getElementById('rulesList');
+  const searchInput = document.getElementById('searchInput');
+  const typeFilter = document.getElementById('typeFilter');
+  const exportRulesBtn = document.getElementById('exportRulesBtn');
+  const importRulesBtn = document.getElementById('importRulesBtn');
+  const importRulesInput = document.getElementById('importRulesInput');
+  const pagination = document.getElementById('pagination');
 
   // Clear the dropdown before populating to avoid duplicates
   botIdSelect.innerHTML = '<option value="">اختر بوت</option>';
@@ -76,9 +105,11 @@ async function loadRulesPage() {
     botIdSelect.appendChild(option);
   });
 
+  let currentPage = 1;
+
   if (botIdSelect && userBots.length > 0) {
     botIdSelect.value = userBots[0]._id;
-    loadRules(userBots[0]._id, rulesList, token);
+    loadRules(userBots[0]._id, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
     console.log(`✅ تم اختيار البوت الأول تلقائيًا وتحميل القواعد: ${userBots[0].name}`);
   }
 
@@ -159,10 +190,108 @@ async function loadRulesPage() {
   if (botIdSelect) {
     botIdSelect.addEventListener('change', () => {
       const selectedBotId = botIdSelect.value;
-      if (selectedBotId) loadRules(selectedBotId, rulesList, token);
+      currentPage = 1;
+      if (selectedBotId) loadRules(selectedBotId, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
     });
   } else {
     console.error('العنصر botIdSelect غير موجود في الـ DOM');
+  }
+
+  // Event listeners for filters
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      currentPage = 1;
+      loadRules(botIdSelect.value, rulesList, token, typeFilter?.value || 'all', searchInput.value, currentPage);
+    });
+  }
+
+  if (typeFilter) {
+    typeFilter.addEventListener('change', () => {
+      currentPage = 1;
+      loadRules(botIdSelect.value, rulesList, token, typeFilter.value, searchInput?.value || '', currentPage);
+    });
+  }
+
+  // Export rules
+  if (exportRulesBtn) {
+    exportRulesBtn.addEventListener('click', async () => {
+      try {
+        const botId = botIdSelect.value;
+        if (!botId) {
+          alert('يرجى اختيار بوت أولاً');
+          return;
+        }
+        const response = await fetch(`/api/rules/export?botId=${botId}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+        if (!response.ok) {
+          throw new Error('فشل في تصدير القواعد');
+        }
+        const rules = await response.json();
+        const blob = new Blob([JSON.stringify(rules, null, 2)], { type: 'application/json' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `rules_${botId}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (err) {
+        console.error('خطأ في تصدير القواعد:', err);
+        alert('خطأ في تصدير القواعد، حاول مرة أخرى لاحقًا');
+      }
+    });
+  }
+
+  // Import rules
+  if (importRulesBtn && importRulesInput) {
+    importRulesBtn.addEventListener('click', () => {
+      importRulesInput.click();
+    });
+
+    importRulesInput.addEventListener('change', async (event) => {
+      try {
+        const botId = botIdSelect.value;
+        if (!botId) {
+          alert('يرجى اختيار بوت أولاً');
+          return;
+        }
+        const file = event.target.files[0];
+        if (!file) {
+          alert('يرجى اختيار ملف JSON');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          try {
+            const rules = JSON.parse(e.target.result);
+            const response = await fetch('/api/rules/import', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ botId, rules }),
+            });
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.message || 'فشل في استيراد القواعد');
+            }
+            const result = await response.json();
+            alert(result.message);
+            loadRules(botId, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
+          } catch (err) {
+            console.error('خطأ في استيراد القواعد:', err);
+            alert(`خطأ في استيراد القواعد: ${err.message}`);
+          }
+        };
+        reader.readAsText(file);
+      } catch (err) {
+        console.error('خطأ في استيراد القواعد:', err);
+        alert('خطأ في استيراد القواعد، حاول مرة أخرى لاحقًا');
+      }
+    });
   }
 
   if (ruleForm) {
@@ -244,7 +373,7 @@ async function loadRulesPage() {
           throw new Error(errorData.message || 'فشل في إضافة القاعدة');
         }
         alert('تم إضافة القاعدة بنجاح');
-        loadRules(botId, rulesList, token);
+        loadRules(botId, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
       } catch (err) {
         console.error('خطأ في إضافة القاعدة:', err);
         alert(`خطأ في إضافة القاعدة: ${err.message}`);
@@ -252,17 +381,24 @@ async function loadRulesPage() {
     });
   }
 
-  async function loadRules(botId, rulesList, token) {
+  async function loadRules(botId, rulesList, token, typeFilter = 'all', search = '', page = 1) {
     try {
-      const response = await fetch(`/api/rules?botId=${botId}`, {
+      const query = new URLSearchParams({
+        botId,
+        ...(typeFilter && typeFilter !== 'all' && { type: typeFilter }),
+        ...(search && { search }),
+        page,
+        limit: '30',
+      });
+      const response = await fetch(`/api/rules?${query}`, {
         headers: { 'Authorization': `Bearer ${token}` },
       });
       if (!response.ok) {
         throw new Error('فشل في جلب القواعد');
       }
-      const rules = await response.json();
+      const { rules, totalPages, currentPage } = await response.json();
       rulesList.innerHTML = '';
-      if (rules.length === 0) {
+      if (!rules || rules.length === 0) {
         rulesList.innerHTML = '<div class="rule-card"><p>لا توجد قواعد لهذا البوت.</p></div>';
       } else {
         rules.forEach(rule => {
@@ -290,6 +426,24 @@ async function loadRulesPage() {
           `;
           rulesList.appendChild(card);
         });
+      }
+
+      // Render pagination only if there are more than one page
+      pagination.innerHTML = '';
+      if (totalPages > 1) {
+        pagination.style.display = 'flex';
+        for (let i = 1; i <= totalPages; i++) {
+          const pageButton = document.createElement('button');
+          pageButton.textContent = i;
+          pageButton.className = i === currentPage ? 'pagination-btn active' : 'pagination-btn';
+          pageButton.addEventListener('click', () => {
+            currentPage = i;
+            loadRules(botId, rulesList, token, typeFilter, search, currentPage);
+          });
+          pagination.appendChild(pageButton);
+        }
+      } else {
+        pagination.style.display = 'none';
       }
     } catch (err) {
       console.error('خطأ في جلب القواعد:', err);
@@ -363,7 +517,7 @@ async function loadRulesPage() {
           throw new Error('فشل في تعديل القاعدة');
         }
         alert('تم تعديل القاعدة بنجاح');
-        loadRules(botIdSelect.value, rulesList, token);
+        loadRules(botIdSelect.value, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
       }
     } catch (err) {
       console.error('خطأ في تعديل القاعدة:', err);
@@ -393,7 +547,7 @@ async function loadRulesPage() {
           throw new Error('فشل في حذف القاعدة');
         }
         alert('تم حذف القاعدة بنجاح');
-        loadRules(botIdSelect.value, rulesList, token);
+        loadRules(botIdSelect.value, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
       }
     } catch (err) {
       console.error('خطأ في حذف القاعدة:', err);
