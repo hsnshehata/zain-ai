@@ -381,6 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
           <button class="delete-btn delete-conversation-btn" data-user-id="${userId}">حذف المحادثة</button>
         </div>
       `;
+      
       const chatMessages = chatContainer.querySelector('.chat-messages');
       const searchInChatInput = chatContainer.querySelector(`#searchInChatInput-${userId}`);
       const searchInChatBtn = chatContainer.querySelector(`#searchInChatBtn-${userId}`);
@@ -426,8 +427,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
       renderMessages(messages);
 
+      // Remove any previous event listeners to avoid conflicts
+      const newSearchInChatBtn = searchInChatBtn.cloneNode(true);
+      searchInChatBtn.parentNode.replaceChild(newSearchInChatBtn, searchInChatBtn);
+      const newCloseChatBtn = closeChatBtn.cloneNode(true);
+      closeChatBtn.parentNode.replaceChild(newCloseChatBtn, closeChatBtn);
+
       // Search in chat
-      searchInChatBtn.addEventListener('click', () => {
+      newSearchInChatBtn.addEventListener('click', () => {
+        console.log('Search button clicked'); // Debugging
         const searchTerm = searchInChatInput.value.trim().toLowerCase();
         const filtered = messages.filter(msg => msg.content.toLowerCase().includes(searchTerm));
         renderMessages(filtered);
@@ -440,7 +448,8 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       // Close chat
-      closeChatBtn.addEventListener('click', () => {
+      newCloseChatBtn.addEventListener('click', () => {
+        console.log('Close button clicked'); // Debugging
         chatContainer.style.display = 'none';
         currentUserId = '';
       });
