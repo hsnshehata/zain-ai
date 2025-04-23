@@ -15,7 +15,21 @@ async function loadRulesPage() {
           </select>
           <label for="botId">اختر البوت</label>
         </div>
-        <div class="rules-actions">
+        <div class="rule-tabs">
+          <button class="rule-type-btn active" data-type="general">قواعد عامة</button>
+          <button class="rule-type-btn" data-type="products">قائمة الأسعار</button>
+          <button class="rule-type-btn" data-type="qa">سؤال وجواب</button>
+          <button class="rule-type-btn" data-type="api">ربط API للمتجر</button>
+          ${role === 'superadmin' ? '<button class="rule-type-btn" data-type="global">قواعد موحدة</button>' : ''}
+        </div>
+        <div id="ruleFormContainer" style="display: none;">
+          <form id="ruleForm">
+            <div id="contentFields"></div>
+            <button type="submit">إضافة القاعدة</button>
+          </form>
+        </div>
+        <h3>القواعد الحالية</h3>
+        <div class="rules-actions" style="display: flex; gap: 10px; align-items: center;">
           <div class="form-group">
             <input type="text" id="searchInput" placeholder="ابحث في القواعد...">
             <label for="searchInput">البحث</label>
@@ -31,27 +45,13 @@ async function loadRulesPage() {
             </select>
             <label for="typeFilter">فلتر حسب النوع</label>
           </div>
-          <div class="action-buttons">
-            <button id="exportRulesBtn" class="download-btn">تصدير القواعد</button>
-            <input type="file" id="importRulesInput" accept=".json" style="display: none;">
-            <button id="importRulesBtn" class="download-btn">استيراد القواعد</button>
-          </div>
         </div>
-        <div class="rule-tabs">
-          <button class="rule-type-btn active" data-type="general">قواعد عامة</button>
-          <button class="rule-type-btn" data-type="products">قائمة الأسعار</button>
-          <button class="rule-type-btn" data-type="qa">سؤال وجواب</button>
-          <button class="rule-type-btn" data-type="api">ربط API للمتجر</button>
-          ${role === 'superadmin' ? '<button class="rule-type-btn" data-type="global">قواعد موحدة</button>' : ''}
-        </div>
-        <div id="ruleFormContainer" style="display: none;">
-          <form id="ruleForm">
-            <div id="contentFields"></div>
-            <button type="submit">إضافة القاعدة</button>
-          </form>
-        </div>
-        <h3>القواعد الحالية</h3>
         <div id="rulesList" class="rules-grid"></div>
+        <div class="action-buttons" style="margin-top: 20px;">
+          <button id="exportRulesBtn" class="download-btn">تصدير القواعد</button>
+          <input type="file" id="importRulesInput" accept=".json" style="display: none;">
+          <button id="importRulesBtn" class="download-btn">استيراد القواعد</button>
+        </div>
         <div id="pagination" class="pagination" style="display: none;"></div>
       </div>
     </div>
@@ -295,7 +295,8 @@ async function loadRulesPage() {
   }
 
   if (ruleForm) {
-    ruleForm.addEventListener('submit', async (e) => {
+    // Remove any existing submit event listeners to prevent multiple submissions
+    const handleSubmit = async (e) => {
       e.preventDefault();
       const botId = botIdSelect?.value;
       const type = document.querySelector('.rule-type-btn.active')?.getAttribute('data-type');
@@ -378,7 +379,11 @@ async function loadRulesPage() {
         console.error('خطأ في إضافة القاعدة:', err);
         alert(`خطأ في إضافة القاعدة: ${err.message}`);
       }
-    });
+    };
+
+    // Remove existing submit listeners to prevent duplicates
+    ruleForm.removeEventListener('submit', handleSubmit);
+    ruleForm.addEventListener('submit', handleSubmit);
   }
 
   async function loadRules(botId, rulesList, token, typeFilter = 'all', search = '', page = 1) {
