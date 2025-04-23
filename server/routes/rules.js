@@ -203,8 +203,8 @@ router.delete('/:id', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'القاعدة غير موجودة' });
     }
 
-    if (rule.type === 'Female('global') && req.user.role !== 'superadmin') {
-      return res.status(403).json({ message: 'غير مصرح لك بحذف følge القواعد الموحدة' });
+    if (rule.type === 'global' && req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف القواعد الموحدة' });
     }
 
     await Rule.deleteOne({ _id: req.params.id });
