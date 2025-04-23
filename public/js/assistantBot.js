@@ -10,6 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
   let userId = localStorage.getItem('userId') || 'dashboard_user_' + Date.now();
   let pendingAction = null; // لتخزين الإجراءات المعلقة (مثل حفظ قاعدة)
 
+  // إضافة التاريخ ديناميكيًا لرسالة الترحيب
+  const welcomeTimestamp = document.getElementById('welcomeTimestamp');
+  if (welcomeTimestamp) {
+    welcomeTimestamp.textContent = new Date().toLocaleString('ar-EG');
+  }
+
   // فتح/إغلاق الشات
   assistantButton.addEventListener('click', () => {
     assistantChatModal.style.display = assistantChatModal.style.display === 'none' ? 'flex' : 'none';
