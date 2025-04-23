@@ -5,10 +5,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const assistantMessageInput = document.getElementById('assistantMessageInput');
   const assistantSendMessageBtn = document.getElementById('assistantSendMessageBtn');
   const assistantChatMessages = document.getElementById('assistantChatMessages');
+  const newChatBtn = document.getElementById('newChatBtn');
+  const chatArchiveBtn = document.getElementById('chatArchiveBtn');
 
   const ASSISTANT_BOT_ID = '68087d93c0124c9fe05a6996'; // ObjectId للبوت المساعد
   let userId = localStorage.getItem('userId') || 'dashboard_user_' + Date.now();
   let pendingAction = null; // لتخزين الإجراءات المعلقة (مثل حفظ قاعدة)
+  let lastMessageTimestamp = new Date(); // لتخزين وقت آخر رسالة
 
   // إضافة التاريخ ديناميكيًا لرسالة الترحيب
   const welcomeTimestamp = document.getElementById('welcomeTimestamp');
@@ -30,6 +33,47 @@ document.addEventListener('DOMContentLoaded', () => {
     assistantButton.style.transform = 'scale(1)';
   });
 
+  // بدء دردشة جديدة
+  newChatBtn.addEventListener('click', () => {
+    assistantChatMessages.innerHTML = `
+      <div class="message bot-message">
+        <p>مرحبًا! أنا المساعد الذكي. كيف يمكنني مساعدتك اليوم؟</p>
+        <small>${new Date().toLocaleString('ar-EG')}</small>
+      </div>
+    `;
+    pendingAction = null;
+    addBotMessage('بدأت دردشة جديدة. كيف يمكنني مساعدتك؟');
+  });
+
+  // عرض أرشيف الدردشات
+  chatArchiveBtn.addEventListener('click', async () => {
+    try {
+      const response = await fetch(`/api/conversations/${ASSISTANT_BOT_ID}/${userId}`, {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+      });
+      if (!response.ok) throw new Error('فشل في جلب الأرشيف');
+
+      const conversations = await response.json();
+      if (conversations.length === 0) {
+        addBotMessage('لا توجد محادثات سابقة في الأرشيف.');
+        return;
+      }
+
+      let archiveMessage = 'إليك أرشيف محادثاتك:\n';
+      conversations.forEach((conv, index) => {
+        const firstMessage = conv.messages[0]?.content || 'محادثة فارغة';
+        const date = new Date(conv.messages[0]?.timestamp).toLocaleString('ar-EG');
+        archiveMessage += `${index + 1}. [${date}] ${firstMessage}\n`;
+      });
+      archiveMessage += 'اختر رقم المحادثة لعرضها (مثال: "عرض المحادثة 1")';
+
+      addBotMessage(archiveMessage);
+      pendingAction = { type: 'showConversation', data: { conversations } };
+    } catch (err) {
+      addBotMessage('فشل في جلب الأرشيف. حاول مرة أخرى!');
+    }
+  });
+
   // إرسال رسالة
   assistantSendMessageBtn.addEventListener('click', sendMessage);
   assistantMessageInput.addEventListener('keypress', (e) => {
@@ -40,12 +84,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const message = assistantMessageInput.value.trim();
     if (!message) return;
 
+    // تحديث وقت آخر رسالة
+    lastMessageTimestamp = new Date();
+
     // إضافة رسالة المستخدم
     const userMessageDiv = document.createElement('div');
     userMessageDiv.className = 'message user-message';
     userMessageDiv.innerHTML = `
       <p>${message}</p>
-      <small>${new Date().toLocaleString('ar-EG')}</small>
+      <small>${lastMessageTimestamp.toLocaleString('ar-EG')}</small>
     `;
     assistantChatMessages.appendChild(userMessageDiv);
     assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
@@ -65,11 +112,33 @@ document.addEventListener('DOMContentLoaded', () => {
         addBotMessage('حسنًا، يمكنك مراجعة الإعدادات بنفسك. أنا هنا إذا احتجت مساعدة!');
         pendingAction = null;
         return;
+      } else if (pendingAction && pendingAction.type === 'showConversation' && message.match(/عرض المحادثة (\d+)/)) {
+        const match = message.match(/عرض المحادثة (\d+)/);
+        const convIndex = parseInt(match[1]) - 1;
+        const conversations = pendingAction.data.conversations;
+        if (convIndex >= 0 && convIndex < conversations.length) {
+          const conv = conversations[convIndex];
+          assistantChatMessages.innerHTML = '';
+          conv.messages.forEach(msg => {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${msg.role === 'user' ? 'user-message' : 'bot-message'}`;
+            messageDiv.innerHTML = `
+              <p>${msg.content}</p>
+              <small>${new Date(msg.timestamp).toLocaleString('ar-EG')}</small>
+            `;
+            assistantChatMessages.appendChild(messageDiv);
+          });
+          addBotMessage('هذه هي المحادثة المطلوبة. هل تريد متابعة هذه المحادثة أو بدء دردشة جديدة؟');
+        } else {
+          addBotMessage('رقم المحادثة غير صحيح. حاول مرة أخرى!');
+        }
+        pendingAction = null;
+        return;
       }
 
       // تحديد السياق بناءً على الصفحة الحالية
       const currentPage = window.location.hash || '#rules'; // الافتراضي للمستخدم العادي
-      const contextMessage = message + ` (أنا في صفحة ${currentPage.replace('#', '')})`;
+      const contextMessage = message + ` (أنا في صفحة ${currentPage.replace('#', '')}, وقت الرسالة: ${lastMessageTimestamp.toISOString()})`;
 
       // إرسال الرسالة للـ Backend
       const response = await fetch('/api/bot', {
@@ -135,24 +204,31 @@ document.addEventListener('DOMContentLoaded', () => {
   function handleNavigation(reply) {
     if (reply.includes('القواعد')) {
       window.location.hash = 'rules';
+      if (typeof window.loadRulesPage === 'function') window.loadRulesPage();
       addBotMessage('تم الانتقال إلى صفحة القواعد. هل تريد إضافة قاعدة جديدة أو البحث عن قاعدة؟');
     } else if (reply.includes('الرسائل')) {
       window.location.hash = 'messages';
+      if (typeof window.loadMessagesPage === 'function') window.loadMessagesPage();
       addBotMessage('تم الانتقال إلى صفحة الرسائل. هل تريد تصفية الرسائل أو تعديل رد معين؟');
     } else if (reply.includes('التقييمات')) {
       window.location.hash = 'feedback';
+      if (typeof window.loadFeedbackPage === 'function') window.loadFeedbackPage();
       addBotMessage('تم الانتقال إلى صفحة التقييمات. هل تريد عرض التقييمات الإيجابية أو السلبية؟');
     } else if (reply.includes('إعدادات فيسبوك')) {
       window.location.hash = 'facebook';
+      if (typeof window.loadFacebookPage === 'function') window.loadFacebookPage();
       addBotMessage('تم الانتقال إلى صفحة إعدادات فيسبوك. هل تريد تفعيل رسائل الترحيب أو تتبع المصادر؟');
     } else if (reply.includes('البوتات')) {
       window.location.hash = 'bots';
+      if (typeof window.loadBotsPage === 'function') window.loadBotsPage();
       addBotMessage('تم الانتقال إلى صفحة البوتات. هل تريد إنشاء بوت جديد أو تعديل بوت موجود؟');
     } else if (reply.includes('التحليلات')) {
       window.location.hash = 'analytics';
+      if (typeof window.loadAnalyticsPage === 'function') window.loadAnalyticsPage();
       addBotMessage('تم الانتقال إلى صفحة التحليلات. هل تريد عرض إحصائيات بوت معين؟');
     } else if (reply.includes('تخصيص الدردشة')) {
       window.location.hash = 'chat-page';
+      if (typeof window.loadChatPage === 'function') window.loadChatPage();
       addBotMessage('تم الانتقال إلى صفحة تخصيص الدردشة. هل تريد تغيير العنوان أو الألوان؟');
     } else {
       addBotMessage('لم أتعرف على الصفحة المطلوبة. حاول مرة أخرى!');
