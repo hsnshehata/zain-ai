@@ -33,6 +33,34 @@
     <button class="nav-item facebook-btn"><i class="fas fa-cogs"></i> إعدادات فيسبوك</button>
     <button class="nav-item logout-btn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
   </nav>
+
+  <!-- زر عائم للبوت المساعد -->
+  <div id="assistantButtonContainer" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+    <img id="assistantButton" src="https://i.ibb.co/7JJScM0Q/Chat-GPT-Image-20-2025-08-04-13.png" alt="المساعد الذكي" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
+  </div>
+
+  <!-- مربع حواري للبوت المساعد -->
+  <div id="assistantChatModal" class="chat-modal" style="display: none;">
+    <div class="chat-modal-content">
+      <div class="chat-header">
+        <h3>المساعد الذكي</h3>
+        <button id="closeAssistantChatBtn" class="chat-close-btn"><i class="fas fa-times"></i></button>
+      </div>
+      <div id="assistantChatMessages" class="chat-messages">
+        <div class="message bot-message">
+          <p>مرحبًا! أنا المساعد الذكي. كيف يمكنني مساعدتك اليوم؟</p>
+          <small>${new Date().toLocaleString('ar-EG')}</small>
+        </div>
+      </div>
+      <div class="chat-footer">
+        <div class="chat-input">
+          <input type="text" id="assistantMessageInput" placeholder="اكتب رسالتك...">
+          <button id="assistantSendMessageBtn">إرسال</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/bots.js"></script>
   <script src="/js/rules.js"></script>
   <script src="/js/chatPage.js"></script>
@@ -40,9 +68,10 @@
   <script src="/js/users.js"></script>
   <script src="/js/feedback.js"></script>
   <script src="/js/facebook.js"></script>
-  <script src="/js/messages.js"></script> <!-- ملف جديد لصفحة الرسائل -->
+  <script src="/js/messages.js"></script>
   <script src="/js/auth.js"></script>
   <script src="/js/dashboard.js"></script>
+  <script src="/js/assistantBot.js"></script>
   <script>
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/service-worker.js')
@@ -59,5 +88,6 @@
       });
     });
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9342e15f2eee6789',t:'MTc0NTMwMTQxMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9342e15f2eee6789',t:'MTc0NTMwMTQxMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'934aea610a77b0eb',t:'MTc0NTM4NTY2Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
 </html>
