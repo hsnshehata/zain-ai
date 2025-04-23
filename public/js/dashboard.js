@@ -1,23 +1,25 @@
 document.addEventListener('DOMContentLoaded', () => {
   const role = localStorage.getItem('role');
   const token = localStorage.getItem('token');
+  const userId = localStorage.getItem('userId');
   if (!token) {
     window.location.href = '/';
     return;
   }
 
+  const content = document.getElementById('content');
   const botsBtn = document.querySelectorAll('.bots-btn');
   const rulesBtn = document.querySelectorAll('.rules-btn');
   const chatPageBtn = document.querySelectorAll('.chat-page-btn');
   const analyticsBtn = document.querySelectorAll('.analytics-btn');
-  const messagesBtn = document.querySelectorAll('.messages-btn'); // زرار جديد
+  const messagesBtn = document.querySelectorAll('.messages-btn');
   const feedbackBtn = document.querySelectorAll('.feedback-btn');
   const facebookBtn = document.querySelectorAll('.facebook-btn');
   const logoutBtn = document.querySelectorAll('.logout-btn');
 
   if (role !== 'superadmin') {
     botsBtn.forEach(btn => btn.style.display = 'none');
-    messagesBtn.forEach(btn => btn.style.display = 'none'); // إخفاء الرسائل لغير الـ superadmin
+    messagesBtn.forEach(btn => btn.style.display = 'none');
     feedbackBtn.forEach(btn => btn.style.display = 'none');
     facebookBtn.forEach(btn => btn.style.display = 'none');
   } else {
@@ -170,6 +172,12 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error('❌ Error during logout:', err);
       alert('حدث خطأ أثناء تسجيل الخروج');
     }
+  };
+
+  const loadMessagesPage = () => {
+    console.log('Loading Messages Page...');
+    content.innerHTML = ''; // Clear existing content
+    loadMessagesPageContent(content, token, role, userId); // Call the function from messages.js
   };
 
   attachEventListeners();
