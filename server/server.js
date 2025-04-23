@@ -10,10 +10,11 @@ const rulesRoutes = require('./routes/rules');
 const botRoutes = require('./routes/bot');
 const analyticsRoutes = require('./routes/analytics');
 const chatPageRoutes = require('./routes/chat-page');
-const messagesRoutes = require('./routes/messages'); // Route جديد
+const messagesRoutes = require('./routes/messages');
 const indexRoutes = require('./routes/index');
 const uploadRoutes = require('./routes/upload');
 const connectDB = require('./db');
+const Conversation = require('./models/Conversation'); // استيراد موديل Conversation
 
 const app = express();
 
@@ -33,9 +34,21 @@ app.use('/api/rules', rulesRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/chat-page', chatPageRoutes);
-app.use('/api/messages', messagesRoutes); // Route جديد
+app.use('/api/messages', messagesRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/', indexRoutes);
+
+// Route لجلب المحادثات بتاعت المستخدم مع البوت
+app.get('/api/conversations/:botId/:userId', async (req, res) => {
+  try {
+    const { botId, userId } = req.params;
+    const conversations = await Conversation.find({ botId, userId }).sort({ 'messages.timestamp': -1 });
+    res.status(200).json(conversations);
+  } catch (err) {
+    console.error('❌ Error fetching conversations:', err.message, err.stack);
+    res.status(500).json({ message: 'Failed to fetch conversations' });
+  }
+});
 
 // Route for dashboard
 app.get('/dashboard', (req, res) => {
