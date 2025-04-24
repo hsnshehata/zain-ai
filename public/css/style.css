@@ -20,6 +20,144 @@ body {
   overflow-x: hidden;
 }
 
+/* Chat Container */
+.chat-container {
+  max-width: 400px;
+  margin: 20px auto;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 40px);
+}
+
+/* Chat Header */
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px;
+  background-color: #f8f9fa; /* Default from colorSchemes */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.chat-logo {
+  max-height: 40px;
+  width: auto;
+}
+
+.chat-title {
+  font-size: 1.2em;
+  margin: 0;
+  color: #333333; /* Default from colorSchemes */
+}
+
+/* Chat Messages */
+.chat-messages {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  background-color: #ffffff; /* Default from colorSchemes */
+  color: #333333; /* Default from colorSchemes */
+}
+
+.message {
+  margin: 5px 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  max-width: 80%;
+  word-wrap: break-word;
+}
+
+.user-message {
+  background-color: #007bff; /* Default from colorSchemes */
+  color: #ffffff; /* Default from colorSchemes */
+  margin-left: auto;
+}
+
+.bot-message {
+  background-color: #e9ecef; /* Default from colorSchemes */
+  color: #333333; /* Default from colorSchemes */
+  margin-right: auto;
+}
+
+/* Suggested Questions */
+.suggested-questions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  justify-content: center;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+}
+
+.suggested-question {
+  padding: 6px 12px;
+  font-size: 0.9em;
+  background-color: #007bff; /* Default from colorSchemes */
+  color: #ffffff;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.suggested-question:hover {
+  transform: translateY(-2px);
+}
+
+/* Chat Input */
+.chat-input {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  background: var(--card-bg);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  flex-wrap: wrap;
+}
+
+.chat-input input[type="text"] {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px;
+  font-size: 0.9em;
+  background: var(--glass-bg);
+  color: #333333; /* Default from colorSchemes */
+  border: 1px solid transparent;
+  border-radius: 8px;
+}
+
+.chat-input input[type="file"] {
+  background: var(--glass-bg);
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 8px;
+  color: var(--text-dark);
+  cursor: pointer;
+}
+
+.chat-input button {
+  padding: 8px 16px;
+  font-size: 0.9em;
+  background-color: #007bff; /* Default from colorSchemes */
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.chat-input button:hover {
+  background: #1565C0;
+  transform: translateY(-2px);
+}
+
 /* Containers */
 .container, .dashboard-container {
   max-width: 1200px;
@@ -47,34 +185,31 @@ body {
     min-height: calc(100vh - 80px);
     overflow-y: auto;
   }
-}
-
-@media (min-width: 769px) {
-  .dashboard-container {
-    margin-left: 270px;
-    padding-bottom: 20px;
+  .chat-container {
+    margin: 10px;
+    max-width: 100%;
   }
-}
-
-@media (max-width: 768px) {
-  .dashboard-container {
-    margin-left: 0;
-    padding-bottom: 100px;
-    min-height: calc(100vh - 100px);
-    overflow-y: auto;
+  .chat-title {
+    font-size: 1em;
   }
-}
-
-/* Bot Selector Container */
-.bot-selector-container {
-  position: sticky;
-  top: 0;
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  padding: 10px;
-  z-index: 100;
-  border-radius: 8px;
-  margin-bottom: 20px;
+  .chat-logo {
+    max-height: 30px;
+  }
+  .chat-messages {
+    height: 150px;
+  }
+  .suggested-question {
+    padding: 5px 10px;
+    font-size: 0.8em;
+  }
+  .chat-input input[type="text"],
+  .chat-input input[type="file"],
+  .chat-input button {
+    font-size: 0.8em;
+  }
+  .chat-input button {
+    padding: 6px 12px;
+  }
 }
 
 /* Sidebar */
@@ -236,7 +371,7 @@ select option {
 /* Bot Selector */
 .bot-selector {
   margin-bottom: 20px;
-  padding: 10px;
+  padding:10px;
   background: var(--glass-bg);
   backdrop-filter: blur(10px);
   border-radius: 8px;
@@ -482,7 +617,7 @@ select option {
 
 .question-actions button {
   padding: 5px 10px;
-  font-size: 0.9em;
+  font-size: 0. Materia9em;
 }
 
 /* Buttons */
@@ -1237,6 +1372,7 @@ input:checked + .slider:before {
   backdrop-filter: blur(10px);
   padding: 15px;
   border-radius: 8px;
+  box-shadow: var矿山设备
   box-shadow: var(--shadow);
 }
 
