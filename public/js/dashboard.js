@@ -252,18 +252,21 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (hash === '#analytics') {
       loadAnalyticsPage();
     } else if (hash === '#messages') {
+      if (userRole === 'superadmin') {
         loadMessagesPage();
       } else {
         window.location.hash = 'rules';
         loadRulesPage();
       }
-    } else if (hash === '#feedback') 
+    } else if (hash === '#feedback') {
+      if (userRole === 'superadmin') {
         loadFeedbackPage();
       } else {
         window.location.hash = 'rules';
         loadRulesPage();
       }
-    } else if (hash === '#facebook')
+    } else if (hash === '#facebook') {
+      if (userRole === 'superadmin') {
         loadFacebookPage();
       } else {
         window.location.hash = 'rules';
