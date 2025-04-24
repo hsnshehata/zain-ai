@@ -1,222 +1,152 @@
-/* chat.css - Styles for Chat Page */
-
-/* Chat Container */
+/* chat.css */
 .chat-container {
-  width: 85%;
-  max-width: 600px;
-  margin: 0 auto;
-  background: #34495e; /* الألوان الجديدة */
-  border: 2px solid #1abc9c; /* إطار بنفس اللون الجديد */
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  max-width: 800px;
+  margin: 20px auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   overflow: hidden;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  min-height: 600px; /* عشان ياخد الارتفاع زي الصورة */
+  direction: rtl;
+  font-family: 'Arial', sans-serif;
 }
 
-/* Chat Header */
-.chat-header {
+#chatHeader {
+  padding: 15px 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between; /* زي القديم */
-  background: #2c3e50; /* Dark theme header from colorSchemes 'غامق 1' */
-  color: #ffffff;
-  padding: 10px;
-  font-weight: bold;
-  border-bottom: 2px solid #1abc9c; /* إطار بنفس اللون الجديد */
+  justify-content: center;
 }
 
-.chat-logo {
-  width: 85px; /* زي القديم */
-  height: auto;
-  margin-left: 10px;
-}
-
-.chat-title {
-  flex: 1;
-  text-align: left; /* زي القديم */
-  font-size: 18px;
-  font-weight: bold;
-  margin: 0;
-  color: #ffffff;
-}
-
-/* Suggested Questions Section (Questions Container) */
-.suggested-questions {
-  width: 100%;
-  overflow: hidden;
-  white-space: nowrap;
-  background: #2c3e50; /* زي القديم */
-  padding: 8px 0;
-  position: relative;
-  display: block; /* للتأكد إنه بيظهر */
-}
-
-/* Suggested Question Buttons */
-.suggested-question {
-  display: inline-block;
-  padding: 7px 12px;
-  margin: 0 5px;
-  background: linear-gradient(45deg, #1abc9c, #16a085); /* تدرج بالألوان الجديدة */
-  color: #ffffff;
-  border-radius: 12px;
-  border: none;
-  cursor: pointer;
-  font-size: 12px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  box-shadow: 0 0 8px rgba(26, 188, 156, 0.7), 0 0 15px rgba(26, 188, 156, 0.5);
-}
-
-.suggested-question:hover {
-  transform: scale(1.08);
-  box-shadow: 0 0 12px rgba(26, 188, 156, 1);
-}
-
-/* Marquee Animation for Suggested Questions */
-.suggested-questions .questions-marquee {
+.header-content {
   display: flex;
-  gap: 15px;
-  animation: marquee 360s linear infinite;
+  align-items: center;
+  gap: 10px;
 }
 
-@keyframes marquee {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(4000%); }
+#chatLogo {
+  max-width: 40px;
+  max-height: 40px;
+  border-radius: 50%;
 }
 
-/* Chat Messages Area */
-.chat-messages {
-  height: 330px; /* زي القديم */
+#chatTitle {
+  margin: 0;
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+#chatMessages {
   padding: 20px;
+  height: 400px;
   overflow-y: auto;
-  background-color: #34495e; /* Matches chat-container background */
-  color: #ffffff;
-  border-bottom: 2px solid #1abc9c; /* إطار بنفس اللون الجديد */
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
 
-/* Individual Messages */
 .message {
-  padding: 8px; /* زي القديم */
-  border-radius: 10px; /* زي القديم */
-  max-width: 75%; /* زي القديم */
+  max-width: 70%;
+  padding: 10px 15px;
+  border-radius: 12px;
+  line-height: 1.4;
   word-wrap: break-word;
-  font-size: 13px; /* زي القديم */
 }
 
 .user-message {
-  background-color: #1abc9c; /* User message color from colorSchemes 'غامق 1' */
-  color: #ffffff;
-  align-self: flex-end; /* زي القديم */
+  align-self: flex-end;
+  margin-left: 10px;
+  border-bottom-right-radius: 4px;
 }
 
 .bot-message {
-  background-color: #2c3e50; /* Bot message color from colorSchemes 'غامق 1' */
-  color: #ffffff;
-  border-left: 4px solid #1abc9c; /* إطار بنفس اللون الجديد */
-  align-self: flex-start; /* زي القديم */
+  align-self: flex-start;
+  margin-right: 10px;
+  border-bottom-left-radius: 4px;
 }
 
-/* Chat Input Section */
-.chat-input {
+#suggestedQuestions {
+  padding: 10px 20px;
   display: flex;
-  align-items: center;
-  justify-content: space-between; /* زي القديم */
-  padding: 10px;
-  background: #2c3e50; /* زي القديم */
-  border-top: 2px solid #1abc9c; /* إطار بنفس اللون الجديد */
-  gap: 10px; /* زي القديم */
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
-.chat-input input[type="text"] {
-  flex: 1;
-  padding: 10px; /* زي القديم */
-  border: 2px solid #1abc9c; /* إطار بنفس اللون الجديد */
-  border-radius: 5px;
-  background: #34495e; /* زي القديم */
-  color: #ffffff;
-  outline: none;
-}
-
-.chat-input input[type="file"] {
-  background: #34495e;
-  border: 2px solid #1abc9c; /* إطار بنفس اللون الجديد */
-  border-radius: 5px;
-  padding: 8px;
-  color: #ffffff;
-  cursor: pointer;
-}
-
-.chat-input input[type="file"]::file-selector-button {
-  background: #1abc9c;
-  color: #ffffff;
-  border: none;
+.suggested-question {
   padding: 8px 16px;
-  border-radius: 5px;
+  border: none;
+  border-radius: 20px;
   cursor: pointer;
-  transition: transform 0.3s;
+  font-size: 0.9em;
+  transition: transform 0.2s, background-color 0.3s;
 }
 
-.chat-input input[type="file"]::file-selector-button:hover {
+.suggested-question:hover {
   transform: translateY(-2px);
 }
 
-.chat-input input[type="file"]::file-selector-button:active {
-  transform: translateY(0);
+.chat-input {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  gap: 10px;
+  border-top: 1px solid #e0e0e0;
 }
 
-.chat-input button {
-  padding: 10px 20px; /* زي القديم */
-  border: none;
-  background: #1abc9c; /* زي القديم */
-  color: #ffffff;
-  border-radius: 5px;
-  cursor: pointer;
-  font-weight: bold;
-  transition: 0.3s ease;
-}
-
-.chat-input button:hover {
-  background: #16a085; /* زي القديم */
-}
-
-/* Thumbnail Images in Messages */
-.message img {
-  max-width: 100px;
-  height: auto;
+#messageInput {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
   border-radius: 8px;
-  margin-top: 5px;
+  font-size: 1em;
+  outline: none;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 600px) {
-  .chat-container {
-    width: 90%;
-    min-height: 90vh; /* زي الصورة */
-  }
-  .chat-title {
-    font-size: 16px;
-  }
-  .chat-logo {
-    width: 60px;
-  }
-  .chat-messages {
-    height: 200px; /* للتأقلم مع الشاشات الصغيرة */
-  }
-  .suggested-question {
-    padding: 5px 10px;
-    font-size: 11px;
-  }
-  .chat-input input[type="text"],
-  .chat-input input[type="file"],
-  .chat-input button {
-    font-size: 0.9em;
-  }
-  .chat-input button {
-    padding: 8px 15px;
-  }
+#imageInput::file-selector-button,
+#sendMessageBtn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1em;
+  transition: transform 0.2s, background-color 0.3s;
+}
+
+#imageInput::file-selector-button:hover,
+#sendMessageBtn:hover {
+  transform: translateY(-2px);
+}
+
+.feedback-buttons {
+  margin-top: 5px;
+  display: flex;
+  gap: 10px;
+}
+
+.feedback-btn {
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.feedback-btn:hover {
+  transform: scale(1.2);
+}
+
+/* Scrollbar Styling */
+#chatMessages::-webkit-scrollbar {
+  width: 8px;
+}
+
+#chatMessages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#chatMessages::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+#chatMessages::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
