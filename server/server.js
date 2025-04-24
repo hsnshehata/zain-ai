@@ -15,6 +15,7 @@ const indexRoutes = require('./routes/index');
 const uploadRoutes = require('./routes/upload');
 const connectDB = require('./db');
 const Conversation = require('./models/Conversation'); // استيراد موديل Conversation
+const { processMessage } = require('./botEngine'); // استيراد processMessage من botEngine
 
 const app = express();
 
@@ -47,6 +48,18 @@ app.get('/api/conversations/:botId/:userId', async (req, res) => {
   } catch (err) {
     console.error('❌ Error fetching conversations:', err.message, err.stack);
     res.status(500).json({ message: 'Failed to fetch conversations' });
+  }
+});
+
+// Route جديد للذكاء الاصطناعي
+app.post('/api/bot/ai', async (req, res) => {
+  try {
+    const { botId, message, userId } = req.body;
+    const reply = await processMessage(botId, userId, message); // استدعاء دالة processMessage من botEngine.js
+    res.status(200).json({ reply });
+  } catch (err) {
+    console.error('❌ Error in AI route:', err.message, err.stack);
+    res.status(500).json({ message: 'Failed to process AI request' });
   }
 });
 
