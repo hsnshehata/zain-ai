@@ -22,21 +22,18 @@ exports.getSettings = async (req, res) => {
     if (!bot) {
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
-    // التأكد من إن المستخدم ليه صلاحية للوصول للبوت ده
-    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'غير مصرح لك بالوصول إلى هذا البوت' });
-    }
+
     res.status(200).json({
-      messagingOptinsEnabled: bot.messagingOptinsEnabled,
-      messageReactionsEnabled: bot.messageReactionsEnabled,
-      messagingReferralsEnabled: bot.messagingReferralsEnabled,
-      messageEditsEnabled: bot.messageEditsEnabled,
-      inboxLabelsEnabled: bot.inboxLabelsEnabled,
-      sendCartEnabled: bot.sendCartEnabled,
+      messagingOptinsEnabled: bot.messagingOptinsEnabled || false,
+      messageReactionsEnabled: bot.messageReactionsEnabled || false,
+      messagingReferralsEnabled: bot.messagingReferralsEnabled || false,
+      messageEditsEnabled: bot.messageEditsEnabled || false,
+      inboxLabelsEnabled: bot.inboxLabelsEnabled || false,
+      sendCartEnabled: bot.sendCartEnabled || false,
     });
   } catch (err) {
     console.error('❌ خطأ في جلب إعدادات البوت:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر' });
+    res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
   }
 };
 
@@ -48,10 +45,6 @@ exports.updateSettings = async (req, res) => {
     if (!bot) {
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
-    // التأكد من إن المستخدم ليه صلاحية للوصول للبوت ده
-    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'غير مصرح لك بالوصول إلى هذا البوت' });
-    }
 
     const updates = req.body;
     await Bot.updateOne({ _id: botId }, { $set: updates });
@@ -59,6 +52,6 @@ exports.updateSettings = async (req, res) => {
     res.status(200).json({ message: 'تم تحديث الإعدادات بنجاح' });
   } catch (err) {
     console.error('❌ خطأ في تحديث إعدادات البوت:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر' });
+    res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
   }
 };
