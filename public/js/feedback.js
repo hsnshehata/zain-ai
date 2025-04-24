@@ -2,14 +2,20 @@ async function loadFeedbackPage() {
   const content = document.getElementById('content');
   const role = localStorage.getItem('role');
   const userId = localStorage.getItem('userId');
+  const token = localStorage.getItem('token');
+  const selectedBotId = localStorage.getItem('selectedBotId');
+
+  if (!selectedBotId) {
+    content.innerHTML = `
+      <h2>التقييمات</h2>
+      <p style="color: red;">يرجى اختيار بوت من لوحة التحكم أولاً.</p>
+    `;
+    return;
+  }
 
   content.innerHTML = `
     <h2>التقييمات</h2>
     <div class="feedback-container">
-      <div class="form-group">
-        <select id="botSelectFeedback" onchange="loadFeedback(this.value)"></select>
-        <label for="botSelectFeedback">اختر بوت</label>
-      </div>
       <div class="feedback-sections">
         <div class="feedback-column positive-column">
           <h3>التقييمات الإيجابية</h3>
@@ -32,44 +38,14 @@ async function loadFeedbackPage() {
     </div>
   `;
 
-  const botSelect = document.getElementById('botSelectFeedback');
-  try {
-    const res = await fetch('/api/bots', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    });
-
-    let bots;
-    try {
-      bots = await res.json();
-    } catch (jsonErr) {
-      throw new Error('فشل في تحليل البيانات: رد السيرفر غير متوقع');
-    }
-
-    if (!res.ok) {
-      throw new Error(bots.message || 'فشل في جلب البوتات');
-    }
-
-    botSelect.innerHTML = '';
-    const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
-    userBots.forEach((bot) => {
-      botSelect.innerHTML += `<option value="${bot._id}">${bot.name}</option>`;
-    });
-
-    if (botSelect.options.length > 0) {
-      loadFeedback(botSelect.options[0].value);
-    } else {
-      content.innerHTML += `<p style="color: #dc3545; text-align: center;">لا توجد بوتات متاحة لعرض تقييماتها.</p>`;
-    }
-  } catch (err) {
-    console.error('❌ خطأ في جلب البوتات:', err);
-    content.innerHTML = `<p style="color: #dc3545; text-align: center;">تعذر تحميل البيانات، حاول مرة أخرى لاحقًا.</p>`;
-  }
+  await loadFeedback(selectedBotId);
 }
 
 async function loadFeedback(botId) {
   console.log(`📋 Loading feedback for botId: ${botId}`);
   const positiveFeedbackList = document.getElementById('positiveFeedbackList');
   const negativeFeedbackList = document.getElementById('negativeFeedbackList');
+  const token = localStorage.getItem('token');
 
   if (!positiveFeedbackList || !negativeFeedbackList) {
     console.error('عناصر التقييمات غير موجودة في الـ DOM');
@@ -81,7 +57,7 @@ async function loadFeedback(botId) {
 
   try {
     const res = await fetch(`/api/bots/${botId}/feedback`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     let feedback;
@@ -209,7 +185,7 @@ async function deleteFeedback(feedbackId, botId) {
 }
 
 async function clearFeedback(type) {
-  const botId = document.getElementById('botSelectFeedback').value;
+  const botId = localStorage.getItem('selectedBotId');
   console.log(`🗑️ Attempting to hide ${type} feedback for botId: ${botId}`);
   if (!botId) {
     alert('يرجى اختيار بوت أولاً.');
@@ -259,7 +235,7 @@ async function clearFeedback(type) {
 }
 
 async function downloadFeedback(type) {
-  const botId = document.getElementById('botSelectFeedback').value;
+  const botId = localStorage.getItem('selectedBotId');
   if (!botId) {
     alert('يرجى اختيار بوت أولاً.');
     return;
