@@ -1,0 +1,117 @@
+/* feedback.css - Styles for Feedback Page */
+
+/* Feedback Container */
+.feedback-container {
+  margin-top: 20px;
+}
+
+/* Feedback Sections */
+.feedback-sections {
+  display: flex;
+  gap: 20px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+/* Feedback Column */
+.feedback-column {
+  flex: 1;
+  min-width: 300px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.feedback-column h3 {
+  margin-top: 0;
+  color: #E0E0E0;
+}
+
+/* Feedback Grid */
+.feedback-grid {
+  display: grid;
+  gap: 15px;
+}
+
+/* Feedback Card */
+.feedback-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+.feedback-card p {
+  margin: 5px 0;
+  color: #E0E0E0;
+}
+
+/* Feedback Actions */
+.feedback-actions {
+  margin-top: 15px;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+/* Action Buttons */
+.clear-btn,
+.download-btn,
+.delete-btn {
+  padding: 8px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+.clear-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.clear-btn:hover {
+  background-color: #c82333;
+  transform: translateY(-2px);
+}
+
+.download-btn {
+  background-color: #28a745;
+  color: white;
+}
+
+.download-btn:hover {
+  background-color: #218838;
+  transform: translateY(-2px);
+}
+
+.delete-btn {
+  background-color: #ff6b6b;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #e65a5a;
+  transform: translateY(-2px);
+}
+
+/* Feedback Note */
+.feedback-note {
+  margin-top: 20px;
+  font-style: italic;
+  color: #E0E0E0;
+  opacity: 0.8;
+  text-align: center;
+}
+
+/* Ensure Proper Direction for Arabic */
+.feedback-container,
+.feedback-column,
+.feedback-card,
+.feedback-actions,
+.feedback-note {
+  direction: rtl;
+}
