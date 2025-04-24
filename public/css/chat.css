@@ -2,16 +2,17 @@
 
 /* Chat Container */
 .chat-container {
+  width: 85%;
+  max-width: 600px;
+  margin: 0 auto;
+  background: #34495e; /* الألوان الجديدة */
+  border: 2px solid #1abc9c; /* إطار بنفس اللون الجديد */
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  width: 100%;
-  max-width: 600px; /* زي القديم */
-  margin: 0 auto;
-  padding: 15px;
-  background: #34495e; /* الألوان الجديدة */
-  border-radius: 12px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1); /* زي القديم */
   min-height: 600px; /* عشان ياخد الارتفاع زي الصورة */
 }
 
@@ -19,108 +20,132 @@
 .chat-header {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
+  justify-content: space-between; /* زي القديم */
+  background: #2c3e50; /* Dark theme header from colorSchemes 'غامق 1' */
+  color: #ffffff;
   padding: 10px;
-  background-color: #2c3e50; /* Dark theme header from colorSchemes 'غامق 1' */
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px 8px 0 0;
+  font-weight: bold;
+  border-bottom: 2px solid #1abc9c; /* إطار بنفس اللون الجديد */
 }
 
 .chat-logo {
-  max-height: 40px;
-  width: auto;
+  width: 85px; /* زي القديم */
+  height: auto;
+  margin-left: 10px;
 }
 
 .chat-title {
-  font-size: 1.2em;
+  flex: 1;
+  text-align: left; /* زي القديم */
+  font-size: 18px;
+  font-weight: bold;
   margin: 0;
-  color: #ffffff; /* White text for dark theme */
+  color: #ffffff;
+}
+
+/* Suggested Questions Section (Questions Container) */
+.suggested-questions {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  background: #2c3e50; /* زي القديم */
+  padding: 8px 0;
+  position: relative;
+  display: block; /* للتأكد إنه بيظهر */
+}
+
+/* Suggested Question Buttons */
+.suggested-question {
+  display: inline-block;
+  padding: 7px 12px;
+  margin: 0 5px;
+  background: linear-gradient(45deg, #1abc9c, #16a085); /* تدرج بالألوان الجديدة */
+  color: #ffffff;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 0 8px rgba(26, 188, 156, 0.7), 0 0 15px rgba(26, 188, 156, 0.5);
+}
+
+.suggested-question:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 12px rgba(26, 188, 156, 1);
+}
+
+/* Marquee Animation for Suggested Questions */
+.suggested-questions .questions-marquee {
+  display: flex;
+  gap: 15px;
+  animation: marquee 360s linear infinite;
+}
+
+@keyframes marquee {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(4000%); }
 }
 
 /* Chat Messages Area */
 .chat-messages {
-  height: 300px; /* زي القديم */
-  padding: 10px;
+  height: 330px; /* زي القديم */
+  padding: 20px;
   overflow-y: auto;
   background-color: #34495e; /* Matches chat-container background */
   color: #ffffff;
-  margin-bottom: 20px;
-  border-radius: 8px;
-  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1); /* زي القديم */
+  border-bottom: 2px solid #1abc9c; /* إطار بنفس اللون الجديد */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
 /* Individual Messages */
 .message {
-  margin: 5px 0;
-  padding: 10px; /* زي القديم */
-  border-radius: 8px; /* زي القديم */
-  max-width: 80%;
+  padding: 8px; /* زي القديم */
+  border-radius: 10px; /* زي القديم */
+  max-width: 75%; /* زي القديم */
   word-wrap: break-word;
+  font-size: 13px; /* زي القديم */
 }
 
 .user-message {
   background-color: #1abc9c; /* User message color from colorSchemes 'غامق 1' */
   color: #ffffff;
-  margin-left: auto;
+  align-self: flex-end; /* زي القديم */
 }
 
 .bot-message {
   background-color: #2c3e50; /* Bot message color from colorSchemes 'غامق 1' */
   color: #ffffff;
-  margin-right: auto;
-}
-
-/* Suggested Questions Section */
-.suggested-questions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding: 10px;
-  justify-content: center;
-  background: #34495e;
-}
-
-.suggested-question {
-  padding: 6px 12px;
-  font-size: 0.9em;
-  background-color: #1abc9c;
-  color: #ffffff;
-  border: none;
-  border-radius: 20px;
-  cursor: pointer;
-  transition: transform 0.3s;
-}
-
-.suggested-question:hover {
-  transform: translateY(-2px);
+  border-left: 4px solid #1abc9c; /* إطار بنفس اللون الجديد */
+  align-self: flex-start; /* زي القديم */
 }
 
 /* Chat Input Section */
 .chat-input {
   display: flex;
-  gap: 10px;
+  align-items: center;
+  justify-content: space-between; /* زي القديم */
   padding: 10px;
-  background: #34495e;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  flex-wrap: wrap;
+  background: #2c3e50; /* زي القديم */
+  border-top: 2px solid #1abc9c; /* إطار بنفس اللون الجديد */
+  gap: 10px; /* زي القديم */
 }
 
 .chat-input input[type="text"] {
   flex: 1;
-  min-width: 200px;
-  padding: 8px;
-  font-size: 0.9em;
-  background: #2c3e50;
+  padding: 10px; /* زي القديم */
+  border: 2px solid #1abc9c; /* إطار بنفس اللون الجديد */
+  border-radius: 5px;
+  background: #34495e; /* زي القديم */
   color: #ffffff;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  outline: none;
 }
 
 .chat-input input[type="file"] {
-  background: #2c3e50;
-  border: 1px solid transparent;
-  border-radius: 8px;
+  background: #34495e;
+  border: 2px solid #1abc9c; /* إطار بنفس اللون الجديد */
+  border-radius: 5px;
   padding: 8px;
   color: #ffffff;
   cursor: pointer;
@@ -131,7 +156,7 @@
   color: #ffffff;
   border: none;
   padding: 8px 16px;
-  border-radius: 8px;
+  border-radius: 5px;
   cursor: pointer;
   transition: transform 0.3s;
 }
@@ -145,19 +170,18 @@
 }
 
 .chat-input button {
-  padding: 8px 16px;
-  font-size: 0.9em;
-  background-color: #1abc9c;
-  color: #ffffff;
+  padding: 10px 20px; /* زي القديم */
   border: none;
-  border-radius: 8px;
+  background: #1abc9c; /* زي القديم */
+  color: #ffffff;
+  border-radius: 5px;
   cursor: pointer;
-  transition: all 0.3s;
+  font-weight: bold;
+  transition: 0.3s ease;
 }
 
 .chat-input button:hover {
-  background: #16a085; /* Slightly darker shade for hover effect */
-  transform: translateY(-2px);
+  background: #16a085; /* زي القديم */
 }
 
 /* Thumbnail Images in Messages */
@@ -171,29 +195,28 @@
 /* Responsive Adjustments */
 @media (max-width: 600px) {
   .chat-container {
-    margin: 10px;
-    max-width: 100%;
+    width: 90%;
     min-height: 90vh; /* زي الصورة */
   }
   .chat-title {
-    font-size: 1em;
+    font-size: 16px;
   }
   .chat-logo {
-    max-height: 30px;
+    width: 60px;
   }
   .chat-messages {
-    height: 150px; /* زي القديم */
+    height: 200px; /* للتأقلم مع الشاشات الصغيرة */
   }
   .suggested-question {
     padding: 5px 10px;
-    font-size: 0.8em;
+    font-size: 11px;
   }
   .chat-input input[type="text"],
   .chat-input input[type="file"],
   .chat-input button {
-    font-size: 0.8em;
+    font-size: 0.9em;
   }
   .chat-input button {
-    padding: 6px 12px;
+    padding: 8px 15px;
   }
 }
