@@ -233,6 +233,40 @@ document.addEventListener('DOMContentLoaded', () => {
     assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
     conversationHistory.push({ role: 'assistant', content: content });
   }
+  function handleNavigation(reply) {
+    if (reply.includes('القواعد')) {
+      window.location.hash = 'rules';
+      if (typeof window.loadRulesPage === 'function') window.loadRulesPage();
+      addBotMessage('تم الانتقال إلى صفحة القواعد. هل تريد إضافة قاعدة جديدة أو البحث عن قاعدة؟');
+    } else if (reply.includes('الرسائل')) {
+      window.location.hash = 'messages';
+      if (typeof window.loadMessagesPage === 'function') window.loadMessagesPage();
+      addBotMessage('تم الانتقال إلى صفحة الرسائل. هل تريد تصفية الرسائل أو تعديل رد معين؟');
+    } else if (reply.includes('التقييمات')) {
+      window.location.hash = 'feedback';
+      if (typeof window.loadFeedbackPage === 'function') window.loadFeedbackPage();
+      addBotMessage('تم الانتقال إلى صفحة التقييمات. هل تريد عرض التقييمات الإيجابية أو السلبية؟');
+    } else if (reply.includes('إعدادات فيسبوك')) {
+      window.location.hash = 'facebook';
+      if (typeof window.loadFacebookPage === 'function') window.loadFacebookPage();
+      addBotMessage('تم الانتقال إلى صفحة إعدادات فيسبوك. هل تريد تفعيل رسائل الترحيب أو تتبع المصادر؟');
+    } else if (reply.includes('البوتات')) {
+      window.location.hash = 'bots';
+      if (typeof window.loadBotsPage === 'function') window.loadBotsPage();
+      addBotMessage('تم الانتقال إلى صفحة البوتات. هل تريد إنشاء بوت جديد أو تعديل بوت موجود؟');
+    } else if (reply.includes('التحليلات')) {
+      window.location.hash = 'analytics';
+      if (typeof window.loadAnalyticsPage === 'function') window.loadAnalyticsPage();
+      addBotMessage('تم الانتقال إلى صفحة التحليلات. هل تريد عرض إحصائيات بوت معين؟');
+    } else if (reply.includes('تخصيص الدردشة')) {
+      window.location.hash = 'chat-page';
+      if (typeof window.loadChatPage === 'function') window.loadChatPage();
+      addBotMessage('تم الانتقال إلى صفحة تخصيص الدردشة. هل تريد تغيير العنوان أو الألوان؟');
+    } else {
+      addBotMessage('لم أتعرف على الصفحة المطلوبة. حاول مرة أخرى!');
+    }
+  }
+
 
   async function handleAddRule(reply) {
     const ruleMatch = reply.match(/أضف قاعدة (عامة|موحدة|أسعار|سؤال وجواب|API): (.*)/);
