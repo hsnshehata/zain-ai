@@ -181,6 +181,24 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (reply.includes('في صفحة')) {
         handleContextSuggestions(reply);
       } else {
+        // لو الرسالة مش مطابقة لأي أمر معروف، نستخدم الذكاء الاصطناعي للرد
+        const aiResponse = await fetch('/api/bot/ai', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({
+            botId: ASSISTANT_BOT_ID,
+            message: contextMessage,
+            userId,
+          }),
+        });
+
+        if (!aiResponse.ok) throw new Error('فشل في جلب رد الذكاء الاصطناعي');
+
+        const aiData = await aiResponse.json();
+        reply = aiData.reply || 'عذرًا، مش عارف أرد على ده. ممكن تحاول بطريقة تانية؟';
         addBotMessage(reply);
       }
     } catch (err) {
@@ -648,9 +666,18 @@ document.addEventListener('DOMContentLoaded', () => {
     else if (setting === 'تصنيف المحادثات') settingKey = 'inboxLabelsToggle';
 
     const toggle = document.getElementById(settingKey);
+    if (!toggle) {
+      addBotMessage('لم أجد الإعداد المطلوب في صفحة إعدادات فيسبوك. تأكد من تحميل الصفحة.');
+      return;
+    }
+
     toggle.checked = true;
     toggle.dispatchEvent(new Event('change'));
 
+    // إرسال رسالة للنظام بدل المستخدم
+    if (typeof window.loadFacebookPage === 'function') {
+      window.loadFacebookPage();
+    }
     addBotMessage(`تم تفعيل ${setting} لبوت "${botName}". هل تريد تفعيل إعداد آخر؟`);
   }
 
