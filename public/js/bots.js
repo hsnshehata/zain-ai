@@ -1,24 +1,25 @@
-let selectedBotId = null;
-
 async function loadBotsPage() {
   const content = document.getElementById('content');
   const role = localStorage.getItem('role');
   const userId = localStorage.getItem('userId');
+  const token = localStorage.getItem('token');
+
+  if (role !== 'superadmin') {
+    content.innerHTML = `
+      <h2>إدارة البوتات</h2>
+      <p style="color: red;">غير مسموح لك بالوصول إلى هذه الصفحة.</p>
+    `;
+    return;
+  }
 
   content.innerHTML = `
     <h2>إدارة البوتات</h2>
     <div class="bots-container">
       <div class="spinner"><div class="loader"></div></div>
       <div id="botsContent" style="display: none;">
-        <div class="form-group">
-          <select id="botSelect" onchange="selectBot(this.value)"></select>
-          <label for="botSelect">اختر بوت</label>
-        </div>
         <div class="admin-actions">
-          ${role === 'superadmin' ? `
-            <button onclick="showCreateUserForm()">إنشاء مستخدم جديد</button>
-            <button onclick="showCreateBotForm()">إنشاء بوت جديد</button>
-          ` : ''}
+          <button onclick="showCreateUserForm()">إنشاء مستخدم جديد</button>
+          <button onclick="showCreateBotForm()">إنشاء بوت جديد</button>
         </div>
         <div id="formContainer"></div>
         <div id="usersTable" class="users-grid"></div>
@@ -32,60 +33,20 @@ async function loadBotsPage() {
   try {
     spinner.style.display = 'flex';
     await fetchUsers();
-    await populateBotSelect();
     botsContent.style.display = 'block';
     spinner.style.display = 'none';
-    if (!selectedBotId && document.getElementById('botSelect').options.length > 0) {
-      selectBot(document.getElementById('botSelect').options[0].value);
-    }
   } catch (err) {
-    console.error('خطأ في تحميل البوتات:', err);
+    console.error('خطأ في تحميل البيانات:', err);
     botsContent.innerHTML = `<p style="color: red;">تعذر تحميل البيانات، حاول مرة أخرى لاحقًا.</p>`;
     spinner.style.display = 'none';
   }
 }
 
-async function populateBotSelect() {
-  const botSelect = document.getElementById('botSelect');
-  const role = localStorage.getItem('role');
-  const userId = localStorage.getItem('userId');
-  try {
-    const res = await fetch('/api/bots', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-    });
-    if (!res.ok) {
-      throw new Error('فشل في جلب البوتات');
-    }
-    const bots = await res.json();
-
-    botSelect.innerHTML = '';
-    const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
-    userBots.forEach((bot) => {
-      botSelect.innerHTML += `<option value="${bot._id}">${bot.name}</option>`;
-    });
-  } catch (err) {
-    console.error('خطأ في جلب البوتات:', err);
-    alert('خطأ في جلب البوتات');
-  }
-}
-
-function selectBot(botId) {
-  selectedBotId = botId;
-  const botSelect = document.getElementById('botSelect');
-  for (let option of botSelect.options) {
-    option.classList.remove('selected-bot');
-    if (option.value === botId) {
-      option.classList.add('selected-bot');
-    }
-  }
-}
-
 async function fetchUsers() {
-  const role = localStorage.getItem('role');
-  const userId = localStorage.getItem('userId');
+  const token = localStorage.getItem('token');
   try {
     const res = await fetch('/api/users', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) {
       throw new Error('فشل في جلب المستخدمين');
@@ -95,27 +56,17 @@ async function fetchUsers() {
     const usersGrid = document.getElementById('usersTable');
     usersGrid.innerHTML = '';
 
-    if (role !== 'superadmin') {
-      users = users.filter(user => user._id === userId);
-    }
-
     if (users.length === 0) {
       usersGrid.innerHTML = '<div class="user-card"><p>لا توجد مستخدمين.</p></div>';
       return;
     }
 
     users.forEach((user) => {
-      const botsList = user.bots.map((bot) => {
-        if (role === 'superadmin') {
-          return `
-            ${bot.name}
-            <button onclick="editBot('${bot._id}', '${bot.name}', '${bot.facebookApiKey || ''}', '${bot.facebookPageId || ''}')">تعديل</button>
-            <button onclick="deleteBot('${bot._id}')">حذف</button>
-          `;
-        } else {
-          return `${bot.name}`;
-        }
-      }).join('<br>');
+      const botsList = user.bots.map((bot) => `
+        ${bot.name}
+        <button onclick="editBot('${bot._id}', '${bot.name}', '${bot.facebookApiKey || ''}', '${bot.facebookPageId || ''}')">تعديل</button>
+        <button onclick="deleteBot('${bot._id}')">حذف</button>
+      `).join('<br>');
 
       const card = document.createElement('div');
       card.className = 'user-card';
@@ -123,12 +74,10 @@ async function fetchUsers() {
         <h4>${user.username}</h4>
         <p>نوع المستخدم: ${user.role === 'superadmin' ? 'سوبر أدمن' : 'مستخدم عادي'}</p>
         <p>البوتات: ${botsList || 'لا توجد بوتات'}</p>
-        ${role === 'superadmin' ? `
-          <div class="card-actions">
-            <button onclick="editUser('${user._id}', '${user.username}', '${user.role}')">تعديل</button>
-            <button onclick="deleteUser('${user._id}')">حذف</button>
-          </div>
-        ` : ''}
+        <div class="card-actions">
+          <button onclick="editUser('${user._id}', '${user.username}', '${user.role}')">تعديل</button>
+          <button onclick="deleteUser('${user._id}')">حذف</button>
+        </div>
       `;
       usersGrid.appendChild(card);
     });
@@ -225,10 +174,6 @@ function showCreateBotForm() {
       if (res.ok) {
         formContainer.innerHTML = '<p>تم إنشاء البوت بنجاح!</p>';
         await fetchUsers();
-        await populateBotSelect();
-        if (!selectedBotId && document.getElementById('botSelect').options.length > 0) {
-          selectBot(document.getElementById('botSelect').options[0].value);
-        }
       } else {
         errorEl.textContent = data.message || 'فشل في إنشاء البوت';
       }
@@ -261,7 +206,6 @@ async function editBot(id, name, facebookApiKey, facebookPageId) {
       if (res.ok) {
         alert('تم تعديل البوت بنجاح');
         await fetchUsers();
-        await populateBotSelect();
       } else {
         alert(data.message || 'فشل في تعديل البوت');
       }
@@ -284,12 +228,6 @@ async function deleteBot(id) {
       if (res.ok) {
         alert('تم حذف البوت بنجاح');
         await fetchUsers();
-        await populateBotSelect();
-        if (selectedBotId === id && document.getElementById('botSelect').options.length > 0) {
-          selectBot(document.getElementById('botSelect').options[0].value);
-        } else if (document.getElementById('botSelect').options.length === 0) {
-          selectedBotId = null;
-        }
       } else {
         alert(data.message || 'فشل في حذف البوت');
       }
@@ -298,12 +236,4 @@ async function deleteBot(id) {
       alert('خطأ في السيرفر');
     }
   }
-}
-
-function getSelectedBotId() {
-  return selectedBotId;
-}
-
-function setSelectedBotId(botId) {
-  selectedBotId = botId;
 }
