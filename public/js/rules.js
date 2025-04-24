@@ -3,18 +3,21 @@ async function loadRulesPage() {
   const role = localStorage.getItem('role');
   const userId = localStorage.getItem('userId');
   const token = localStorage.getItem('token');
+  const selectedBotId = localStorage.getItem('selectedBotId');
+
+  if (!selectedBotId) {
+    content.innerHTML = `
+      <h2>إدارة القواعد</h2>
+      <p style="color: red;">يرجى اختيار بوت من لوحة التحكم أولاً.</p>
+    `;
+    return;
+  }
 
   content.innerHTML = `
     <h2>إدارة القواعد</h2>
     <div class="rules-container">
       <div class="spinner"><div class="loader"></div></div>
       <div id="rulesContent" style="display: none;">
-        <div class="form-group">
-          <select id="botId" name="botId" required>
-            <option value="">اختر بوت</option>
-          </select>
-          <label for="botId">اختر البوت</label>
-        </div>
         <div class="rule-tabs">
           <button class="rule-type-btn active" data-type="general">قواعد عامة</button>
           <button class="rule-type-btn" data-type="products">قائمة الأسعار</button>
@@ -60,28 +63,19 @@ async function loadRulesPage() {
   const rulesContent = document.getElementById('rulesContent');
   const spinner = document.querySelector('.spinner');
 
-  let bots = [];
   try {
     spinner.style.display = 'flex';
-    const response = await fetch('/api/bots', {
-      headers: { 'Authorization': `Bearer ${token}` },
-    });
-    if (!response.ok) {
-      throw new Error(`فشل في جلب البوتات: ${response.status} ${response.statusText}`);
-    }
-    bots = await response.json();
     rulesContent.style.display = 'block';
     spinner.style.display = 'none';
   } catch (err) {
-    console.error('خطأ في جلب البوتات:', err);
+    console.error('خطأ في تحميل الصفحة:', err);
     rulesContent.innerHTML = `
-      <p style="color: red;">تعذر جلب البوتات، حاول مرة أخرى لاحقًا.</p>
+      <p style="color: red;">تعذر تحميل الصفحة، حاول مرة أخرى لاحقًا.</p>
     `;
     spinner.style.display = 'none';
     return;
   }
 
-  const botIdSelect = document.getElementById('botId');
   const ruleTypeButtons = document.querySelectorAll('.rule-type-btn');
   const contentFields = document.getElementById('contentFields');
   const ruleFormContainer = document.getElementById('ruleFormContainer');
@@ -94,24 +88,9 @@ async function loadRulesPage() {
   const importRulesInput = document.getElementById('importRulesInput');
   const pagination = document.getElementById('pagination');
 
-  // Clear the dropdown before populating to avoid duplicates
-  botIdSelect.innerHTML = '<option value="">اختر بوت</option>';
-
-  const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
-  userBots.forEach(bot => {
-    const option = document.createElement('option');
-    option.value = bot._id;
-    option.textContent = bot.name;
-    botIdSelect.appendChild(option);
-  });
-
   let currentPage = 1;
 
-  if (botIdSelect && userBots.length > 0) {
-    botIdSelect.value = userBots[0]._id;
-    loadRules(userBots[0]._id, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
-    console.log(`✅ تم اختيار البوت الأول تلقائيًا وتحميل القواعد: ${userBots[0].name}`);
-  }
+  loadRules(selectedBotId, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
 
   const loadContentFields = (type) => {
     contentFields.innerHTML = '';
@@ -187,28 +166,18 @@ async function loadRulesPage() {
     ruleTypeButtons[0].click();
   }
 
-  if (botIdSelect) {
-    botIdSelect.addEventListener('change', () => {
-      const selectedBotId = botIdSelect.value;
-      currentPage = 1;
-      if (selectedBotId) loadRules(selectedBotId, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
-    });
-  } else {
-    console.error('العنصر botIdSelect غير موجود في الـ DOM');
-  }
-
   // Event listeners for filters
   if (searchInput) {
     searchInput.addEventListener('input', () => {
       currentPage = 1;
-      loadRules(botIdSelect.value, rulesList, token, typeFilter?.value || 'all', searchInput.value, currentPage);
+      loadRules(selectedBotId, rulesList, token, typeFilter?.value || 'all', searchInput.value, currentPage);
     });
   }
 
   if (typeFilter) {
     typeFilter.addEventListener('change', () => {
       currentPage = 1;
-      loadRules(botIdSelect.value, rulesList, token, typeFilter.value, searchInput?.value || '', currentPage);
+      loadRules(selectedBotId, rulesList, token, typeFilter.value, searchInput?.value || '', currentPage);
     });
   }
 
@@ -216,12 +185,7 @@ async function loadRulesPage() {
   if (exportRulesBtn) {
     exportRulesBtn.addEventListener('click', async () => {
       try {
-        const botId = botIdSelect.value;
-        if (!botId) {
-          alert('يرجى اختيار بوت أولاً');
-          return;
-        }
-        const response = await fetch(`/api/rules/export?botId=${botId}`, {
+        const response = await fetch(`/api/rules/export?botId=${selectedBotId}`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
         if (!response.ok) {
@@ -232,7 +196,7 @@ async function loadRulesPage() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `rules_${botId}.json`;
+        a.download = `rules_${selectedBotId}.json`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -252,11 +216,6 @@ async function loadRulesPage() {
 
     importRulesInput.addEventListener('change', async (event) => {
       try {
-        const botId = botIdSelect.value;
-        if (!botId) {
-          alert('يرجى اختيار بوت أولاً');
-          return;
-        }
         const file = event.target.files[0];
         if (!file) {
           alert('يرجى اختيار ملف JSON');
@@ -272,7 +231,7 @@ async function loadRulesPage() {
                 'Authorization': `Bearer ${token}`,
                 'Content-Type': 'application/json',
               },
-              body: JSON.stringify({ botId, rules }),
+              body: JSON.stringify({ botId: selectedBotId, rules }),
             });
             if (!response.ok) {
               const errorData = await response.json();
@@ -280,7 +239,7 @@ async function loadRulesPage() {
             }
             const result = await response.json();
             alert(result.message);
-            loadRules(botId, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
+            loadRules(selectedBotId, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
           } catch (err) {
             console.error('خطأ في استيراد القواعد:', err);
             alert(`خطأ في استيراد القواعد: ${err.message}`);
@@ -298,12 +257,11 @@ async function loadRulesPage() {
     // Remove any existing submit event listeners to prevent multiple submissions
     const handleSubmit = async (e) => {
       e.preventDefault();
-      const botId = botIdSelect?.value;
       const type = document.querySelector('.rule-type-btn.active')?.getAttribute('data-type');
       let content;
 
-      if (!botId || !type) {
-        alert('يرجى اختيار بوت ونوع القاعدة');
+      if (!type) {
+        alert('يرجى اختيار نوع القاعدة');
         return;
       }
 
@@ -360,21 +318,21 @@ async function loadRulesPage() {
       }
 
       try {
-        console.log('📤 إرسال قاعدة جديدة:', { botId, type, content });
+        console.log('📤 إرسال قاعدة جديدة:', { botId: selectedBotId, type, content });
         const response = await fetch('/api/rules', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ botId, type, content }),
+          body: JSON.stringify({ botId: selectedBotId, type, content }),
         });
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.message || 'فشل في إضافة القاعدة');
         }
         alert('تم إضافة القاعدة بنجاح');
-        loadRules(botId, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
+        loadRules(selectedBotId, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
       } catch (err) {
         console.error('خطأ في إضافة القاعدة:', err);
         alert(`خطأ في إضافة القاعدة: ${err.message}`);
@@ -522,7 +480,7 @@ async function loadRulesPage() {
           throw new Error('فشل في تعديل القاعدة');
         }
         alert('تم تعديل القاعدة بنجاح');
-        loadRules(botIdSelect.value, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
+        loadRules(selectedBotId, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
       }
     } catch (err) {
       console.error('خطأ في تعديل القاعدة:', err);
@@ -552,7 +510,7 @@ async function loadRulesPage() {
           throw new Error('فشل في حذف القاعدة');
         }
         alert('تم حذف القاعدة بنجاح');
-        loadRules(botIdSelect.value, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
+        loadRules(selectedBotId, rulesList, token, typeFilter?.value || 'all', searchInput?.value || '', currentPage);
       }
     } catch (err) {
       console.error('خطأ في حذف القاعدة:', err);
