@@ -150,13 +150,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }),
       });
 
-      if (!response.ok) throw new Error('فشل في معالجة الرسالة');
+      if (!response.ok) {
+        throw new Error('فشل في معالجة الرسالة');
+      }
 
       const data = await response.json();
       let reply = data.reply || 'عذرًا، لم أفهم طلبك. حاول مرة أخرى!';
 
       if (reply.includes('<') || reply.includes('>')) {
-        reply = reply.replace(/</g, '<').replace(/>/g, '>');
+        reply = reply.replace(/</g, '&lt;').replace(/>/g, '&gt;');
       }
 
       if (reply.includes('انتقل إلى صفحة')) {
@@ -174,38 +176,49 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (reply.includes('اعرض التقييمات')) {
         handleShowFeedback(reply);
       } else if (reply.includes('فعّل')) {
-        handleFacebookSettings(reply);
+        await handleFacebookSettings(reply);
       } else if (reply.includes('اعرض إحصائيات')) {
         handleShowAnalytics(reply);
       } else if (reply.includes('في صفحة')) {
         handleContextSuggestions(reply);
       } else {
-        const aiResponse = await fetch('/api/bot/ai', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: JSON.stringify({
-            botId: ASSISTANT_BOT_ID,
-            message: contextMessage,
-            userId,
-            history: conversationHistory,
-          }),
-        });
-
-        if (!aiResponse.ok) throw new Error('فشل في جلب رد الذكاء الاصطناعي');
-
-        const aiData = await aiResponse.json();
-        reply = aiData.reply || 'عذرًا، مش عارف أرد على ده. ممكن تحاول بطريقة تانية؟';
-        if (reply.includes('<') || reply.includes('>')) {
-          reply = reply.replace(/</g, '<').replace(/>/g, '>');
-        }
-        addBotMessage(reply);
+        await handleAIResponse(contextMessage, reply);
       }
     } catch (err) {
       console.error('خطأ في معالجة الرسالة:', err);
-      addBotMessage('عذرًا، حدث خطأ أثناء معالجة طلبك.');
+      addBotMessage('عذرًا، حدث خطأ أثناء معالجة طلبك. حاول مرة أخرى!');
+    }
+  }
+
+  async function handleAIResponse(contextMessage, fallbackReply) {
+    try {
+      const aiResponse = await fetch('/api/bot/ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({
+          botId: ASSISTANT_BOT_ID,
+          message: contextMessage,
+          userId,
+          history: conversationHistory,
+        }),
+      });
+
+      if (!aiResponse.ok) {
+        throw new Error('فشل في جلب رد الذكاء الاصطناعي');
+      }
+
+      const aiData = await aiResponse.json();
+      let reply = aiData.reply || 'عذرًا، مش عارف أرد على ده. ممكن تحاول بطريقة تانية؟';
+      if (reply.includes('<') || reply.includes('>')) {
+        reply = reply.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      }
+      addBotMessage(reply);
+    } catch (err) {
+      console.error('خطأ في جلب رد الذكاء الاصطناعي:', err);
+      addBotMessage(fallbackReply || 'عذرًا، مش عارف أرد على ده. ممكن تحاول بطريقة تانية؟');
     }
   }
 
