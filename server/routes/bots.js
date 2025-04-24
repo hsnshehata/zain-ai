@@ -26,10 +26,6 @@ router.get('/:id/feedback', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
-    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'غير مصرح لك بعرض تقييمات هذا البوت' });
-    }
-
     const feedback = await Feedback.find({ botId, isVisible: true }).sort({ timestamp: -1 });
     res.status(200).json(feedback);
   } catch (err) {
@@ -53,11 +49,6 @@ router.delete('/:id/feedback/:feedbackId', authenticate, async (req, res) => {
     const bot = await Bot.findById(botId);
     if (!bot) {
       return res.status(404).json({ message: 'البوت غير موجود' });
-    }
-
-    // التحقق من صلاحيات المستخدم
-    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'غير مصرح لك بإخفاء تقييمات هذا البوت' });
     }
 
     // البحث عن التقييم والتحقق من تطابق botId
@@ -87,11 +78,6 @@ router.delete('/:id/feedback/clear/:type', authenticate, async (req, res) => {
     const bot = await Bot.findById(botId);
     if (!bot) {
       return res.status(404).json({ message: 'البوت غير موجود' });
-    }
-
-    // التحقق من صلاحيات المستخدم
-    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'غير مصرح لك بإخفاء تقييمات هذا البوت' });
     }
 
     // إخفاء التقييمات
