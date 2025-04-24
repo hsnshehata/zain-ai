@@ -22,16 +22,15 @@ body {
 
 /* Chat Container */
 .chat-container {
-  max-width: 400px;
+  max-width: 350px; /* زي الصورة التالتة */
   margin: 20px auto;
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  background: #34495e; /* من colorSchemes 'غامق 1' */
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 40px);
+  height: 600px; /* زي الصورة التالتة */
 }
 
 /* Chat Header */
@@ -41,7 +40,7 @@ body {
   justify-content: center;
   gap: 10px;
   padding: 10px;
-  background-color: #f8f9fa; /* Default from colorSchemes */
+  background-color: #2c3e50; /* من colorSchemes 'غامق 1' */
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -53,7 +52,7 @@ body {
 .chat-title {
   font-size: 1.2em;
   margin: 0;
-  color: #333333; /* Default from colorSchemes */
+  color: #ffffff; /* من colorSchemes 'غامق 1' */
 }
 
 /* Chat Messages */
@@ -61,27 +60,27 @@ body {
   flex: 1;
   padding: 10px;
   overflow-y: auto;
-  background-color: #ffffff; /* Default from colorSchemes */
-  color: #333333; /* Default from colorSchemes */
+  background-color: #34495e; /* من colorSchemes 'غامق 1' */
+  color: #ffffff; /* من colorSchemes 'غامق 1' */
 }
 
 .message {
   margin: 5px 0;
   padding: 8px 12px;
-  border-radius: 12px;
+  border-radius: 20px; /* زي الصورة التالتة */
   max-width: 80%;
   word-wrap: break-word;
 }
 
 .user-message {
-  background-color: #007bff; /* Default from colorSchemes */
-  color: #ffffff; /* Default from colorSchemes */
+  background-color: #1abc9c; /* من colorSchemes 'غامق 1' */
+  color: #ffffff; /* من colorSchemes 'غامق 1' */
   margin-left: auto;
 }
 
 .bot-message {
-  background-color: #e9ecef; /* Default from colorSchemes */
-  color: #333333; /* Default from colorSchemes */
+  background-color: #2c3e50; /* من colorSchemes 'غامق 1' */
+  color: #ffffff; /* من colorSchemes 'غامق 1' */
   margin-right: auto;
 }
 
@@ -92,14 +91,13 @@ body {
   gap: 8px;
   padding: 10px;
   justify-content: center;
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
+  background: #34495e; /* من colorSchemes 'غامق 1' */
 }
 
 .suggested-question {
   padding: 6px 12px;
   font-size: 0.9em;
-  background-color: #007bff; /* Default from colorSchemes */
+  background-color: #1abc9c; /* من colorSchemes 'غامق 1' */
   color: #ffffff;
   border: none;
   border-radius: 20px;
@@ -116,8 +114,7 @@ body {
   display: flex;
   gap: 10px;
   padding: 10px;
-  background: var(--card-bg);
-  backdrop-filter: blur(10px);
+  background: #34495e; /* من colorSchemes 'غامق 1' */
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   flex-wrap: wrap;
 }
@@ -127,25 +124,25 @@ body {
   min-width: 200px;
   padding: 8px;
   font-size: 0.9em;
-  background: var(--glass-bg);
-  color: #333333; /* Default from colorSchemes */
+  background: #2c3e50; /* من colorSchemes 'غامق 1' */
+  color: #ffffff; /* من colorSchemes 'غامق 1' */
   border: 1px solid transparent;
   border-radius: 8px;
 }
 
 .chat-input input[type="file"] {
-  background: var(--glass-bg);
+  background: #2c3e50; /* من colorSchemes 'غامق 1' */
   border: 1px solid transparent;
   border-radius: 8px;
   padding: 8px;
-  color: var(--text-dark);
+  color: #ffffff;
   cursor: pointer;
 }
 
 .chat-input button {
   padding: 8px 16px;
   font-size: 0.9em;
-  background-color: #007bff; /* Default from colorSchemes */
+  background-color: #1abc9c; /* من colorSchemes 'غامق 1' */
   color: #ffffff;
   border: none;
   border-radius: 8px;
@@ -154,7 +151,7 @@ body {
 }
 
 .chat-input button:hover {
-  background: #1565C0;
+  background: #16a085; /* تدرج أغمق من #1abc9c */
   transform: translateY(-2px);
 }
 
@@ -188,6 +185,7 @@ body {
   .chat-container {
     margin: 10px;
     max-width: 100%;
+    height: 90vh; /* زي الصورة التالتة */
   }
   .chat-title {
     font-size: 1em;
@@ -371,7 +369,7 @@ select option {
 /* Bot Selector */
 .bot-selector {
   margin-bottom: 20px;
-  padding:10px;
+  padding: 10px;
   background: var(--glass-bg);
   backdrop-filter: blur(10px);
   border-radius: 8px;
@@ -617,7 +615,7 @@ select option {
 
 .question-actions button {
   padding: 5px 10px;
-  font-size: 0. Materia9em;
+  font-size: 0.9em;
 }
 
 /* Buttons */
@@ -1372,7 +1370,6 @@ input:checked + .slider:before {
   backdrop-filter: blur(10px);
   padding: 15px;
   border-radius: 8px;
-  box-shadow: var矿山设备
   box-shadow: var(--shadow);
 }
 
