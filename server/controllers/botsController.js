@@ -26,10 +26,6 @@ router.get('/:id/feedback', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
-    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.id) {
-      return res.status(403).json({ message: 'غير مصرح لك بعرض تقييمات هذا البوت' });
-    }
-
     const feedback = await Feedback.find({ botId, isVisible: true }).sort({ timestamp: -1 });
 
     const feedbackWithUsernames = await Promise.all(
