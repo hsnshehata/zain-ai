@@ -18,16 +18,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const facebookBtn = document.querySelectorAll('.facebook-btn');
   const logoutBtn = document.querySelectorAll('.logout-btn');
 
+  // إظهار أو إخفاء زر البوتات بس بناءً على الرول
   if (role !== 'superadmin') {
     botsBtn.forEach(btn => btn.style.display = 'none');
-    messagesBtn.forEach(btn => btn.style.display = 'none');
-    feedbackBtn.forEach(btn => btn.style.display = 'none');
-    facebookBtn.forEach(btn => btn.style.display = 'none');
   } else {
     botsBtn.forEach(btn => btn.style.display = 'inline-block');
-    messagesBtn.forEach(btn => btn.style.display = 'inline-block');
-    feedbackBtn.forEach(btn => btn.style.display = 'inline-block');
-    facebookBtn.forEach(btn => btn.style.display = 'inline-block');
   }
 
   // Load bots into the dropdown
@@ -252,26 +247,11 @@ document.addEventListener('DOMContentLoaded', () => {
     } else if (hash === '#analytics') {
       loadAnalyticsPage();
     } else if (hash === '#messages') {
-      if (userRole === 'superadmin') {
-        loadMessagesPage();
-      } else {
-        window.location.hash = 'rules';
-        loadRulesPage();
-      }
+      loadMessagesPage();
     } else if (hash === '#feedback') {
-      if (userRole === 'superadmin') {
-        loadFeedbackPage();
-      } else {
-        window.location.hash = 'rules';
-        loadRulesPage();
-      }
+      loadFeedbackPage();
     } else if (hash === '#facebook') {
-      if (userRole === 'superadmin') {
-        loadFacebookPage();
-      } else {
-        window.location.hash = 'rules';
-        loadRulesPage();
-      }
+      loadFacebookPage();
     } else {
       if (userRole === 'superadmin') {
         window.location.hash = 'bots';
