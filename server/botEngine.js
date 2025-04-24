@@ -52,7 +52,7 @@ async function transcribeAudio(audioUrl) {
   }
 }
 
-async function processMessage(botId, userId, message, isImage = false, isVoice = false, history = []) {
+async function processMessage(botId, userId, message, isImage = false, isVoice = false) {
   try {
     console.log('🤖 Processing message for bot:', botId, 'user:', userId, 'message:', message);
 
@@ -93,19 +93,20 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       console.log('💬 Transcribed audio message:', userMessageContent);
     }
 
+    // إضافة رسالة المستخدم مع الـ timestamp
     conversation.messages.push({ role: 'user', content: userMessageContent, timestamp: new Date() });
     await conversation.save();
     console.log('💬 User message added to conversation:', userMessageContent);
 
+    // جلب وقت آخر رسالة من المستخدم
     const lastUserMessage = conversation.messages
       .filter(msg => msg.role === 'user')
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
     const lastMessageTimestamp = lastUserMessage ? new Date(lastUserMessage.timestamp) : new Date();
 
-    // استخدام الذاكرة المرسلة من العميل مع النظام
     const messages = [
       { role: 'system', content: systemPrompt },
-      ...history.map(msg => ({ role: msg.role, content: msg.content })), // إضافة الذاكرة
+      ...conversation.messages.map((msg) => ({ role: msg.role, content: msg.content })),
     ];
 
     if (isImage) {
@@ -122,7 +123,9 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     console.log('📡 Calling OpenAI API...');
     let reply = '';
 
+    // التحقق إذا كان السؤال يتعلق بمواعيد العمل
     if (message.includes('انتوا فاتحين') || message.includes('مواعيد العمل')) {
+      // تحليل القواعد لاستخراج مواعيد العمل باستخدام OpenAI
       const timePrompt = `
         أنت بوت ذكي. القواعد التالية تحتوي على معلومات قد تتضمن مواعيد العمل:
         ${systemPrompt}
@@ -139,9 +142,10 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       });
 
       let workingHoursText = timeResponse.choices[0].message.content;
-      let workingHours = { start: '09:00', end: '17:00' };
+      let workingHours = { start: '09:00', end: '17:00' }; // قيم افتراضية لو ما لقيناش مواعيد
 
       if (workingHoursText !== 'لم أجد مواعيد عمل في القواعد.') {
+        // استخراج مواعيد العمل من النص (مثال: "من 09:00 إلى 17:00")
         const match = workingHoursText.match(/من (\d{2}:\d{2}) إلى (\d{2}:\d{2})/);
         if (match) {
           workingHours.start = match[1];
@@ -151,6 +155,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         reply = 'لم أجد مواعيد عمل في القواعد. يمكنك إضافتها في القواعد الخاصة بي!';
       }
 
+      // إذا لقينا مواعيد عمل، نحسب إذا البوت "فاتح" أو "مغلق"
       if (!reply) {
         const now = lastMessageTimestamp;
         const startTime = new Date(now.toDateString() + ' ' + workingHours.start);
@@ -160,6 +165,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         reply = `مواعيد العمل من ${workingHours.start} إلى ${workingHours.end}. الوقت دلوقتي ${lastMessageTimestamp.toLocaleString('ar-EG')}. ${isOpen ? 'إحنا فاتحين دلوقتي!' : 'للأسف إحنا مغلقين دلوقتي.'}`;
       }
     } else {
+      // إذا كان السؤال مش عن مواعيد العمل، نكمل معالجة الرسالة بشكل عادي
       const response = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages,
@@ -168,6 +174,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       reply = response.choices[0].message.content;
     }
 
+    // استبدال القيم الديناميكية في الرد
     if (reply.includes('${lastMessageTimestamp.toLocaleString(\'ar-EG\')}')) {
       reply = reply.replace('${lastMessageTimestamp.toLocaleString(\'ar-EG\')}', lastMessageTimestamp.toLocaleString('ar-EG'));
     }
