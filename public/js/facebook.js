@@ -1,24 +1,23 @@
-// public/js/facebook.js
 document.addEventListener('DOMContentLoaded', () => {
   async function loadFacebookPage() {
     const content = document.getElementById('content');
     const role = localStorage.getItem('role');
     const userId = localStorage.getItem('userId');
     const token = localStorage.getItem('token');
+    const selectedBotId = localStorage.getItem('selectedBotId');
 
-    // Initial HTML with bot selector and loading spinner
+    if (!selectedBotId) {
+      content.innerHTML = `
+        <h2>إعدادات فيسبوك</h2>
+        <p style="color: red;">يرجى اختيار بوت من لوحة التحكم أولاً.</p>
+      `;
+      return;
+    }
+
     content.innerHTML = `
       <h2>إعدادات فيسبوك</h2>
       <div class="spinner">
         <div class="loader"></div>
-      </div>
-      <div id="botSelectorContainer" style="display: none;">
-        <div class="form-group bot-selector">
-          <select id="botSelectFacebook" name="botSelectFacebook">
-            <option value="">اختر بوت</option>
-          </select>
-          <label for="botSelectFacebook">اختر البوت</label>
-        </div>
       </div>
       <div id="facebookSettingsContent" class="facebook-settings" style="display: none;">
         <div class="setting-item">
@@ -75,86 +74,11 @@ document.addEventListener('DOMContentLoaded', () => {
       <div id="error" style="display: none; text-align: center; margin-top: 10px; color: #dc3545;"></div>
     `;
 
-    const botSelect = document.getElementById('botSelectFacebook');
-    const botSelectorContainer = document.getElementById('botSelectorContainer');
     const facebookSettingsContent = document.getElementById('facebookSettingsContent');
     const errorDiv = document.getElementById('error');
     const spinner = document.querySelector('.spinner');
 
-    // Fetch bots
-    let bots = [];
-    try {
-      const response = await fetch('/api/bots', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('التوكن غير صالح، من فضلك سجل دخول مرة أخرى');
-        }
-        throw new Error(`فشل في جلب البوتات: ${response.status} ${response.statusText}`);
-      }
-
-      const contentType = response.headers.get('content-type');
-      if (!contentType || !contentType.includes('application/json')) {
-        throw new Error('الـ response مش JSON، ممكن يكون فيه مشكلة في السيرفر');
-      }
-
-      bots = await response.json();
-    } catch (err) {
-      console.error('❌ Error fetching bots:', err);
-      spinner.style.display = 'none';
-      botSelectorContainer.style.display = 'none';
-      facebookSettingsContent.style.display = 'none';
-      errorDiv.style.display = 'block';
-      errorDiv.textContent = err.message || 'تعذر جلب البوتات، حاول مرة أخرى لاحقًا';
-      if (err.message.includes('التوكن غير صالح')) {
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 3000);
-      }
-      return;
-    }
-
-    // Populate bot selector
-    botSelect.innerHTML = '<option value="">اختر بوت</option>';
-    const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId && bot.userId._id === userId);
-    userBots.forEach((bot) => {
-      const option = document.createElement('option');
-      option.value = bot._id;
-      option.textContent = bot.name;
-      botSelect.appendChild(option);
-    });
-
-    if (userBots.length === 0) {
-      spinner.style.display = 'none';
-      botSelectorContainer.style.display = 'none';
-      facebookSettingsContent.style.display = 'none';
-      errorDiv.style.display = 'block';
-      errorDiv.textContent = 'لا توجد بوتات متاحة لعرض إعداداتها.';
-      return;
-    }
-
-    // Show bot selector and hide spinner
-    spinner.style.display = 'none';
-    botSelectorContainer.style.display = 'block';
-
-    // Automatically load settings for the first bot
-    let selectedBotId = userBots[0]._id;
-    botSelect.value = selectedBotId;
     await loadSettings(selectedBotId);
-
-    // Add event listener to reload settings when a different bot is selected
-    botSelect.addEventListener('change', async () => {
-      selectedBotId = botSelect.value;
-      if (selectedBotId) {
-        await loadSettings(selectedBotId);
-      } else {
-        facebookSettingsContent.style.display = 'none';
-        errorDiv.style.display = 'block';
-        errorDiv.textContent = 'يرجى اختيار بوت لعرض إعداداته.';
-      }
-    });
 
     async function loadSettings(botId) {
       spinner.style.display = 'flex';
