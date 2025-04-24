@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   const content = document.getElementById('content');
+  const botSelect = document.getElementById('botSelectDashboard');
   const botsBtn = document.querySelectorAll('.bots-btn');
   const rulesBtn = document.querySelectorAll('.rules-btn');
   const chatPageBtn = document.querySelectorAll('.chat-page-btn');
@@ -28,6 +29,46 @@ document.addEventListener('DOMContentLoaded', () => {
     feedbackBtn.forEach(btn => btn.style.display = 'inline-block');
     facebookBtn.forEach(btn => btn.style.display = 'inline-block');
   }
+
+  // Load bots into the dropdown
+  async function populateBotSelect() {
+    try {
+      const res = await fetch('/api/bots', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        throw new Error('فشل في جلب البوتات');
+      }
+      const bots = await res.json();
+      botSelect.innerHTML = '<option value="">اختر بوت</option>';
+      const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
+      userBots.forEach((bot) => {
+        botSelect.innerHTML += `<option value="${bot._id}">${bot.name}</option>`;
+      });
+
+      // Load previously selected bot or select the first one
+      const selectedBotId = localStorage.getItem('selectedBotId');
+      if (selectedBotId && userBots.some(bot => bot._id === selectedBotId)) {
+        botSelect.value = selectedBotId;
+      } else if (userBots.length > 0) {
+        botSelect.value = userBots[0]._id;
+        localStorage.setItem('selectedBotId', userBots[0]._id);
+      }
+
+      // Trigger page load based on hash
+      loadPageBasedOnHash();
+    } catch (err) {
+      console.error('خطأ في جلب البوتات:', err);
+      alert('خطأ في جلب البوتات');
+    }
+  }
+
+  // Save selected bot and reload page
+  botSelect.addEventListener('change', () => {
+    const selectedBotId = botSelect.value;
+    localStorage.setItem('selectedBotId', selectedBotId);
+    loadPageBasedOnHash();
+  });
 
   const setActiveButton = (hash) => {
     const buttons = [botsBtn, rulesBtn, chatPageBtn, analyticsBtn, messagesBtn, feedbackBtn, facebookBtn, logoutBtn];
@@ -162,6 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.removeItem('role');
         localStorage.removeItem('userId');
         localStorage.removeItem('username');
+        localStorage.removeItem('selectedBotId');
         console.log('✅ Logout successful, localStorage cleared');
         window.location.href = '/';
       } else {
@@ -185,6 +227,11 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadPageBasedOnHash() {
     const hash = window.location.hash;
     const userRole = localStorage.getItem('role');
+    const selectedBotId = localStorage.getItem('selectedBotId');
+
+    if (!selectedBotId && botSelect.options.length > 0) {
+      localStorage.setItem('selectedBotId', botSelect.options[0].value);
+    }
 
     setActiveButton(hash);
 
@@ -240,5 +287,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadPageBasedOnHash();
   });
 
-  loadPageBasedOnHash();
+  // Initialize bot selector
+  populateBotSelect();
 });
