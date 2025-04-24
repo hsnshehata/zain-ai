@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
   async function loadFacebookPage() {
     const content = document.getElementById('content');
-    const role = localStorage.getItem('role');
     const userId = localStorage.getItem('userId');
     const token = localStorage.getItem('token');
     const selectedBotId = localStorage.getItem('selectedBotId');
