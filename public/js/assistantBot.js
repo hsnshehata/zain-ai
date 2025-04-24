@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let userId = localStorage.getItem('userId') || 'dashboard_user_' + Date.now();
   let pendingAction = null;
   let lastMessageTimestamp = new Date();
-  let conversationHistory = []; // لتخزين الرسائل للحفاظ على الذاكرة
+  let conversationHistory = [];
 
   const welcomeTimestamp = document.getElementById('welcomeTimestamp');
   if (welcomeTimestamp) {
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <small>${new Date().toLocaleString('ar-EG')}</small>
       </div>
     `;
-    conversationHistory = []; // إعادة تعيين الذاكرة عند بدء دردشة جديدة
+    conversationHistory = [];
     pendingAction = null;
     addBotMessage('بدأت دردشة جديدة. كيف يمكنني مساعدتك؟');
   });
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
     assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
     assistantMessageInput.value = '';
 
-    conversationHistory.push({ role: 'user', content: message }); // إضافة رسالة المستخدم للذاكرة
+    conversationHistory.push({ role: 'user', content: message });
 
     await processMessage(message);
   }
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (convIndex >= 0 && convIndex < conversations.length) {
           const conv = conversations[convIndex];
           assistantChatMessages.innerHTML = '';
-          conversationHistory = []; // إعادة تعيين الذاكرة عند استعادة محادثة
+          conversationHistory = [];
           conv.messages.forEach(msg => {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${msg.role === 'user' ? 'user-message' : 'bot-message'}`;
@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <small>${new Date(msg.timestamp).toLocaleString('ar-EG')}</small>
             `;
             assistantChatMessages.appendChild(messageDiv);
-            conversationHistory.push({ role: msg.role, content: msg.content }); // إضافة الرسائل للذاكرة
+            conversationHistory.push({ role: msg.role, content: msg.content });
           });
           addBotMessage('هذه هي المحادثة المطلوبة. هل تريد متابعة هذه المحادثة أو بدء دردشة جديدة؟');
         } else {
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
           botId: ASSISTANT_BOT_ID,
           message: contextMessage,
           userId,
-          history: conversationHistory, // إرسال الذاكرة مع الرسالة
+          history: conversationHistory,
         }),
       });
 
@@ -155,9 +155,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await response.json();
       let reply = data.reply || 'عذرًا، لم أفهم طلبك. حاول مرة أخرى!';
 
-      // منع تنفيذ الأكواد وتحويلها لنص
       if (reply.includes('<') || reply.includes('>')) {
-        reply = reply.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        reply = reply.replace(/</g, '<').replace(/>/g, '>');
       }
 
       if (reply.includes('انتقل إلى صفحة')) {
@@ -200,7 +199,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const aiData = await aiResponse.json();
         reply = aiData.reply || 'عذرًا، مش عارف أرد على ده. ممكن تحاول بطريقة تانية؟';
         if (reply.includes('<') || reply.includes('>')) {
-          reply = reply.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+          reply = reply.replace(/</g, '<').replace(/>/g, '>');
         }
         addBotMessage(reply);
       }
@@ -219,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     assistantChatMessages.appendChild(botMessageDiv);
     assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
-    conversationHistory.push({ role: 'assistant', content: content }); // إضافة رد البوت للذاكرة
+    conversationHistory.push({ role: 'assistant', content: content });
   }
 
   function handleNavigation(reply) {
@@ -637,7 +636,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const setting = settingMatch[1];
     const botName = settingMatch[2];
-    
+
+    const selectedBotId = localStorage.getItem('selectedBotId');
+    if (!selectedBotId) {
+      addBotMessage('يرجى اختيار بوت من لوحة التحكم أولاً.');
+      return;
+    }
+
+    const botResponse = await fetch(`/api/bots/${selectedBotId}`, {
+      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+    });
+    if (!botResponse.ok) {
+      addBotMessage('فشل في جلب بيانات البوت. حاول مرة أخرى!');
+      return;
+    }
+    const botData = await botResponse.json();
+    if (botData.name !== botName) {
+      addBotMessage(`البوت المختار في لوحة التحكم مش "${botName}". اختر البوت الصحيح من لوحة التحكم وحاول تاني!`);
+      return;
+    }
+
     window.location.hash = 'facebook';
 
     if (typeof window.loadFacebookPage !== 'function') {
@@ -665,16 +683,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     try {
-      const botSelect = await waitForElement('#botSelectFacebook');
-      const botOption = Array.from(botSelect.options).find(opt => opt.text === botName);
-      if (!botOption) {
-        addBotMessage(`لم أجد بوت باسم "${botName}".`);
-        return;
-      }
-
-      botSelect.value = botOption.value;
-      botSelect.dispatchEvent(new Event('change'));
-
       let settingKey;
       if (setting === 'رسائل الترحيب') settingKey = 'messagingOptinsToggle';
       else if (setting === 'التفاعل مع ردود الفعل') settingKey = 'messageReactionsToggle';
