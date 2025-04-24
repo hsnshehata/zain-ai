@@ -94,10 +94,11 @@
 #messageInput {
   flex: 1;
   padding: 10px;
-  border: 1px solid #ccc;
+  border: none; /* إزالة الحدود عشان تتطابق مع التصميم */
   border-radius: 8px;
   font-size: 1em;
   outline: none;
+  background-color: inherit; /* استخدام لون الخلفية العامة */
 }
 
 #imageInput::file-selector-button,
