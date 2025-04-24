@@ -1,6 +1,5 @@
 async function loadFeedbackPage() {
   const content = document.getElementById('content');
-  const role = localStorage.getItem('role');
   const userId = localStorage.getItem('userId');
   const token = localStorage.getItem('token');
   const selectedBotId = localStorage.getItem('selectedBotId');
@@ -287,3 +286,6 @@ async function downloadFeedback(type) {
     alert(err.message || 'فشل في تنزيل التقييمات، حاول مرة أخرى');
   }
 }
+
+// Define the function globally so dashboard.js can call it
+window.loadFeedbackPage = loadFeedbackPage;
