@@ -10,7 +10,7 @@ exports.getBot = async (req, res) => {
     res.status(200).json(bot);
   } catch (err) {
     console.error('❌ خطأ في جلب البوت:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر' });
+    res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
   }
 };
 
@@ -29,7 +29,6 @@ exports.getSettings = async (req, res) => {
       messagingReferralsEnabled: bot.messagingReferralsEnabled || false,
       messageEditsEnabled: bot.messageEditsEnabled || false,
       inboxLabelsEnabled: bot.inboxLabelsEnabled || false,
-      sendCartEnabled: bot.sendCartEnabled || false,
     });
   } catch (err) {
     console.error('❌ خطأ في جلب إعدادات البوت:', err.message, err.stack);
@@ -47,7 +46,27 @@ exports.updateSettings = async (req, res) => {
     }
 
     const updates = req.body;
-    await Bot.updateOne({ _id: botId }, { $set: updates });
+    // الحقول المسموح بتحديثها بناءً على السكيما
+    const allowedUpdates = [
+      'messagingOptinsEnabled',
+      'messageReactionsEnabled',
+      'messagingReferralsEnabled',
+      'messageEditsEnabled',
+      'inboxLabelsEnabled',
+    ];
+    // فلترة التحديثات عشان تتضمن الحقول المسموح بيها بس
+    const filteredUpdates = {};
+    for (const key of allowedUpdates) {
+      if (updates[key] !== undefined) {
+        filteredUpdates[key] = updates[key];
+      }
+    }
+
+    if (Object.keys(filteredUpdates).length === 0) {
+      return res.status(400).json({ message: 'لا توجد تحديثات صالحة للحفظ' });
+    }
+
+    await Bot.updateOne({ _id: botId }, { $set: filteredUpdates });
 
     res.status(200).json({ message: 'تم تحديث الإعدادات بنجاح' });
   } catch (err) {
