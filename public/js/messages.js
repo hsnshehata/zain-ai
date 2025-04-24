@@ -4,20 +4,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const role = localStorage.getItem('role');
     const userId = localStorage.getItem('userId');
     const token = localStorage.getItem('token');
+    const selectedBotId = localStorage.getItem('selectedBotId');
 
-    // Initial HTML with bot selector and loading spinner
+    if (!selectedBotId) {
+      content.innerHTML = `
+        <h2>الرسائل</h2>
+        <p style="color: red;">يرجى اختيار بوت من لوحة التحكم أولاً.</p>
+      `;
+      return;
+    }
+
     content.innerHTML = `
       <h2>الرسائل</h2>
       <div class="spinner">
         <div class="loader"></div>
-      </div>
-      <div id="botSelectorContainer" style="display: none;">
-        <div class="form-group bot-selector">
-          <select id="botSelectMessages" name="botSelectMessages">
-            <option value="">اختر بوت</option>
-          </select>
-          <label for="botSelectMessages">اختر البوت</label>
-        </div>
       </div>
       <div id="messagesContent" style="display: none;">
         <div class="messages-tabs">
@@ -52,8 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
       <div id="error" style="display: none; text-align: center; margin-top: 10px; color: #dc3545;"></div>
     `;
 
-    const botSelect = document.getElementById('botSelectMessages');
-    const botSelectorContainer = document.getElementById('botSelectorContainer');
     const messagesContent = document.getElementById('messagesContent');
     const facebookMessagesTab = document.getElementById('facebookMessagesTab');
     const webMessagesTab = document.getElementById('webMessagesTab');
@@ -69,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const errorDiv = document.getElementById('error');
     const spinner = document.querySelector('.spinner');
 
-    let currentBotId = '';
+    let currentBotId = selectedBotId;
     let currentUserId = '';
     let currentTab = 'facebook'; // Default tab
     let conversations = [];
@@ -78,76 +76,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentPage = 1;
     const cardsPerPage = 30;
 
-    // Fetch bots
-    let bots = [];
-    try {
-      const response = await fetch('/api/bots', {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('التوكن غير صالح، من فضلك سجل دخول مرة أخرى');
-        }
-        throw new Error(`فشل في جلب البوتات: ${response.status} ${response.statusText}`);
-      }
-
-      bots = await response.json();
-    } catch (err) {
-      console.error('❌ Error fetching bots:', err);
-      spinner.style.display = 'none';
-      botSelectorContainer.style.display = 'none';
-      messagesContent.style.display = 'none';
-      errorDiv.style.display = 'block';
-      errorDiv.textContent = err.message || 'تعذر جلب البوتات، حاول مرة أخرى لاحقًا';
-      if (err.message.includes('التوكن غير صالح')) {
-        setTimeout(() => {
-          window.location.href = '/';
-        }, 3000);
-      }
-      return;
-    }
-
-    // Populate bot selector
-    botSelect.innerHTML = '<option value="">اختر بوت</option>';
-    const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId && bot.userId._id === userId);
-    userBots.forEach((bot) => {
-      const option = document.createElement('option');
-      option.value = bot._id;
-      option.textContent = bot.name;
-      botSelect.appendChild(option);
-    });
-
-    if (userBots.length === 0) {
-      spinner.style.display = 'none';
-      botSelectorContainer.style.display = 'none';
-      messagesContent.style.display = 'none';
-      errorDiv.style.display = 'block';
-      errorDiv.textContent = 'لا توجد بوتات متاحة لعرض رسائلها.';
-      return;
-    }
-
-    // Show bot selector and hide spinner
+    // Hide spinner and show content
     spinner.style.display = 'none';
-    botSelectorContainer.style.display = 'block';
+    messagesContent.style.display = 'block';
 
-    // Automatically load messages for the first bot
-    currentBotId = userBots[0]._id;
-    botSelect.value = currentBotId;
     await loadConversations(currentBotId);
-
-    // Add event listener to reload messages when a different bot is selected
-    botSelect.addEventListener('change', async () => {
-      currentBotId = botSelect.value;
-      if (currentBotId) {
-        currentPage = 1; // Reset to first page
-        await loadConversations(currentBotId);
-      } else {
-        messagesContent.style.display = 'none';
-        errorDiv.style.display = 'block';
-        errorDiv.textContent = 'يرجى اختيار بوت لعرض رسائله.';
-      }
-    });
 
     // Tab switching
     facebookMessagesTab.addEventListener('click', () => {
