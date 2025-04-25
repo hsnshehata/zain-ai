@@ -5,8 +5,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const assistantMessageInput = document.getElementById('assistantMessageInput');
   const assistantSendMessageBtn = document.getElementById('assistantSendMessageBtn');
   const assistantChatMessages = document.getElementById('assistantChatMessages');
-  const newChatBtn = document.getElementById('newChatBtn');
-  const chatArchiveBtn = document.getElementById('chatArchiveBtn');
 
   const ASSISTANT_BOT_ID = '68087d93c0124c9fe05a6996';
   let userId = localStorage.getItem('userId') || 'dashboard_user_' + Date.now();
@@ -30,46 +28,6 @@ document.addEventListener('DOMContentLoaded', () => {
   closeAssistantChatBtn.addEventListener('click', () => {
     assistantChatModal.style.display = 'none';
     assistantButton.style.transform = 'scale(1)';
-  });
-
-  newChatBtn.addEventListener('click', () => {
-    assistantChatMessages.innerHTML = `
-      <div class="message bot-message">
-        <p>مرحبًا! أنا المساعد الذكي. كيف يمكنني مساعدتك اليوم؟</p>
-        <small>${new Date().toLocaleString('ar-EG')}</small>
-      </div>
-    `;
-    conversationHistory = [];
-    pendingAction = null;
-    addBotMessage('بدأت دردشة جديدة. كيف يمكنني مساعدتك؟');
-  });
-
-  chatArchiveBtn.addEventListener('click', async () => {
-    try {
-      const response = await fetch(`/api/conversations/${ASSISTANT_BOT_ID}/${userId}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-      });
-      if (!response.ok) throw new Error('فشل في جلب الأرشيف');
-
-      const conversations = await response.json();
-      if (conversations.length === 0) {
-        addBotMessage('لا توجد محادثات سابقة في الأرشيف.');
-        return;
-      }
-
-      let archiveMessage = 'إليك أرشيف محادثاتك:\n';
-      conversations.forEach((conv, index) => {
-        const firstMessage = conv.messages[0]?.content || 'محادثة فارغة';
-        const date = new Date(conv.messages[0]?.timestamp).toLocaleString('ar-EG');
-        archiveMessage += `${index + 1}. [${date}] ${firstMessage}\n`;
-      });
-      archiveMessage += 'اختر رقم المحادثة لعرضها (مثال: "عرض المحادثة 1")';
-
-      addBotMessage(archiveMessage);
-      pendingAction = { type: 'showConversation', data: { conversations } };
-    } catch (err) {
-      addBotMessage('فشل في جلب الأرشيف. حاول مرة أخرى!');
-    }
   });
 
   assistantSendMessageBtn.addEventListener('click', sendMessage);
@@ -105,30 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       } else if (pendingAction && (message.includes('لا') || message.includes('مراجعة'))) {
         addBotMessage('حسنًا، يمكنك مراجعة الإعدادات بنفسك. أنا هنا إذا احتجت مساعدة!');
-        pendingAction = null;
-        return;
-      } else if (pendingAction && pendingAction.type === 'showConversation' && message.match(/عرض المحادثة (\d+)/)) {
-        const match = message.match(/عرض المحادثة (\d+)/);
-        const convIndex = parseInt(match[1]) - 1;
-        const conversations = pendingAction.data.conversations;
-        if (convIndex >= 0 && convIndex < conversations.length) {
-          const conv = conversations[convIndex];
-          assistantChatMessages.innerHTML = '';
-          conversationHistory = [];
-          conv.messages.forEach(msg => {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${msg.role === 'user' ? 'user-message' : 'bot-message'}`;
-            messageDiv.innerHTML = `
-              <p>${msg.content}</p>
-              <small>${new Date(msg.timestamp).toLocaleString('ar-EG')}</small>
-            `;
-            assistantChatMessages.appendChild(messageDiv);
-            conversationHistory.push({ role: msg.role, content: msg.content });
-          });
-          addBotMessage('هذه هي المحادثة المطلوبة. هل تريد متابعة هذه المحادثة أو بدء دردشة جديدة؟');
-        } else {
-          addBotMessage('رقم المحادثة غير صحيح. حاول مرة أخرى!');
-        }
         pendingAction = null;
         return;
       }
@@ -290,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ruleType === 'عامة') {
       content = ruleContent;
     } else if (ruleType === 'موحدة') {
-      content = ruleContent; // إزالة شرط السوبر أدمن
+      content = ruleContent;
     } else if (ruleType === 'أسعار') {
       const productMatch = ruleContent.match(/(.*) بسعر (\d+) (جنيه|دولار)/);
       if (!productMatch) {
