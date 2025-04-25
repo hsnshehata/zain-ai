@@ -158,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
       let reply = data.reply || 'عذرًا، لم أفهم طلبك. حاول مرة أخرى!';
 
       if (reply.includes('<') || reply.includes('>')) {
-        reply = reply.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        reply = reply.replace(/</g, '<').replace(/>/g, '>');
       }
 
       if (reply.includes('انتقل إلى صفحة')) {
@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const aiData = await aiResponse.json();
       let reply = aiData.reply || 'عذرًا، مش عارف أرد على ده. ممكن تحاول بطريقة تانية؟';
       if (reply.includes('<') || reply.includes('>')) {
-        reply = reply.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        reply = reply.replace(/</g, '<').replace(/>/g, '>');
       }
       addBotMessage(reply);
     } catch (err) {
@@ -233,6 +233,7 @@ document.addEventListener('DOMContentLoaded', () => {
     assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
     conversationHistory.push({ role: 'assistant', content: content });
   }
+
   function handleNavigation(reply) {
     if (reply.includes('القواعد')) {
       window.location.hash = 'rules';
@@ -267,7 +268,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-
   async function handleAddRule(reply) {
     const ruleMatch = reply.match(/أضف قاعدة (عامة|موحدة|أسعار|سؤال وجواب|API): (.*)/);
     if (!ruleMatch) {
@@ -290,11 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ruleType === 'عامة') {
       content = ruleContent;
     } else if (ruleType === 'موحدة') {
-      if (localStorage.getItem('role') !== 'superadmin') {
-        addBotMessage('عذرًا، لا يمكنك إضافة قاعدة موحدة لأنك لست سوبر أدمن.');
-        return;
-      }
-      content = ruleContent;
+      content = ruleContent; // إزالة شرط السوبر أدمن
     } else if (ruleType === 'أسعار') {
       const productMatch = ruleContent.match(/(.*) بسعر (\d+) (جنيه|دولار)/);
       if (!productMatch) {
