@@ -315,7 +315,7 @@ async function loadChatPage() {
           <div class="preview-settings-container">
             <div class="preview-section">
               <h3>معاينة صفحة الدردشة</h3>
-              <div class="chat-preview-container">
+              <div class="chat-preview-container" style="padding: 10px;">
                 <div id="previewChat" class="chat-container" style="
                   max-width: 400px;
                   margin: 10px auto;
@@ -414,7 +414,7 @@ async function loadChatPage() {
                       flex-wrap: wrap;
                       gap: 8px;
                     ">
-                      ${data.suggestedQuestions?.map(q => `<button class="suggested-question" style="padding: 6px 12px; border: none; border-radius: 16px; cursor: pointer; font-size: 0.8em; transition: transform 0.2s, background-color 0.3s;">${q}</button>`).join('') || ''}
+                      ${data.suggestedQuestions?.map(q => `<button class="suggested-question" style="padding: 6px 12px; border: none; border-radius: 16px; cursor: pointer; font-size: 0.8em; transition: transform 0.2s, background-color: 0.3s;">${q}</button>`).join('') || ''}
                     </div>
                     <button class="settings-gear" data-target="suggested-questions-settings" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};" id="suggestedQuestionsGear">⚙️</button>
                     <div id="suggested-questions-settings" class="settings-popup" style="display: none;">
@@ -586,6 +586,7 @@ async function loadChatPage() {
         const previewImageInput = document.getElementById('previewImageInput');
         const userMessage = document.querySelector('#previewChatMessages .user-message');
         const botMessage = document.querySelector('#previewChatMessages .bot-message');
+        const previewContainer = document.querySelector('.chat-preview-container');
 
         let colorValues = {
           titleColor: data.titleColor || '#ffffff',
@@ -621,7 +622,7 @@ async function loadChatPage() {
           botMessage.style.backgroundColor = colorValues.botMessageBackgroundColor;
           botMessage.style.color = colorValues.botMessageTextColor;
           previewChat.style.backgroundColor = colorValues.containerBackgroundColor;
-          document.body.style.backgroundColor = transparentBackgroundEnabled
+          previewContainer.style.backgroundColor = transparentBackgroundEnabled
             ? `rgba(${hexToRgb(colorValues.outerBackgroundColor)}, ${colorValues.outerBackgroundTransparency})`
             : colorValues.outerBackgroundColor;
 
