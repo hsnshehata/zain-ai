@@ -36,7 +36,7 @@
 
 #chatMessages {
   padding: 20px;
-  height: 400px;
+  height: 350px; /* تم تقليل الارتفاع من 400px لـ 350px */
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -89,6 +89,7 @@
   padding: 15px 20px;
   gap: 10px;
   border-top: 1px solid #e0e0e0;
+  margin-bottom: -20px; /* رفع مربع الإدخال وزرار الإرسال لفوق */
 }
 
 #messageInput {
@@ -98,9 +99,9 @@
   border-radius: 8px;
   font-size: 1em;
   outline: none;
-  background-color: rgba(255, 255, 255, 0.1); /* تأثير زجاجي أبيض بشفافية 10% */
-  backdrop-filter: blur(5px); /* تأثير الزجاج مع blur */
-  -webkit-backdrop-filter: blur(5px); /* توافق مع المتصفحات */
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
 }
 
 #imageInput::file-selector-button,
