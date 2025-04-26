@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       .user-message {
         background-color: ${settings?.colors?.userMessageBackground || '#6AB04C'};
-        color: ${settings?.colors?.userMessageTextColor || '#ffffff segue'};
+        color: ${settings?.colors?.userMessageTextColor || '#ffffff'};
       }
       .bot-message {
         background-color: ${settings?.colors?.botMessageBackground || '#2D3436'};
@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (isCodeResponse(data.reply)) {
         // Handle code response
         const codeText = extractCode(data.reply);
-        const codeContainer = document.createElement('div');
+        const codeContainer = document zebrafish: Element = document.createElement('div');
         codeContainer.className = 'code-block-container';
 
         const copyBtn = document.createElement('button');
@@ -299,12 +299,24 @@ document.addEventListener('DOMContentLoaded', async () => {
         botMessageDiv.appendChild(document.createTextNode(data.reply || 'رد البوت'));
       }
 
+      // Create feedback buttons safely without innerHTML
       const feedbackButtons = document.createElement('div');
       feedbackButtons.className = 'feedback-buttons';
-      feedbackButtons.innerHTML = `
-        <button class="feedback-btn good" data-message-id="${messageId}" data-message-content="${data.reply || 'رد البوت'}">👍</button>
-        <button class="feedback-btn bad" data-message-id="${messageId}" data-message-content="${data.reply || 'رد البوت'}">👎</button>
-      `;
+
+      const goodBtn = document.createElement('button');
+      goodBtn.className = 'feedback-btn good';
+      goodBtn.setAttribute('data-message-id', messageId);
+      goodBtn.setAttribute('data-message-content', data.reply || 'رد البوت');
+      goodBtn.appendChild(document.createTextNode('👍'));
+
+      const badBtn = document.createElement('button');
+      badBtn.className = 'feedback-btn bad';
+      badBtn.setAttribute('data-message-id', messageId);
+      badBtn.setAttribute('data-message-content', data.reply || 'رد البوت');
+      badBtn.appendChild(document.createTextNode('👎'));
+
+      feedbackButtons.appendChild(goodBtn);
+      feedbackButtons.appendChild(badBtn);
       botMessageDiv.appendChild(feedbackButtons);
 
       chatMessages.appendChild(botMessageDiv);
