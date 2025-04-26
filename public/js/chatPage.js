@@ -478,11 +478,6 @@ async function loadChatPage() {
                         <label for="outerBackgroundColor">لون الخلفية الخارجية (المحيطة):</label>
                         <input type="color" class="color-input" id="outerBackgroundColorInput" data-color-id="outerBackgroundColor" value="${data.colors.outerBackgroundColor || '#000000'}">
                       </div>
-                      <div class="color-picker-wrapper" id="transparencyWrapper" style="display: ${data.transparentBackgroundEnabled ? 'block' : 'none'};">
-                        <label for="outerBackgroundTransparency">شفافية الخلفية الخارجية (0-1):</label>
-                        <input type="range" min="0" max="1" step="0.1" id="outerBackgroundTransparencyInput" data-color-id="outerBackgroundTransparency" value="${data.outerBackgroundTransparency || 0.5}">
-                        <span id="transparencyValue">${data.outerBackgroundTransparency || 0.5}</span>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -564,12 +559,6 @@ async function loadChatPage() {
                     تفعيل إرفاق الصور
                   </label>
                 </div>
-                <div class="form-group checkbox-group">
-                  <label class="checkbox-label">
-                    <input type="checkbox" id="transparentBackgroundEnabled" name="transparentBackgroundEnabled" ${data.transparentBackgroundEnabled ? 'checked' : ''}>
-                    جعل الخلفية الخارجية شفافة
-                  </label>
-                </div>
                 <button type="submit" class="submit-btn">حفظ الإعدادات</button>
               </form>
             </div>
@@ -603,11 +592,9 @@ async function loadChatPage() {
           sendButtonColor: data.colors.sendButtonColor || '#007bff',
           containerBackgroundColor: data.colors.containerBackgroundColor || '#ffffff',
           outerBackgroundColor: data.colors.outerBackgroundColor || '#000000',
-          outerBackgroundTransparency: data.outerBackgroundTransparency || 0.5,
         };
 
         function updatePreviewStyles() {
-          const transparentBackgroundEnabled = document.getElementById('transparentBackgroundEnabled').checked;
           previewChatHeader.style.backgroundColor = colorValues.headerColor;
           previewChatTitle.style.color = colorValues.titleColor;
           previewChatMessages.style.backgroundColor = colorValues.chatAreaBackgroundColor;
@@ -622,9 +609,7 @@ async function loadChatPage() {
           botMessage.style.backgroundColor = colorValues.botMessageBackgroundColor;
           botMessage.style.color = colorValues.botMessageTextColor;
           previewChat.style.backgroundColor = colorValues.containerBackgroundColor;
-          previewContainer.style.backgroundColor = transparentBackgroundEnabled
-            ? `rgba(${hexToRgb(colorValues.outerBackgroundColor)}, ${colorValues.outerBackgroundTransparency})`
-            : colorValues.outerBackgroundColor;
+          previewContainer.style.backgroundColor = colorValues.outerBackgroundColor;
 
           document.getElementById('titleColorInput').value = colorValues.titleColor;
           document.getElementById('headerColorInput').value = colorValues.headerColor;
@@ -640,29 +625,7 @@ async function loadChatPage() {
           document.getElementById('sendButtonColorInput').value = colorValues.sendButtonColor;
           document.getElementById('containerBackgroundColorInput').value = colorValues.containerBackgroundColor;
           document.getElementById('outerBackgroundColorInput').value = colorValues.outerBackgroundColor;
-          document.getElementById('outerBackgroundTransparencyInput').value = colorValues.outerBackgroundTransparency;
-          document.getElementById('transparencyValue').textContent = colorValues.outerBackgroundTransparency;
         }
-
-        function hexToRgb(hex) {
-          hex = hex.replace('#', '');
-          const r = parseInt(hex.substring(0, 2), 16);
-          const g = parseInt(hex.substring(2, 4), 16);
-          const b = parseInt(hex.substring(4, 6), 16);
-          return `${r}, ${g}, ${b}`;
-        }
-
-        document.getElementById('transparentBackgroundEnabled').addEventListener('change', () => {
-          const transparencyWrapper = document.getElementById('transparencyWrapper');
-          transparencyWrapper.style.display = document.getElementById('transparentBackgroundEnabled').checked ? 'block' : 'none';
-          updatePreviewStyles();
-        });
-
-        document.getElementById('outerBackgroundTransparencyInput').addEventListener('input', (e) => {
-          colorValues.outerBackgroundTransparency = e.target.value;
-          document.getElementById('transparencyValue').textContent = e.target.value;
-          updatePreviewStyles();
-        });
 
         document.querySelectorAll('.settings-gear').forEach(gear => {
           gear.addEventListener('click', (e) => {
@@ -685,7 +648,7 @@ async function loadChatPage() {
           btn.addEventListener('click', () => {
             const schemeIndex = btn.getAttribute('data-scheme-index');
             const selectedScheme = colorSchemes[schemeIndex];
-            colorValues = { ...selectedScheme.colors, outerBackgroundTransparency: colorValues.outerBackgroundTransparency };
+            colorValues = { ...selectedScheme.colors };
             updatePreviewStyles();
           });
         });
@@ -850,8 +813,6 @@ async function loadChatPage() {
           formData.set('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on' ? 'true' : 'false');
           formData.set('suggestedQuestions', JSON.stringify(questions));
           formData.set('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on' ? 'true' : 'false');
-          formData.set('transparentBackgroundEnabled', formData.get('transparentBackgroundEnabled') === 'on' ? 'true' : 'false');
-          formData.set('outerBackgroundTransparency', colorValues.outerBackgroundTransparency);
 
           try {
             const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
@@ -943,4 +904,4 @@ async function loadChatPage() {
   }
 
   loadChatPageSettings();
-                }
+}
