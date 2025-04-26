@@ -194,7 +194,30 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   - البوت الداخلي هيعدل الإعدادات ويرجع تأكيد أو خطأ.
 
-#### 8. **عام**:
+#### 8. **إنشاء بوت جديد (صفحة البوتات)**:
+- لو المستخدم طلب "أنشئ بوت جديد" (مثال: "أنشئ بوت جديد باسم بوت التسويق"):
+  - استخرج اسم البوت (مثل "بوت التسويق").
+  - اطلب من المستخدم اختيار المستخدم المرتبط بالبوت لو مش محدد.
+  - ارجع الأمر للبوت الداخلي في صيغة JSON:
+    {
+      "action": "createBot",
+      "name": "اسم البوت",
+      "userId": "معرف المستخدم (لو مش محدد، اطلب من المستخدم)",
+      "facebookApiKey": "رقم API لفيسبوك (اختياري، لو مش محدد استخدم قيمة فارغة)",
+      "facebookPageId": "معرف صفحة فيسبوك (اختياري، لو مش محدد استخدم قيمة فارغة)"
+    }
+  - البوت الداخلي هينشئ البوت ويرجع تأكيد أو خطأ.
+
+#### 9. **عرض الإحصائيات (صفحة التحليلات)**:
+- لو المستخدم طلب "اعرض إحصائيات" (مثال: "اعرض إحصائيات بوت التسويق"):
+  - ارجع الأمر للبوت الداخلي في صيغة JSON:
+    {
+      "action": "showAnalytics",
+      "botId": "${selectedBotId}"
+    }
+  - البوت الداخلي هيرجع الإحصائيات (عدد الرسائل، القواعد النشطة، إلخ).
+
+#### 10. **عام**:
 - لو المستخدم طلب أمر مش واضح، اطلب توضيح (مثال: "من فضلك، وضّح الأمر أكتر").
 - لو الأمر يتطلب بيانات ناقصة، اطلب البيانات الناقصة (مثال: "يرجى تحديد العملة للسعر").
 - لو الأمر خارج نطاق الصفحات، رد بـ "عذرًا، هذا الأمر غير متاح حاليًا."
@@ -236,12 +259,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await response.json();
       let aiCommand = data.reply || 'عذرًا، لم أفهم طلبك. حاول مرة أخرى!';
 
-      // تحويل رد الذكاء الاصطناعي إلى JSON إذا كان ممكن
       let internalCommand;
       try {
         internalCommand = JSON.parse(aiCommand);
       } catch (err) {
-        // لو الذكاء الاصطناعي رجّع نص مش JSON، بنعرضه كرسالة مباشرة
         const botMessageDiv = document.createElement('div');
         botMessageDiv.className = 'message bot-message';
         botMessageDiv.innerHTML = `
@@ -254,7 +275,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      // تنفيذ الأمر بواسطة البوت الداخلي
       let retryCount = 0;
       const maxRetries = 3;
 
@@ -270,7 +290,7 @@ document.addEventListener('DOMContentLoaded', () => {
           assistantChatMessages.appendChild(botMessageDiv);
           assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
           conversationHistory.push({ role: 'assistant', content: executionResult.message });
-          break; // الأمر نفّذ بنجاح، بنخرج من الحلقة
+          break;
         } catch (err) {
           retryCount++;
           if (retryCount === maxRetries) {
@@ -287,7 +307,6 @@ document.addEventListener('DOMContentLoaded', () => {
             break;
           }
 
-          // إعادة صياغة الأمر لو فيه خطأ
           internalCommand = await retryCommandWithAI(internalCommand, err.message);
         }
       }
@@ -306,7 +325,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // دالة لتنفيذ الأوامر داخل النظام
   async function executeInternalCommand(command) {
     if (!command.action) {
       throw new Error('الأمر غير صالح: يجب تحديد "action"');
@@ -317,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!command.botId || !command.type || !command.content) {
           throw new Error('الأمر غير صالح: يجب تحديد botId وtype وcontent');
         }
-        const addRuleResponse = await fetch('/api/rules', {
+        const addRuleResp = await fetch('/api/rules', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -329,8 +347,8 @@ document.addEventListener('DOMContentLoaded', () => {
             content: command.content,
           }),
         });
-        if (!addRuleResponse.ok) {
-          throw new Error('فشل في إضافة قاعدة: ' + (await addRuleResponse.text()));
+        if (!addRuleResp.ok) {
+          throw new Error('فشل في إضافة قاعدة: ' + (await addRuleResp.text()));
         }
         window.location.hash = 'rules';
         if (typeof window.loadRulesPage === 'function') {
@@ -439,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error('لم يتم العثور على سؤال من المستخدم في المحادثة');
         }
         const question = messages[lastUserMessageIndex].content;
-        const addRuleResponse = await fetch('/api/rules', {
+        const editRuleResp = await fetch('/api/rules', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -451,8 +469,8 @@ document.addEventListener('DOMContentLoaded', () => {
             content: { question, answer: command.newReply },
           }),
         });
-        if (!addRuleResponse.ok) {
-          throw new Error('فشل في تعديل رد البوت: ' + (await addRuleResponse.text()));
+        if (!editRuleResp.ok) {
+          throw new Error('فشل في تعديل رد البوت: ' + (await editRuleResp.text()));
         }
         window.location.hash = 'messages';
         if (typeof window.loadMessagesPage === 'function') {
@@ -539,12 +557,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return { message: 'تم تفعيل الإعداد بنجاح' };
 
+      case 'createBot':
+        if (!command.name) {
+          throw new Error('الأمر غير صالح: يجب تحديد name');
+        }
+        const createBotResponse = await fetch('/api/bots', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({
+            name: command.name,
+            userId: command.userId || localStorage.getItem('userId'),
+            facebookApiKey: command.facebookApiKey || '',
+            facebookPageId: command.facebookPageId || '',
+          }),
+        });
+        if (!createBotResponse.ok) {
+          throw new Error('فشل في إنشاء البوت: ' + (await createBotResponse.text()));
+        }
+        window.location.hash = 'bots';
+        if (typeof window.loadBotsPage === 'function') {
+          window.loadBotsPage();
+        }
+        return { message: 'تم إنشاء البوت بنجاح' };
+
+      case 'showAnalytics':
+        if (!command.botId) {
+          throw new Error('الأمر غير صالح: يجب تحديد botId');
+        }
+        const analyticsResponse = await fetch(`/api/bots/${command.botId}/analytics`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        });
+        if (!analyticsResponse.ok) {
+          throw new Error('فشل في جلب الإحصائيات: ' + (await analyticsResponse.text()));
+        }
+        const analyticsData = await analyticsResponse.json();
+        window.location.hash = 'analytics';
+        if (typeof window.loadAnalyticsPage === 'function') {
+          window.loadAnalyticsPage();
+        }
+        return { message: `إحصائيات البوت:\nعدد الرسائل: ${analyticsData.messagesCount}\nالقواعد النشطة: ${analyticsData.activeRules}` };
+
       default:
         throw new Error('الأمر غير مدعوم: ' + command.action);
     }
   }
 
-  // دالة لإعادة صياغة الأمر لو فيه خطأ
   async function retryCommandWithAI(command, errorMessage) {
     const retryPrompt = `
 الأمر التالي فشل بسبب خطأ: ${errorMessage}
