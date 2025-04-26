@@ -254,10 +254,13 @@ async function loadChatPage() {
 <div id="supportButtonContainer" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
   <img id="supportButton" src="https://i.ibb.co/7JJScM0Q/Chat-GPT-Image-20-2025-08-04-13.png" alt="دعم العملاء" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
 </div>
-<div id="chatIframeContainer" style="display: none; position: fixed; bottom: 90px; right: 20px; z-index: 1000;">
+<div id="supportButtonContainer" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+  <img id="supportButton" src="https://i.ibb.co/7JJScM0Q/Chat-GPT-Image-20-2025-08-04-13.png" alt="دعم العملاء" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
+</div>
+<div id="chatIframeContainer" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
   <div style="position: relative; width: 350px; height: 550px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); background: white;">
-    <button id="closeChatIframe" style="position: absolute; top: 10px; right: 10px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer;">✕</button>
-    <iframe src="${data.link}" style="width: 100%; height: 100%; border: none; border-radius: 8px;"></iframe>
+    <button id="closeChatIframe" style="position: absolute; top: 10px; left: 10px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer;">✕</button>
+    <iframe src="${data.link}" style="width: 100%; height: 100%; border: none; border-radius: 8px;" scrolling="no"></iframe>
   </div>
 </div>
 <script>
@@ -266,14 +269,14 @@ async function loadChatPage() {
   const closeChatIframe = document.getElementById('closeChatIframe');
   supportButton.addEventListener('click', () => {
     chatIframeContainer.style.display = chatIframeContainer.style.display === 'none' ? 'block' : 'none';
-    supportButton.style.transform = chatIframeContainer.style.display === 'block' ? 'scale(1.1)' : 'scale(1)';
+    supportButton.style.display = chatIframeContainer.style.display === 'block' ? 'none' : 'block';
   });
   closeChatIframe.addEventListener('click', () => {
     chatIframeContainer.style.display = 'none';
-    supportButton.style.transform = 'scale(1)';
+    supportButton.style.display = 'block';
   });
 </script>
-        `.trim();
+         `.trim();
 
         const fullIframeCode = `
 <iframe src="${data.link}" style="width: 100%; height: 100vh; border: none;"></iframe>
@@ -409,7 +412,12 @@ async function loadChatPage() {
             <div class="settings-section">
               <h3>نماذج الألوان</h3>
               <div class="color-schemes-container">
-                <div class="color-schemes-buttons">
+                <div class="color-schemes-buttons" style="
+                  display: flex;
+                  flex-wrap: wrap;
+                  gap: 10px;
+                  justify-content: center;
+                ">
                   ${colorSchemes
                     .map(
                       (scheme, index) => `
@@ -430,6 +438,9 @@ async function loadChatPage() {
                           font-size: 0.9em;
                           margin: 5px;
                           transition: transform 0.2s;
+                          flex: 1 1 calc(33.33% - 20px);
+                          max-width: calc(33.33% - 20px);
+                          box-sizing: border-box;
                         ">
                           ${scheme.name}
                         </button>
