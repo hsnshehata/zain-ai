@@ -1,272 +1,110 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const role = localStorage.getItem('role');
-  const token = localStorage.getItem('token');
-  const userId = localStorage.getItem('userId');
-  if (!token) {
-    window.location.href = '/';
-    return;
-  }
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة التحكم</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="/css/bots.css">
+  <link rel="stylesheet" href="/css/rules.css">
+  <link rel="stylesheet" href="/css/feedback.css">
+  <link rel="stylesheet" href="/css/messages.css">
+  <link rel="stylesheet" href="/css/facebook.css">
+  <link rel="stylesheet" href="/css/analytics.css">
+  <link rel="stylesheet" href="/css/chat-modal.css">
+  <link rel="stylesheet" href="/css/preview.css">
+</head>
+<body>
+  <div class="sidebar">
+    <button class="nav-item bots-btn"><i class="fas fa-robot"></i> إدارة البوتات</button>
+    <button class="nav-item rules-btn"><i class="fas fa-book"></i> إدارة القواعد</button>
+    <button class="nav-item chat-page-btn"><i class="fas fa-comment"></i> تخصيص الدردشة</button>
+    <button class="nav-item analytics-btn"><i class="fas fa-chart-bar"></i> التحليلات</button>
+    <button class="nav-item messages-btn"><i class="fas fa-envelope"></i> الرسائـــل</button>
+    <button class="nav-item feedback-btn"><i class="fas fa-star"></i> التقييمات</button>
+    <button class="nav-item facebook-btn"><i class="fas fa-cogs"></i> إعدادات فيسبوك</button>
+    <button class="nav-item logout-btn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+  </div>
+  <div class="dashboard-container">
+    <div class="bot-selector-container">
+      <div class="form-group bot-selector">
+        <select id="botSelectDashboard" name="botSelectDashboard">
+          <option value="">اختر بوت</option>
+        </select>
+        <label for="botSelectDashboard">اختر البوت</label>
+      </div>
+    </div>
+    <h1>لوحة التحكم</h1>
+    <div id="content"></div>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-item bots-btn"><i class="fas fa-robot"></i> البوتات</button>
+    <button class="nav-item rules-btn"><i class="fas fa-book"></i> القواعد</button>
+    <button class="nav-item chat-page-btn"><i class="fas fa-comment"></i> الدردشة</button>
+    <button class="nav-item analytics-btn"><i class="fas fa-chart-bar"></i> التحليلات</button>
+    <button class="nav-item messages-btn"><i class="fas fa-envelope"></i> الرسائـــل</button>
+    <button class="nav-item feedback-btn"><i class="fas fa-star"></i> التقييمات</button>
+    <button class="nav-item facebook-btn"><i class="fas fa-cogs"></i> إعدادات فيسبوك</button>
+    <button class="nav-item logout-btn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+  </nav>
 
-  const content = document.getElementById('content');
-  const botSelect = document.getElementById('botSelectDashboard');
-  const botsBtn = document.querySelectorAll('.bots-btn');
-  const rulesBtn = document.querySelectorAll('.rules-btn');
-  const chatPageBtn = document.querySelectorAll('.chat-page-btn');
-  const analyticsBtn = document.querySelectorAll('.analytics-btn');
-  const messagesBtn = document.querySelectorAll('.messages-btn');
-  const feedbackBtn = document.querySelectorAll('.feedback-btn');
-  const facebookBtn = document.querySelectorAll('.facebook-btn');
-  const logoutBtn = document.querySelectorAll('.logout-btn');
+  <!-- زر عائم للبوت المساعد -->
+  <div id="assistantButtonContainer" style="position: fixed; bottom: 70px; right: 20px; z-index: 1000;">
+    <img id="assistantButton" src="https://i.ibb.co/7JJScM0Q/Chat-GPT-Image-20-2025-08-04-13.png" alt="المساعد الذكي" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
+  </div>
 
-  // إظهار أو إخفاء زر البوتات بس بناءً على الرول
-  if (role !== 'superadmin') {
-    botsBtn.forEach(btn => btn.style.display = 'none');
-  } else {
-    botsBtn.forEach(btn => btn.style.display = 'inline-block');
-  }
+  <!-- مربع حواري للبوت المساعد -->
+  <div id="assistantChatModal" class="chat-modal" style="display: none;">
+    <div class="chat-modal-content">
+      <div class="chat-header">
+        <h3>المساعد الذكي</h3>
+        <button id="closeAssistantChatBtn" class="chat-close-btn"><i class="fas fa-times"></i></button>
+      </div>
+      <div id="assistantChatMessages" class="chat-messages">
+        <div class="message bot-message">
+          <p>مرحبًا! أنا المساعد الذكي. كيف يمكنني مساعدتك اليوم؟</p>
+          <small id="welcomeTimestamp"></small>
+        </div>
+      </div>
+      <div class="chat-footer">
+        <div class="chat-input">
+          <input type="text" id="assistantMessageInput" placeholder="اكتب رسالتك...">
+          <button id="assistantSendMessageBtn">إرسال</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-  // Load bots into the dropdown
-  async function populateBotSelect() {
-    try {
-      const res = await fetch('/api/bots', {
-        headers: { Authorization: `Bearer ${token}` },
+  <script src="/js/bots.js"></script>
+  <script src="/js/rules.js"></script>
+  <script src="/js/chatPage.js"></script>
+  <script src="/js/analytics.js"></script>
+  <script src="/js/users.js"></script>
+  <script src="/js/feedback.js"></script>
+  <script src="/js/facebook.js"></script>
+  <script src="/js/messages.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/dashboard.js"></script>
+  <script src="/js/assistantBot.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(() => console.log('Service Worker Registered'))
+        .catch((err) => console.error('Service Worker Error:', err));
+    }
+    // Toggle light/dark mode
+    document.addEventListener('DOMContentLoaded', () => {
+      const theme = localStorage.getItem('theme') || 'dark';
+      document.body.classList.toggle('light', theme === 'light');
+      document.getElementById('themeToggle')?.addEventListener('click', () => {
+        document.body.classList.toggle('light');
+        localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
       });
-      if (!res.ok) {
-        throw new Error('فشل في جلب البوتات');
-      }
-      const bots = await res.json();
-      botSelect.innerHTML = '<option value="">اختر بوت</option>';
-      const userBots = role === 'superadmin' ? bots : bots.filter((bot) => bot.userId._id === userId);
-      userBots.forEach((bot) => {
-        botSelect.innerHTML += `<option value="${bot._id}">${bot.name}</option>`;
-      });
-
-      // Load previously selected bot or select the first one
-      const selectedBotId = localStorage.getItem('selectedBotId');
-      if (selectedBotId && userBots.some(bot => bot._id === selectedBotId)) {
-        botSelect.value = selectedBotId;
-      } else if (userBots.length > 0) {
-        botSelect.value = userBots[0]._id;
-        localStorage.setItem('selectedBotId', userBots[0]._id);
-      }
-
-      // Trigger page load based on hash
-      loadPageBasedOnHash();
-    } catch (err) {
-      console.error('خطأ في جلب البوتات:', err);
-      alert('خطأ في جلب البوتات');
-    }
-  }
-
-  // Save selected bot and reload page
-  botSelect.addEventListener('change', () => {
-    const selectedBotId = botSelect.value;
-    localStorage.setItem('selectedBotId', selectedBotId);
-    loadPageBasedOnHash();
-  });
-
-  const setActiveButton = (hash) => {
-    const buttons = [botsBtn, rulesBtn, chatPageBtn, analyticsBtn, messagesBtn, feedbackBtn, facebookBtn, logoutBtn];
-    buttons.forEach(btnGroup => {
-      btnGroup.forEach(btn => btn.classList.remove('active'));
     });
-
-    switch (hash) {
-      case '#bots':
-        botsBtn.forEach(btn => btn.classList.add('active'));
-        break;
-      case '#rules':
-        rulesBtn.forEach(btn => btn.classList.add('active'));
-        break;
-      case '#chat-page':
-        chatPageBtn.forEach(btn => btn.classList.add('active'));
-        break;
-      case '#analytics':
-        analyticsBtn.forEach(btn => btn.classList.add('active'));
-        break;
-      case '#messages':
-        messagesBtn.forEach(btn => btn.classList.add('active'));
-        break;
-      case '#feedback':
-        feedbackBtn.forEach(btn => btn.classList.add('active'));
-        break;
-      case '#facebook':
-        facebookBtn.forEach(btn => btn.classList.add('active'));
-        break;
-    }
-  };
-
-  const attachEventListeners = () => {
-    botsBtn.forEach(btn => {
-      btn.removeEventListener('click', botsBtnClickHandler);
-      btn.addEventListener('click', botsBtnClickHandler);
-    });
-
-    rulesBtn.forEach(btn => {
-      btn.removeEventListener('click', rulesBtnClickHandler);
-      btn.addEventListener('click', rulesBtnClickHandler);
-    });
-
-    chatPageBtn.forEach(btn => {
-      btn.removeEventListener('click', chatPageBtnClickHandler);
-      btn.addEventListener('click', chatPageBtnClickHandler);
-    });
-
-    analyticsBtn.forEach(btn => {
-      btn.removeEventListener('click', analyticsBtnClickHandler);
-      btn.addEventListener('click', analyticsBtnClickHandler);
-    });
-
-    messagesBtn.forEach(btn => {
-      btn.removeEventListener('click', messagesBtnClickHandler);
-      btn.addEventListener('click', messagesBtnClickHandler);
-    });
-
-    feedbackBtn.forEach(btn => {
-      btn.removeEventListener('click', feedbackBtnClickHandler);
-      btn.addEventListener('click', feedbackBtnClickHandler);
-    });
-
-    facebookBtn.forEach(btn => {
-      btn.removeEventListener('click', facebookBtnClickHandler);
-      btn.addEventListener('click', facebookBtnClickHandler);
-    });
-
-    logoutBtn.forEach(btn => {
-      btn.removeEventListener('click', logoutBtnClickHandler);
-      btn.addEventListener('click', logoutBtnClickHandler);
-    });
-  };
-
-  const botsBtnClickHandler = () => {
-    console.log('Bots Button Clicked');
-    window.location.hash = 'bots';
-    loadPageBasedOnHash();
-  };
-
-  const rulesBtnClickHandler = () => {
-    console.log('Rules Button Clicked');
-    window.location.hash = 'rules';
-    loadPageBasedOnHash();
-  };
-
-  const chatPageBtnClickHandler = () => {
-    console.log('Chat Page Button Clicked');
-    window.location.hash = 'chat-page';
-    loadPageBasedOnHash();
-  };
-
-  const analyticsBtnClickHandler = () => {
-    console.log('Analytics Button Clicked');
-    window.location.hash = 'analytics';
-    loadPageBasedOnHash();
-  };
-
-  const messagesBtnClickHandler = () => {
-    console.log('Messages Button Clicked');
-    window.location.hash = 'messages';
-    loadPageBasedOnHash();
-  };
-
-  const feedbackBtnClickHandler = () => {
-    console.log('Feedback Button Clicked');
-    window.location.hash = 'feedback';
-    loadPageBasedOnHash();
-  };
-
-  const facebookBtnClickHandler = () => {
-    console.log('Facebook Button Clicked');
-    window.location.hash = 'facebook';
-    loadPageBasedOnHash();
-  };
-
-  const logoutBtnClickHandler = async () => {
-    console.log('Logout Button Clicked');
-    try {
-      console.log('📤 Sending logout request for username:', localStorage.getItem('username'));
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: localStorage.getItem('username') }),
-      });
-
-      const data = await response.json();
-      console.log('📥 Logout response:', data);
-
-      if (response.ok && data.success) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        localStorage.removeItem('userId');
-        localStorage.removeItem('username');
-        localStorage.removeItem('selectedBotId');
-        console.log('✅ Logout successful, localStorage cleared');
-        window.location.href = '/';
-      } else {
-        console.log('❌ Logout failed:', data.message);
-        alert('فشل تسجيل الخروج، حاول مرة أخرى');
-      }
-    } catch (err) {
-      console.error('❌ Error during logout:', err);
-      alert('حدث خطأ أثناء تسجيل الخروج');
-    }
-  };
-
-  const loadMessagesPage = () => {
-    console.log('Loading Messages Page...');
-    content.innerHTML = ''; // Clear existing content
-    window.loadMessagesPage(); // Call the function from messages.js
-  };
-
-  attachEventListeners();
-
-  async function loadPageBasedOnHash() {
-    const hash = window.location.hash;
-    const userRole = localStorage.getItem('role');
-    const selectedBotId = localStorage.getItem('selectedBotId');
-
-    if (!selectedBotId && botSelect.options.length > 0) {
-      localStorage.setItem('selectedBotId', botSelect.options[0].value);
-    }
-
-    setActiveButton(hash);
-
-    if (userRole !== 'superadmin' && !hash) {
-      window.location.hash = 'rules';
-      loadRulesPage();
-    } else if (hash === '#bots') {
-      if (userRole === 'superadmin') {
-        loadBotsPage();
-      } else {
-        window.location.hash = 'rules';
-        loadRulesPage();
-      }
-    } else if (hash === '#rules') {
-      loadRulesPage();
-    } else if (hash === '#chat-page') {
-      loadChatPage();
-    } else if (hash === '#analytics') {
-      loadAnalyticsPage();
-    } else if (hash === '#messages') {
-      loadMessagesPage();
-    } else if (hash === '#feedback') {
-      loadFeedbackPage();
-    } else if (hash === '#facebook') {
-      loadFacebookPage();
-    } else {
-      if (userRole === 'superadmin') {
-        window.location.hash = 'bots';
-        loadBotsPage();
-      } else {
-        window.location.hash = 'rules';
-        loadRulesPage();
-      }
-    }
-  }
-
-  window.addEventListener('hashchange', () => {
-    loadPageBasedOnHash();
-  });
-
-  // Initialize bot selector
-  populateBotSelect();
-});
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353242cb8976758',t:'MTc0NTQ3MTkyMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'936156573a107b91',t:'MTc0NTYyMDc3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
