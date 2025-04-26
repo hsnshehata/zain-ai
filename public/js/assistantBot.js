@@ -67,7 +67,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function processMessage(message, lastMessageTimestamp) {
     try {
-      const systemPrompt = `
+      // التحقق من الأوامر البسيطة مباشرة في الكود
+      let internalCommand = parseSimpleCommand(message);
+
+      if (!internalCommand) {
+        // لو الأمر مش بسيط، بنستخدم الذكاء الاصطناعي
+        const systemPrompt = `
 أنت بوت ذكي اسمه "المساعد الذكي" (ID: ${ASSISTANT_BOT_ID}). مهمتك تنفيذ تعليمات المستخدم بناءً على الأوامر اللي بيطلبها في الداشبورد. الداشبورد عبارة عن صفحات متعددة لإدارة البوتات، وكل صفحة فيها وظائف معينة. البوت المختار حاليًا (اللي هتنفذ الأوامر عليه) هو: ${selectedBotId}. المستخدم مش محتاج يحدد البوت لأنه مختار بالفعل من الداشبورد.
 
 ### تعليمات التعامل مع الأوامر:
@@ -80,7 +85,6 @@ document.addEventListener('DOMContentLoaded', () => {
       "page": "اسم الصفحة (rules, messages, feedback, facebook, bots, analytics, chat-page)",
       "secretCode": "EXECUTE_NOW"
     }
-  - النظام الداخلي هينفذ الأمر ويرجّع تأكيد التنفيذ.
 
 #### 2. **إضافة قاعدة جديدة (صفحة القواعد)**:
 - لو المستخدم طلب "أضف قاعدة" أو "ضيف قاعدة" (مثال: "أضف قاعدة إن مفيش عندنا منتجات للاسترجاع"):
@@ -98,7 +102,6 @@ document.addEventListener('DOMContentLoaded', () => {
       "content": المحتوى (نص أو كائن JSON بناءً على نوع القاعدة),
       "secretCode": "EXECUTE_NOW"
     }
-  - النظام الداخلي هينفذ الأمر ويرجّع تأكيد التنفيذ.
 
 #### 3. **البحث في القواعد (صفحة القواعد)**:
 - لو المستخدم طلب "ابحث عن قاعدة" أو "دور على قاعدة" (مثال: "ابحث عن قاعدة تحتوي على كمبيوتر"):
@@ -110,7 +113,6 @@ document.addEventListener('DOMContentLoaded', () => {
       "searchTerm": "النص المطلوب البحث عنه",
       "secretCode": "EXECUTE_NOW"
     }
-  - النظام الداخلي هيرجّع نتيجة البحث (قاعدة أو رسالة "لم يتم العثور على قاعدة").
 
 #### 4. **البحث في الرسائل (صفحة الرسائل)**:
 - لو المستخدم طلب "ابحث عن رسائل" أو "دور على رسائل" (مثال: "ابحث عن رسائل من تاريخ 2025-04-01 إلى 2025-04-10"):
@@ -125,7 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
       "endDate": "تاريخ النهاية (ISO format)",
       "secretCode": "EXECUTE_NOW"
     }
-  - النظام الداخلي هيرجّع نتيجة البحث (عدد الرسائل أو رسالة "لم يتم العثور على رسائل").
 
 #### 5. **البحث في التقييمات (صفحة التقييمات)**:
 - لو المستخدم طلب "ابحث عن تقييمات" أو "دور على تقييمات" (مثال: "ابحث عن تقييمات إيجابية"):
@@ -137,7 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
       "type": "نوع التقييم (positive أو negative)",
       "secretCode": "EXECUTE_NOW"
     }
-  - النظام الداخلي هيرجّع نتيجة البحث (أول 3 تقييمات أو رسالة "لم يتم العثور على تقييمات").
 
 #### 6. **تعديل رد البوت في صفحة الرسائل**:
 - لو المستخدم طلب "عدل رد البوت" (مثال: "عدل رد البوت في محادثة مع مستخدم 1 إلى الرد: السعر 2000 جنيه"):
@@ -152,7 +152,6 @@ document.addEventListener('DOMContentLoaded', () => {
       "type": "نوع الرسائل (facebook, web, whatsapp) أو all لو مش محدد",
       "secretCode": "EXECUTE_NOW"
     }
-  - النظام الداخلي هيعدل الرد ويرجّع تأكيد أو خطأ.
 
 #### 7. **تعديل إعدادات صفحة الدردشة (صفحة تخصيص الدردشة)**:
 - لو المستخدم طلب تفعيل خاصية (مثال: "فعّل إرفاق الصور" أو "فعّل الأسئلة المقترحة"):
@@ -169,7 +168,6 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       "secretCode": "EXECUTE_NOW"
     }
-  - النظام الداخلي هيعدل الإعدادات ويرجّع تأكيد أو خطأ.
 
 - لو المستخدم طلب تغيير الألوان (مثال: "غيّر لون فقاعة المستخدم إلى #FF0000"):
   - الألوان المتاحة في صفحة الدردشة:
@@ -194,7 +192,6 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       "secretCode": "EXECUTE_NOW"
     }
-  - النظام الداخلي هيعدل الألوان ويرجّع تأكيد أو خطأ.
 
 #### 8. **تعديل إعدادات فيسبوك (صفحة إعدادات فيسبوك)**:
 - لو المستخدم طلب تفعيل إعداد (مثال: "فعّل رسائل الترحيب"):
@@ -211,7 +208,6 @@ document.addEventListener('DOMContentLoaded', () => {
       "value": true,
       "secretCode": "EXECUTE_NOW"
     }
-  - النظام الداخلي هيعدل الإعدادات ويرجّع تأكيد أو خطأ.
 
 #### 9. **إنشاء بوت جديد (صفحة البوتات)**:
 - لو المستخدم طلب "أنشئ بوت جديد" (مثال: "أنشئ بوت جديد باسم بوت التسويق"):
@@ -226,7 +222,6 @@ document.addEventListener('DOMContentLoaded', () => {
       "facebookPageId": "معرف صفحة فيسبوك (اختياري، لو مش محدد استخدم قيمة فارغة)",
       "secretCode": "EXECUTE_NOW"
     }
-  - النظام الداخلي هينشئ البوت ويرجّع تأكيد أو خطأ.
 
 #### 10. **عرض الإحصائيات (صفحة التحليلات)**:
 - لو المستخدم طلب "اعرض إحصائيات" (مثال: "اعرض إحصائيات البوت"):
@@ -236,62 +231,29 @@ document.addEventListener('DOMContentLoaded', () => {
       "botId": "${selectedBotId}",
       "secretCode": "EXECUTE_NOW"
     }
-  - النظام الداخلي هيرجّع الإحصائيات (عدد الرسائل، القواعد النشطة، إلخ).
 
 #### 11. **عام**:
 - لو المستخدم طلب أمر مش واضح، اطلب توضيح (مثال: "من فضلك، وضّح الأمر أكتر").
 - لو الأمر يتطلب بيانات ناقصة، اطلب البيانات الناقصة (مثال: "يرجى تحديد العملة للسعر").
 - لو الأمر خارج نطاق الصفحات، رد بـ "عذرًا، هذا الأمر غير متاح حاليًا."
-- لو البوت الداخلي رجّع خطأ (مثل "خطأ في الصيغة")، حاول مرة تانية بصيغة مختلفة (مثل تغيير ترتيب البيانات أو إضافة بيانات افتراضية) لحد ما الأمر يتنفذ أو يرجع خطأ نهائي للمستخدم.
-- دائمًا رجّع الأوامر في صيغة JSON مع الرمز السري "EXECUTE_NOW" عشان النظام الداخلي ينفذ الأمر من غير ما يعرضه للمستخدم مباشرة.
+- دائمًا رجّع الأوامر في صيغة JSON مع الرمز السري "EXECUTE_NOW" عشان النظام الداخلي ينفذ الأمر.
 
 ### معلومات إضافية:
 - الصفحات المتاحة: القواعد (#rules)، الرسائل (#messages)، التقييمات (#feedback)، إعدادات فيسبوك (#facebook)، البوتات (#bots)، التحليلات (#analytics)، تخصيص الدردشة (#chat-page).
 - البوت المختار: ${selectedBotId}.
 - حافظ على ذاكرة المحادثة (conversationHistory) عشان تفهم سياق الأوامر.
-- ارجع الأمر للبوت الداخلي دائمًا في صيغة JSON مع الرمز السري "EXECUTE_NOW" كما هو موضح أعلاه.
+- ارجع الأمر للبوت الداخلي دائمًا في صيغة JSON مع الرمز السري "EXECUTE_NOW".
 
 ### الآن، نفّذ الأمر التالي بناءً على التعليمات أعلاه:
 الأمر: "${message}"
 `;
 
-      const messages = [
-        { role: 'system', content: systemPrompt },
-        ...conversationHistory,
-      ];
+        const messages = [
+          { role: 'system', content: systemPrompt },
+          ...conversationHistory,
+        ];
 
-      const response = await fetch('/api/bot', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-        body: JSON.stringify({
-          botId: ASSISTANT_BOT_ID,
-          message,
-          userId,
-          history: conversationHistory,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('فشل في معالجة الرسالة');
-      }
-
-      const data = await response.json();
-      let aiCommand = data.reply || 'عذرًا، لم أفهم طلبك. حاول مرة أخرى!';
-
-      let internalCommand;
-      try {
-        internalCommand = JSON.parse(aiCommand);
-      } catch (err) {
-        // لو الذكاء الاصطناعي رجّع نص مش JSON، بنطلب منه يحوله لـ JSON
-        const retryPrompt = `
-الأمر اللي رجعته مش في صيغة JSON صحيحة: ${aiCommand}
-الأمر الأصلي: ${message}
-من فضلك، رجّع الأمر في صيغة JSON صحيحة بناءً على التعليمات اللي فوق.
-`;
-        const retryResponse = await fetch('/api/bot', {
+        const response = await fetch('/api/bot', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -299,48 +261,23 @@ document.addEventListener('DOMContentLoaded', () => {
           },
           body: JSON.stringify({
             botId: ASSISTANT_BOT_ID,
-            message: retryPrompt,
+            message,
             userId,
             history: conversationHistory,
           }),
         });
 
-        if (!retryResponse.ok) {
-          throw new Error('فشل في إعادة صياغة الأمر');
+        if (!response.ok) {
+          throw new Error('فشل في معالجة الرسالة');
         }
 
-        const retryData = await retryResponse.json();
-        internalCommand = JSON.parse(retryData.reply);
+        const data = await response.json();
+        internalCommand = JSON.parse(data.reply);
       }
 
       // التحقق من الرمز السري
       if (internalCommand.secretCode !== 'EXECUTE_NOW') {
-        // لو مفيش رمز سري، بنطلب من الذكاء الاصطناعي يضيف الرمز السري
-        const retryPrompt = `
-الأمر اللي رجعته (${JSON.stringify(internalCommand)}) ناقصه الرمز السري "EXECUTE_NOW".
-الأمر الأصلي: ${message}
-من فضلك، رجّع الأمر في صيغة JSON مع إضافة "secretCode": "EXECUTE_NOW".
-`;
-        const retryResponse = await fetch('/api/bot', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: JSON.stringify({
-            botId: ASSISTANT_BOT_ID,
-            message: retryPrompt,
-            userId,
-            history: conversationHistory,
-          }),
-        });
-
-        if (!retryResponse.ok) {
-          throw new Error('فشل في إعادة صياغة الأمر مع الرمز السري');
-        }
-
-        const retryData = await retryResponse.json();
-        internalCommand = JSON.parse(retryData.reply);
+        throw new Error('الأمر غير صالح: الرمز السري غير موجود أو غير صحيح');
       }
 
       let retryCount = 0;
@@ -349,42 +286,15 @@ document.addEventListener('DOMContentLoaded', () => {
       while (retryCount < maxRetries) {
         try {
           const executionResult = await executeInternalCommand(internalCommand);
-          // بنبعت التأكيد للذكاء الاصطناعي عشان يحوله لرد نهائي
-          const confirmationPrompt = `
-النظام الداخلي نفّذ الأمر بنجاح ورجّع التأكيد التالي: ${executionResult.message}
-الأمر الأصلي: ${message}
-من فضلك، صيغ رد نهائي للمستخدم بناءً على التأكيد ده.
-`;
-          const confirmationResponse = await fetch('/api/bot', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('token')}`,
-            },
-            body: JSON.stringify({
-              botId: ASSISTANT_BOT_ID,
-              message: confirmationPrompt,
-              userId,
-              history: conversationHistory,
-            }),
-          });
-
-          if (!confirmationResponse.ok) {
-            throw new Error('فشل في صياغة رد التأكيد');
-          }
-
-          const confirmationData = await confirmationResponse.json();
-          const finalReply = confirmationData.reply || executionResult.message;
-
           const botMessageDiv = document.createElement('div');
           botMessageDiv.className = 'message bot-message';
           botMessageDiv.innerHTML = `
-            <p>${finalReply}</p>
+            <p>${executionResult.message}</p>
             <small>${new Date().toLocaleString('ar-EG')}</small>
           `;
           assistantChatMessages.appendChild(botMessageDiv);
           assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
-          conversationHistory.push({ role: 'assistant', content: finalReply });
+          conversationHistory.push({ role: 'assistant', content: executionResult.message });
           break;
         } catch (err) {
           retryCount++;
@@ -418,6 +328,52 @@ document.addEventListener('DOMContentLoaded', () => {
       assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
       conversationHistory.push({ role: 'assistant', content: errorMessage });
     }
+  }
+
+  // دالة لتحليل الأوامر البسيطة مباشرة
+  function parseSimpleCommand(message) {
+    const navigateMatch = message.match(/(?:انتقل إلى|افتح) صفحة (القواعد|الرسائل|التقييمات|إعدادات فيسبوك|البوتات|التحليلات|تخصيص الدردشة)/);
+    if (navigateMatch) {
+      const pageMap = {
+        'القواعد': 'rules',
+        'الرسائل': 'messages',
+        'التقييمات': 'feedback',
+        'إعدادات فيسبوك': 'facebook',
+        'البوتات': 'bots',
+        'التحليلات': 'analytics',
+        'تخصيص الدردشة': 'chat-page',
+      };
+      const page = pageMap[navigateMatch[1]];
+      return {
+        action: 'navigate',
+        page,
+        secretCode: 'EXECUTE_NOW',
+      };
+    }
+
+    const addRuleMatch = message.match(/(?:أضف|ضيف) قاعدة(?: جديدة)?(?::\s*|\s+)(.+)/);
+    if (addRuleMatch) {
+      const content = addRuleMatch[1].trim();
+      let type = 'general'; // افتراضيًا القاعدة عامة
+      if (content.includes('السؤال:') && content.includes('الإجابة:')) {
+        type = 'qa';
+      } else if (content.includes('بسعر')) {
+        type = 'products';
+      } else if (content.includes('مفتاح API:')) {
+        type = 'api';
+      } else if (content.includes('موحدة')) {
+        type = 'global';
+      }
+      return {
+        action: 'addRule',
+        botId: selectedBotId,
+        type,
+        content,
+        secretCode: 'EXECUTE_NOW',
+      };
+    }
+
+    return null;
   }
 
   async function executeInternalCommand(command) {
