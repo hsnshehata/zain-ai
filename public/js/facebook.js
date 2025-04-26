@@ -22,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="setting-item">
           <div class="setting-info">
             <h3>رسائل الترحيب</h3>
-            <p>إرسال رسالة ترحيب تلقائية للمستخدم عند فتح الدردشة. مفيد لتحسين تجربة العميل وتشجيعه على التفاعل.</p>
+            <p>إرسال رسالة ترحيب تلقائية للمستخدم عند فتح الدردشة مع الصفحة لأول مرة. مفيد لتحسين تجربة العميل وتشجيعه على التفاعل.</p>
           </div>
           <label class="switch">
             <input type="checkbox" id="messagingOptinsToggle">
@@ -62,7 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="setting-item">
           <div class="setting-info">
             <h3>تصنيف المحادثات</h3>
-            <p>إضافة تصنيفات للمحادثات (مثل "عميل مهم"). يساعد في تنظيم المحادثات وتحسين المتابعة.</p>
+            <p>إضافة تصنيفات للمحادثات (مثل "عميل مهم") ملاحظة: يعمل فقط في حالة ان ميتا تتيح لصفحتك هذه الخاصية. يساعد في تنظيم المحادثات وتحسين المتابعة.</p>
           </div>
           <label class="switch">
             <input type="checkbox" id="inboxLabelsToggle">
