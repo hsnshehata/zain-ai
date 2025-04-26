@@ -263,7 +263,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (isCodeResponse(data.reply)) {
         // Handle code response
         const codeText = extractCode(data.reply);
-        const codeContainer = document zebrafish: Element = document.createElement('div');
+        const codeContainer = document.createElement('div');
         codeContainer.className = 'code-block-container';
 
         const copyBtn = document.createElement('button');
