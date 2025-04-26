@@ -25,105 +25,219 @@ async function loadChatPage() {
   // Color schemes definitions
   const colorSchemes = [
     {
-      name: 'فاتح 1',
+      name: 'ذهبي عصري',
       colors: {
-        titleColor: '#333333',
-        headerColor: '#f8f9fa',
-        chatAreaBackgroundColor: '#ffffff',
-        textColor: '#333333',
-        userMessageBackgroundColor: '#007bff',
-        userMessageTextColor: '#ffffff',
-        botMessageBackgroundColor: '#e9ecef',
-        botMessageTextColor: '#333333',
-        buttonColor: '#007bff',
-        backgroundColor: '#f8f9fa',
-        inputTextColor: '#333333',
-        sendButtonColor: '#007bff',
+        titleColor: '#D4AF37',
+        headerColor: '#FDF5E6',
+        chatAreaBackgroundColor: '#FFF8DC',
+        textColor: '#4A3C31',
+        userMessageBackgroundColor: '#DAA520',
+        userMessageTextColor: '#FFFFFF',
+        botMessageBackgroundColor: '#F5F5DC',
+        botMessageTextColor: '#4A3C31',
+        buttonColor: '#DAA520',
+        backgroundColor: '#FDF5E6',
+        inputTextColor: '#4A3C31',
+        sendButtonColor: '#DAA520',
+        mainBackgroundColor: '#FFF8DC',
       },
     },
     {
-      name: 'فاتح 2',
+      name: 'أزرق فاتح',
       colors: {
         titleColor: '#222222',
-        headerColor: '#e6f3fa',
-        chatAreaBackgroundColor: '#f0f8ff',
+        headerColor: '#E6F3FA',
+        chatAreaBackgroundColor: '#F0F8FF',
         textColor: '#222222',
-        userMessageBackgroundColor: '#00b7eb',
-        userMessageTextColor: '#ffffff',
-        botMessageBackgroundColor: '#d9edf7',
+        userMessageBackgroundColor: '#00B7EB',
+        userMessageTextColor: '#FFFFFF',
+        botMessageBackgroundColor: '#D9EDF7',
         botMessageTextColor: '#222222',
-        buttonColor: '#00b7eb',
-        backgroundColor: '#e6f3fa',
+        buttonColor: '#00B7EB',
+        backgroundColor: '#E6F3FA',
         inputTextColor: '#222222',
-        sendButtonColor: '#00b7eb',
+        sendButtonColor: '#00B7EB',
+        mainBackgroundColor: '#E6F3FA',
       },
     },
     {
-      name: 'فاتح 3',
+      name: 'برتقالي دافئ',
       colors: {
         titleColor: '#111111',
-        headerColor: '#fff5e6',
-        chatAreaBackgroundColor: '#fffaf0',
+        headerColor: '#FFF5E6',
+        chatAreaBackgroundColor: '#FFFAF0',
         textColor: '#111111',
-        userMessageBackgroundColor: '#ff9900',
-        userMessageTextColor: '#ffffff',
-        botMessageBackgroundColor: '#ffebcc',
+        userMessageBackgroundColor: '#FF9900',
+        userMessageTextColor: '#FFFFFF',
+        botMessageBackgroundColor: '#FFEBCC',
         botMessageTextColor: '#111111',
-        buttonColor: '#ff9900',
-        backgroundColor: '#fff5e6',
+        buttonColor: '#FF9900',
+        backgroundColor: '#FFF5E6',
         inputTextColor: '#111111',
-        sendButtonColor: '#ff9900',
+        sendButtonColor: '#FF9900',
+        mainBackgroundColor: '#FFFAF0',
       },
     },
     {
-      name: 'غامق 1',
+      name: 'تركواز غامق',
       colors: {
-        titleColor: '#ffffff',
-        headerColor: '#2c3e50',
-        chatAreaBackgroundColor: '#34495e',
-        textColor: '#ffffff',
-        userMessageBackgroundColor: '#1abc9c',
-        userMessageTextColor: '#ffffff',
-        botMessageBackgroundColor: '#2c3e50',
-        botMessageTextColor: '#ffffff',
-        buttonColor: '#1abc9c',
-        backgroundColor: '#34495e',
-        inputTextColor: '#ffffff',
-        sendButtonColor: '#1abc9c',
+        titleColor: '#FFFFFF',
+        headerColor: '#2C3E50',
+        chatAreaBackgroundColor: '#34495E',
+        textColor: '#FFFFFF',
+        userMessageBackgroundColor: '#1ABC9C',
+        userMessageTextColor: '#FFFFFF',
+        botMessageBackgroundColor: '#2C3E50',
+        botMessageTextColor: '#FFFFFF',
+        buttonColor: '#1ABC9C',
+        backgroundColor: '#34495E',
+        inputTextColor: '#FFFFFF',
+        sendButtonColor: '#1ABC9C',
+        mainBackgroundColor: '#34495E',
       },
     },
     {
-      name: 'غامق 2',
+      name: 'أحمر غامق',
       colors: {
-        titleColor: '#ffffff',
-        headerColor: '#1a1a1a',
+        titleColor: '#FFFFFF',
+        headerColor: '#1A1A1A',
         chatAreaBackgroundColor: '#262626',
-        textColor: '#ffffff',
-        userMessageBackgroundColor: '#e74c3c',
-        userMessageTextColor: '#ffffff',
-        botMessageBackgroundColor: '#1a1a1a',
-        botMessageTextColor: '#ffffff',
-        buttonColor: '#e74c3c',
+        textColor: '#FFFFFF',
+        userMessageBackgroundColor: '#E74C3C',
+        userMessageTextColor: '#FFFFFF',
+        botMessageBackgroundColor: '#1A1A1A',
+        botMessageTextColor: '#FFFFFF',
+        buttonColor: '#E74C3C',
         backgroundColor: '#262626',
-        inputTextColor: '#ffffff',
-        sendButtonColor: '#e74c3c',
+        inputTextColor: '#FFFFFF',
+        sendButtonColor: '#E74C3C',
+        mainBackgroundColor: '#262626',
       },
     },
     {
-      name: 'غامق 3',
+      name: 'أخضر غامق',
       colors: {
-        titleColor: '#ffffff',
-        headerColor: '#2d3436',
-        chatAreaBackgroundColor: '#3b4a4e',
-        textColor: '#ffffff',
-        userMessageBackgroundColor: '#6ab04c',
-        userMessageTextColor: '#ffffff',
-        botMessageBackgroundColor: '#2d3436',
-        botMessageTextColor: '#ffffff',
-        buttonColor: '#6ab04c',
-        backgroundColor: '#3b4a4e',
-        inputTextColor: '#ffffff',
-        sendButtonColor: '#6ab04c',
+        titleColor: '#FFFFFF',
+        headerColor: '#2D3436',
+        chatAreaBackgroundColor: '#3B4A4E',
+        textColor: '#FFFFFF',
+        userMessageBackgroundColor: '#6AB04C',
+        userMessageTextColor: '#FFFFFF',
+        botMessageBackgroundColor: '#2D3436',
+        botMessageTextColor: '#FFFFFF',
+        buttonColor: '#6AB04C',
+        backgroundColor: '#3B4A4E',
+        inputTextColor: '#FFFFFF',
+        sendButtonColor: '#6AB04C',
+        mainBackgroundColor: '#3B4A4E',
+      },
+    },
+    {
+      name: 'فضي أنيق',
+      colors: {
+        titleColor: '#333333',
+        headerColor: '#D3D3D3',
+        chatAreaBackgroundColor: '#E8ECEF',
+        textColor: '#333333',
+        userMessageBackgroundColor: '#B0C4DE',
+        userMessageTextColor: '#FFFFFF',
+        botMessageBackgroundColor: '#C0C0C0',
+        botMessageTextColor: '#333333',
+        buttonColor: '#B0C4DE',
+        backgroundColor: '#E8ECEF',
+        inputTextColor: '#333333',
+        sendButtonColor: '#B0C4DE',
+        mainBackgroundColor: '#E8ECEF',
+      },
+    },
+    {
+      name: 'بنفسجي ملكي',
+      colors: {
+        titleColor: '#FFFFFF',
+        headerColor: '#4B0082',
+        chatAreaBackgroundColor: '#6A5ACD',
+        textColor: '#FFFFFF',
+        userMessageBackgroundColor: '#8A2BE2',
+        userMessageTextColor: '#FFFFFF',
+        botMessageBackgroundColor: '#4B0082',
+        botMessageTextColor: '#FFFFFF',
+        buttonColor: '#8A2BE2',
+        backgroundColor: '#6A5ACD',
+        inputTextColor: '#FFFFFF',
+        sendButtonColor: '#8A2BE2',
+        mainBackgroundColor: '#6A5ACD',
+      },
+    },
+    {
+      name: 'وردي ناعم',
+      colors: {
+        titleColor: '#4A2F39',
+        headerColor: '#FFE4E1',
+        chatAreaBackgroundColor: '#FFF0F5',
+        textColor: '#4A2F39',
+        userMessageBackgroundColor: '#FF69B4',
+        userMessageTextColor: '#FFFFFF',
+        botMessageBackgroundColor: '#FFD1DC',
+        botMessageTextColor: '#4A2F39',
+        buttonColor: '#FF69B4',
+        backgroundColor: '#FFE4E1',
+        inputTextColor: '#4A2F39',
+        sendButtonColor: '#FF69B4',
+        mainBackgroundColor: '#FFF0F5',
+      },
+    },
+    {
+      name: 'أخضر زمردي',
+      colors: {
+        titleColor: '#FFFFFF',
+        headerColor: '#2E8B57',
+        chatAreaBackgroundColor: '#3CB371',
+        textColor: '#FFFFFF',
+        userMessageBackgroundColor: '#228B22',
+        userMessageTextColor: '#FFFFFF',
+        botMessageBackgroundColor: '#2E8B57',
+        botMessageTextColor: '#FFFFFF',
+        buttonColor: '#228B22',
+        backgroundColor: '#3CB371',
+        inputTextColor: '#FFFFFF',
+        sendButtonColor: '#228B22',
+        mainBackgroundColor: '#3CB371',
+      },
+    },
+    {
+      name: 'أسود لامع',
+      colors: {
+        titleColor: '#FFD700',
+        headerColor: '#1C2526',
+        chatAreaBackgroundColor: '#2A2F32',
+        textColor: '#FFD700',
+        userMessageBackgroundColor: '#FFD700',
+        userMessageTextColor: '#1C2526',
+        botMessageBackgroundColor: '#1C2526',
+        botMessageTextColor: '#FFD700',
+        buttonColor: '#FFD700',
+        backgroundColor: '#2A2F32',
+        inputTextColor: '#FFD700',
+        sendButtonColor: '#FFD700',
+        mainBackgroundColor: '#2A2F32',
+      },
+    },
+    {
+      name: 'بيج كلاسيكي',
+      colors: {
+        titleColor: '#5C4033',
+        headerColor: '#F5F5DC',
+        chatAreaBackgroundColor: '#FAEBD7',
+        textColor: '#5C4033',
+        userMessageBackgroundColor: '#DEB887',
+        userMessageTextColor: '#FFFFFF',
+        botMessageBackgroundColor: '#F5F5DC',
+        botMessageTextColor: '#5C4033',
+        buttonColor: '#DEB887',
+        backgroundColor: '#FAEBD7',
+        inputTextColor: '#5C4033',
+        sendButtonColor: '#DEB887',
+        mainBackgroundColor: '#FAEBD7',
       },
     },
   ];
@@ -138,12 +252,12 @@ async function loadChatPage() {
         const data = await response.json();
         const floatingButtonCode = `
 <div id="supportButtonContainer" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-  <img id="supportButton" src="https://i.ibb.co/7JJScM0Q/Chat-GPT-Image-20-2025-08-04-13.png" alt="دعم العملاء" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; -webkit-box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
+  <img id="supportButton" src="https://i.ibb.co/7JJScM0Q/Chat-GPT-Image-20-2025-08-04-13.png" alt="دعم العملاء" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
 </div>
 <div id="chatIframeContainer" style="display: none; position: fixed; bottom: 90px; right: 20px; z-index: 1000;">
-  <div style="position: relative; width: 350px; height: 600px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); background: ${data.colors.background || '#262626'}; overflow: hidden;">
-    <button id="closeChatIframe" style="position: absolute; top: 10px; left: 10px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px;">✕</button>
-    <iframe src="${data.link}" style="width: 100%; height: 100%; border: none; border-radius: 8px; overflow: hidden;" scrolling="no"></iframe>
+  <div style="position: relative; width: 350px; height: 600px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); background: white;">
+    <button id="closeChatIframe" style="position: absolute; top: 10px; right: 10px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer;">✕</button>
+    <iframe src="${data.link}" style="width: 100%; height: 100%; border: none; border-radius: 8px;"></iframe>
   </div>
 </div>
 <script>
@@ -278,6 +392,15 @@ async function loadChatPage() {
                         <label for="sendButtonColor">لون زر الإرسال:</label>
                         <input type="color" class="color-input" id="sendButtonColorInput" data-color-id="sendButtonColor" value="${data.colors.sendButtonColor || '#007bff'}">
                       </div>
+                      <div class="color-picker-wrapper">
+                        <label for="mainBackgroundColor">لون خلفية الصفحة الرئيسية:</label>
+                        <input type="color" class="color-input" id="mainBackgroundColorInput" data-color-id="mainBackgroundColor" value="${data.colors.mainBackgroundColor || '#ffffff'}">
+                      </div>
+                      <div class="color-picker-wrapper" id="transparencyWrapper" style="display: ${data.transparentBackgroundEnabled ? 'block' : 'none'};">
+                        <label for="backgroundTransparency">نسبة الشفافية (0-1):</label>
+                        <input type="range" min="0" max="1" step="0.1" id="backgroundTransparencyInput" data-color-id="backgroundTransparency" value="${data.backgroundTransparency || 0.5}">
+                        <span id="transparencyValue">${data.backgroundTransparency || 0.5}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -286,20 +409,30 @@ async function loadChatPage() {
             <div class="settings-section">
               <h3>نماذج الألوان</h3>
               <div class="color-schemes-container">
-                <div class="color-schemes-grid">
+                <div class="color-schemes-buttons">
                   ${colorSchemes
                     .map(
                       (scheme, index) => `
-                        <div class="color-scheme-card" data-scheme-index="${index}">
-                          <div class="color-samples">
-                            <div class="color-sample" style="background-color: ${scheme.colors.headerColor};"></div>
-                            <div class="color-sample" style="background-color: ${scheme.colors.backgroundColor};"></div>
-                            <div class="color-sample" style="background-color: ${scheme.colors.userMessageBackgroundColor};"></div>
-                            <div class="color-sample" style="background-color: ${scheme.colors.botMessageBackgroundColor};"></div>
-                            <div class="color-sample" style="background-color: ${scheme.colors.buttonColor};"></div>
-                          </div>
-                          <p>${scheme.name}</p>
-                        </div>
+                        <button class="color-scheme-btn" data-scheme-index="${index}" style="
+                          background: linear-gradient(
+                            45deg,
+                            ${scheme.colors.headerColor} 20%,
+                            ${scheme.colors.backgroundColor} 20%, ${scheme.colors.backgroundColor} 40%,
+                            ${scheme.colors.userMessageBackgroundColor} 40%, ${scheme.colors.userMessageBackgroundColor} 60%,
+                            ${scheme.colors.botMessageBackgroundColor} 60%, ${scheme.colors.botMessageBackgroundColor} 80%,
+                            ${scheme.colors.buttonColor} 80%
+                          );
+                          color: ${scheme.colors.textColor};
+                          padding: 8px 16px;
+                          border: none;
+                          border-radius: 20px;
+                          cursor: pointer;
+                          font-size: 0.9em;
+                          margin: 5px;
+                          transition: transform 0.2s;
+                        ">
+                          ${scheme.name}
+                        </button>
                       `
                     )
                     .join('')}
@@ -339,6 +472,12 @@ async function loadChatPage() {
                     تفعيل إرفاق الصور
                   </label>
                 </div>
+                <div class="form-group checkbox-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="transparentBackgroundEnabled" name="transparentBackgroundEnabled" ${data.transparentBackgroundEnabled ? 'checked' : ''}>
+                    جعل خلفية الصفحة شفافة
+                  </label>
+                </div>
                 <button type="submit" class="submit-btn">حفظ الإعدادات</button>
               </form>
             </div>
@@ -357,7 +496,7 @@ async function loadChatPage() {
         const userMessage = document.querySelector('#previewChatMessages .user-message');
         const botMessage = document.querySelector('#previewChatMessages .bot-message');
 
-        // Object to store color values
+        // Object to store color values and transparency
         let colorValues = {
           titleColor: data.titleColor || '#ffffff',
           headerColor: data.colors.header,
@@ -371,10 +510,17 @@ async function loadChatPage() {
           backgroundColor: data.colors.background,
           inputTextColor: data.colors.inputTextColor || '#333333',
           sendButtonColor: data.colors.sendButtonColor || '#007bff',
+          mainBackgroundColor: data.colors.mainBackgroundColor || '#ffffff',
+          backgroundTransparency: data.backgroundTransparency || 0.5,
         };
 
         function updatePreviewStyles() {
-          previewChat.style.backgroundColor = colorValues.backgroundColor;
+          const transparentBackgroundEnabled = document.getElementById('transparentBackgroundEnabled').checked;
+          if (transparentBackgroundEnabled) {
+            previewChat.style.backgroundColor = `rgba(255, 255, 255, ${colorValues.backgroundTransparency})`;
+          } else {
+            previewChat.style.backgroundColor = colorValues.mainBackgroundColor;
+          }
           previewChatHeader.style.backgroundColor = colorValues.headerColor;
           previewChatTitle.style.color = colorValues.titleColor;
           previewChatMessages.style.backgroundColor = colorValues.chatAreaBackgroundColor;
@@ -402,21 +548,34 @@ async function loadChatPage() {
           document.getElementById('backgroundColorInput').value = colorValues.backgroundColor;
           document.getElementById('inputTextColorInput').value = colorValues.inputTextColor;
           document.getElementById('sendButtonColorInput').value = colorValues.sendButtonColor;
+          document.getElementById('mainBackgroundColorInput').value = colorValues.mainBackgroundColor;
+          document.getElementById('backgroundTransparencyInput').value = colorValues.backgroundTransparency;
+          document.getElementById('transparencyValue').textContent = colorValues.backgroundTransparency;
         }
+
+        // Handle transparent background toggle
+        document.getElementById('transparentBackgroundEnabled').addEventListener('change', () => {
+          const transparencyWrapper = document.getElementById('transparencyWrapper');
+          transparencyWrapper.style.display = document.getElementById('transparentBackgroundEnabled').checked ? 'block' : 'none';
+          updatePreviewStyles();
+        });
+
+        // Handle transparency slider
+        document.getElementById('backgroundTransparencyInput').addEventListener('input', (e) => {
+          colorValues.backgroundTransparency = e.target.value;
+          document.getElementById('transparencyValue').textContent = e.target.value;
+          updatePreviewStyles();
+        });
 
         // Handle gear buttons to show/hide settings popups
         document.querySelectorAll('.settings-gear').forEach(gear => {
           gear.addEventListener('click', (e) => {
             e.stopPropagation();
-            console.log('Settings gear clicked:', gear.getAttribute('data-target'));
             const targetId = gear.getAttribute('data-target');
             const popup = document.getElementById(targetId);
             const isVisible = popup.style.display === 'block';
-            // Hide all popups first
             document.querySelectorAll('.settings-popup').forEach(p => p.style.display = 'none');
-            // Toggle the clicked popup
             popup.style.display = isVisible ? 'none' : 'block';
-            console.log(`Toggled popup ${targetId} to ${popup.style.display}`);
           });
         });
 
@@ -428,11 +587,11 @@ async function loadChatPage() {
         });
 
         // Handle color schemes
-        document.querySelectorAll('.color-scheme-card').forEach( card => {
-          card.addEventListener('click', () => {
-            const schemeIndex = card.getAttribute('data-scheme-index');
+        document.querySelectorAll('.color-scheme-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const schemeIndex = btn.getAttribute('data-scheme-index');
             const selectedScheme = colorSchemes[schemeIndex];
-            colorValues = { ...selectedScheme.colors };
+            colorValues = { ...selectedScheme.colors, backgroundTransparency: colorValues.backgroundTransparency };
             updatePreviewStyles();
           });
         });
@@ -440,17 +599,14 @@ async function loadChatPage() {
         // Attach event listeners to color inputs
         setTimeout(() => {
           const colorInputs = document.querySelectorAll('.color-input');
-          console.log(`Found ${colorInputs.length} color-input elements`);
           colorInputs.forEach(input => {
             const colorId = input.getAttribute('data-color-id');
-            console.log(`Attaching event listener for ${colorId}`);
             input.addEventListener('input', (e) => {
               colorValues[colorId] = e.target.value;
               updatePreviewStyles();
-              console.log(`Color changed for ${colorId}: ${e.target.value}`);
             });
           });
-        }, 0); // Ensure DOM is fully rendered
+        }, 0);
 
         // Update title in preview
         document.getElementById('title').addEventListener('input', (e) => {
@@ -484,7 +640,6 @@ async function loadChatPage() {
           try {
             await navigator.clipboard.writeText(linkInput.value);
             alert('تم نسخ الرابط بنجاح!');
-            console.log(`Link copied: ${linkInput.value}`);
           } catch (err) {
             console.error('خطأ في نسخ الرابط:', err);
             alert('فشل في نسخ الرابط، حاول مرة أخرى');
@@ -497,7 +652,6 @@ async function loadChatPage() {
           try {
             await navigator.clipboard.writeText(floatingButtonCodeInput.value);
             alert('تم نسخ كود زر الدعم العائم بنجاح!');
-            console.log('Floating button code copied');
           } catch (err) {
             console.error('خطأ في نسخ كود زر الدعم العائم:', err);
             alert('فشل في نسخ الكود، حاول مرة أخرى');
@@ -510,7 +664,6 @@ async function loadChatPage() {
           try {
             await navigator.clipboard.writeText(fullIframeCodeInput.value);
             alert('تم نسخ كود تضمين صفحة الدردشة بنجاح!');
-            console.log('Full iframe code copied');
           } catch (err) {
             console.error('خطأ في نسخ كود تضمين صفحة الدردشة:', err);
             alert('فشل في نسخ الكود، حاول مرة أخرى');
@@ -606,10 +759,13 @@ async function loadChatPage() {
             botMessageTextColor: colorValues.botMessageTextColor,
             inputTextColor: colorValues.inputTextColor,
             sendButtonColor: colorValues.sendButtonColor,
+            mainBackgroundColor: colorValues.mainBackgroundColor,
           }));
           formData.set('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on' ? 'true' : 'false');
           formData.set('suggestedQuestions', JSON.stringify(questions));
           formData.set('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on' ? 'true' : 'false');
+          formData.set('transparentBackgroundEnabled', formData.get('transparentBackgroundEnabled') === 'on' ? 'true' : 'false');
+          formData.set('backgroundTransparency', colorValues.backgroundTransparency);
 
           try {
             const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
@@ -633,7 +789,6 @@ async function loadChatPage() {
               previewChatLogo.src = result.logoUrl;
               previewChatLogo.style.display = 'block';
             }
-            // Update colorValues with the new values from the server response
             if (result.colors) {
               colorValues.headerColor = result.colors.header || colorValues.headerColor;
               colorValues.backgroundColor = result.colors.background || colorValues.backgroundColor;
@@ -646,8 +801,7 @@ async function loadChatPage() {
               colorValues.botMessageTextColor = result.colors.botMessageTextColor || colorValues.botMessageTextColor;
               colorValues.inputTextColor = result.colors.inputTextColor || colorValues.inputTextColor;
               colorValues.sendButtonColor = result.colors.sendButtonColor || colorValues.sendButtonColor;
-
-              // Update the preview with the new values
+              colorValues.mainBackgroundColor = result.colors.mainBackgroundColor || colorValues.mainBackgroundColor;
               updatePreviewStyles();
             }
             alert('تم حفظ الإعدادات بنجاح!');
@@ -660,7 +814,6 @@ async function loadChatPage() {
         // Initial preview update
         updatePreviewStyles();
       } else {
-        // If no chat page exists for the selected bot, show the "Create Chat Page" button
         chatPageContent.innerHTML = `
           <button id="createChatPageBtn" class="submit-btn">إنشاء صفحة دردشة</button>
         `;
@@ -685,7 +838,6 @@ async function loadChatPage() {
                 throw new Error(`فشل في إنشاء صفحة الدردشة: ${response.status} ${response.statusText}`);
               }
 
-              // After creating the chat page, reload settings
               loadChatPageSettings();
             } catch (err) {
               console.error('خطأ في إنشاء صفحة الدردشة:', err);
@@ -704,6 +856,5 @@ async function loadChatPage() {
     }
   }
 
-  // Load settings for the selected bot
   loadChatPageSettings();
 }
