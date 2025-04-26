@@ -71,7 +71,17 @@ document.addEventListener('DOMContentLoaded', () => {
 أنت بوت ذكي اسمه "المساعد الذكي" (ID: ${ASSISTANT_BOT_ID}). مهمتك تنفيذ تعليمات المستخدم بناءً على الأوامر اللي بيطلبها في الداشبورد. الداشبورد عبارة عن صفحات متعددة لإدارة البوتات، وكل صفحة فيها وظائف معينة. البوت المختار حاليًا (اللي هتنفذ الأوامر عليه) هو: ${selectedBotId}. المستخدم مش محتاج يحدد البوت لأنه مختار بالفعل من الداشبورد.
 
 ### تعليمات التعامل مع الأوامر:
-#### 1. **إضافة قاعدة جديدة (صفحة القواعد)**:
+#### 1. **التنقل بين الصفحات**:
+- لو المستخدم طلب "انتقل إلى صفحة" أو "افتح صفحة" (مثال: "انتقل إلى صفحة التقييمات"):
+  - حدد اسم الصفحة المطلوبة (مثل "التقييمات").
+  - ارجع الأمر للبوت الداخلي في صيغة JSON:
+    {
+      "action": "navigate",
+      "page": "اسم الصفحة (rules, messages, feedback, facebook, bots, analytics, chat-page)"
+    }
+  - البوت الداخلي هينتقل للصفحة ويرجع تأكيد.
+
+#### 2. **إضافة قاعدة جديدة (صفحة القواعد)**:
 - لو المستخدم طلب "أضف قاعدة" أو "ضيف قاعدة" (مثال: "أضف قاعدة إن مفيش عندنا منتجات للاسترجاع"):
   - لو القاعدة نص عام (زي "مفيش عندنا منتجات للاسترجاع")، أضفها كـ قاعدة عامة (general).
   - لو القاعدة فيها سؤال وإجابة (مثال: "السؤال: ما هو سعر الكمبيوتر؟ الإجابة: 1000 جنيه")، أضفها كـ قاعدة سؤال وجواب (qa).
@@ -86,9 +96,9 @@ document.addEventListener('DOMContentLoaded', () => {
       "type": "نوع القاعدة (general, qa, products, api, global)",
       "content": المحتوى (نص أو كائن JSON بناءً على نوع القاعدة)
     }
-  - بعد الإضافة، البوت الداخلي هينفذ الأمر ويرجع تأكيد أو خطأ.
+  - البوت الداخلي هينفذ الأمر ويرجع تأكيد أو خطأ.
 
-#### 2. **البحث في القواعد (صفحة القواعد)**:
+#### 3. **البحث في القواعد (صفحة القواعد)**:
 - لو المستخدم طلب "ابحث عن قاعدة" أو "دور على قاعدة" (مثال: "ابحث عن قاعدة تحتوي على كمبيوتر"):
   - ابحث عن القاعدة بناءً على النص المطلوب (مثل "كمبيوتر").
   - ارجع الأمر للبوت الداخلي في صيغة JSON:
@@ -99,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   - البوت الداخلي هيرجع نتيجة البحث (قاعدة أو رسالة "لم يتم العثور على قاعدة").
 
-#### 3. **البحث في الرسائل (صفحة الرسائل)**:
+#### 4. **البحث في الرسائل (صفحة الرسائل)**:
 - لو المستخدم طلب "ابحث عن رسائل" أو "دور على رسائل" (مثال: "ابحث عن رسائل من تاريخ 2025-04-01 إلى 2025-04-10"):
   - استخرج التواريخ من الأمر (مثل من 2025-04-01 إلى 2025-04-10).
   - لو فيه نوع رسائل محدد (فيسبوك، ويب، واتساب)، حدده (مثال: "ابحث عن رسائل فيسبوك").
@@ -113,7 +123,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   - البوت الداخلي هيرجع نتيجة البحث (عدد الرسائل أو رسالة "لم يتم العثور على رسائل").
 
-#### 4. **البحث في التقييمات (صفحة التقييمات)**:
+#### 5. **البحث في التقييمات (صفحة التقييمات)**:
 - لو المستخدم طلب "ابحث عن تقييمات" أو "دور على تقييمات" (مثال: "ابحث عن تقييمات إيجابية"):
   - حدد نوع التقييم (إيجابي أو سلبي).
   - ارجع الأمر للبوت الداخلي في صيغة JSON:
@@ -124,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   - البوت الداخلي هيرجع نتيجة البحث (أول 3 تقييمات أو رسالة "لم يتم العثور على تقييمات").
 
-#### 5. **تعديل رد البوت في صفحة الرسائل**:
+#### 6. **تعديل رد البوت في صفحة الرسائل**:
 - لو المستخدم طلب "عدل رد البوت" (مثال: "عدل رد البوت في محادثة مع مستخدم 1 إلى الرد: السعر 2000 جنيه"):
   - استخرج اسم المستخدم (مثل "مستخدم 1") والرد الجديد (مثل "السعر 2000 جنيه").
   - ابحث عن آخر سؤال من المستخدم في المحادثة لربطه بالرد الجديد.
@@ -138,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   - البوت الداخلي هيعدل الرد ويرجع تأكيد أو خطأ.
 
-#### 6. **تعديل إعدادات صفحة الدردشة (صفحة تخصيص الدردشة)**:
+#### 7. **تعديل إعدادات صفحة الدردشة (صفحة تخصيص الدردشة)**:
 - لو المستخدم طلب تفعيل خاصية (مثال: "فعّل إرفاق الصور" أو "فعّل الأسئلة المقترحة"):
   - لو طلب تفعيل إرفاق الصور، فعّل imageUploadEnabled (true).
   - لو طلب تفعيل الأسئلة المقترحة، فعّل suggestedQuestionsEnabled (true) وأضف الأسئلة المقترحة لو المستخدم حددها (مثال: "فعّل الأسئلة المقترحة بأسئلة: ما هو السعر؟، كيف أطلب؟").
@@ -178,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   - البوت الداخلي هيعدل الألوان ويرجع تأكيد أو خطأ.
 
-#### 7. **تعديل إعدادات فيسبوك (صفحة إعدادات فيسبوك)**:
+#### 8. **تعديل إعدادات فيسبوك (صفحة إعدادات فيسبوك)**:
 - لو المستخدم طلب تفعيل إعداد (مثال: "فعّل رسائل الترحيب"):
   - لو "رسائل الترحيب"، فعّل messagingOptinsEnabled (true).
   - لو "التفاعل مع ردود الفعل"، فعّل messageReactionsEnabled (true).
@@ -194,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   - البوت الداخلي هيعدل الإعدادات ويرجع تأكيد أو خطأ.
 
-#### 8. **إنشاء بوت جديد (صفحة البوتات)**:
+#### 9. **إنشاء بوت جديد (صفحة البوتات)**:
 - لو المستخدم طلب "أنشئ بوت جديد" (مثال: "أنشئ بوت جديد باسم بوت التسويق"):
   - استخرج اسم البوت (مثل "بوت التسويق").
   - اطلب من المستخدم اختيار المستخدم المرتبط بالبوت لو مش محدد.
@@ -208,8 +218,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   - البوت الداخلي هينشئ البوت ويرجع تأكيد أو خطأ.
 
-#### 9. **عرض الإحصائيات (صفحة التحليلات)**:
-- لو المستخدم طلب "اعرض إحصائيات" (مثال: "اعرض إحصائيات بوت التسويق"):
+#### 10. **عرض الإحصائيات (صفحة التحليلات)**:
+- لو المستخدم طلب "اعرض إحصائيات" (مثال: "اعرض إحصائيات البوت"):
   - ارجع الأمر للبوت الداخلي في صيغة JSON:
     {
       "action": "showAnalytics",
@@ -217,11 +227,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   - البوت الداخلي هيرجع الإحصائيات (عدد الرسائل، القواعد النشطة، إلخ).
 
-#### 10. **عام**:
+#### 11. **عام**:
 - لو المستخدم طلب أمر مش واضح، اطلب توضيح (مثال: "من فضلك، وضّح الأمر أكتر").
 - لو الأمر يتطلب بيانات ناقصة، اطلب البيانات الناقصة (مثال: "يرجى تحديد العملة للسعر").
 - لو الأمر خارج نطاق الصفحات، رد بـ "عذرًا، هذا الأمر غير متاح حاليًا."
 - لو البوت الداخلي رجّع خطأ (مثل "خطأ في الصيغة")، حاول مرة تانية بصيغة مختلفة (مثل تغيير ترتيب البيانات أو إضافة بيانات افتراضية) لحد ما الأمر يتنفذ أو يرجع خطأ نهائي للمستخدم.
+- دائمًا رجّع الأوامر في صيغة JSON صحيحة، وما تعرضش الأمر للمستخدم مباشرة، خلّيه يتنفذ من النظام الداخلي.
 
 ### معلومات إضافية:
 - الصفحات المتاحة: القواعد (#rules)، الرسائل (#messages)، التقييمات (#feedback)، إعدادات فيسبوك (#facebook)، البوتات (#bots)، التحليلات (#analytics)، تخصيص الدردشة (#chat-page).
@@ -263,16 +274,32 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         internalCommand = JSON.parse(aiCommand);
       } catch (err) {
-        const botMessageDiv = document.createElement('div');
-        botMessageDiv.className = 'message bot-message';
-        botMessageDiv.innerHTML = `
-          <p>${aiCommand}</p>
-          <small>${new Date().toLocaleString('ar-EG')}</small>
-        `;
-        assistantChatMessages.appendChild(botMessageDiv);
-        assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
-        conversationHistory.push({ role: 'assistant', content: aiCommand });
-        return;
+        // لو الذكاء الاصطناعي رجّع نص مش JSON، بنضيف تعليمات إضافية للذكاء عشان يرجّع JSON
+        const retryPrompt = `
+الأمر اللي رجعته مش في صيغة JSON صحيحة: ${aiCommand}
+الأمر الأصلي: ${message}
+من فضلك، رجّع الأمر في صيغة JSON صحيحة بناءً على التعليمات اللي فوق.
+`;
+        const retryResponse = await fetch('/api/bot', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({
+            botId: ASSISTANT_BOT_ID,
+            message: retryPrompt,
+            userId,
+            history: conversationHistory,
+          }),
+        });
+
+        if (!retryResponse.ok) {
+          throw new Error('فشل في إعادة صياغة الأمر');
+        }
+
+        const retryData = await retryResponse.json();
+        internalCommand = JSON.parse(retryData.reply);
       }
 
       let retryCount = 0;
@@ -331,6 +358,57 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     switch (command.action) {
+      case 'navigate':
+        if (!command.page) {
+          throw new Error('الأمر غير صالح: يجب تحديد page');
+        }
+        switch (command.page) {
+          case 'rules':
+            window.location.hash = 'rules';
+            if (typeof window.loadRulesPage === 'function') {
+              window.loadRulesPage();
+            }
+            return { message: 'تم الانتقال إلى صفحة القواعد' };
+          case 'messages':
+            window.location.hash = 'messages';
+            if (typeof window.loadMessagesPage === 'function') {
+              window.loadMessagesPage();
+            }
+            return { message: 'تم الانتقال إلى صفحة الرسائل' };
+          case 'feedback':
+            window.location.hash = 'feedback';
+            if (typeof window.loadFeedbackPage === 'function') {
+              window.loadFeedbackPage();
+            }
+            return { message: 'تم الانتقال إلى صفحة التقييمات' };
+          case 'facebook':
+            window.location.hash = 'facebook';
+            if (typeof window.loadFacebookPage === 'function') {
+              window.loadFacebookPage();
+            }
+            return { message: 'تم الانتقال إلى صفحة إعدادات فيسبوك' };
+          case 'bots':
+            window.location.hash = 'bots';
+            if (typeof window.loadBotsPage === 'function') {
+              window.loadBotsPage();
+            }
+            return { message: 'تم الانتقال إلى صفحة البوتات' };
+          case 'analytics':
+            window.location.hash = 'analytics';
+            if (typeof window.loadAnalyticsPage === 'function') {
+              window.loadAnalyticsPage();
+            }
+            return { message: 'تم الانتقال إلى صفحة التحليلات' };
+          case 'chat-page':
+            window.location.hash = 'chat-page';
+            if (typeof window.loadChatPage === 'function') {
+              window.loadChatPage();
+            }
+            return { message: 'تم الانتقال إلى صفحة تخصيص الدردشة' };
+          default:
+            throw new Error('الصفحة غير مدعومة: ' + command.page);
+        }
+
       case 'addRule':
         if (!command.botId || !command.type || !command.content) {
           throw new Error('الأمر غير صالح: يجب تحديد botId وtype وcontent');
