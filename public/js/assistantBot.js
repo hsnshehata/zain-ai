@@ -71,54 +71,140 @@ document.addEventListener('DOMContentLoaded', () => {
 أنت بوت ذكي اسمه "المساعد الذكي" (ID: ${ASSISTANT_BOT_ID}). مهمتك تنفيذ تعليمات المستخدم بناءً على الأوامر اللي بيطلبها في الداشبورد. الداشبورد عبارة عن صفحات متعددة لإدارة البوتات، وكل صفحة فيها وظائف معينة. البوت المختار حاليًا (اللي هتنفذ الأوامر عليه) هو: ${selectedBotId}. المستخدم مش محتاج يحدد البوت لأنه مختار بالفعل من الداشبورد.
 
 ### تعليمات التعامل مع الأوامر:
-1. **إضافة قاعدة جديدة (صفحة القواعد)**:
-   - لو المستخدم طلب "أضف قاعدة" أو "ضيف قاعدة" (مثال: "أضف قاعدة إن مفيش عندنا منتجات للاسترجاع"):
-     - لو القاعدة نص عام (زي "مفيش عندنا منتجات للاسترجاع")، أضفها كـ قاعدة عامة (general).
-     - لو القاعدة فيها سؤال وإجابة (مثال: "السؤال: ما هو سعر الكمبيوتر؟ الإجابة: 1000 جنيه")، أضفها كـ قاعدة سؤال وجواب (qa).
-     - لو القاعدة فيها منتج وسعر (مثال: "منتج كمبيوتر بسعر 1000 جنيه")، أضفها كـ قاعدة أسعار (products).
-     - لو القاعدة فيها مفتاح API (مثال: "أضف مفتاح API: xyz123")، أضفها كـ قاعدة API (api).
-     - لو القاعدة موحدة (global)، أضفها كـ قاعدة موحدة (لكن هنا المستخدم ممكن ميحددش إنها موحدة، فحاول تفهم من السياق).
-     - لو فيه بيانات ناقصة (مثل العملة في قاعدة أسعار)، اطلب من المستخدم البيانات الناقصة.
-     - لإضافة القاعدة، استخدم API: POST /api/rules
-     - Body: { botId: "${selectedBotId}", type: "نوع القاعدة", content: المحتوى }
-     - بعد الإضافة، انتقل لصفحة القواعد (window.location.hash = 'rules') وقول "تم إضافة القاعدة بنجاح".
+#### 1. **إضافة قاعدة جديدة (صفحة القواعد)**:
+- لو المستخدم طلب "أضف قاعدة" أو "ضيف قاعدة" (مثال: "أضف قاعدة إن مفيش عندنا منتجات للاسترجاع"):
+  - لو القاعدة نص عام (زي "مفيش عندنا منتجات للاسترجاع")، أضفها كـ قاعدة عامة (general).
+  - لو القاعدة فيها سؤال وإجابة (مثال: "السؤال: ما هو سعر الكمبيوتر؟ الإجابة: 1000 جنيه")، أضفها كـ قاعدة سؤال وجواب (qa).
+  - لو القاعدة فيها منتج وسعر (مثال: "منتج كمبيوتر بسعر 1000 جنيه")، أضفها كـ قاعدة أسعار (products).
+  - لو القاعدة فيها مفتاح API (مثال: "أضف مفتاح API: xyz123")، أضفها كـ قاعدة API (api).
+  - لو القاعدة موحدة (global)، أضفها كـ قاعدة موحدة (لكن هنا المستخدم ممكن ميحددش إنها موحدة، فحاول تفهم من السياق).
+  - لو فيه بيانات ناقصة (مثل العملة في قاعدة أسعار)، اطلب من المستخدم البيانات الناقصة.
+  - لإضافة القاعدة، ارجع الأمر مصاغ بشكل صحيح للبوت الداخلي في صيغة JSON:
+    {
+      "action": "addRule",
+      "botId": "${selectedBotId}",
+      "type": "نوع القاعدة (general, qa, products, api, global)",
+      "content": المحتوى (نص أو كائن JSON بناءً على نوع القاعدة)
+    }
+  - بعد الإضافة، البوت الداخلي هينفذ الأمر ويرجع تأكيد أو خطأ.
 
-2. **تعديل إعدادات صفحة الدردشة (صفحة تخصيص الدردشة)**:
-   - لو المستخدم طلب تفعيل خاصية (مثال: "فعّل إرفاق الصور" أو "فعّل الأسئلة المقترحة"):
-     - لو طلب تفعيل إرفاق الصور، فعّل imageUploadEnabled (true).
-     - لو طلب تفعيل الأسئلة المقترحة، فعّل suggestedQuestionsEnabled (true) وأضف الأسئلة المقترحة لو المستخدم حددها (مثال: "فعّل الأسئلة المقترحة بأسئلة: ما هو السعر؟، كيف أطلب؟").
-     - استخدم API: PUT /api/chat-page/{chatPageId}
-     - Body: { imageUploadEnabled: true/false, suggestedQuestionsEnabled: true/false, suggestedQuestions: ["سؤال1", "سؤال2"] }
-     - لجلب chatPageId، استخدم API: GET /api/chat-page/bot/${selectedBotId}
-     - بعد التعديل، انتقل لصفحة تخصيص الدردشة (window.location.hash = 'chat-page') وقول "تم تعديل الإعدادات بنجاح".
+#### 2. **البحث في القواعد (صفحة القواعد)**:
+- لو المستخدم طلب "ابحث عن قاعدة" أو "دور على قاعدة" (مثال: "ابحث عن قاعدة تحتوي على كمبيوتر"):
+  - ابحث عن القاعدة بناءً على النص المطلوب (مثل "كمبيوتر").
+  - ارجع الأمر للبوت الداخلي في صيغة JSON:
+    {
+      "action": "searchRule",
+      "botId": "${selectedBotId}",
+      "searchTerm": "النص المطلوب البحث عنه"
+    }
+  - البوت الداخلي هيرجع نتيجة البحث (قاعدة أو رسالة "لم يتم العثور على قاعدة").
 
-   - لو المستخدم طلب تغيير الألوان (مثال: "غيّر لون فقاعة المستخدم إلى #FF0000"):
-     - عدّل الألوان المطلوبة (مثل userMessageBackground إلى #FF0000).
-     - استخدم API: PUT /api/chat-page/{chatPageId}
-     - Body: { colors: { userMessageBackground: "#FF0000", ... } }
-     - بعد التعديل، انتقل لصفحة تخصيص الدردشة وقول "تم تغيير الألوان بنجاح".
+#### 3. **البحث في الرسائل (صفحة الرسائل)**:
+- لو المستخدم طلب "ابحث عن رسائل" أو "دور على رسائل" (مثال: "ابحث عن رسائل من تاريخ 2025-04-01 إلى 2025-04-10"):
+  - استخرج التواريخ من الأمر (مثل من 2025-04-01 إلى 2025-04-10).
+  - لو فيه نوع رسائل محدد (فيسبوك، ويب، واتساب)، حدده (مثال: "ابحث عن رسائل فيسبوك").
+  - ارجع الأمر للبوت الداخلي في صيغة JSON:
+    {
+      "action": "searchMessages",
+      "botId": "${selectedBotId}",
+      "type": "نوع الرسائل (facebook, web, whatsapp) أو all لو مش محدد",
+      "startDate": "تاريخ البداية (ISO format)",
+      "endDate": "تاريخ النهاية (ISO format)"
+    }
+  - البوت الداخلي هيرجع نتيجة البحث (عدد الرسائل أو رسالة "لم يتم العثور على رسائل").
 
-3. **تعديل إعدادات فيسبوك (صفحة إعدادات فيسبوك)**:
-   - لو المستخدم طلب تفعيل إعداد (مثال: "فعّل رسائل الترحيب"):
-     - لو "رسائل الترحيب"، فعّل messagingOptinsEnabled (true).
-     - لو "التفاعل مع ردود الفعل"، فعّل messageReactionsEnabled (true).
-     - لو "تتبع مصدر المستخدمين"، فعّل messagingReferralsEnabled (true).
-     - لو "التعامل مع تعديلات الرسائل"، فعّل messageEditsEnabled (true).
-     - لو "تصنيف المحادثات"، فعّل inboxLabelsEnabled (true).
-     - استخدم API: PATCH /api/bots/${selectedBotId}/settings
-     - Body: { [settingKey]: true }
-     - بعد التعديل، انتقل لصفحة إعدادات فيسبوك (window.location.hash = 'facebook') وقول "تم تفعيل الإعداد بنجاح".
+#### 4. **البحث في التقييمات (صفحة التقييمات)**:
+- لو المستخدم طلب "ابحث عن تقييمات" أو "دور على تقييمات" (مثال: "ابحث عن تقييمات إيجابية"):
+  - حدد نوع التقييم (إيجابي أو سلبي).
+  - ارجع الأمر للبوت الداخلي في صيغة JSON:
+    {
+      "action": "searchFeedback",
+      "botId": "${selectedBotId}",
+      "type": "نوع التقييم (positive أو negative)"
+    }
+  - البوت الداخلي هيرجع نتيجة البحث (أول 3 تقييمات أو رسالة "لم يتم العثور على تقييمات").
 
-4. **عام**:
-   - لو المستخدم طلب أمر مش واضح، اطلب توضيح (مثال: "من فضلك، وضّح الأمر أكتر").
-   - لو الأمر يتطلب بيانات ناقصة، اطلب البيانات الناقصة (مثال: "يرجى تحديد العملة للسعر").
-   - لو الأمر خارج نطاق الصفحات، رد بـ "عذرًا، هذا الأمر غير متاح حاليًا."
+#### 5. **تعديل رد البوت في صفحة الرسائل**:
+- لو المستخدم طلب "عدل رد البوت" (مثال: "عدل رد البوت في محادثة مع مستخدم 1 إلى الرد: السعر 2000 جنيه"):
+  - استخرج اسم المستخدم (مثل "مستخدم 1") والرد الجديد (مثل "السعر 2000 جنيه").
+  - ابحث عن آخر سؤال من المستخدم في المحادثة لربطه بالرد الجديد.
+  - ارجع الأمر للبوت الداخلي في صيغة JSON:
+    {
+      "action": "editBotReply",
+      "botId": "${selectedBotId}",
+      "userName": "اسم المستخدم",
+      "newReply": "الرد الجديد",
+      "type": "نوع الرسائل (facebook, web, whatsapp) أو all لو مش محدد"
+    }
+  - البوت الداخلي هيعدل الرد ويرجع تأكيد أو خطأ.
+
+#### 6. **تعديل إعدادات صفحة الدردشة (صفحة تخصيص الدردشة)**:
+- لو المستخدم طلب تفعيل خاصية (مثال: "فعّل إرفاق الصور" أو "فعّل الأسئلة المقترحة"):
+  - لو طلب تفعيل إرفاق الصور، فعّل imageUploadEnabled (true).
+  - لو طلب تفعيل الأسئلة المقترحة، فعّل suggestedQuestionsEnabled (true) وأضف الأسئلة المقترحة لو المستخدم حددها (مثال: "فعّل الأسئلة المقترحة بأسئلة: ما هو السعر؟، كيف أطلب؟").
+  - ارجع الأمر للبوت الداخلي في صيغة JSON:
+    {
+      "action": "updateChatPageSettings",
+      "botId": "${selectedBotId}",
+      "settings": {
+        "imageUploadEnabled": true/false,
+        "suggestedQuestionsEnabled": true/false,
+        "suggestedQuestions": ["سؤال1", "سؤال2"]
+      }
+    }
+  - البوت الداخلي هيعدل الإعدادات ويرجع تأكيد أو خطأ.
+
+- لو المستخدم طلب تغيير الألوان (مثال: "غيّر لون فقاعة المستخدم إلى #FF0000"):
+  - الألوان المتاحة في صفحة الدردشة:
+    - titleColor: لون نص العنوان (مثال: #333333).
+    - headerColor: لون الهيدر (مثال: #f8f9fa).
+    - chatAreaBackgroundColor: لون خلفية مربع الدردشة (مثال: #ffffff).
+    - textColor: لون النص العام (مثال: #333333).
+    - userMessageBackgroundColor: لون فقاعة المستخدم (مثال: #007bff).
+    - userMessageTextColor: لون نص المستخدم (مثال: #ffffff).
+    - botMessageBackgroundColor: لون فقاعة البوت (مثال: #e9ecef).
+    - botMessageTextColor: لون نص البوت (مثال: #333333).
+    - buttonColor: لون الأزرار المقترحة (مثال: #007bff).
+    - backgroundColor: لون الخلفية (مثال: #f8f9fa).
+    - inputTextColor: لون نص مربع الإدخال (مثال: #333333).
+    - sendButtonColor: لون زر الإرسال (مثال: #007bff).
+  - ارجع الأمر للبوت الداخلي في صيغة JSON:
+    {
+      "action": "updateChatPageColors",
+      "botId": "${selectedBotId}",
+      "colors": {
+        "userMessageBackgroundColor": "#FF0000"
+      }
+    }
+  - البوت الداخلي هيعدل الألوان ويرجع تأكيد أو خطأ.
+
+#### 7. **تعديل إعدادات فيسبوك (صفحة إعدادات فيسبوك)**:
+- لو المستخدم طلب تفعيل إعداد (مثال: "فعّل رسائل الترحيب"):
+  - لو "رسائل الترحيب"، فعّل messagingOptinsEnabled (true).
+  - لو "التفاعل مع ردود الفعل"، فعّل messageReactionsEnabled (true).
+  - لو "تتبع مصدر المستخدمين"، فعّل messagingReferralsEnabled (true).
+  - لو "التعامل مع تعديلات الرسائل"، فعّل messageEditsEnabled (true).
+  - لو "تصنيف المحادثات"، فعّل inboxLabelsEnabled (true).
+  - ارجع الأمر للبوت الداخلي في صيغة JSON:
+    {
+      "action": "updateFacebookSettings",
+      "botId": "${selectedBotId}",
+      "settingKey": "messagingOptinsEnabled",
+      "value": true
+    }
+  - البوت الداخلي هيعدل الإعدادات ويرجع تأكيد أو خطأ.
+
+#### 8. **عام**:
+- لو المستخدم طلب أمر مش واضح، اطلب توضيح (مثال: "من فضلك، وضّح الأمر أكتر").
+- لو الأمر يتطلب بيانات ناقصة، اطلب البيانات الناقصة (مثال: "يرجى تحديد العملة للسعر").
+- لو الأمر خارج نطاق الصفحات، رد بـ "عذرًا، هذا الأمر غير متاح حاليًا."
+- لو البوت الداخلي رجّع خطأ (مثل "خطأ في الصيغة")، حاول مرة تانية بصيغة مختلفة (مثل تغيير ترتيب البيانات أو إضافة بيانات افتراضية) لحد ما الأمر يتنفذ أو يرجع خطأ نهائي للمستخدم.
 
 ### معلومات إضافية:
 - الصفحات المتاحة: القواعد (#rules)، الرسائل (#messages)، التقييمات (#feedback)، إعدادات فيسبوك (#facebook)، البوتات (#bots)، التحليلات (#analytics)، تخصيص الدردشة (#chat-page).
 - البوت المختار: ${selectedBotId}.
 - حافظ على ذاكرة المحادثة (conversationHistory) عشان تفهم سياق الأوامر.
-- رد دائمًا بتأكيد تنفيذ الأمر وانتقال الصفحة لو فيه انتقال.
+- ارجع الأمر للبوت الداخلي دائمًا في صيغة JSON كما هو موضح أعلاه.
 
 ### الآن، نفّذ الأمر التالي بناءً على التعليمات أعلاه:
 الأمر: "${message}"
@@ -148,22 +234,63 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const data = await response.json();
-      let reply = data.reply || 'عذرًا، لم أفهم طلبك. حاول مرة أخرى!';
+      let aiCommand = data.reply || 'عذرًا، لم أفهم طلبك. حاول مرة أخرى!';
 
-      if (reply.includes('<') || reply.includes('>')) {
-        reply = reply.replace(/</g, '<').replace(/>/g, '>');
+      // تحويل رد الذكاء الاصطناعي إلى JSON إذا كان ممكن
+      let internalCommand;
+      try {
+        internalCommand = JSON.parse(aiCommand);
+      } catch (err) {
+        // لو الذكاء الاصطناعي رجّع نص مش JSON، بنعرضه كرسالة مباشرة
+        const botMessageDiv = document.createElement('div');
+        botMessageDiv.className = 'message bot-message';
+        botMessageDiv.innerHTML = `
+          <p>${aiCommand}</p>
+          <small>${new Date().toLocaleString('ar-EG')}</small>
+        `;
+        assistantChatMessages.appendChild(botMessageDiv);
+        assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
+        conversationHistory.push({ role: 'assistant', content: aiCommand });
+        return;
       }
 
-      const botMessageDiv = document.createElement('div');
-      botMessageDiv.className = 'message bot-message';
-      botMessageDiv.innerHTML = `
-        <p>${reply}</p>
-        <small>${new Date().toLocaleString('ar-EG')}</small>
-      `;
-      assistantChatMessages.appendChild(botMessageDiv);
-      assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
+      // تنفيذ الأمر بواسطة البوت الداخلي
+      let retryCount = 0;
+      const maxRetries = 3;
 
-      conversationHistory.push({ role: 'assistant', content: reply });
+      while (retryCount < maxRetries) {
+        try {
+          const executionResult = await executeInternalCommand(internalCommand);
+          const botMessageDiv = document.createElement('div');
+          botMessageDiv.className = 'message bot-message';
+          botMessageDiv.innerHTML = `
+            <p>${executionResult.message}</p>
+            <small>${new Date().toLocaleString('ar-EG')}</small>
+          `;
+          assistantChatMessages.appendChild(botMessageDiv);
+          assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
+          conversationHistory.push({ role: 'assistant', content: executionResult.message });
+          break; // الأمر نفّذ بنجاح، بنخرج من الحلقة
+        } catch (err) {
+          retryCount++;
+          if (retryCount === maxRetries) {
+            const errorMessage = `فشلت في تنفيذ الأمر بعد ${maxRetries} محاولات: ${err.message}`;
+            const botMessageDiv = document.createElement('div');
+            botMessageDiv.className = 'message bot-message';
+            botMessageDiv.innerHTML = `
+              <p>${errorMessage}</p>
+              <small>${new Date().toLocaleString('ar-EG')}</small>
+            `;
+            assistantChatMessages.appendChild(botMessageDiv);
+            assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
+            conversationHistory.push({ role: 'assistant', content: errorMessage });
+            break;
+          }
+
+          // إعادة صياغة الأمر لو فيه خطأ
+          internalCommand = await retryCommandWithAI(internalCommand, err.message);
+        }
+      }
     } catch (err) {
       console.error('خطأ في معالجة الرسالة:', err);
       const errorMessage = 'عذرًا، حدث خطأ أثناء معالجة طلبك. حاول مرة أخرى!';
@@ -175,8 +302,275 @@ document.addEventListener('DOMContentLoaded', () => {
       `;
       assistantChatMessages.appendChild(botMessageDiv);
       assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
-
       conversationHistory.push({ role: 'assistant', content: errorMessage });
     }
+  }
+
+  // دالة لتنفيذ الأوامر داخل النظام
+  async function executeInternalCommand(command) {
+    if (!command.action) {
+      throw new Error('الأمر غير صالح: يجب تحديد "action"');
+    }
+
+    switch (command.action) {
+      case 'addRule':
+        if (!command.botId || !command.type || !command.content) {
+          throw new Error('الأمر غير صالح: يجب تحديد botId وtype وcontent');
+        }
+        const addRuleResponse = await fetch('/api/rules', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({
+            botId: command.botId,
+            type: command.type,
+            content: command.content,
+          }),
+        });
+        if (!addRuleResponse.ok) {
+          throw new Error('فشل في إضافة قاعدة: ' + (await addRuleResponse.text()));
+        }
+        window.location.hash = 'rules';
+        if (typeof window.loadRulesPage === 'function') {
+          window.loadRulesPage();
+        }
+        return { message: 'تم إضافة القاعدة بنجاح' };
+
+      case 'searchRule':
+        if (!command.botId || !command.searchTerm) {
+          throw new Error('الأمر غير صالح: يجب تحديد botId وsearchTerm');
+        }
+        const searchRuleResponse = await fetch(`/api/rules?botId=${command.botId}&search=${encodeURIComponent(command.searchTerm)}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        });
+        if (!searchRuleResponse.ok) {
+          throw new Error('فشل في البحث عن القاعدة: ' + (await searchRuleResponse.text()));
+        }
+        const { rules } = await searchRuleResponse.json();
+        if (rules.length === 0) {
+          return { message: `لم أجد أي قاعدة تحتوي على "${command.searchTerm}"` };
+        }
+        const rule = rules[0];
+        let contentDisplay = '';
+        if (rule.type === 'general') contentDisplay = `المحتوى: ${rule.content}`;
+        else if (rule.type === 'products') contentDisplay = `المنتج: ${rule.content.product}، السعر: ${rule.content.price} ${rule.content.currency}`;
+        else if (rule.type === 'qa') contentDisplay = `السؤال: ${rule.content.question}، الإجابة: ${rule.content.answer}`;
+        else if (rule.type === 'api') contentDisplay = `مفتاح API: ${rule.content.apiKey}`;
+        else if (rule.type === 'global') contentDisplay = `المحتوى الموحد: ${rule.content}`;
+        window.location.hash = 'rules';
+        if (typeof window.loadRulesPage === 'function') {
+          window.loadRulesPage();
+        }
+        return { message: `وجدت قاعدة: نوع القاعدة: ${rule.type}، ${contentDisplay}` };
+
+      case 'searchMessages':
+        if (!command.botId || !command.startDate || !command.endDate) {
+          throw new Error('الأمر غير صالح: يجب تحديد botId وstartDate وendDate');
+        }
+        const searchMessagesResponse = await fetch(`/api/messages/${command.botId}?type=${command.type || 'all'}&startDate=${command.startDate}&endDate=${command.endDate}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        });
+        if (!searchMessagesResponse.ok) {
+          throw new Error('فشل في البحث عن الرسائل: ' + (await searchMessagesResponse.text()));
+        }
+        const conversations = await searchMessagesResponse.json();
+        const messagesCount = conversations.length;
+        window.location.hash = 'messages';
+        if (typeof window.loadMessagesPage === 'function') {
+          window.loadMessagesPage();
+        }
+        if (messagesCount === 0) {
+          return { message: 'لم يتم العثور على رسائل في هذه الفترة' };
+        }
+        return { message: `تم العثور على ${messagesCount} رسالة في الفترة من ${command.startDate} إلى ${command.endDate}` };
+
+      case 'searchFeedback':
+        if (!command.botId || !command.type) {
+          throw new Error('الأمر غير صالح: يجب تحديد botId وtype');
+        }
+        const searchFeedbackResponse = await fetch(`/api/bots/${command.botId}/feedback`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        });
+        if (!searchFeedbackResponse.ok) {
+          throw new Error('فشل في البحث عن التقييمات: ' + (await searchFeedbackResponse.text()));
+        }
+        const feedback = await searchFeedbackResponse.json();
+        const filteredFeedback = feedback.filter(item => item.feedback === command.type);
+        window.location.hash = 'feedback';
+        if (typeof window.loadFeedbackPage === 'function') {
+          window.loadFeedbackPage();
+        }
+        if (filteredFeedback.length === 0) {
+          return { message: `لم يتم العثور على تقييمات ${command.type === 'positive' ? 'إيجابية' : 'سلبية'}` };
+        }
+        const feedbackItems = filteredFeedback.slice(0, 3).map(item => {
+          const user = item.username || item.userId;
+          const message = item.messageContent || 'غير متوفر';
+          return `${user} - ${message}`;
+        }).join('\n');
+        return { message: `إليك أول 3 تقييمات ${command.type === 'positive' ? 'إيجابية' : 'سلبية'}:\n${feedbackItems}` };
+
+      case 'editBotReply':
+        if (!command.botId || !command.userName || !command.newReply || !command.type) {
+          throw new Error('الأمر غير صالح: يجب تحديد botId وuserName وnewReply وtype');
+        }
+        const messagesResponse = await fetch(`/api/messages/${command.botId}?type=${command.type}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        });
+        if (!messagesResponse.ok) {
+          throw new Error('فشل في جلب المحادثات: ' + (await messagesResponse.text()));
+        }
+        const conversations = await messagesResponse.json();
+        const userConversation = conversations.find(conv => conv.userId.includes(command.userName));
+        if (!userConversation) {
+          throw new Error(`لم يتم العثور على محادثة مع "${command.userName}"`);
+        }
+        const messages = userConversation.messages;
+        let lastUserMessageIndex = -1;
+        for (let i = messages.length - 1; i >= 0; i--) {
+          if (messages[i].role === 'user') {
+            lastUserMessageIndex = i;
+            break;
+          }
+        }
+        if (lastUserMessageIndex === -1) {
+          throw new Error('لم يتم العثور على سؤال من المستخدم في المحادثة');
+        }
+        const question = messages[lastUserMessageIndex].content;
+        const addRuleResponse = await fetch('/api/rules', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({
+            botId: command.botId,
+            type: 'qa',
+            content: { question, answer: command.newReply },
+          }),
+        });
+        if (!addRuleResponse.ok) {
+          throw new Error('فشل في تعديل رد البوت: ' + (await addRuleResponse.text()));
+        }
+        window.location.hash = 'messages';
+        if (typeof window.loadMessagesPage === 'function') {
+          window.loadMessagesPage();
+        }
+        return { message: `تم تعديل رد البوت في محادثة "${command.userName}" إلى "${command.newReply}"` };
+
+      case 'updateChatPageSettings':
+        if (!command.botId || !command.settings) {
+          throw new Error('الأمر غير صالح: يجب تحديد botId وsettings');
+        }
+        const chatPageResponse = await fetch(`/api/chat-page/bot/${command.botId}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        });
+        if (!chatPageResponse.ok) {
+          throw new Error('فشل في جلب بيانات صفحة الدردشة: ' + (await chatPageResponse.text()));
+        }
+        const chatPageData = await chatPageResponse.json();
+        const chatPageId = chatPageData.chatPageId;
+        const updateSettingsResponse = await fetch(`/api/chat-page/${chatPageId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify(command.settings),
+        });
+        if (!updateSettingsResponse.ok) {
+          throw new Error('فشل في تعديل إعدادات صفحة الدردشة: ' + (await updateSettingsResponse.text()));
+        }
+        window.location.hash = 'chat-page';
+        if (typeof window.loadChatPage === 'function') {
+          window.loadChatPage();
+        }
+        return { message: 'تم تعديل إعدادات صفحة الدردشة بنجاح' };
+
+      case 'updateChatPageColors':
+        if (!command.botId || !command.colors) {
+          throw new Error('الأمر غير صالح: يجب تحديد botId وcolors');
+        }
+        const chatPageColorResponse = await fetch(`/api/chat-page/bot/${command.botId}`, {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        });
+        if (!chatPageColorResponse.ok) {
+          throw new Error('فشل في جلب بيانات صفحة الدردشة: ' + (await chatPageColorResponse.text()));
+        }
+        const chatPageColorData = await chatPageColorResponse.json();
+        const chatPageColorId = chatPageColorData.chatPageId;
+        const updateColorsResponse = await fetch(`/api/chat-page/${chatPageColorId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({ colors: command.colors }),
+        });
+        if (!updateColorsResponse.ok) {
+          throw new Error('فشل في تعديل ألوان صفحة الدردشة: ' + (await updateColorsResponse.text()));
+        }
+        window.location.hash = 'chat-page';
+        if (typeof window.loadChatPage === 'function') {
+          window.loadChatPage();
+        }
+        return { message: 'تم تغيير الألوان بنجاح' };
+
+      case 'updateFacebookSettings':
+        if (!command.botId || !command.settingKey || command.value === undefined) {
+          throw new Error('الأمر غير صالح: يجب تحديد botId وsettingKey وvalue');
+        }
+        const updateFacebookResponse = await fetch(`/api/bots/${command.botId}/settings`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify({ [command.settingKey]: command.value }),
+        });
+        if (!updateFacebookResponse.ok) {
+          throw new Error('فشل في تعديل إعدادات فيسبوك: ' + (await updateFacebookResponse.text()));
+        }
+        window.location.hash = 'facebook';
+        if (typeof window.loadFacebookPage === 'function') {
+          window.loadFacebookPage();
+        }
+        return { message: 'تم تفعيل الإعداد بنجاح' };
+
+      default:
+        throw new Error('الأمر غير مدعوم: ' + command.action);
+    }
+  }
+
+  // دالة لإعادة صياغة الأمر لو فيه خطأ
+  async function retryCommandWithAI(command, errorMessage) {
+    const retryPrompt = `
+الأمر التالي فشل بسبب خطأ: ${errorMessage}
+الأمر: ${JSON.stringify(command)}
+حاول إعادة صياغة الأمر بشكل صحيح بناءً على الخطأ. ارجع الأمر الجديد في صيغة JSON.
+`;
+
+    const retryResponse = await fetch('/api/bot', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({
+        botId: ASSISTANT_BOT_ID,
+        message: retryPrompt,
+        userId,
+        history: conversationHistory,
+      }),
+    });
+
+    if (!retryResponse.ok) {
+      throw new Error('فشل في إعادة صياغة الأمر');
+    }
+
+    const retryData = await retryResponse.json();
+    return JSON.parse(retryData.reply);
   }
 });
