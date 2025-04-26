@@ -28,6 +28,11 @@
 
 /* Chat Header */
 .chat-header {
+  position: sticky;
+  top: 0;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  z-index: 10;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -44,7 +49,7 @@
 
 /* Chat Close Button */
 .chat-close-btn {
-  position: fixed;
+  position: absolute;
   top: 10px;
   right: 10px;
   background: #dc3545;
@@ -73,7 +78,31 @@
   padding: 10px;
   background: none;
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
-  overflow-y: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  backdrop-filter: blur(5px);
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.chat-messages:not(:hover)::-webkit-scrollbar-thumb {
+  background: transparent;
 }
 
 /* Individual Messages */
@@ -113,33 +142,39 @@
 
 /* Chat Footer */
 .chat-footer {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 15px;
-  padding-top: 10px;
+  position: sticky;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  margin-top: 0;
+  padding: 10px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 /* Chat Input */
 .chat-input {
   display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
   align-items: center;
+  gap: 10px;
 }
 
 .chat-input input[type="text"] {
   flex: 1;
-  min-width: 200px;
+  min-width: 0;
 }
 
 .chat-input button {
   background: #003087;
   color: #FFFFFF;
-  padding: 8px 16px;
+  padding: 8px;
   border: none;
   border-radius: 8px;
   cursor: pointer;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Responsive Adjustments */
