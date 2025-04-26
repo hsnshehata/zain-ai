@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Check if the response contains code-like content
     return (
       text.includes('```') ||
-      text.match(/(function|const|let|var|=>|{|}|class|\n\s*[a-zA-Z0-9_]+\s*\()/)
+      text.match(/(function|const|let|var|=>|{|}|class|\n\s*[a-zA-Z0-9_]+\s*\()/i)
     );
   }
 
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       img.style.borderRadius = '8px';
       userMessageDiv.appendChild(img);
     } else {
-      userMessageDiv.textContent = message;
+      userMessageDiv.appendChild(document.createTextNode(message));
     }
     chatMessages.appendChild(userMessageDiv);
     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -258,14 +258,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const pre = document.createElement('pre');
         const code = document.createElement('code');
-        code.textContent = data.reply;
+        // Use createTextNode to prevent any execution of HTML/JS
+        code.appendChild(document.createTextNode(data.reply));
         pre.appendChild(code);
         codeContainer.appendChild(copyBtn);
         codeContainer.appendChild(pre);
         botMessageDiv.appendChild(codeContainer);
       } else {
         // Handle regular text response
-        botMessageDiv.textContent = data.reply || 'رد البوت';
+        botMessageDiv.appendChild(document.createTextNode(data.reply || 'رد البوت'));
       }
 
       const feedbackButtons = document.createElement('div');
@@ -295,7 +296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('خطأ في إرسال الرسالة:', err);
       const errorMessageDiv = document.createElement('div');
       errorMessageDiv.className = 'message bot-message';
-      errorMessageDiv.textContent = 'عذرًا، حدث خطأ أثناء معالجة رسالتك.';
+      errorMessageDiv.appendChild(document.createTextNode('عذرًا، حدث خطأ أثناء معالجة رسالتك.'));
       chatMessages.appendChild(errorMessageDiv);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
@@ -326,7 +327,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         console.error('خطأ في معالجة الصورة:', err);
         const errorMessageDiv = document.createElement('div');
         errorMessageDiv.className = 'message bot-message';
-        errorMessageDiv.textContent = 'عذرًا، حدث خطأ أثناء معالجة الصورة.';
+        errorMessageDiv.appendChild(document.createTextNode('عذرًا، حدث خطأ أثناء معالجة الصورة.'));
         chatMessages.appendChild(errorMessageDiv);
         chatMessages.scrollTop = chatMessages.scrollHeight;
       }
