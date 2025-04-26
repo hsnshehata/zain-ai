@@ -375,8 +375,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!searchMessagesResponse.ok) {
           throw new Error('فشل في البحث عن الرسائل: ' + (await searchMessagesResponse.text()));
         }
-        const conversations = await searchMessagesResponse.json();
-        const messagesCount = conversations.length;
+        const messagesData = await searchMessagesResponse.json();
+        const messagesCount = messagesData.length;
         window.location.hash = 'messages';
         if (typeof window.loadMessagesPage === 'function') {
           window.loadMessagesPage();
@@ -396,8 +396,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!searchFeedbackResponse.ok) {
           throw new Error('فشل في البحث عن التقييمات: ' + (await searchFeedbackResponse.text()));
         }
-        const feedback = await searchFeedbackResponse.json();
-        const filteredFeedback = feedback.filter(item => item.feedback === command.type);
+        const feedbackData = await searchFeedbackResponse.json();
+        const filteredFeedback = feedbackData.filter(item => item.feedback === command.type);
         window.location.hash = 'feedback';
         if (typeof window.loadFeedbackPage === 'function') {
           window.loadFeedbackPage();
@@ -422,8 +422,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!messagesResponse.ok) {
           throw new Error('فشل في جلب المحادثات: ' + (await messagesResponse.text()));
         }
-        const conversations = await messagesResponse.json();
-        const userConversation = conversations.find(conv => conv.userId.includes(command.userName));
+        const messageConversations = await messagesResponse.json();
+        const userConversation = messageConversations.find(conv => conv.userId.includes(command.userName));
         if (!userConversation) {
           throw new Error(`لم يتم العثور على محادثة مع "${command.userName}"`);
         }
