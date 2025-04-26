@@ -3,11 +3,11 @@
 /* Chat Modal (Popup) */
 .chat-modal {
   position: fixed;
-  bottom: 80px; /* عشان يكون فوق زرار الدردشة */
+  bottom: 80px;
   right: 20px;
-  width: 350px; /* عرض أصغر */
-  height: 400px; /* ارتفاع أصغر */
-  background: none; /* إزالة الخلفية الداكنة */
+  width: 350px;
+  height: 400px;
+  background: none;
   z-index: 2000;
   display: flex;
   justify-content: flex-end;
@@ -16,14 +16,14 @@
 
 /* Chat Modal Content */
 .chat-modal-content {
-  background: rgba(255, 255, 255, 0.1); /* خلفية شفافة */
-  backdrop-filter: blur(10px); /* تأثير البلور */
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
   border-radius: 12px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
   padding: 15px;
   width: 100%;
   height: 100%;
-  overflow-y: auto;
+  overflow-y: hidden;
 }
 
 /* Chat Header */
@@ -38,12 +38,15 @@
 
 .chat-header h3 {
   margin: 0;
-  color: #FFFFFF; /* أبيض */
+  color: #FFFFFF;
   font-size: 1.5em;
 }
 
 /* Chat Close Button */
 .chat-close-btn {
+  position: fixed;
+  top: 10px;
+  right: 10px;
   background: #dc3545;
   color: white;
   padding: 5px;
@@ -56,6 +59,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 3000;
 }
 
 .chat-close-btn:hover {
@@ -65,11 +69,11 @@
 
 /* Chat Messages Area */
 .chat-messages {
-  max-height: 300px; /* ارتفاع أصغر للرسائل */
-  overflow-y: auto;
+  max-height: 300px;
   padding: 10px;
-  background: none; /* إزالة الخلفية */
+  background: none;
   box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+  overflow-y: hidden;
 }
 
 /* Individual Messages */
@@ -96,14 +100,14 @@
 }
 
 .user-message {
-  background-color: #003087; /* أزرق غامق */
-  color: #FFFFFF; /* أبيض */
+  background-color: #003087;
+  color: #FFFFFF;
   margin-left: auto;
 }
 
 .bot-message {
-  background-color: rgba(255, 255, 255, 0.2); /* شفاف مع أبيض خفيف */
-  color: #FFFFFF; /* أبيض */
+  background-color: rgba(255, 255, 255, 0.2);
+  color: #FFFFFF;
   margin-right: auto;
 }
 
@@ -130,8 +134,8 @@
 }
 
 .chat-input button {
-  background: #003087; /* أزرق غامق */
-  color: #FFFFFF; /* أبيض */
+  background: #003087;
+  color: #FFFFFF;
   padding: 8px 16px;
   border: none;
   border-radius: 8px;
