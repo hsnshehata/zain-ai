@@ -1,4 +1,10 @@
 /* chat.css */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #000000; /* اللون الافتراضي للخلفية الخارجية */
+}
+
 .chat-container {
   max-width: 800px;
   margin: 20px auto;
@@ -7,6 +13,7 @@
   overflow: hidden;
   direction: rtl;
   font-family: 'Arial', sans-serif;
+  background-color: #ffffff; /* اللون الافتراضي لحاوية الدردشة */
 }
 
 #chatHeader {
@@ -14,6 +21,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: #2D3436; /* اللون الافتراضي للهيدر */
 }
 
 .header-content {
@@ -32,15 +40,17 @@
   margin: 0;
   font-size: 1.5em;
   font-weight: bold;
+  color: #ffffff; /* اللون الافتراضي للعنوان */
 }
 
 #chatMessages {
   padding: 20px;
-  height: 350px; /* تم تقليل الارتفاع من 400px لـ 350px */
+  height: 350px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  background-color: #3B4A4E; /* اللون الافتراضي لمنطقة الرسائل */
 }
 
 .message {
@@ -55,12 +65,16 @@
   align-self: flex-end;
   margin-left: 10px;
   border-bottom-right-radius: 4px;
+  background-color: #6AB04C; /* اللون الافتراضي لرسائل المستخدم */
+  color: #ffffff; /* اللون الافتراضي لنص المستخدم */
 }
 
 .bot-message {
   align-self: flex-start;
   margin-right: 10px;
   border-bottom-left-radius: 4px;
+  background-color: #2D3436; /* اللون الافتراضي لرسائل البوت */
+  color: #ffffff; /* اللون الافتراضي لنص البوت */
 }
 
 #suggestedQuestions {
@@ -77,6 +91,7 @@
   cursor: pointer;
   font-size: 0.9em;
   transition: transform 0.2s, background-color 0.3s;
+  background-color: #6AB04C; /* اللون الافتراضي للأزرار المقترحة */
 }
 
 .suggested-question:hover {
@@ -89,7 +104,8 @@
   padding: 15px 20px;
   gap: 10px;
   border-top: 1px solid #e0e0e0;
-  margin-bottom: -20px; /* رفع مربع الإدخال وزرار الإرسال لفوق */
+  margin-bottom: -20px;
+  background-color: #3B4A4E; /* اللون الافتراضي لمنطقة الإدخال */
 }
 
 #messageInput {
@@ -102,6 +118,7 @@
   background-color: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(5px);
   -webkit-backdrop-filter: blur(5px);
+  color: #ffffff; /* اللون الافتراضي لنص الإدخال */
 }
 
 #imageInput::file-selector-button,
@@ -112,6 +129,7 @@
   cursor: pointer;
   font-size: 1em;
   transition: transform 0.2s, background-color 0.3s;
+  background-color: #6AB04C; /* اللون الافتراضي لزر الإرسال */
 }
 
 #imageInput::file-selector-button:hover,
