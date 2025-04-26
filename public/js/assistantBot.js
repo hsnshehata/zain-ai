@@ -117,12 +117,15 @@ document.addEventListener('DOMContentLoaded', () => {
   - رد بـ: "أنا بخير، شكرًا لسؤالك! وأنت كيف حالك؟"
 - لو المستخدم قال "شكرًا لك":
   - رد بـ: "العفو! أنا هنا عشان أساعدك في أي وقت."
+- لو المستخدم قال "ممكن تساعدني في ايه":
+  - رد بـ: "يمكنني مساعدتك في العديد من الأمور مثل إدارة البوتات، إضافة أو تعديل القواعد، تصفية الرسائل، تقديم معلومات أو إجابات على استفساراتك. كيف يمكنني مساعدتك بشكل محدد اليوم؟"
 
 ### تعليمات عامة:
 - لو المستخدم طلب أمر مش واضح، اطلب توضيح (مثال: "من فضلك، وضّح الأمر أكتر").
 - لو الأمر خارج نطاق الصفحات أو الوظائف، رد بـ "عذرًا، هذا الأمر غير متاح حاليًا."
 - حافظ على ذاكرة المحادثة (conversationHistory) عشان تفهم سياق الأوامر.
 - رد بطريقة طبيعية وودودة دائمًا.
+- لا تحول الأمر لـ JSON ولا تضيف رمز سري لأن الأمر مش تنفيذي.
 
 ### الآن، نفّذ الأمر التالي بناءً على التعليمات أعلاه:
 الأمر: "${message}"
@@ -181,13 +184,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // دالة لتحليل الأوامر البسيطة مباشرة
   function parseSimpleCommand(message) {
-    const navigateMatch = message.match(/(?:انتقل إلى|افتح) صفحة (القواعد|الرسائل|التقييمات|إعدادات فيسبوك|البوتات|التحليلات|تخصيص الدردشة)/);
+    // تحسين التعرف على الأوامر بحيث يشمل كل الصفحات
+    const navigateMatch = message.match(/(?:انتقل إلى|افتح|انتق) صفحة (القواعد|الرسائل|التقييمات|إعدادات فيسبوك|الفيسبوك|البوتات|التحليلات|تخصيص الدردشة)/i);
     if (navigateMatch) {
       const pageMap = {
         'القواعد': 'rules',
         'الرسائل': 'messages',
         'التقييمات': 'feedback',
         'إعدادات فيسبوك': 'facebook',
+        'الفيسبوك': 'facebook', // أضفنا "الفيسبوك" كبديل لـ "إعدادات فيسبوك"
         'البوتات': 'bots',
         'التحليلات': 'analytics',
         'تخصيص الدردشة': 'chat-page',
@@ -222,8 +227,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     }
 
-    return null
-
+    return null;
   }
 
   async function executeInternalCommand(command) {
@@ -247,6 +251,8 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.hash = 'messages';
             if (typeof window.loadMessagesPage === 'function') {
               window.loadMessagesPage();
+            } else {
+              throw new Error('فشل في تحميل صفحة الرسائل: الدالة loadMessagesPage غير موجودة');
             }
             return { message: 'تم الانتقال إلى صفحة الرسائل' };
           case 'feedback':
@@ -259,6 +265,8 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.hash = 'facebook';
             if (typeof window.loadFacebookPage === 'function') {
               window.loadFacebookPage();
+            } else {
+              throw new Error('فشل في تحميل صفحة إعدادات فيسبوك: الدالة loadFacebookPage غير موجودة');
             }
             return { message: 'تم الانتقال إلى صفحة إعدادات فيسبوك' };
           case 'bots':
