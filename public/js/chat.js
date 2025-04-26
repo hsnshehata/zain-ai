@@ -32,14 +32,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     const isInIframe = window.self !== window.top;
-    const transparentBackgroundEnabled = settings.transparentBackgroundEnabled || false;
-    const outerBackgroundTransparency = settings.outerBackgroundTransparency || 0.5;
 
     customStyles.textContent = `
       body {
-        background-color: ${isInIframe && transparentBackgroundEnabled 
-          ? `rgba(${hexToRgb(settings?.colors?.outerBackgroundColor || '#000000')}, ${outerBackgroundTransparency})` 
-          : (settings?.colors?.outerBackgroundColor || '#000000')};
+        background-color: ${settings?.colors?.outerBackgroundColor || '#000000'};
       }
       .chat-container {
         background-color: ${settings?.colors?.containerBackgroundColor || '#ffffff'};
@@ -99,14 +95,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         cursor: pointer;
       }
     `;
-
-    function hexToRgb(hex) {
-      hex = hex.replace('#', '');
-      const r = parseInt(hex.substring(0, 2), 16);
-      const g = parseInt(hex.substring(2, 4), 16);
-      const b = parseInt(hex.substring(4, 6), 16);
-      return `${r}, ${g}, ${b}`;
-    }
 
     function darkenColor(hex, percent) {
       let r = parseInt(hex.slice(1, 3), 16);
@@ -200,6 +188,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  function isCodeResponse(text) {
+    // Check if the response contains code-like content
+    return (
+      text.includes('```') ||
+      text.match(/(function|const|let|var|=>|{|}|class|\n\s*[a-zA-Z0-9_]+\s*\()/)
+    );
+  }
+
   async function sendMessage(message, isImage = false, imageData = null) {
     if (!message && !isImage) return;
 
@@ -241,7 +237,36 @@ document.addEventListener('DOMContentLoaded', async () => {
       const botMessageDiv = document.createElement('div');
       botMessageDiv.className = 'message bot-message';
       botMessageDiv.setAttribute('data-message-id', messageId);
-      botMessageDiv.textContent = data.reply || 'رد البوت';
+
+      if (isCodeResponse(data.reply)) {
+        // Handle code response
+        const codeContainer = document.createElement('div');
+        codeContainer.className = 'code-block-container';
+
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'copy-btn';
+        copyBtn.textContent = 'نسخ';
+        copyBtn.addEventListener('click', async () => {
+          try {
+            await navigator.clipboard.writeText(data.reply);
+            copyBtn.textContent = 'تم النسخ!';
+            setTimeout(() => (copyBtn.textContent = 'نسخ'), 2000);
+          } catch (err) {
+            console.error('خطأ في النسخ:', err);
+          }
+        });
+
+        const pre = document.createElement('pre');
+        const code = document.createElement('code');
+        code.textContent = data.reply;
+        pre.appendChild(code);
+        codeContainer.appendChild(copyBtn);
+        codeContainer.appendChild(pre);
+        botMessageDiv.appendChild(codeContainer);
+      } else {
+        // Handle regular text response
+        botMessageDiv.textContent = data.reply || 'رد البوت';
+      }
 
       const feedbackButtons = document.createElement('div');
       feedbackButtons.className = 'feedback-buttons';
