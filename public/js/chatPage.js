@@ -399,7 +399,7 @@ async function loadChatPage() {
           document.getElementById('botMessageBackgroundColorInput').value = colorValues.botMessageBackgroundColor;
           document.getElementById('botMessageTextColorInput').value = colorValues.botMessageTextColor;
           document.getElementById('buttonColorInput').value = colorValues.buttonColor;
-          document.getElement价钱ById('backgroundColorInput').value = colorValues.backgroundColor;
+          document.getElementById('backgroundColorInput').value = colorValues.backgroundColor;
           document.getElementById('inputTextColorInput').value = colorValues.inputTextColor;
           document.getElementById('sendButtonColorInput').value = colorValues.sendButtonColor;
         }
@@ -428,7 +428,7 @@ async function loadChatPage() {
         });
 
         // Handle color schemes
-        document.querySelectorAll('.color-scheme-card').forEach(card => {
+        document.querySelectorAll('.color-scheme-card').forEach( card => {
           card.addEventListener('click', () => {
             const schemeIndex = card.getAttribute('data-scheme-index');
             const selectedScheme = colorSchemes[schemeIndex];
