@@ -18,12 +18,15 @@ const chatPageSchema = new mongoose.Schema({
     userMessageTextColor: { type: String, default: '#ffffff' },
     botMessageTextColor: { type: String, default: '#000000' },
     sendButtonColor: { type: String, default: '#007bff' }, // لون زر الإرسال
+    mainBackgroundColor: { type: String, default: '#ffffff' }, // لون خلفية الصفحة الرئيسية
   },
   logoUrl: { type: String },
   logoDeleteUrl: { type: String },
   suggestedQuestionsEnabled: { type: Boolean, default: false },
   suggestedQuestions: [{ type: String }],
   imageUploadEnabled: { type: Boolean, default: false },
+  transparentBackgroundEnabled: { type: Boolean, default: false }, // حالة الشفافية
+  backgroundTransparency: { type: Number, default: 0.5, min: 0, max: 1 }, // نسبة الشفافية (من 0 لـ 1)
   createdAt: { type: Date, default: Date.now },
 });
 
