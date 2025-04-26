@@ -141,9 +141,9 @@ async function loadChatPage() {
   <img id="supportButton" src="https://i.ibb.co/7JJScM0Q/Chat-GPT-Image-20-2025-08-04-13.png" alt="دعم العملاء" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
 </div>
 <div id="chatIframeContainer" style="display: none; position: fixed; bottom: 90px; right: 20px; z-index: 1000;">
-  <div style="position: relative; width: 350px; height: 600px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); background: white;">
-    <button id="closeChatIframe" style="position: absolute; top: 10px; right: 10px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer;">✕</button>
-    <iframe src="${data.link}" style="width: 100%; height: 100%; border: none; border-radius: 8px;"></iframe>
+  <div style="position: relative; width: 350px; height: 400px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); background: ${data.colors.background || '#262626'}; overflow: hidden;">
+    <button id="closeChatIframe" style="position: absolute; top: 10px; left: 10px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px;">✕</button>
+    <iframe src="${data.link}" style="width: 100%; height: 100%; border: none; border-radius: 8px; overflow: hidden;"></iframe>
   </div>
 </div>
 <script>
@@ -399,7 +399,7 @@ async function loadChatPage() {
           document.getElementById('botMessageBackgroundColorInput').value = colorValues.botMessageBackgroundColor;
           document.getElementById('botMessageTextColorInput').value = colorValues.botMessageTextColor;
           document.getElementById('buttonColorInput').value = colorValues.buttonColor;
-          document.getElementById('backgroundColorInput').value = colorValues.backgroundColor;
+          document.getElement价钱ById('backgroundColorInput').value = colorValues.backgroundColor;
           document.getElementById('inputTextColorInput').value = colorValues.inputTextColor;
           document.getElementById('sendButtonColorInput').value = colorValues.sendButtonColor;
         }
