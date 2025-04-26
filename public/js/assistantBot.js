@@ -70,179 +70,59 @@ document.addEventListener('DOMContentLoaded', () => {
       // التحقق من الأوامر البسيطة مباشرة في الكود
       let internalCommand = parseSimpleCommand(message);
 
-      if (!internalCommand) {
-        // لو الأمر مش بسيط، بنستخدم الذكاء الاصطناعي
+      if (internalCommand) {
+        // لو الأمر تنفيذي، بننفذه مباشرة
+        let retryCount = 0;
+        const maxRetries = 3;
+
+        while (retryCount < maxRetries) {
+          try {
+            const executionResult = await executeInternalCommand(internalCommand);
+            const botMessageDiv = document.createElement('div');
+            botMessageDiv.className = 'message bot-message';
+            botMessageDiv.innerHTML = `
+              <p>${executionResult.message}</p>
+              <small>${new Date().toLocaleString('ar-EG')}</small>
+            `;
+            assistantChatMessages.appendChild(botMessageDiv);
+            assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
+            conversationHistory.push({ role: 'assistant', content: executionResult.message });
+            break;
+          } catch (err) {
+            retryCount++;
+            if (retryCount === maxRetries) {
+              const errorMessage = `فشلت في تنفيذ الأمر بعد ${maxRetries} محاولات: ${err.message}`;
+              const botMessageDiv = document.createElement('div');
+              botMessageDiv.className = 'message bot-message';
+              botMessageDiv.innerHTML = `
+                <p>${errorMessage}</p>
+                <small>${new Date().toLocaleString('ar-EG')}</small>
+              `;
+              assistantChatMessages.appendChild(botMessageDiv);
+              assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
+              conversationHistory.push({ role: 'assistant', content: errorMessage });
+              break;
+            }
+
+            internalCommand = await retryCommandWithAI(internalCommand, err.message);
+          }
+        }
+      } else {
+        // لو الأمر مش تنفيذي، بنمرره للذكاء الاصطناعي عشان يرد رد طبيعي
         const systemPrompt = `
-أنت بوت ذكي اسمه "المساعد الذكي" (ID: ${ASSISTANT_BOT_ID}). مهمتك تنفيذ تعليمات المستخدم بناءً على الأوامر اللي بيطلبها في الداشبورد. الداشبورد عبارة عن صفحات متعددة لإدارة البوتات، وكل صفحة فيها وظائف معينة. البوت المختار حاليًا (اللي هتنفذ الأوامر عليه) هو: ${selectedBotId}. المستخدم مش محتاج يحدد البوت لأنه مختار بالفعل من الداشبورد.
+أنت بوت ذكي اسمه "المساعد الذكي" (ID: ${ASSISTANT_BOT_ID}). مهمتك الرد على المستخدم بطريقة طبيعية وودودة بناءً على الأوامر أو الأسئلة اللي بيطلبها. لو الأمر مش تنفيذي (زي "كيف حالك" أو "شكرًا لك")، رد عليه بطريقة طبيعية من غير ما تحول الأمر لـ JSON ولا تضيف رمز سري.
 
-### تعليمات التعامل مع الأوامر:
-#### 1. **التنقل بين الصفحات**:
-- لو المستخدم طلب "انتقل إلى صفحة" أو "افتح صفحة" (مثال: "انتقل إلى صفحة التقييمات"):
-  - حدد اسم الصفحة المطلوبة (مثل "التقييمات").
-  - ارجع الأمر للبوت الداخلي في صيغة JSON مع رمز سري للتنفيذ:
-    {
-      "action": "navigate",
-      "page": "اسم الصفحة (rules, messages, feedback, facebook, bots, analytics, chat-page)",
-      "secretCode": "EXECUTE_NOW"
-    }
+### أمثلة على الردود:
+- لو المستخدم قال "كيف حالك":
+  - رد بـ: "أنا بخير، شكرًا لسؤالك! وأنت كيف حالك؟"
+- لو المستخدم قال "شكرًا لك":
+  - رد بـ: "العفو! أنا هنا عشان أساعدك في أي وقت."
 
-#### 2. **إضافة قاعدة جديدة (صفحة القواعد)**:
-- لو المستخدم طلب "أضف قاعدة" أو "ضيف قاعدة" (مثال: "أضف قاعدة إن مفيش عندنا منتجات للاسترجاع"):
-  - لو القاعدة نص عام (زي "مفيش عندنا منتجات للاسترجاع")، أضفها كـ قاعدة عامة (general).
-  - لو القاعدة فيها سؤال وإجابة (مثال: "السؤال: ما هو سعر الكمبيوتر؟ الإجابة: 1000 جنيه")، أضفها كـ قاعدة سؤال وجواب (qa).
-  - لو القاعدة فيها منتج وسعر (مثال: "منتج كمبيوتر بسعر 1000 جنيه")، أضفها كـ قاعدة أسعار (products).
-  - لو القاعدة فيها مفتاح API (مثال: "أضف مفتاح API: xyz123")، أضفها كـ قاعدة API (api).
-  - لو القاعدة موحدة (global)، أضفها كـ قاعدة موحدة (لكن هنا المستخدم ممكن ميحددش إنها موحدة، فحاول تفهم من السياق).
-  - لو فيه بيانات ناقصة (مثل العملة في قاعدة أسعار)، اطلب من المستخدم البيانات الناقصة.
-  - لإضافة القاعدة، ارجع الأمر مصاغ بشكل صحيح للبوت الداخلي في صيغة JSON مع رمز سري للتنفيذ:
-    {
-      "action": "addRule",
-      "botId": "${selectedBotId}",
-      "type": "نوع القاعدة (general, qa, products, api, global)",
-      "content": المحتوى (نص أو كائن JSON بناءً على نوع القاعدة),
-      "secretCode": "EXECUTE_NOW"
-    }
-
-#### 3. **البحث في القواعد (صفحة القواعد)**:
-- لو المستخدم طلب "ابحث عن قاعدة" أو "دور على قاعدة" (مثال: "ابحث عن قاعدة تحتوي على كمبيوتر"):
-  - ابحث عن القاعدة بناءً على النص المطلوب (مثل "كمبيوتر").
-  - ارجع الأمر للبوت الداخلي في صيغة JSON مع رمز سري للتنفيذ:
-    {
-      "action": "searchRule",
-      "botId": "${selectedBotId}",
-      "searchTerm": "النص المطلوب البحث عنه",
-      "secretCode": "EXECUTE_NOW"
-    }
-
-#### 4. **البحث في الرسائل (صفحة الرسائل)**:
-- لو المستخدم طلب "ابحث عن رسائل" أو "دور على رسائل" (مثال: "ابحث عن رسائل من تاريخ 2025-04-01 إلى 2025-04-10"):
-  - استخرج التواريخ من الأمر (مثل من 2025-04-01 إلى 2025-04-10).
-  - لو فيه نوع رسائل محدد (فيسبوك، ويب، واتساب)، حدده (مثال: "ابحث عن رسائل فيسبوك").
-  - ارجع الأمر للبوت الداخلي في صيغة JSON مع رمز سري للتنفيذ:
-    {
-      "action": "searchMessages",
-      "botId": "${selectedBotId}",
-      "type": "نوع الرسائل (facebook, web, whatsapp) أو all لو مش محدد",
-      "startDate": "تاريخ البداية (ISO format)",
-      "endDate": "تاريخ النهاية (ISO format)",
-      "secretCode": "EXECUTE_NOW"
-    }
-
-#### 5. **البحث في التقييمات (صفحة التقييمات)**:
-- لو المستخدم طلب "ابحث عن تقييمات" أو "دور على تقييمات" (مثال: "ابحث عن تقييمات إيجابية"):
-  - حدد نوع التقييم (إيجابي أو سلبي).
-  - ارجع الأمر للبوت الداخلي في صيغة JSON مع رمز سري للتنفيذ:
-    {
-      "action": "searchFeedback",
-      "botId": "${selectedBotId}",
-      "type": "نوع التقييم (positive أو negative)",
-      "secretCode": "EXECUTE_NOW"
-    }
-
-#### 6. **تعديل رد البوت في صفحة الرسائل**:
-- لو المستخدم طلب "عدل رد البوت" (مثال: "عدل رد البوت في محادثة مع مستخدم 1 إلى الرد: السعر 2000 جنيه"):
-  - استخرج اسم المستخدم (مثل "مستخدم 1") والرد الجديد (مثل "السعر 2000 جنيه").
-  - ابحث عن آخر سؤال من المستخدم في المحادثة لربطه بالرد الجديد.
-  - ارجع الأمر للبوت الداخلي في صيغة JSON مع رمز سري للتنفيذ:
-    {
-      "action": "editBotReply",
-      "botId": "${selectedBotId}",
-      "userName": "اسم المستخدم",
-      "newReply": "الرد الجديد",
-      "type": "نوع الرسائل (facebook, web, whatsapp) أو all لو مش محدد",
-      "secretCode": "EXECUTE_NOW"
-    }
-
-#### 7. **تعديل إعدادات صفحة الدردشة (صفحة تخصيص الدردشة)**:
-- لو المستخدم طلب تفعيل خاصية (مثال: "فعّل إرفاق الصور" أو "فعّل الأسئلة المقترحة"):
-  - لو طلب تفعيل إرفاق الصور، فعّل imageUploadEnabled (true).
-  - لو طلب تفعيل الأسئلة المقترحة، فعّل suggestedQuestionsEnabled (true) وأضف الأسئلة المقترحة لو المستخدم حددها (مثال: "فعّل الأسئلة المقترحة بأسئلة: ما هو السعر؟، كيف أطلب؟").
-  - ارجع الأمر للبوت الداخلي في صيغة JSON مع رمز سري للتنفيذ:
-    {
-      "action": "updateChatPageSettings",
-      "botId": "${selectedBotId}",
-      "settings": {
-        "imageUploadEnabled": true/false,
-        "suggestedQuestionsEnabled": true/false,
-        "suggestedQuestions": ["سؤال1", "سؤال2"]
-      },
-      "secretCode": "EXECUTE_NOW"
-    }
-
-- لو المستخدم طلب تغيير الألوان (مثال: "غيّر لون فقاعة المستخدم إلى #FF0000"):
-  - الألوان المتاحة في صفحة الدردشة:
-    - titleColor: لون نص العنوان (مثال: #333333).
-    - headerColor: لون الهيدر (مثال: #f8f9fa).
-    - chatAreaBackgroundColor: لون خلفية مربع الدردشة (مثال: #ffffff).
-    - textColor: لون النص العام (مثال: #333333).
-    - userMessageBackgroundColor: لون فقاعة المستخدم (مثال: #007bff).
-    - userMessageTextColor: لون نص المستخدم (مثال: #ffffff).
-    - botMessageBackgroundColor: لون فقاعة البوت (مثال: #e9ecef).
-    - botMessageTextColor: لون نص البوت (مثال: #333333).
-    - buttonColor: لون الأزرار المقترحة (مثال: #007bff).
-    - backgroundColor: لون الخلفية (مثال: #f8f9fa).
-    - inputTextColor: لون نص مربع الإدخال (مثال: #333333).
-    - sendButtonColor: لون زر الإرسال (مثال: #007bff).
-  - ارجع الأمر للبوت الداخلي في صيغة JSON مع رمز سري للتنفيذ:
-    {
-      "action": "updateChatPageColors",
-      "botId": "${selectedBotId}",
-      "colors": {
-        "userMessageBackgroundColor": "#FF0000"
-      },
-      "secretCode": "EXECUTE_NOW"
-    }
-
-#### 8. **تعديل إعدادات فيسبوك (صفحة إعدادات فيسبوك)**:
-- لو المستخدم طلب تفعيل إعداد (مثال: "فعّل رسائل الترحيب"):
-  - لو "رسائل الترحيب"، فعّل messagingOptinsEnabled (true).
-  - لو "التفاعل مع ردود الفعل"، فعّل messageReactionsEnabled (true).
-  - لو "تتبع مصدر المستخدمين"، فعّل messagingReferralsEnabled (true).
-  - لو "التعامل مع تعديلات الرسائل"، فعّل messageEditsEnabled (true).
-  - لو "تصنيف المحادثات"، فعّل inboxLabelsEnabled (true).
-  - ارجع الأمر للبوت الداخلي في صيغة JSON مع رمز سري للتنفيذ:
-    {
-      "action": "updateFacebookSettings",
-      "botId": "${selectedBotId}",
-      "settingKey": "messagingOptinsEnabled",
-      "value": true,
-      "secretCode": "EXECUTE_NOW"
-    }
-
-#### 9. **إنشاء بوت جديد (صفحة البوتات)**:
-- لو المستخدم طلب "أنشئ بوت جديد" (مثال: "أنشئ بوت جديد باسم بوت التسويق"):
-  - استخرج اسم البوت (مثل "بوت التسويق").
-  - اطلب من المستخدم اختيار المستخدم المرتبط بالبوت لو مش محدد.
-  - ارجع الأمر للبوت الداخلي في صيغة JSON مع رمز سري للتنفيذ:
-    {
-      "action": "createBot",
-      "name": "اسم البوت",
-      "userId": "معرف المستخدم (لو مش محدد، اطلب من المستخدم)",
-      "facebookApiKey": "رقم API لفيسبوك (اختياري، لو مش محدد استخدم قيمة فارغة)",
-      "facebookPageId": "معرف صفحة فيسبوك (اختياري، لو مش محدد استخدم قيمة فارغة)",
-      "secretCode": "EXECUTE_NOW"
-    }
-
-#### 10. **عرض الإحصائيات (صفحة التحليلات)**:
-- لو المستخدم طلب "اعرض إحصائيات" (مثال: "اعرض إحصائيات البوت"):
-  - ارجع الأمر للبوت الداخلي في صيغة JSON مع رمز سري للتنفيذ:
-    {
-      "action": "showAnalytics",
-      "botId": "${selectedBotId}",
-      "secretCode": "EXECUTE_NOW"
-    }
-
-#### 11. **عام**:
+### تعليمات عامة:
 - لو المستخدم طلب أمر مش واضح، اطلب توضيح (مثال: "من فضلك، وضّح الأمر أكتر").
-- لو الأمر يتطلب بيانات ناقصة، اطلب البيانات الناقصة (مثال: "يرجى تحديد العملة للسعر").
-- لو الأمر خارج نطاق الصفحات، رد بـ "عذرًا، هذا الأمر غير متاح حاليًا."
-- دائمًا رجّع الأوامر في صيغة JSON مع الرمز السري "EXECUTE_NOW" عشان النظام الداخلي ينفذ الأمر.
-
-### معلومات إضافية:
-- الصفحات المتاحة: القواعد (#rules)، الرسائل (#messages)، التقييمات (#feedback)، إعدادات فيسبوك (#facebook)، البوتات (#bots)، التحليلات (#analytics)، تخصيص الدردشة (#chat-page).
-- البوت المختار: ${selectedBotId}.
+- لو الأمر خارج نطاق الصفحات أو الوظائف، رد بـ "عذرًا، هذا الأمر غير متاح حاليًا."
 - حافظ على ذاكرة المحادثة (conversationHistory) عشان تفهم سياق الأوامر.
-- ارجع الأمر للبوت الداخلي دائمًا في صيغة JSON مع الرمز السري "EXECUTE_NOW".
+- رد بطريقة طبيعية وودودة دائمًا.
 
 ### الآن، نفّذ الأمر التالي بناءً على التعليمات أعلاه:
 الأمر: "${message}"
@@ -272,48 +152,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const data = await response.json();
-        internalCommand = JSON.parse(data.reply);
-      }
+        const reply = data.reply || 'عذرًا، لم أفهم طلبك. حاول مرة أخرى!';
 
-      // التحقق من الرمز السري
-      if (internalCommand.secretCode !== 'EXECUTE_NOW') {
-        throw new Error('الأمر غير صالح: الرمز السري غير موجود أو غير صحيح');
-      }
-
-      let retryCount = 0;
-      const maxRetries = 3;
-
-      while (retryCount < maxRetries) {
-        try {
-          const executionResult = await executeInternalCommand(internalCommand);
-          const botMessageDiv = document.createElement('div');
-          botMessageDiv.className = 'message bot-message';
-          botMessageDiv.innerHTML = `
-            <p>${executionResult.message}</p>
-            <small>${new Date().toLocaleString('ar-EG')}</small>
-          `;
-          assistantChatMessages.appendChild(botMessageDiv);
-          assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
-          conversationHistory.push({ role: 'assistant', content: executionResult.message });
-          break;
-        } catch (err) {
-          retryCount++;
-          if (retryCount === maxRetries) {
-            const errorMessage = `فشلت في تنفيذ الأمر بعد ${maxRetries} محاولات: ${err.message}`;
-            const botMessageDiv = document.createElement('div');
-            botMessageDiv.className = 'message bot-message';
-            botMessageDiv.innerHTML = `
-              <p>${errorMessage}</p>
-              <small>${new Date().toLocaleString('ar-EG')}</small>
-            `;
-            assistantChatMessages.appendChild(botMessageDiv);
-            assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
-            conversationHistory.push({ role: 'assistant', content: errorMessage });
-            break;
-          }
-
-          internalCommand = await retryCommandWithAI(internalCommand, err.message);
-        }
+        const botMessageDiv = document.createElement('div');
+        botMessageDiv.className = 'message bot-message';
+        botMessageDiv.innerHTML = `
+          <p>${reply}</p>
+          <small>${new Date().toLocaleString('ar-EG')}</small>
+        `;
+        assistantChatMessages.appendChild(botMessageDiv);
+        assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
+        conversationHistory.push({ role: 'assistant', content: reply });
       }
     } catch (err) {
       console.error('خطأ في معالجة الرسالة:', err);
@@ -373,7 +222,8 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     }
 
-    return null;
+    return null
+
   }
 
   async function executeInternalCommand(command) {
