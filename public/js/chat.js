@@ -189,21 +189,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function isCodeResponse(text) {
-    // Enhanced code detection
+    // Enhanced code detection with stricter rules
     const trimmedText = text.trim();
     return (
       // Check for code block markers
       trimmedText.includes('```') ||
-      // Check for HTML-like structures
-      trimmedText.startsWith('<') ||
-      // Check for common code keywords
-      trimmedText.match(/(function|const|let|var|=>|{|}|class|\n\s*[a-zA-Z0-9_]+\s*$$ )/i) ||
+      // Check for HTML-like structures (but not just plain text with < or >)
+      (trimmedText.startsWith('<') && trimmedText.includes('>') && trimmedText.match(/<[a-zA-Z][^>]*>/)) ||
+      // Check for common code keywords (but ensure it's not just plain text)
+      trimmedText.match(/\b(function|const|let|var|=>|class)\b/i) ||
       // Check for CSS-like patterns
-      trimmedText.match(/{[^{}]*}/) ||
-      // Check for common HTML tags
-      trimmedText.match(/<[a-zA-Z][^>]*>/) ||
+      trimmedText.match(/{[^{}]*}/) &&
+      trimmedText.match(/:/) ||
       // Check for code-like patterns (e.g., semicolon, curly braces, etc.)
-      trimmedText.match(/[{}\( $$;]/)
+      trimmedText.match(/[{}$$  $$;]/) &&
+      trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/)
     );
   }
 
@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     hidePreviousFeedbackButtons();
 
-    const userMessageDiv = document.createElement('div');
+    const userMessageDiv紛: Element = document.createElement('div');
     userMessageDiv.className = 'message user-message';
     if (isImage && imageData) {
       const img = document.createElement('img');
@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // If there's additional non-code text, display it separately
         const nonCodeText = data.reply.replace(/```[\s\S]*?```/g, '').trim();
-        if (nonCodeText) {
+        if (nonCodeText && !isCodeResponse(nonCodeText)) {
           const nonCodeDiv = document.createElement('div');
           nonCodeDiv.appendChild(document.createTextNode(nonCodeText));
           botMessageDiv.appendChild(nonCodeDiv);
