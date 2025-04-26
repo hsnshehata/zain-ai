@@ -85,26 +85,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
 2. **تعديل إعدادات صفحة الدردشة (صفحة تخصيص الدردشة)**:
    - لو المستخدم طلب تفعيل خاصية (مثال: "فعّل إرفاق الصور" أو "فعّل الأسئلة المقترحة"):
-     - لو طلب تفعيل إرفاق الصور، فعّل `imageUploadEnabled` (true).
-     - لو طلب تفعيل الأسئلة المقترحة، فعّل `suggestedQuestionsEnabled` (true) وأضف الأسئلة المقترحة لو المستخدم حددها (مثال: "فعّل الأسئلة المقترحة بأسئلة: ما هو السعر؟، كيف أطلب؟").
+     - لو طلب تفعيل إرفاق الصور، فعّل imageUploadEnabled (true).
+     - لو طلب تفعيل الأسئلة المقترحة، فعّل suggestedQuestionsEnabled (true) وأضف الأسئلة المقترحة لو المستخدم حددها (مثال: "فعّل الأسئلة المقترحة بأسئلة: ما هو السعر؟، كيف أطلب؟").
      - استخدم API: PUT /api/chat-page/{chatPageId}
      - Body: { imageUploadEnabled: true/false, suggestedQuestionsEnabled: true/false, suggestedQuestions: ["سؤال1", "سؤال2"] }
-     - لجلب `chatPageId`، استخدم API: GET /api/chat-page/bot/${selectedBotId}
+     - لجلب chatPageId، استخدم API: GET /api/chat-page/bot/${selectedBotId}
      - بعد التعديل، انتقل لصفحة تخصيص الدردشة (window.location.hash = 'chat-page') وقول "تم تعديل الإعدادات بنجاح".
 
    - لو المستخدم طلب تغيير الألوان (مثال: "غيّر لون فقاعة المستخدم إلى #FF0000"):
-     - عدّل الألوان المطلوبة (مثل `userMessageBackgroundColor` إلى #FF0000).
+     - عدّل الألوان المطلوبة (مثل userMessageBackground إلى #FF0000).
      - استخدم API: PUT /api/chat-page/{chatPageId}
      - Body: { colors: { userMessageBackground: "#FF0000", ... } }
      - بعد التعديل، انتقل لصفحة تخصيص الدردشة وقول "تم تغيير الألوان بنجاح".
 
 3. **تعديل إعدادات فيسبوك (صفحة إعدادات فيسبوك)**:
    - لو المستخدم طلب تفعيل إعداد (مثال: "فعّل رسائل الترحيب"):
-     - لو "رسائل الترحيب"، فعّل `messagingOptinsEnabled` (true).
-     - لو "التفاعل مع ردود الفعل"، فعّل `messageReactionsEnabled` (true).
-     - لو "تتبع مصدر المستخدمين"، فعّل `messagingReferralsEnabled` (true).
-     - لو "التعامل مع تعديلات الرسائل"، فعّل `messageEditsEnabled` (true).
-     - لو "تصنيف المحادثات"، فعّل `inboxLabelsEnabled` (true).
+     - لو "رسائل الترحيب"، فعّل messagingOptinsEnabled (true).
+     - لو "التفاعل مع ردود الفعل"، فعّل messageReactionsEnabled (true).
+     - لو "تتبع مصدر المستخدمين"، فعّل messagingReferralsEnabled (true).
+     - لو "التعامل مع تعديلات الرسائل"، فعّل messageEditsEnabled (true).
+     - لو "تصنيف المحادثات"، فعّل inboxLabelsEnabled (true).
      - استخدم API: PATCH /api/bots/${selectedBotId}/settings
      - Body: { [settingKey]: true }
      - بعد التعديل، انتقل لصفحة إعدادات فيسبوك (window.location.hash = 'facebook') وقول "تم تفعيل الإعداد بنجاح".
