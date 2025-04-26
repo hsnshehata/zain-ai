@@ -129,7 +129,12 @@ exports.updateChatPage = async (req, res) => {
     const imageUploadEnabled = req.body.imageUploadEnabled === 'true' ? true : req.body.imageUploadEnabled === 'false' ? false : chatPage.imageUploadEnabled;
     const darkModeEnabled = req.body.darkModeEnabled === 'true' ? true : req.body.darkModeEnabled === 'false' ? false : chatPage.darkModeEnabled;
     const transparentBackgroundEnabled = req.body.transparentBackgroundEnabled === 'true' ? true : req.body.transparentBackgroundEnabled === 'false' ? false : chatPage.transparentBackgroundEnabled;
-    const outerBackgroundTransparency = req.body.outerBackgroundTransparency ? parseFloat(req.body.outerBackgroundTransparency) : chatPage.outerBackgroundTransparency;
+    // تحسين التعامل مع outerBackgroundTransparency للتأكد من حفظ القيمة 0
+    let outerBackgroundTransparency = chatPage.outerBackgroundTransparency;
+    if (req.body.hasOwnProperty('outerBackgroundTransparency')) {
+      const parsedValue = parseFloat(req.body.outerBackgroundTransparency);
+      outerBackgroundTransparency = isNaN(parsedValue) ? chatPage.outerBackgroundTransparency : parsedValue;
+    }
 
     let logoUrl = chatPage.logoUrl;
     let logoDeleteUrl = chatPage.logoDeleteUrl;
