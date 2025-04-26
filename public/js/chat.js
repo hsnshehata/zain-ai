@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let botId = '';
   let settings = {};
   let messageCounter = 0;
-  let lastFeedbackButtons = null; // لتتبع أزرار التقييم لآخر رد
+  let lastFeedbackButtons = null;
 
   try {
     const response = await fetch(`/api/chat-page/${linkId}`);
@@ -30,21 +30,83 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       chatLogo.style.display = 'none';
     }
+
+    const isInIframe = window.self !== window.top;
+    const transparentBackgroundEnabled = settings.transparentBackgroundEnabled || false;
+    const outerBackgroundTransparency = settings.outerBackgroundTransparency || 0.5;
+
     customStyles.textContent = `
-      .chat-container { background-color: ${settings?.colors?.background || '#f8f9fa'}; color: ${settings?.colors?.text || '#333333'}; }
-      #chatHeader { background-color: ${settings?.colors?.header || '#007bff'}; }
-      #chatTitle { color: ${settings?.titleColor || '#ffffff'}; }
-      #chatMessages { background-color: ${settings?.colors?.chatAreaBackground || '#ffffff'}; }
-      #sendMessageBtn { background-color: ${settings?.colors?.sendButtonColor || '#007bff'}; }
-      .suggested-question { background-color: ${settings?.colors?.button || '#007bff'}; }
-      .user-message { background-color: ${settings?.colors?.userMessageBackground || '#007bff'}; color: ${settings?.colors?.userMessageTextColor || '#ffffff'}; }
-      .bot-message { background-color: ${settings?.colors?.botMessageBackground || '#e9ecef'}; color: ${settings?.colors?.botMessageTextColor || '#000000'}; }
-      #messageInput { color: ${settings?.colors?.inputTextColor || '#333333'}; }
-      #imageInput::file-selector-button { background-color: ${settings?.colors?.sendButtonColor || '#007bff'}; color: white; border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; transition: all 0.3s; }
-      #imageInput::file-selector-button:hover { background-color: ${settings?.colors?.sendButtonColor ? darkenColor(settings.colors.sendButtonColor, 10) : '#0056b3'}; transform: translateY(-2px); }
-      .feedback-buttons { margin-top: 5px; display: flex; gap: 10px; }
-      .feedback-btn { background: none; border: none; font-size: 1.2em; cursor: pointer; }
+      body {
+        background-color: ${isInIframe && transparentBackgroundEnabled 
+          ? `rgba(${hexToRgb(settings?.colors?.outerBackgroundColor || '#000000')}, ${outerBackgroundTransparency})` 
+          : (settings?.colors?.outerBackgroundColor || '#000000')};
+      }
+      .chat-container {
+        background-color: ${settings?.colors?.containerBackgroundColor || '#ffffff'};
+        color: ${settings?.colors?.text || '#ffffff'};
+      }
+      #chatHeader {
+        background-color: ${settings?.colors?.header || '#2D3436'};
+      }
+      #chatTitle {
+        color: ${settings?.titleColor || '#ffffff'};
+      }
+      #chatMessages {
+        background-color: ${settings?.colors?.chatAreaBackground || '#3B4A4E'};
+      }
+      #sendMessageBtn {
+        background-color: ${settings?.colors?.sendButtonColor || '#6AB04C'};
+      }
+      .suggested-question {
+        background-color: ${settings?.colors?.button || '#6AB04C'};
+      }
+      .user-message {
+        background-color: ${settings?.colors?.userMessageBackground || '#6AB04C'};
+        color: ${settings?.colors?.userMessageTextColor || '#ffffff'};
+      }
+      .bot-message {
+        background-color: ${settings?.colors?.botMessageBackground || '#2D3436'};
+        color: ${settings?.colors?.botMessageTextColor || '#ffffff'};
+      }
+      .chat-input {
+        background-color: ${settings?.colors?.inputAreaBackground || '#3B4A4E'};
+      }
+      #messageInput {
+        color: ${settings?.colors?.inputTextColor || '#ffffff'};
+      }
+      #imageInput::file-selector-button {
+        background-color: ${settings?.colors?.sendButtonColor || '#6AB04C'};
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      #imageInput::file-selector-button:hover {
+        background-color: ${settings?.colors?.sendButtonColor ? darkenColor(settings.colors.sendButtonColor, 10) : '#4A803A'};
+        transform: translateY(-2px);
+      }
+      .feedback-buttons {
+        margin-top: 5px;
+        display: flex;
+        gap: 10px;
+      }
+      .feedback-btn {
+        background: none;
+        border: none;
+        font-size: 1.2em;
+        cursor: pointer;
+      }
     `;
+
+    function hexToRgb(hex) {
+      hex = hex.replace('#', '');
+      const r = parseInt(hex.substring(0, 2), 16);
+      const g = parseInt(hex.substring(2, 4), 16);
+      const b = parseInt(hex.substring(4, 6), 16);
+      return `${r}, ${g}, ${b}`;
+    }
 
     function darkenColor(hex, percent) {
       let r = parseInt(hex.slice(1, 3), 16);
@@ -141,7 +203,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function sendMessage(message, isImage = false, imageData = null) {
     if (!message && !isImage) return;
 
-    // إخفاء أزرار التقييم السابقة لما المستخدم يبعت رسالة جديدة
     hidePreviousFeedbackButtons();
 
     const userMessageDiv = document.createElement('div');
@@ -182,7 +243,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       botMessageDiv.setAttribute('data-message-id', messageId);
       botMessageDiv.textContent = data.reply || 'رد البوت';
 
-      // إضافة أزرار التقييم
       const feedbackButtons = document.createElement('div');
       feedbackButtons.className = 'feedback-buttons';
       feedbackButtons.innerHTML = `
@@ -194,17 +254,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       chatMessages.appendChild(botMessageDiv);
       chatMessages.scrollTop = chatMessages.scrollHeight;
 
-      // تحديث أزرار التقييم لآخر رد
       lastFeedbackButtons = feedbackButtons;
 
-      // إضافة مستمعات الأحداث لأزرار التقييم
       feedbackButtons.querySelectorAll('.feedback-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {
           const messageId = e.target.getAttribute('data-message-id');
           const messageContent = e.target.getAttribute('data-message-content');
           const feedback = e.target.classList.contains('good') ? 'positive' : 'negative';
           await submitFeedback(messageId, messageContent, feedback);
-          // إخفاء الأزرار بعد التقييم
           feedbackButtons.style.display = 'none';
           lastFeedbackButtons = null;
         });
