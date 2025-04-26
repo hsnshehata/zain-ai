@@ -8,25 +8,26 @@ const chatPageSchema = new mongoose.Schema({
   titleColor: { type: String, default: '#ffffff' },
   colors: {
     header: { type: String, default: '#007bff' },
-    background: { type: String, default: '#f8f9fa' },
+    inputAreaBackground: { type: String, default: '#f8f9fa' }, // كان background
     text: { type: String, default: '#333333' },
-    button: { type: String, default: '#007bff' }, // لون الأزرار المقترحة
+    button: { type: String, default: '#007bff' },
     botMessageBackground: { type: String, default: '#e9ecef' },
     userMessageBackground: { type: String, default: '#007bff' },
     chatAreaBackground: { type: String, default: '#ffffff' },
     inputTextColor: { type: String, default: '#333333' },
     userMessageTextColor: { type: String, default: '#ffffff' },
     botMessageTextColor: { type: String, default: '#000000' },
-    sendButtonColor: { type: String, default: '#007bff' }, // لون زر الإرسال
-    mainBackgroundColor: { type: String, default: '#ffffff' }, // لون خلفية الصفحة الرئيسية
+    sendButtonColor: { type: String, default: '#007bff' },
+    containerBackgroundColor: { type: String, default: '#ffffff' }, // لون حاوية الدردشة
+    outerBackgroundColor: { type: String, default: '#000000' }, // كان mainBackgroundColor
   },
   logoUrl: { type: String },
   logoDeleteUrl: { type: String },
   suggestedQuestionsEnabled: { type: Boolean, default: false },
   suggestedQuestions: [{ type: String }],
   imageUploadEnabled: { type: Boolean, default: false },
-  transparentBackgroundEnabled: { type: Boolean, default: false }, // حالة الشفافية
-  backgroundTransparency: { type: Number, default: 0.5, min: 0, max: 1 }, // نسبة الشفافية (من 0 لـ 1)
+  transparentBackgroundEnabled: { type: Boolean, default: false },
+  outerBackgroundTransparency: { type: Number, default: 0.5, min: 0, max: 1 }, // كان backgroundTransparency
   createdAt: { type: Date, default: Date.now },
 });
 
