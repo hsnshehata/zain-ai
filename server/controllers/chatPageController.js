@@ -128,6 +128,8 @@ exports.updateChatPage = async (req, res) => {
     }
     const imageUploadEnabled = req.body.imageUploadEnabled === 'true' ? true : req.body.imageUploadEnabled === 'false' ? false : chatPage.imageUploadEnabled;
     const darkModeEnabled = req.body.darkModeEnabled === 'true' ? true : req.body.darkModeEnabled === 'false' ? false : chatPage.darkModeEnabled;
+    const transparentBackgroundEnabled = req.body.transparentBackgroundEnabled === 'true' ? true : req.body.transparentBackgroundEnabled === 'false' ? false : chatPage.transparentBackgroundEnabled;
+    const outerBackgroundTransparency = req.body.outerBackgroundTransparency ? parseFloat(req.body.outerBackgroundTransparency) : chatPage.outerBackgroundTransparency;
 
     let logoUrl = chatPage.logoUrl;
     let logoDeleteUrl = chatPage.logoDeleteUrl;
@@ -155,6 +157,8 @@ exports.updateChatPage = async (req, res) => {
     chatPage.suggestedQuestions = suggestedQuestions;
     chatPage.imageUploadEnabled = imageUploadEnabled;
     chatPage.darkModeEnabled = darkModeEnabled;
+    chatPage.transparentBackgroundEnabled = transparentBackgroundEnabled;
+    chatPage.outerBackgroundTransparency = outerBackgroundTransparency;
 
     await chatPage.save();
 
@@ -162,6 +166,8 @@ exports.updateChatPage = async (req, res) => {
       message: 'Chat page settings updated successfully',
       logoUrl: chatPage.logoUrl,
       colors: chatPage.colors,
+      transparentBackgroundEnabled: chatPage.transparentBackgroundEnabled,
+      outerBackgroundTransparency: chatPage.outerBackgroundTransparency,
     });
   } catch (err) {
     console.error('Error updating chat page:', err);
@@ -186,6 +192,8 @@ exports.getChatPageByLinkId = async (req, res) => {
       suggestedQuestions: chatPage.suggestedQuestions,
       imageUploadEnabled: chatPage.imageUploadEnabled,
       darkModeEnabled: chatPage.darkModeEnabled,
+      transparentBackgroundEnabled: chatPage.transparentBackgroundEnabled,
+      outerBackgroundTransparency: chatPage.outerBackgroundTransparency,
       botId: chatPage.botId._id,
     });
   } catch (err) {
@@ -214,6 +222,8 @@ exports.getChatPageByBotId = async (req, res) => {
       suggestedQuestions: chatPage.suggestedQuestions,
       imageUploadEnabled: chatPage.imageUploadEnabled,
       darkModeEnabled: chatPage.darkModeEnabled,
+      transparentBackgroundEnabled: chatPage.transparentBackgroundEnabled,
+      outerBackgroundTransparency: chatPage.outerBackgroundTransparency,
     });
   } catch (err) {
     console.error('Error fetching chat page by botId:', err);
