@@ -7,7 +7,41 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/chat.css">
-  <style id="customStyles"></style>
+  <style id="customStyles">
+    .code-block-container {
+      position: relative;
+      margin: 10px 0;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .code-block-container pre {
+      background-color: #2d2d2d;
+      color: #f8f8f2;
+      padding: 15px;
+      margin: 0;
+      border-radius: 0 0 8px 8px;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 0.9em;
+      overflow-x: auto;
+      max-height: 400px;
+    }
+    .code-block-container .copy-btn {
+      position: absolute;
+      top: 0;
+      left: 10px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 0 0 4px 4px;
+      cursor: pointer;
+      font-size: 0.8em;
+      transition: background-color 0.3s;
+    }
+    .code-block-container .copy-btn:hover {
+      background-color: #0056b3;
+    }
+  </style>
 </head>
 <body>
   <div class="chat-container">
@@ -22,9 +56,9 @@
     <div class="chat-input">
       <input type="text" id="messageInput" placeholder="اكتب رسالتك...">
       <input type="file" id="imageInput" accept="image/*" style="display: none;">
-      <button id="sendMessageBtn"<i class="fas fa-arrow-up"></i></button>
+      <button id="sendMessageBtn"><i class="fas fa-arrow-up"></i></button>
     </div>
   </div>
   <script src="/js/chat.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'933aab6c3c3044f3',t:'MTc0NTIxNTMxNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353242c3b54dd1e',t:'MTc0NTQ3MTkyMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9363b8019e0478ce',t:'MTc0NTY0NTc0Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
