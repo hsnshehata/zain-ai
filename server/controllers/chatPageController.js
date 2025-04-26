@@ -129,9 +129,9 @@ exports.updateChatPage = async (req, res) => {
     const imageUploadEnabled = req.body.imageUploadEnabled === 'true' ? true : req.body.imageUploadEnabled === 'false' ? false : chatPage.imageUploadEnabled;
     const darkModeEnabled = req.body.darkModeEnabled === 'true' ? true : req.body.darkModeEnabled === 'false' ? false : chatPage.darkModeEnabled;
     const transparentBackgroundEnabled = req.body.transparentBackgroundEnabled === 'true' ? true : req.body.transparentBackgroundEnabled === 'false' ? false : chatPage.transparentBackgroundEnabled;
-    // تحسين التعامل مع outerBackgroundTransparency للتأكد من حفظ القيمة 0
+    // تحسين التعامل مع outerBackgroundTransparency باستخدام طريقة أكثر أمانًا
     let outerBackgroundTransparency = chatPage.outerBackgroundTransparency;
-    if (req.body.hasOwnProperty('outerBackgroundTransparency')) {
+    if ('outerBackgroundTransparency' in req.body) {
       const parsedValue = parseFloat(req.body.outerBackgroundTransparency);
       outerBackgroundTransparency = isNaN(parsedValue) ? chatPage.outerBackgroundTransparency : parsedValue;
     }
@@ -176,7 +176,7 @@ exports.updateChatPage = async (req, res) => {
     });
   } catch (err) {
     console.error('Error updating chat page:', err);
-    throw err;
+    res.status(500).json({ message: 'خطأ في تحديث إعدادات صفحة الدردشة' });
   }
 };
 
@@ -203,7 +203,7 @@ exports.getChatPageByLinkId = async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching chat page:', err);
-    throw err;
+    res.status(500).json({ message: 'خطأ في جلب إعدادات صفحة الدردشة' });
   }
 };
 
@@ -232,7 +232,7 @@ exports.getChatPageByBotId = async (req, res) => {
     });
   } catch (err) {
     console.error('Error fetching chat page by botId:', err);
-    throw err;
+    res.status(500).json({ message: 'خطأ في جلب إعدادات صفحة الدردشة' });
   }
 };
 
