@@ -287,7 +287,7 @@ async function loadChatPage() {
         `.trim();
 
         const fullIframeCode = `
-<iframe src="${data.link}" style="width: 100%; height: 100vh; border: none;"></iframe>
+    <iframe src="${data.link}" style="width: 100%; height: 100%; border: none;" scrolling="no"></iframe>
         `.trim();
 
         chatPageContent.innerHTML = `
