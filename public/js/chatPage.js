@@ -254,9 +254,6 @@ async function loadChatPage() {
 <div id="supportButtonContainer" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
   <img id="supportButton" src="https://i.ibb.co/7JJScM0Q/Chat-GPT-Image-20-2025-08-04-13.png" alt="دعم العملاء" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
 </div>
-<div id="supportButtonContainer" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-  <img id="supportButton" src="https://i.ibb.co/7JJScM0Q/Chat-GPT-Image-20-2025-08-04-13.png" alt="دعم العملاء" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
-</div>
 <div id="chatIframeContainer" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
   <div style="position: relative; width: 350px; height: 550px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); background: white;">
     <button id="closeChatIframe" style="position: absolute; top: 10px; left: 10px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer;">✕</button>
@@ -276,7 +273,7 @@ async function loadChatPage() {
     supportButton.style.display = 'block';
   });
 </script>
-         `.trim();
+        `.trim();
 
         const fullIframeCode = `
 <iframe src="${data.link}" style="width: 100%; height: 100vh; border: none;"></iframe>
@@ -308,11 +305,24 @@ async function loadChatPage() {
             <div class="preview-section">
               <h3>معاينة صفحة الدردشة</h3>
               <div class="chat-preview-container">
-                <div id="previewChat" class="chat-container">
+                <div id="previewChat" class="chat-container" style="
+                  max-width: 400px;
+                  margin: 10px auto;
+                  border-radius: 12px;
+                  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                  overflow: hidden;
+                  direction: rtl;
+                  font-family: 'Arial', sans-serif;
+                ">
                   <div class="section-with-settings">
-                    <div id="previewChatHeader" class="chat-header">
-                      <img id="previewChatLogo" class="chat-logo" style="display: ${data.logoUrl ? 'block' : 'none'};" src="${data.logoUrl || ''}" alt="Logo">
-                      <h1 id="previewChatTitle" class="chat-title">${data.title}</h1>
+                    <div id="previewChatHeader" class="chat-header" style="
+                      padding: 10px 15px;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                    ">
+                      <img id="previewChatLogo" class="chat-logo" style="display: ${data.logoUrl ? 'block' : 'none'}; max-width: 40px; max-height: 40px; border-radius: 50%;" src="${data.logoUrl || ''}" alt="Logo">
+                      <h1 id="previewChatTitle" class="chat-title" style="margin: 0; font-size: 1.2em; font-weight: bold;">${data.title}</h1>
                     </div>
                     <button class="settings-gear" data-target="header-settings">⚙️</button>
                     <div id="header-settings" class="settings-popup" style="display: none;">
@@ -328,9 +338,34 @@ async function loadChatPage() {
                     </div>
                   </div>
                   <div class="section-with-settings">
-                    <div id="previewChatMessages" class="chat-messages">
-                      <div class="message user-message">رسالة المستخدم</div>
-                      <div class="message bot-message">رد البوت</div>
+                    <div id="previewChatMessages" class="chat-messages" style="
+                      padding: 10px;
+                      height: 200px;
+                      overflow-y: auto;
+                      display: flex;
+                      flex-direction: column;
+                      gap: 8px;
+                    ">
+                      <div class="message user-message" style="
+                        max-width: 70%;
+                        padding: 8px 12px;
+                        border-radius: 12px;
+                        line-height: 1.4;
+                        word-wrap: break-word;
+                        align-self: flex-end;
+                        margin-left: 10px;
+                        border-bottom-right-radius: 4px;
+                      ">رسالة المستخدم</div>
+                      <div class="message bot-message" style="
+                        max-width: 70%;
+                        padding: 8px 12px;
+                        border-radius: 12px;
+                        line-height: 1.4;
+                        word-wrap: break-word;
+                        align-self: flex-start;
+                        margin-right: 10px;
+                        border-bottom-left-radius: 4px;
+                      ">رد البوت</div>
                     </div>
                     <button class="settings-gear" data-target="messages-settings">⚙️</button>
                     <div id="messages-settings" class="settings-popup" style="display: none;">
@@ -362,8 +397,13 @@ async function loadChatPage() {
                     </div>
                   </div>
                   <div class="section-with-settings">
-                    <div id="previewSuggestedQuestions" class="suggested-questions" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
-                      ${data.suggestedQuestions?.map(q => `<button class="suggested-question">${q}</button>`).join('') || ''}
+                    <div id="previewSuggestedQuestions" class="suggested-questions" style="
+                      display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};
+                      padding: 8px 15px;
+                      flex-wrap: wrap;
+                      gap: 8px;
+                    ">
+                      ${data.suggestedQuestions?.map(q => `<button class="suggested-question" style="padding: 6px 12px; border: none; border-radius: 16px; cursor: pointer; font-size: 0.8em; transition: transform 0.2s, background-color 0.3s;">${q}</button>`).join('') || ''}
                     </div>
                     <button class="settings-gear" data-target="suggested-questions-settings" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};" id="suggestedQuestionsGear">⚙️</button>
                     <div id="suggested-questions-settings" class="settings-popup" style="display: none;">
@@ -375,10 +415,34 @@ async function loadChatPage() {
                     </div>
                   </div>
                   <div class="section-with-settings">
-                    <div class="chat-input">
-                      <input type="text" id="previewMessageInput" placeholder="اكتب رسالتك...">
+                    <div class="chat-input" style="
+                      display: flex;
+                      align-items: center;
+                      padding: 10px 15px;
+                      gap: 8px;
+                      border-top: 1px solid #e0e0e0;
+                      margin-bottom: -15px;
+                    ">
+                      <input type="text" id="previewMessageInput" placeholder="اكتب رسالتك..." style="
+                        flex: 1;
+                        padding: 8px;
+                        border: none;
+                        border-radius: 8px;
+                        font-size: 0.9em;
+                        outline: none;
+                        background-color: rgba(255, 255, 255, 0.1);
+                        backdrop-filter: blur(5px);
+                        -webkit-backdrop-filter: blur(5px);
+                      ">
                       <input type="file" id="previewImageInput" accept="image/*" style="display: ${data.imageUploadEnabled ? 'block' : 'none'};">
-                      <button id="previewSendMessageBtn">إرسال</button>
+                      <button id="previewSendMessageBtn" style="
+                        padding: 8px 15px;
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 0.9em;
+                        transition: transform 0.2s, background-color 0.3s;
+                      ">إرسال</button>
                     </div>
                     <button class="settings-gear" data-target="input-settings">⚙️</button>
                     <div id="input-settings" class="settings-popup" style="display: none;">
@@ -415,8 +479,10 @@ async function loadChatPage() {
                 <div class="color-schemes-buttons" style="
                   display: flex;
                   flex-wrap: wrap;
-                  gap: 10px;
+                  gap: 8px;
                   justify-content: center;
+                  max-width: 400px;
+                  margin: 0 auto;
                 ">
                   ${colorSchemes
                     .map(
@@ -431,15 +497,15 @@ async function loadChatPage() {
                             ${scheme.colors.buttonColor} 80%
                           );
                           color: ${scheme.colors.textColor};
-                          padding: 8px 16px;
+                          padding: 6px 12px;
                           border: none;
-                          border-radius: 20px;
+                          border-radius: 16px;
                           cursor: pointer;
-                          font-size: 0.9em;
-                          margin: 5px;
+                          font-size: 0.8em;
+                          margin: 3px;
                           transition: transform 0.2s;
-                          flex: 1 1 calc(33.33% - 20px);
-                          max-width: calc(33.33% - 20px);
+                          flex: 1 1 calc(33.33% - 10px);
+                          max-width: calc(33.33% - 10px);
                           box-sizing: border-box;
                         ">
                           ${scheme.name}
@@ -722,7 +788,7 @@ async function loadChatPage() {
         }
 
         function updatePreviewSuggestedQuestions() {
-          previewSuggestedQuestions.innerHTML = questions.map(q => `<button class="suggested-question">${q}</button>`).join('');
+          previewSuggestedQuestions.innerHTML = questions.map(q => `<button class="suggested-question" style="padding: 6px 12px; border: none; border-radius: 16px; cursor: pointer; font-size: 0.8em; transition: transform 0.2s, background-color 0.3s;">${q}</button>`).join('');
           Array.from(previewSuggestedQuestions.children).forEach(btn => {
             btn.style.backgroundColor = colorValues.buttonColor;
           });
