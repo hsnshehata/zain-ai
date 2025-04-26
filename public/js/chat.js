@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       .user-message {
         background-color: ${settings?.colors?.userMessageBackground || '#6AB04C'};
-        color: ${settings?.colors?.userMessageTextColor || '#ffffff'};
+        color: ${settings?.colors?.userMessageTextColor || '#ffffff segue'};
       }
       .bot-message {
         background-color: ${settings?.colors?.botMessageBackground || '#2D3436'};
@@ -189,11 +189,33 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function isCodeResponse(text) {
-    // Check if the response contains code-like content
+    // Enhanced code detection
+    const trimmedText = text.trim();
     return (
-      text.includes('```') ||
-      text.match(/(function|const|let|var|=>|{|}|class|\n\s*[a-zA-Z0-9_]+\s*\()/i)
+      // Check for code block markers
+      trimmedText.includes('```') ||
+      // Check for HTML-like structures
+      trimmedText.startsWith('<') ||
+      // Check for common code keywords
+      trimmedText.match(/(function|const|let|var|=>|{|}|class|\n\s*[a-zA-Z0-9_]+\s*$$ )/i) ||
+      // Check for CSS-like patterns
+      trimmedText.match(/{[^{}]*}/) ||
+      // Check for common HTML tags
+      trimmedText.match(/<[a-zA-Z][^>]*>/) ||
+      // Check for code-like patterns (e.g., semicolon, curly braces, etc.)
+      trimmedText.match(/[{}\( $$;]/)
     );
+  }
+
+  function extractCode(text) {
+    // If the text contains a code block (e.g., ```code```), extract it
+    const codeBlockMatch = text.match(/```[\s\S]*?```/g);
+    if (codeBlockMatch) {
+      // Extract code between ```
+      return codeBlockMatch.map(block => block.replace(/```/g, '').trim()).join('\n');
+    }
+    // If no code block, return the whole text as code
+    return text.trim();
   }
 
   async function sendMessage(message, isImage = false, imageData = null) {
@@ -240,6 +262,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       if (isCodeResponse(data.reply)) {
         // Handle code response
+        const codeText = extractCode(data.reply);
         const codeContainer = document.createElement('div');
         codeContainer.className = 'code-block-container';
 
@@ -248,7 +271,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         copyBtn.textContent = 'نسخ';
         copyBtn.addEventListener('click', async () => {
           try {
-            await navigator.clipboard.writeText(data.reply);
+            await navigator.clipboard.writeText(codeText);
             copyBtn.textContent = 'تم النسخ!';
             setTimeout(() => (copyBtn.textContent = 'نسخ'), 2000);
           } catch (err) {
@@ -258,12 +281,19 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         const pre = document.createElement('pre');
         const code = document.createElement('code');
-        // Use createTextNode to prevent any execution of HTML/JS
-        code.appendChild(document.createTextNode(data.reply));
+        code.appendChild(document.createTextNode(codeText));
         pre.appendChild(code);
         codeContainer.appendChild(copyBtn);
         codeContainer.appendChild(pre);
         botMessageDiv.appendChild(codeContainer);
+
+        // If there's additional non-code text, display it separately
+        const nonCodeText = data.reply.replace(/```[\s\S]*?```/g, '').trim();
+        if (nonCodeText) {
+          const nonCodeDiv = document.createElement('div');
+          nonCodeDiv.appendChild(document.createTextNode(nonCodeText));
+          botMessageDiv.appendChild(nonCodeDiv);
+        }
       } else {
         // Handle regular text response
         botMessageDiv.appendChild(document.createTextNode(data.reply || 'رد البوت'));
