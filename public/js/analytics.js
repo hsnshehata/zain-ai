@@ -23,8 +23,9 @@ async function loadAnalyticsPage() {
           <label>فلترة حسب الفترة:</label>
           <div class="date-filter">
             <select id="timePeriodFilter">
+              <option value="all" selected>طوال فترة الاستخدام</option>
               <option value="day">يوم</option>
-              <option value="week" selected>أسبوع</option>
+              <option value="week">أسبوع</option>
               <option value="month">شهر</option>
               <option value="custom">تخصيص</option>
             </select>
@@ -42,8 +43,8 @@ async function loadAnalyticsPage() {
           <p id="facebookMessages">رسائل الفيسبوك: جاري التحميل...</p>
           <p id="webMessages">رسائل الويب: جاري التحميل...</p>
           <p id="whatsappMessages">رسائل الواتساب: جاري التحميل...</p>
-          <canvas id="messagesTypeChart" width="400" height="200"></canvas>
-          <canvas id="messagesDailyChart" width="400" height="200"></canvas>
+          <canvas id="messagesTypeChart" width="300" height="150"></canvas>
+          <canvas id="messagesDailyChart" width="300" height="150"></canvas>
         </div>
         <!-- إحصائيات القواعد -->
         <div id="rulesAnalytics">
@@ -65,7 +66,7 @@ async function loadAnalyticsPage() {
             <h4>أكثر ردود البوت تقييمًا سلبيًا:</h4>
             <ul id="negativeRepliesList"></ul>
           </div>
-          <canvas id="feedbackChart" width="400" height="200"></canvas>
+          <canvas id="feedbackChart" width="300" height="150"></canvas>
         </div>
         <!-- إحصائيات التفاعل -->
         <div id="interactionAnalytics">
@@ -100,7 +101,11 @@ async function loadAnalyticsPage() {
     const now = new Date();
     let startDate, endDate;
 
-    if (period === 'day') {
+    if (period === 'all') {
+      // "طوال فترة الاستخدام" يعني بدون فلتر زمني
+      startDate = null;
+      endDate = null;
+    } else if (period === 'day') {
       startDate = new Date(now.setHours(0, 0, 0, 0));
       endDate = new Date(now.setHours(23, 59, 59, 999));
     } else if (period === 'week') {
