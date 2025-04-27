@@ -36,10 +36,12 @@ document.addEventListener('DOMContentLoaded', () => {
             <div id="messagesByChannel">
               <h4>توزيع الرسائل حسب القناة</h4>
               <div id="messagesByChannelChart" class="ct-chart"></div>
+              <div id="messagesByChannelStats" class="stats-text"></div>
             </div>
             <div id="dailyMessages">
               <h4>معدل الرسائل يوميًا</h4>
               <div id="dailyMessagesChart" class="ct-chart"></div>
+              <div id="dailyMessagesStats" class="stats-text"></div>
             </div>
           </div>
           <div id="feedbackAnalytics">
@@ -47,6 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div id="feedbackRatio">
               <h4>نسبة التقييمات الإيجابية مقابل السلبية</h4>
               <div id="feedbackRatioChart" class="ct-chart"></div>
+              <div id="feedbackRatioStats" class="stats-text"></div>
             </div>
             <div id="topNegativeReplies">
               <h4>أكثر الردود السلبية</h4>
@@ -105,6 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
           messagesByChannelData[channel] = messageCount;
         }
 
+        const totalMessages = messagesByChannelData.facebook + messagesByChannelData.web + messagesByChannelData.whatsapp;
+
         // رسم Pie Chart لتوزيع الرسائل حسب القناة
         new Chartist.Pie('#messagesByChannelChart', {
           series: [
@@ -117,9 +122,18 @@ document.addEventListener('DOMContentLoaded', () => {
           donut: true,
           donutWidth: 60,
           startAngle: 270,
-          total: messagesByChannelData.facebook + messagesByChannelData.web + messagesByChannelData.whatsapp,
+          total: totalMessages,
           showLabel: true
         });
+
+        // إضافة الإحصائيات النصية للرسائل
+        const messagesByChannelStats = document.getElementById('messagesByChannelStats');
+        messagesByChannelStats.innerHTML = `
+          <p>إجمالي الرسائل: ${totalMessages}</p>
+          <p>رسائل فيسبوك: ${messagesByChannelData.facebook}</p>
+          <p>رسائل الويب: ${messagesByChannelData.web}</p>
+          <p>رسائل واتساب: ${messagesByChannelData.whatsapp}</p>
+        `;
 
         // 2. معدل الرسائل يوميًا
         const dailyQuery = new URLSearchParams({
@@ -148,6 +162,13 @@ document.addEventListener('DOMContentLoaded', () => {
             right: 40
           }
         });
+
+        // إضافة الإحصائيات النصية لمعدل الرسائل
+        const dailyMessagesStats = document.getElementById('dailyMessagesStats');
+        const totalDailyMessages = series.reduce((sum, count) => sum + count, 0);
+        dailyMessagesStats.innerHTML = `
+          <p>إجمالي الرسائل في الفترة: ${totalDailyMessages}</p>
+        `;
 
       } catch (err) {
         console.error('خطأ في تحميل إحصائيات الرسائل:', err);
@@ -184,6 +205,10 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         });
 
+        const totalFeedback = positiveCount + negativeCount;
+        const positivePercentage = totalFeedback > 0 ? ((positiveCount / totalFeedback) * 100).toFixed(1) : 0;
+        const negativePercentage = totalFeedback > 0 ? ((negativeCount / totalFeedback) * 100).toFixed(1) : 0;
+
         // رسم Pie Chart لنسبة التقييمات
         new Chartist.Pie('#feedbackRatioChart', {
           series: [positiveCount, negativeCount],
@@ -192,9 +217,17 @@ document.addEventListener('DOMContentLoaded', () => {
           donut: true,
           donutWidth: 60,
           startAngle: 270,
-          total: positiveCount + negativeCount,
+          total: totalFeedback,
           showLabel: true
         });
+
+        // إضافة الإحصائيات النصية للتقييمات
+        const feedbackRatioStats = document.getElementById('feedbackRatioStats');
+        feedbackRatioStats.innerHTML = `
+          <p>إجمالي التقييمات: ${totalFeedback}</p>
+          <p>التقييمات الإيجابية: ${positiveCount} (${positivePercentage}%)</p>
+          <p>التقييمات السلبية: ${negativeCount} (${negativePercentage}%)</p>
+        `;
 
         // 2. أكثر الردود السلبية
         const negativeRepliesResponse = await fetch(`/api/bots/feedback/negative-replies/${botId}?${feedbackQuery}`, {
