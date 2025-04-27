@@ -12,12 +12,6 @@ const botsController = require('../controllers/botsController');
 // جلب كل البوتات
 router.get('/', authenticate, botsController.getBots);
 
-// جلب حالة البوتات (نشط مقابل غير نشط)
-router.get('/status', authenticate, botsController.getBotsStatus);
-
-// جلب توزيع البوتات حسب المستخدمين
-router.get('/per-user', authenticate, botsController.getBotsPerUser);
-
 // جلب التقييمات بناءً على botId مع اسم المستخدم من فيسبوك (التقييمات المرئية فقط)
 router.get('/:id/feedback', authenticate, botsController.getFeedback);
 
