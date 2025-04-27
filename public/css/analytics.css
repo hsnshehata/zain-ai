@@ -143,6 +143,18 @@
   word-wrap: break-word;
 }
 
+/* Stats Text */
+.stats-text {
+  text-align: center;
+  color: #ddd;
+  font-size: 0.9em;
+  margin-top: 15px;
+}
+
+.stats-text p {
+  margin: 5px 0;
+}
+
 /* Charts */
 .ct-chart {
   max-width: 300px;
