@@ -1,84 +1,149 @@
-async function loadAnalyticsPage() {
-  const content = document.getElementById('content');
-  const role = localStorage.getItem('role');
-  const token = localStorage.getItem('token');
-  const selectedBotId = localStorage.getItem('selectedBotId');
+// /public/js/analytics.js
 
-  if (!selectedBotId) {
+document.addEventListener('DOMContentLoaded', () => {
+  async function loadAnalyticsPage() {
+    const content = document.getElementById('content');
+    const token = localStorage.getItem('token');
+    const selectedBotId = localStorage.getItem('selectedBotId');
+
+    if (!selectedBotId) {
+      content.innerHTML = `
+        <h2>التحليلات</h2>
+        <p style="color: red;">يرجى اختيار بوت من لوحة التحكم أولاً.</p>
+      `;
+      return;
+    }
+
     content.innerHTML = `
-      <h2>إحصائيات البوتات</h2>
-      <p style="color: red;">يرجى اختيار بوت من لوحة التحكم أولاً.</p>
-    `;
-    return;
-  }
-
-  content.innerHTML = `
-    <h2>إحصائيات البوتات</h2>
-    <div class="analytics-container">
-      <div class="spinner"><div class="loader"></div></div>
-      <div id="analyticsContent" style="display: none;">
-        <div id="analyticsData">
-          <h3>تفاصيل الأداء</h3>
-          <p id="messagesCount">عدد الرسائل: جاري التحميل...</p>
-          <p id="activeRules">عدد القواعد النشطة: جاري التحميل...</p>
-          <div id="messagesChart" class="ct-chart ct-perfect-fourth"></div>
+      <h2>التحليلات</h2>
+      <div class="analytics-container">
+        <div class="spinner">
+          <div class="loader"></div>
+        </div>
+        <div id="analyticsContent" style="display: none;">
+          <div class="filter-group">
+            <div class="form-group">
+              <label>فلترة البيانات حسب الفترة:</label>
+              <div class="date-filter">
+                <input type="date" id="startDateFilter" placeholder="من تاريخ" />
+                <input type="date" id="endDateFilter" placeholder="إلى تاريخ" />
+                <button id="applyFilterBtn">تطبيق الفلتر</button>
+              </div>
+            </div>
+          </div>
+          <div id="messagesAnalytics">
+            <h3>إحصائيات الرسائل</h3>
+            <div id="messagesByChannel">
+              <h4>توزيع الرسائل حسب القناة</h4>
+              <div id="messagesByChannelChart" class="ct-chart"></div>
+            </div>
+            <div id="dailyMessages">
+              <h4>معدل الرسائل يوميًا</h4>
+              <div id="dailyMessagesChart" class="ct-chart"></div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
-  `;
+    `;
 
-  const analyticsContent = document.getElementById('analyticsContent');
-  const spinner = document.querySelector('.spinner');
+    const analyticsContent = document.getElementById('analyticsContent');
+    const spinner = document.querySelector('.spinner');
+    const startDateFilter = document.getElementById('startDateFilter');
+    const endDateFilter = document.getElementById('endDateFilter');
+    const applyFilterBtn = document.getElementById('applyFilterBtn');
 
-  try {
-    spinner.style.display = 'flex';
-    console.log('Fetching analytics for botId:', selectedBotId);
-    const res = await fetch(`/api/analytics?botId=${selectedBotId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    // إخفاء السبينر وإظهار المحتوى
+    spinner.style.display = 'none';
+    analyticsContent.style.display = 'block';
+
+    // جلب البيانات وعرضها
+    await loadMessagesAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
+
+    // إعادة جلب البيانات عند تطبيق الفلتر
+    applyFilterBtn.addEventListener('click', async () => {
+      await loadMessagesAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
     });
 
-    if (!res.ok) {
-      const errorText = await res.text();
-      throw new Error(`فشل في جلب الإحصائيات: ${res.status} - ${errorText}`);
-    }
+    async function loadMessagesAnalytics(botId, token, startDate, endDate) {
+      try {
+        // 1. عدد الرسائل حسب القناة
+        const channels = ['facebook', 'web', 'whatsapp'];
+        const messagesByChannelData = { facebook: 0, web: 0, whatsapp: 0 };
 
-    const analytics = await res.json();
+        for (const channel of channels) {
+          const query = new URLSearchParams({
+            type: channel,
+            ...(startDate && { startDate }),
+            ...(endDate && { endDate }),
+          });
+          const response = await fetch(`/api/messages/${botId}?${query}`, {
+            headers: { 'Authorization': `Bearer ${token}` },
+          });
 
-    // عرض البيانات النصية
-    const adjustedMessagesCount = Math.round((analytics.messagesCount || 0) / 3);
-    document.getElementById('messagesCount').textContent = `عدد الرسائل: ${adjustedMessagesCount}`;
-    document.getElementById('activeRules').textContent = `عدد القواعد النشطة: ${analytics.activeRules || 0}`;
+          if (!response.ok) {
+            throw new Error('فشل في جلب الرسائل');
+          }
 
-    // عرض رسم بياني بسيط باستخدام Chartist.js
-    const chartElement = document.getElementById('messagesChart');
-    if (chartElement) {
-      new Chartist.Pie('#messagesChart', {
-        labels: ['الرسائل', 'القواعد النشطة'],
-        series: [adjustedMessagesCount, analytics.activeRules || 0],
-      }, {
-        width: '300px',
-        height: '150px',
-        chartPadding: 10,
-        labelOffset: 30,
-        labelDirection: 'explode',
-        labelInterpolationFnc: function(value) {
-          return value;
+          const conversations = await response.json();
+          let messageCount = 0;
+          conversations.forEach(conv => {
+            messageCount += conv.messages.length;
+          });
+          messagesByChannelData[channel] = messageCount;
         }
-      });
+
+        // رسم Pie Chart لتوزيع الرسائل حسب القناة
+        new Chartist.Pie('#messagesByChannelChart', {
+          series: [
+            messagesByChannelData.facebook,
+            messagesByChannelData.web,
+            messagesByChannelData.whatsapp
+          ],
+          labels: ['فيسبوك', 'ويب', 'واتساب']
+        }, {
+          donut: true,
+          donutWidth: 60,
+          startAngle: 270,
+          total: messagesByChannelData.facebook + messagesByChannelData.web + messagesByChannelData.whatsapp,
+          showLabel: true
+        });
+
+        // 2. معدل الرسائل يوميًا
+        const dailyQuery = new URLSearchParams({
+          ...(startDate && { startDate }),
+          ...(endDate && { endDate }),
+        });
+        const dailyResponse = await fetch(`/api/messages/daily/${botId}?${dailyQuery}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (!dailyResponse.ok) {
+          throw new Error('فشل في جلب معدل الرسائل يوميًا');
+        }
+
+        const dailyData = await dailyResponse.json();
+        const labels = dailyData.map(item => item.date);
+        const series = dailyData.map(item => item.count);
+
+        // رسم Line Chart لمعدل الرسائل يوميًا
+        new Chartist.Line('#dailyMessagesChart', {
+          labels: labels,
+          series: [series]
+        }, {
+          fullWidth: true,
+          chartPadding: {
+            right: 40
+          }
+        });
+
+      } catch (err) {
+        console.error('خطأ في تحميل إحصائيات الرسائل:', err);
+        analyticsContent.innerHTML += `
+          <p style="color: red; text-align: center;">تعذر تحميل إحصائيات الرسائل، حاول مرة أخرى لاحقًا.</p>
+        `;
+      }
     }
-
-    analyticsContent.style.display = 'block';
-    spinner.style.display = 'none';
-  } catch (err) {
-    console.error('خطأ في جلب الإحصائيات:', err);
-    alert(`خطأ في جلب الإحصائيات: ${err.message}`);
-
-    // عرض قيم افتراضية في حالة الخطأ
-    document.getElementById('messagesCount').textContent = `عدد الرسائل: 0`;
-    document.getElementById('activeRules').textContent = `عدد القواعد النشطة: 0`;
-
-    // إخفاء الـ spinner وإظهار المحتوى حتى لو حصل خطأ
-    spinner.style.display = 'none';
-    analyticsContent.style.display = 'block';
   }
-}
+
+  window.loadAnalyticsPage = loadAnalyticsPage;
+});
