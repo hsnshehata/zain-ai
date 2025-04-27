@@ -42,6 +42,17 @@ document.addEventListener('DOMContentLoaded', () => {
               <div id="dailyMessagesChart" class="ct-chart"></div>
             </div>
           </div>
+          <div id="feedbackAnalytics">
+            <h3>إحصائيات التقييمات</h3>
+            <div id="feedbackRatio">
+              <h4>نسبة التقييمات الإيجابية مقابل السلبية</h4>
+              <div id="feedbackRatioChart" class="ct-chart"></div>
+            </div>
+            <div id="topNegativeReplies">
+              <h4>أكثر الردود السلبية</h4>
+              <ul id="negativeRepliesList"></ul>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -58,10 +69,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // جلب البيانات وعرضها
     await loadMessagesAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
+    await loadFeedbackAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
 
     // إعادة جلب البيانات عند تطبيق الفلتر
     applyFilterBtn.addEventListener('click', async () => {
       await loadMessagesAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
+      await loadFeedbackAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
     });
 
     async function loadMessagesAnalytics(botId, token, startDate, endDate) {
@@ -138,8 +151,78 @@ document.addEventListener('DOMContentLoaded', () => {
 
       } catch (err) {
         console.error('خطأ في تحميل إحصائيات الرسائل:', err);
-        analyticsContent.innerHTML += `
+        document.getElementById('messagesAnalytics').innerHTML += `
           <p style="color: red; text-align: center;">تعذر تحميل إحصائيات الرسائل، حاول مرة أخرى لاحقًا.</p>
+        `;
+      }
+    }
+
+    async function loadFeedbackAnalytics(botId, token, startDate, endDate) {
+      try {
+        // 1. نسبة التقييمات الإيجابية مقابل السلبية
+        const feedbackQuery = new URLSearchParams({
+          ...(startDate && { startDate }),
+          ...(endDate && { endDate }),
+        });
+        const feedbackResponse = await fetch(`/api/bots/${botId}/feedback?${feedbackQuery}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (!feedbackResponse.ok) {
+          throw new Error('فشل في جلب التقييمات');
+        }
+
+        const feedbackData = await feedbackResponse.json();
+        let positiveCount = 0;
+        let negativeCount = 0;
+
+        feedbackData.forEach(feedback => {
+          if (feedback.feedback === 'positive') {
+            positiveCount++;
+          } else if (feedback.feedback === 'negative') {
+            negativeCount++;
+          }
+        });
+
+        // رسم Pie Chart لنسبة التقييمات
+        new Chartist.Pie('#feedbackRatioChart', {
+          series: [positiveCount, negativeCount],
+          labels: ['إيجابية', 'سلبية']
+        }, {
+          donut: true,
+          donutWidth: 60,
+          startAngle: 270,
+          total: positiveCount + negativeCount,
+          showLabel: true
+        });
+
+        // 2. أكثر الردود السلبية
+        const negativeRepliesResponse = await fetch(`/api/feedback/negative-replies/${botId}?${feedbackQuery}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (!negativeRepliesResponse.ok) {
+          throw new Error('فشل في جلب الردود السلبية');
+        }
+
+        const negativeRepliesData = await negativeRepliesResponse.json();
+        const negativeRepliesList = document.getElementById('negativeRepliesList');
+        negativeRepliesList.innerHTML = '';
+
+        if (negativeRepliesData.length === 0) {
+          negativeRepliesList.innerHTML = '<li>لا توجد ردود سلبية حاليًا.</li>';
+        } else {
+          negativeRepliesData.slice(0, 3).forEach(reply => {
+            const li = document.createElement('li');
+            li.textContent = `${reply.messageContent} (عدد التقييمات السلبية: ${reply.count})`;
+            negativeRepliesList.appendChild(li);
+          });
+        }
+
+      } catch (err) {
+        console.error('خطأ في تحميل إحصائيات التقييمات:', err);
+        document.getElementById('feedbackAnalytics').innerHTML += `
+          <p style="color: red; text-align: center;">تعذر تحميل إحصائيات التقييمات، حاول مرة أخرى لاحقًا.</p>
         `;
       }
     }
