@@ -227,23 +227,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (userNamesCache[userId]) {
               userName = userNamesCache[userId];
             } else {
-              try {
-                const fbUserResponse = await fetch(`/api/messages/facebook-user/${userId}`, {
-                  headers: { 'Authorization': `Bearer ${token}` },
-                });
-                if (fbUserResponse.ok) {
-                  const fbUser = await fbUserResponse.json();
-                  userName = fbUser.name || userId;
-                  userNamesCache[userId] = userName;
-                } else {
-                  userName = `مستخدم فيسبوك ${userId}`; // اسم افتراضي لو فيسبوك رفض الطلب
-                  userNamesCache[userId] = userName;
-                }
-              } catch (err) {
-                console.warn('⚠️ فشل في جلب بيانات المستخدم من فيسبوك:', err.message);
-                userName = `مستخدم فيسبوك ${userId}`; // اسم افتراضي في حالة الخطأ
-                userNamesCache[userId] = userName;
-              }
+              // إلغاء جلب بيانات المستخدم من فيسبوك مؤقتًا
+              userName = `مستخدم فيسبوك ${userId}`; // اسم افتراضي
+              userNamesCache[userId] = userName;
             }
           } else if (currentTab === 'whatsapp') {
             userName = `واتساب ${webUserCounter++}`;
