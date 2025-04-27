@@ -131,13 +131,19 @@ async function loadAnalyticsPage() {
   async function fetchAnalyticsData() {
     try {
       spinner.style.display = 'flex';
+      analyticsContent.style.display = 'none'; // إخفاء المحتوى لحين تحميل البيانات
 
+      // جلب بيانات الرسائل
       const { startDate, endDate } = getDateRange();
       const messagesQuery = `/api/messages/${selectedBotId}?type=all${startDate ? `&startDate=${startDate.toISOString()}` : ''}${endDate ? `&endDate=${endDate.toISOString()}` : ''}`;
+      console.log('Fetching messages with query:', messagesQuery);
       const messagesRes = await fetch(messagesQuery, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!messagesRes.ok) throw new Error('فشل في جلب بيانات الرسائل');
+      if (!messagesRes.ok) {
+        const errorText = await messagesRes.text();
+        throw new Error(`فشل في جلب بيانات الرسائل: ${messagesRes.status} - ${errorText}`);
+      }
       const messages = await messagesRes.json();
 
       // تحليل الرسائل
@@ -174,10 +180,14 @@ async function loadAnalyticsPage() {
       const peakHour = messagesByHour.indexOf(Math.max(...messagesByHour));
 
       // جلب بيانات القواعد
+      console.log('Fetching rules for botId:', selectedBotId);
       const rulesRes = await fetch(`/api/rules?botId=${selectedBotId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!rulesRes.ok) throw new Error('فشل في جلب بيانات القواعد');
+      if (!rulesRes.ok) {
+        const errorText = await rulesRes.text();
+        throw new Error(`فشل في جلب بيانات القواعد: ${rulesRes.status} - ${errorText}`);
+      }
       const { rules } = await rulesRes.json();
 
       const generalRules = rules.filter(rule => rule.type === 'general').length;
@@ -187,10 +197,14 @@ async function loadAnalyticsPage() {
       const globalRules = role === 'superadmin' ? rules.filter(rule => rule.type === 'global').length : 0;
 
       // جلب بيانات التقييمات
+      console.log('Fetching feedback for botId:', selectedBotId);
       const feedbackRes = await fetch(`/api/bots/${selectedBotId}/feedback`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (!feedbackRes.ok) throw new Error('فشل في جلب بيانات التقييمات');
+      if (!feedbackRes.ok) {
+        const errorText = await feedbackRes.text();
+        throw new Error(`فشل في جلب بيانات التقييمات: ${feedbackRes.status} - ${errorText}`);
+      }
       const feedback = await feedbackRes.json();
 
       const filteredFeedback = feedback.filter(item => {
@@ -303,11 +317,14 @@ async function loadAnalyticsPage() {
         });
       }
 
-      analyticsContent.style.display = 'block';
+      // إظهار المحتوى وإخفاء الـ spinner
       spinner.style.display = 'none';
+      analyticsContent.style.display = 'block';
     } catch (err) {
       console.error('خطأ في جلب الإحصائيات:', err);
-      alert('خطأ في جلب الإحصائيات، يرجى المحاولة لاحقًا');
+      alert(`خطأ في جلب الإحصائيات: ${err.message}`);
+
+      // عرض قيم افتراضية في حالة الخطأ
       document.getElementById('totalMessages').textContent = `إجمالي الرسائل: 0`;
       document.getElementById('facebookMessages').textContent = `رسائل الفيسبوك: 0`;
       document.getElementById('webMessages').textContent = `رسائل الويب: 0`;
@@ -325,7 +342,10 @@ async function loadAnalyticsPage() {
       document.getElementById('negativeFeedback').textContent = `التقييمات السلبية: 0 (0%)`;
       document.getElementById('negativeRepliesList').innerHTML = '<li>لا توجد ردود سلبية حاليًا</li>';
       document.getElementById('peakHours').textContent = `أوقات الذروة: غير متاح`;
+
+      // إخفاء الـ spinner وإظهار المحتوى حتى لو حصل خطأ
       spinner.style.display = 'none';
+      analyticsContent.style.display = 'block';
     }
   }
 
