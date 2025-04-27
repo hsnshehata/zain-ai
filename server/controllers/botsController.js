@@ -17,6 +17,54 @@ exports.getBots = async (req, res) => {
   }
 };
 
+// جلب حالة البوتات (نشط مقابل غير نشط)
+exports.getBotsStatus = async (req, res) => {
+  try {
+    const bots = await Bot.find();
+
+    let activeCount = 0;
+    let inactiveCount = 0;
+
+    bots.forEach(bot => {
+      // نعتبر البوت نشط إذا كان عنده facebookApiKey
+      if (bot.facebookApiKey && bot.facebookApiKey.trim() !== '') {
+        activeCount++;
+      } else {
+        inactiveCount++;
+      }
+    });
+
+    res.status(200).json({
+      active: activeCount,
+      inactive: inactiveCount
+    });
+  } catch (err) {
+    console.error('❌ خطأ في جلب حالة البوتات:', err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر' });
+  }
+};
+
+// جلب توزيع البوتات حسب المستخدمين
+exports.getBotsPerUser = async (req, res) => {
+  try {
+    const users = await User.find().populate('bots');
+
+    const result = users
+      .filter(user => user.bots && user.bots.length > 0) // المستخدمين اللي عندهم بوتات فقط
+      .map(user => ({
+        username: user.username,
+        botCount: user.bots.length
+      }))
+      .sort((a, b) => b.botCount - a.botCount) // ترتيب تنازلي حسب عدد البوتات
+      .slice(0, 5); // أكثر 5 مستخدمين
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error('❌ خطأ في جلب توزيع البوتات حسب المستخدمين:', err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر' });
+  }
+};
+
 // جلب التقييمات بناءً على botId مع اسم المستخدم من فيسبوك (التقييمات المرئية فقط)
 exports.getFeedback = async (req, res) => {
   try {
