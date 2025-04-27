@@ -223,7 +223,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     hidePreviousFeedbackButtons();
 
-    const userMessageDiv紛: Element = document.createElement('div');
+    const userMessageDiv = document.createElement('div');
     userMessageDiv.className = 'message user-message';
     if (isImage && imageData) {
       const img = document.createElement('img');
