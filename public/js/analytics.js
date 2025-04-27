@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // 2. أكثر الردود السلبية
-        const negativeRepliesResponse = await fetch(`/api/feedback/negative-replies/${botId}?${feedbackQuery}`, {
+        const negativeRepliesResponse = await fetch(`/api/bots/feedback/negative-replies/${botId}?${feedbackQuery}`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
 
