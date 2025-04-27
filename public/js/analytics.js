@@ -53,13 +53,19 @@ document.addEventListener('DOMContentLoaded', () => {
           <h3>إحصائيات البوتات</h3>
           <div id="botsStatus">
             <h4>البوتات النشطة مقابل غير النشطة</h4>
-            <div id="botsStatusChart" class="ct-chart"></div>
-            <div id="botsStatusStats" class="stats-text"></div>
+            <div class="section-spinner">
+              <div class="loader"></div>
+            </div>
+            <div id="botsStatusChart" class="ct-chart" style="display: none;"></div>
+            <div id="botsStatusStats" class="stats-text" style="display: none;"></div>
           </div>
           <div id="botsPerUser">
             <h4>توزيع البوتات حسب المستخدمين</h4>
-            <div id="botsPerUserChart" class="ct-chart ct-bar-chart"></div>
-            <div id="botsPerUserStats" class="stats-text"></div>
+            <div class="section-spinner">
+              <div class="loader"></div>
+            </div>
+            <div id="botsPerUserChart" class="ct-chart ct-bar-chart" style="display: none;"></div>
+            <div id="botsPerUserStats" class="stats-text" style="display: none;"></div>
           </div>
         </div>
       `;
@@ -68,51 +74,63 @@ document.addEventListener('DOMContentLoaded', () => {
     content.innerHTML = `
       <h2>التحليلات</h2>
       <div class="analytics-container">
-        <div class="spinner">
-          <div class="loader"></div>
-        </div>
-        <div id="analyticsContent" style="display: none;">
-          <div class="filter-group">
-            <div class="form-group">
-              <label>فلترة البيانات حسب الفترة:</label>
-              <div class="date-filter">
-                <input type="date" id="startDateFilter" placeholder="من تاريخ" />
-                <input type="date" id="endDateFilter" placeholder="إلى تاريخ" />
-                <button id="applyFilterBtn">تطبيق الفلتر</button>
-              </div>
+        <div class="filter-group">
+          <div class="form-group">
+            <label>فلترة البيانات حسب الفترة:</label>
+            <div class="date-filter">
+              <input type="date" id="startDateFilter" placeholder="من تاريخ" />
+              <input type="date" id="endDateFilter" placeholder="إلى تاريخ" />
+              <button id="applyFilterBtn">تطبيق الفلتر</button>
             </div>
           </div>
+        </div>
+        <div id="analyticsContent">
           <div id="messagesAnalytics">
             <h3>إحصائيات الرسائل</h3>
             <div id="messagesByChannel">
               <h4>توزيع الرسائل حسب القناة</h4>
-              <div id="messagesByChannelChart" class="ct-chart"></div>
-              <div id="messagesByChannelStats" class="stats-text"></div>
+              <div class="section-spinner">
+                <div class="loader"></div>
+              </div>
+              <div id="messagesByChannelChart" class="ct-chart" style="display: none;"></div>
+              <div id="messagesByChannelStats" class="stats-text" style="display: none;"></div>
             </div>
             <div id="dailyMessages">
               <h4>معدل الرسائل يوميًا</h4>
-              <div id="dailyMessagesChart" class="ct-chart"></div>
-              <div id="dailyMessagesStats" class="stats-text"></div>
+              <div class="section-spinner">
+                <div class="loader"></div>
+              </div>
+              <div id="dailyMessagesChart" class="ct-chart" style="display: none;"></div>
+              <div id="dailyMessagesStats" class="stats-text" style="display: none;"></div>
             </div>
           </div>
           <div id="feedbackAnalytics">
             <h3>إحصائيات التقييمات</h3>
             <div id="feedbackRatio">
               <h4>نسبة التقييمات الإيجابية مقابل السلبية</h4>
-              <div id="feedbackRatioChart" class="ct-chart"></div>
-              <div id="feedbackRatioStats" class="stats-text"></div>
+              <div class="section-spinner">
+                <div class="loader"></div>
+              </div>
+              <div id="feedbackRatioChart" class="ct-chart" style="display: none;"></div>
+              <div id="feedbackRatioStats" class="stats-text" style="display: none;"></div>
             </div>
             <div id="topNegativeReplies">
               <h4>أكثر الردود السلبية</h4>
-              <ul id="negativeRepliesList"></ul>
+              <div class="section-spinner">
+                <div class="loader"></div>
+              </div>
+              <ul id="negativeRepliesList" style="display: none;"></ul>
             </div>
           </div>
           <div id="rulesAnalytics">
             <h3>إحصائيات القواعد</h3>
             <div id="rulesType">
               <h4>توزيع أنواع القواعد</h4>
-              <div id="rulesTypeChart" class="ct-chart"></div>
-              <div id="rulesTypeStats" class="stats-text"></div>
+              <div class="section-spinner">
+                <div class="loader"></div>
+              </div>
+              <div id="rulesTypeChart" class="ct-chart" style="display: none;"></div>
+              <div id="rulesTypeStats" class="stats-text" style="display: none;"></div>
             </div>
           </div>
           ${botsAnalyticsSection}
@@ -121,16 +139,11 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
 
     const analyticsContent = document.getElementById('analyticsContent');
-    const spinner = document.querySelector('.spinner');
     const startDateFilter = document.getElementById('startDateFilter');
     const endDateFilter = document.getElementById('endDateFilter');
     const applyFilterBtn = document.getElementById('applyFilterBtn');
 
-    // إخفاء السبينر وإظهار المحتوى
-    spinner.style.display = 'none';
-    analyticsContent.style.display = 'block';
-
-    // جلب البيانات وعرضها
+    // جلب البيانات بشكل متتالي (Lazy Loading)
     await loadMessagesAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
     await loadFeedbackAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
     await loadRulesAnalytics(selectedBotId, token);
@@ -151,6 +164,10 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadMessagesAnalytics(botId, token, startDate, endDate) {
       try {
         // 1. عدد الرسائل حسب القناة
+        const messagesByChannelSpinner = document.querySelector('#messagesByChannel .section-spinner');
+        const messagesByChannelChart = document.getElementById('messagesByChannelChart');
+        const messagesByChannelStats = document.getElementById('messagesByChannelStats');
+
         const channels = ['facebook', 'web', 'whatsapp'];
         const messagesByChannelData = { facebook: 0, web: 0, whatsapp: 0 };
 
@@ -195,7 +212,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // إضافة الإحصائيات النصية للرسائل
-        const messagesByChannelStats = document.getElementById('messagesByChannelStats');
         messagesByChannelStats.innerHTML = `
           <p>إجمالي الرسائل: ${totalMessages}</p>
           <p>رسائل فيسبوك: ${messagesByChannelData.facebook}</p>
@@ -203,7 +219,16 @@ document.addEventListener('DOMContentLoaded', () => {
           <p>رسائل واتساب: ${messagesByChannelData.whatsapp}</p>
         `;
 
+        // إخفاء السبينر وإظهار المحتوى
+        messagesByChannelSpinner.style.display = 'none';
+        messagesByChannelChart.style.display = 'block';
+        messagesByChannelStats.style.display = 'block';
+
         // 2. معدل الرسائل يوميًا
+        const dailyMessagesSpinner = document.querySelector('#dailyMessages .section-spinner');
+        const dailyMessagesChart = document.getElementById('dailyMessagesChart');
+        const dailyMessagesStats = document.getElementById('dailyMessagesStats');
+
         const dailyQuery = new URLSearchParams({
           ...(startDate && { startDate }),
           ...(endDate && { endDate }),
@@ -232,11 +257,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // إضافة الإحصائيات النصية لمعدل الرسائل
-        const dailyMessagesStats = document.getElementById('dailyMessagesStats');
         const totalDailyMessages = series.reduce((sum, count) => sum + count, 0);
         dailyMessagesStats.innerHTML = `
           <p>إجمالي الرسائل في الفترة: ${totalDailyMessages}</p>
         `;
+
+        // إخفاء السبينر وإظهار المحتوى
+        dailyMessagesSpinner.style.display = 'none';
+        dailyMessagesChart.style.display = 'block';
+        dailyMessagesStats.style.display = 'block';
 
       } catch (err) {
         console.error('خطأ في تحميل إحصائيات الرسائل:', err);
@@ -249,6 +278,10 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadFeedbackAnalytics(botId, token, startDate, endDate) {
       try {
         // 1. نسبة التقييمات الإيجابية مقابل السلبية
+        const feedbackRatioSpinner = document.querySelector('#feedbackRatio .section-spinner');
+        const feedbackRatioChart = document.getElementById('feedbackRatioChart');
+        const feedbackRatioStats = document.getElementById('feedbackRatioStats');
+
         const feedbackQuery = new URLSearchParams({
           ...(startDate && { startDate }),
           ...(endDate && { endDate }),
@@ -290,14 +323,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // إضافة الإحصائيات النصية للتقييمات
-        const feedbackRatioStats = document.getElementById('feedbackRatioStats');
         feedbackRatioStats.innerHTML = `
           <p>إجمالي التقييمات: ${totalFeedback}</p>
           <p>التقييمات الإيجابية: ${positiveCount} (${positivePercentage}%)</p>
           <p>التقييمات السلبية: ${negativeCount} (${negativePercentage}%)</p>
         `;
 
+        // إخفاء السبينر وإظهار المحتوى
+        feedbackRatioSpinner.style.display = 'none';
+        feedbackRatioChart.style.display = 'block';
+        feedbackRatioStats.style.display = 'block';
+
         // 2. أكثر الردود السلبية
+        const negativeRepliesSpinner = document.querySelector('#topNegativeReplies .section-spinner');
+        const negativeRepliesList = document.getElementById('negativeRepliesList');
+
         const negativeRepliesResponse = await fetch(`/api/bots/feedback/negative-replies/${botId}?${feedbackQuery}`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
@@ -307,7 +347,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const negativeRepliesData = await negativeRepliesResponse.json();
-        const negativeRepliesList = document.getElementById('negativeRepliesList');
         negativeRepliesList.innerHTML = '';
 
         if (negativeRepliesData.length === 0) {
@@ -320,6 +359,10 @@ document.addEventListener('DOMContentLoaded', () => {
           });
         }
 
+        // إخفاء السبينر وإظهار المحتوى
+        negativeRepliesSpinner.style.display = 'none';
+        negativeRepliesList.style.display = 'block';
+
       } catch (err) {
         console.error('خطأ في تحميل إحصائيات التقييمات:', err);
         document.getElementById('feedbackAnalytics').innerHTML += `
@@ -331,6 +374,10 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadRulesAnalytics(botId, token) {
       try {
         // 1. توزيع أنواع القواعد
+        const rulesTypeSpinner = document.querySelector('#rulesType .section-spinner');
+        const rulesTypeChart = document.getElementById('rulesTypeChart');
+        const rulesTypeStats = document.getElementById('rulesTypeStats');
+
         const rulesQuery = new URLSearchParams({ botId });
         const rulesResponse = await fetch(`/api/rules?${rulesQuery}`, {
           headers: { 'Authorization': `Bearer ${token}` },
@@ -381,7 +428,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // إضافة الإحصائيات النصية لتوزيع أنواع القواعد
-        const rulesTypeStats = document.getElementById('rulesTypeStats');
         rulesTypeStats.innerHTML = `
           <p>إجمالي القواعد: ${totalRules}</p>
           <p>قواعد عامة: ${rulesTypesCount.general} (${generalPercentage}%)</p>
@@ -390,6 +436,11 @@ document.addEventListener('DOMContentLoaded', () => {
           <p>قواعد سؤال وجواب: ${rulesTypesCount.qa} (${qaPercentage}%)</p>
           <p>قواعد API: ${rulesTypesCount.api} (${apiPercentage}%)</p>
         `;
+
+        // إخفاء السبينر وإظهار المحتوى
+        rulesTypeSpinner.style.display = 'none';
+        rulesTypeChart.style.display = 'block';
+        rulesTypeStats.style.display = 'block';
 
       } catch (err) {
         console.error('خطأ في تحميل إحصائيات القواعد:', err);
@@ -402,6 +453,10 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadBotsAnalytics(token) {
       try {
         // 1. البوتات النشطة مقابل غير النشطة
+        const botsStatusSpinner = document.querySelector('#botsStatus .section-spinner');
+        const botsStatusChart = document.getElementById('botsStatusChart');
+        const botsStatusStats = document.getElementById('botsStatusStats');
+
         const statusResponse = await fetch(`/api/bots/status`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
@@ -428,14 +483,22 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // إضافة الإحصائيات النصية لحالة البوتات
-        const botsStatusStats = document.getElementById('botsStatusStats');
         botsStatusStats.innerHTML = `
           <p>إجمالي البوتات: ${totalBots}</p>
           <p>البوتات النشطة: ${statusData.active} (${activePercentage}%)</p>
           <p>البوتات غير النشطة: ${statusData.inactive} (${inactivePercentage}%)</p>
         `;
 
+        // إخفاء السبينر وإظهار المحتوى
+        botsStatusSpinner.style.display = 'none';
+        botsStatusChart.style.display = 'block';
+        botsStatusStats.style.display = 'block';
+
         // 2. توزيع البوتات حسب المستخدمين
+        const botsPerUserSpinner = document.querySelector('#botsPerUser .section-spinner');
+        const botsPerUserChart = document.getElementById('botsPerUserChart');
+        const botsPerUserStats = document.getElementById('botsPerUserStats');
+
         const perUserResponse = await fetch(`/api/bots/per-user`, {
           headers: { 'Authorization': `Bearer ${token}` },
         });
@@ -462,12 +525,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // إضافة الإحصائيات النصية لتوزيع البوتات
-        const botsPerUserStats = document.getElementById('botsPerUserStats');
         let statsHtml = '<p>توزيع البوتات حسب المستخدمين:</p>';
         perUserData.forEach(item => {
           statsHtml += `<p>${item.username}: ${item.botCount} بوت</p>`;
         });
         botsPerUserStats.innerHTML = statsHtml;
+
+        // إخفاء السبينر وإظهار المحتوى
+        botsPerUserSpinner.style.display = 'none';
+        botsPerUserChart.style.display = 'block';
+        botsPerUserStats.style.display = 'block';
 
       } catch (err) {
         console.error('خطأ في تحميل إحصائيات البوتات:', err);
