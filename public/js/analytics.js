@@ -102,7 +102,6 @@ async function loadAnalyticsPage() {
     let startDate, endDate;
 
     if (period === 'all') {
-      // "طوال فترة الاستخدام" يعني بدون فلتر زمني
       startDate = null;
       endDate = null;
     } else if (period === 'day') {
@@ -215,7 +214,7 @@ async function loadAnalyticsPage() {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3);
 
-      // عرض البيانات
+      // عرض البيانات النصية أولًا
       document.getElementById('totalMessages').textContent = `إجمالي الرسائل: ${totalMessages}`;
       document.getElementById('facebookMessages').textContent = `رسائل الفيسبوك: ${facebookMessages}`;
       document.getElementById('webMessages').textContent = `رسائل الويب: ${webMessages}`;
@@ -239,54 +238,70 @@ async function loadAnalyticsPage() {
         ? topNegativeReplies.map(([reply, count]) => `<li>${reply} (${count} تقييمات سلبية)</li>`).join('')
         : '<li>لا توجد ردود سلبية حاليًا</li>';
 
-      // تدمير المخططات القديمة قبل إنشاء جديدة
-      if (messagesTypeChart) messagesTypeChart.destroy();
-      if (messagesDailyChart) messagesDailyChart.destroy();
-      if (feedbackChart) feedbackChart.destroy();
+      // تدمير المخططات القديمة إذا كانت موجودة
+      if (messagesTypeChart) {
+        messagesTypeChart.destroy();
+        messagesTypeChart = null;
+      }
+      if (messagesDailyChart) {
+        messagesDailyChart.destroy();
+        messagesDailyChart = null;
+      }
+      if (feedbackChart) {
+        feedbackChart.destroy();
+        feedbackChart = null;
+      }
 
-      // رسم بياني لتوزيع الرسائل حسب النوع
-      const messagesTypeChartCtx = document.getElementById('messagesTypeChart').getContext('2d');
-      messagesTypeChart = new Chart(messagesTypeChartCtx, {
-        type: 'pie',
-        data: {
-          labels: ['فيسبوك', 'ويب', 'واتساب'],
-          datasets: [{
-            label: 'توزيع الرسائل',
-            data: [facebookMessages, webMessages, whatsappMessages],
-            backgroundColor: ['#3b5998', '#00cc00', '#25d366'],
-          }],
-        },
-      });
+      // رسم المخططات فقط إذا كانت العناصر موجودة في الـ DOM
+      const messagesTypeChartCanvas = document.getElementById('messagesTypeChart');
+      if (messagesTypeChartCanvas) {
+        const messagesTypeChartCtx = messagesTypeChartCanvas.getContext('2d');
+        messagesTypeChart = new Chart(messagesTypeChartCtx, {
+          type: 'pie',
+          data: {
+            labels: ['فيسبوك', 'ويب', 'واتساب'],
+            datasets: [{
+              label: 'توزيع الرسائل',
+              data: [facebookMessages, webMessages, whatsappMessages],
+              backgroundColor: ['#3b5998', '#00cc00', '#25d366'],
+            }],
+          },
+        });
+      }
 
-      // رسم بياني خطي للتفاعل اليومي
-      const messagesDailyChartCtx = document.getElementById('messagesDailyChart').getContext('2d');
-      messagesDailyChart = new Chart(messagesDailyChartCtx, {
-        type: 'line',
-        data: {
-          labels: labels,
-          datasets: [{
-            label: 'عدد الرسائل اليومية',
-            data: dailyMessages,
-            borderColor: '#007bff',
-            fill: false,
-          }],
-        },
-        options: { scales: { y: { beginAtZero: true } } },
-      });
+      const messagesDailyChartCanvas = document.getElementById('messagesDailyChart');
+      if (messagesDailyChartCanvas) {
+        const messagesDailyChartCtx = messagesDailyChartCanvas.getContext('2d');
+        messagesDailyChart = new Chart(messagesDailyChartCtx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'عدد الرسائل اليومية',
+              data: dailyMessages,
+              borderColor: '#007bff',
+              fill: false,
+            }],
+          },
+          options: { scales: { y: { beginAtZero: true } } },
+        });
+      }
 
-      // رسم بياني للتقييمات
-      const feedbackChartCtx = document.getElementById('feedbackChart').getContext('2d');
-      feedbackChart = new Chart(feedbackChartCtx, {
-        type: 'pie',
-        data: {
-          labels: ['إيجابي', 'سلبي'],
-          datasets: [{
-            label: 'التقييمات',
-            data: [positiveFeedback, negativeFeedback],
-            backgroundColor: ['#28a745', '#dc3545'],
-          }],
-        },
-      });
+      const feedbackChartCanvas = document.getElementById('feedbackChart');
+      if (feedbackChartCanvas) {
+        const feedbackChartCtx = feedbackChartCanvas.getContext('2d');
+        feedbackChart = new Chart(feedbackChartCtx, {
+          type: 'pie',
+          data: {
+            labels: ['إيجابي', 'سلبي'],
+            datasets: [{
+              label: 'التقييمات',
+              data: [positiveFeedback, negativeFeedback],
+              backgroundColor: ['#28a745', '#dc3545'],
+            }],
+          },
+        });
+      }
 
       analyticsContent.style.display = 'block';
       spinner.style.display = 'none';
@@ -314,8 +329,10 @@ async function loadAnalyticsPage() {
     }
   }
 
-  // استدعاء الدالة عند التحميل الأولي
-  fetchAnalyticsData();
+  // التأكد من تحميل الـ DOM قبل استدعاء الدالة
+  document.addEventListener('DOMContentLoaded', () => {
+    fetchAnalyticsData();
+  });
 
   // إضافة حدث لتطبيق الفلتر
   applyFilterBtn.addEventListener('click', fetchAnalyticsData);
