@@ -131,7 +131,7 @@ async function loadAnalyticsPage() {
   }
 
   // دالة لجلب البيانات مع مهلة زمنية (timeout)
-  async function fetchWithTimeout(url, options, timeout = 5000) {
+  async function fetchWithTimeout(url, options, timeout = 3000) {
     const controller = new AbortController();
     const id = setTimeout(() => controller.abort(), timeout);
 
@@ -160,7 +160,7 @@ async function loadAnalyticsPage() {
       console.log('Fetching messages with query:', messagesQuery);
       const messagesRes = await fetchWithTimeout(messagesQuery, {
         headers: { Authorization: `Bearer ${token}` },
-      }, 5000);
+      }, 3000);
 
       let messages = [];
       if (messagesRes.ok) {
@@ -207,7 +207,7 @@ async function loadAnalyticsPage() {
       console.log('Fetching rules for botId:', selectedBotId);
       const rulesRes = await fetchWithTimeout(`/api/rules?botId=${selectedBotId}`, {
         headers: { Authorization: `Bearer ${token}` },
-      }, 5000);
+      }, 3000);
 
       let rules = [];
       if (rulesRes.ok) {
@@ -228,7 +228,7 @@ async function loadAnalyticsPage() {
       console.log('Fetching feedback for botId:', selectedBotId);
       const feedbackRes = await fetchWithTimeout(`/api/bots/${selectedBotId}/feedback`, {
         headers: { Authorization: `Bearer ${token}` },
-      }, 5000);
+      }, 3000);
 
       let feedback = [];
       if (feedbackRes.ok) {
