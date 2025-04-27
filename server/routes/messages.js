@@ -1,8 +1,11 @@
+// /server/routes/messages.js
+
 const express = require('express');
 const router = express.Router();
 const Conversation = require('../models/Conversation');
 const authenticate = require('../middleware/authenticate');
 const request = require('request');
+const messagesController = require('../controllers/messagesController');
 
 // Get conversations for a bot
 router.get('/:botId', authenticate, async (req, res) => {
@@ -32,6 +35,9 @@ router.get('/:botId', authenticate, async (req, res) => {
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 });
+
+// Get daily messages for a bot
+router.get('/daily/:botId', authenticate, messagesController.getDailyMessages);
 
 // Get Facebook user name
 router.get('/facebook-user/:userId', authenticate, async (req, res) => {
