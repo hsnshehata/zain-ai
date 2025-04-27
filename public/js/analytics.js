@@ -68,6 +68,19 @@ document.addEventListener('DOMContentLoaded', () => {
               <ul id="topRulesList"></ul>
             </div>
           </div>
+          <div id="botsAnalytics">
+            <h3>إحصائيات البوتات</h3>
+            <div id="botsStatus">
+              <h4>البوتات النشطة مقابل غير النشطة</h4>
+              <div id="botsStatusChart" class="ct-chart"></div>
+              <div id="botsStatusStats" class="stats-text"></div>
+            </div>
+            <div id="botsPerUser">
+              <h4>توزيع البوتات حسب المستخدمين</h4>
+              <div id="botsPerUserChart" class="ct-chart ct-bar-chart"></div>
+              <div id="botsPerUserStats" class="stats-text"></div>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -86,12 +99,14 @@ document.addEventListener('DOMContentLoaded', () => {
     await loadMessagesAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
     await loadFeedbackAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
     await loadRulesAnalytics(selectedBotId, token);
+    await loadBotsAnalytics(token);
 
     // إعادة جلب البيانات عند تطبيق الفلتر
     applyFilterBtn.addEventListener('click', async () => {
       await loadMessagesAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
       await loadFeedbackAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
-      await loadRulesAnalytics(selectedBotId, token); // القواعد مش هتتأثر بالتاريخ حاليًا
+      await loadRulesAnalytics(selectedBarChart(selectedBotId, token); // القواعد مش هتتأثر بالتاريخ حاليًا
+      await loadBotsAnalytics(token); // البوتات مش هتتأثر بالتاريخ حاليًا
     });
 
     async function loadMessagesAnalytics(botId, token, startDate, endDate) {
@@ -364,6 +379,84 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('خطأ في تحميل إحصائيات القواعد:', err);
         document.getElementById('rulesAnalytics').innerHTML += `
           <p style="color: red; text-align: center;">تعذر تحميل إحصائيات القواعد، حاول مرة أخرى لاحقًا.</p>
+        `;
+      }
+    }
+
+    async function loadBotsAnalytics(token) {
+      try {
+        // 1. البوتات النشطة مقابل غير النشطة
+        const statusResponse = await fetch(`/api/bots/status`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (!statusResponse.ok) {
+          throw new Error('فشل في جلب حالة البوتات');
+        }
+
+        const statusData = await statusResponse.json();
+        const totalBots = statusData.active + statusData.inactive;
+        const activePercentage = totalBots > 0 ? ((statusData.active / totalBots) * 100).toFixed(1) : 0;
+        const inactivePercentage = totalBots > 0 ? ((statusData.inactive / totalBots) * 100).toFixed(1) : 0;
+
+        // رسم Pie Chart للبوتات النشطة مقابل غير النشطة
+        new Chartist.Pie('#botsStatusChart', {
+          series: [statusData.active, statusData.inactive],
+          labels: ['نشط', 'غير نشط']
+        }, {
+          donut: true,
+          donutWidth: 60,
+          startAngle: 270,
+          total: totalBots,
+          showLabel: true
+        });
+
+        // إضافة الإحصائيات النصية لحالة البوتات
+        const botsStatusStats = document.getElementById('botsStatusStats');
+        botsStatusStats.innerHTML = `
+          <p>إجمالي البوتات: ${totalBots}</p>
+          <p>البوتات النشطة: ${statusData.active} (${activePercentage}%)</p>
+          <p>البوتات غير النشطة: ${statusData.inactive} (${inactivePercentage}%)</p>
+        `;
+
+        // 2. توزيع البوتات حسب المستخدمين
+        const perUserResponse = await fetch(`/api/bots/per-user`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (!perUserResponse.ok) {
+          throw new Error('فشل في جلب توزيع البوتات حسب المستخدمين');
+        }
+
+        const perUserData = await perUserResponse.json();
+        const labels = perUserData.map(item => item.username);
+        const series = perUserData.map(item => item.botCount);
+
+        // رسم Bar Chart لتوزيع البوتات حسب المستخدمين
+        new Chartist.Bar('#botsPerUserChart', {
+          labels: labels,
+          series: [series]
+        }, {
+          axisX: {
+            labelInterpolationFnc: value => value.length > 10 ? value.substring(0, 10) + '...' : value // تقصير الأسماء الطويلة
+          },
+          axisY: {
+            onlyInteger: true // التأكد إن القيم صحيحة (عدد البوتات)
+          }
+        });
+
+        // إضافة الإحصائيات النصية لتوزيع البوتات
+        const botsPerUserStats = document.getElementById('botsPerUserStats');
+        let statsHtml = '<p>توزيع البوتات حسب المستخدمين:</p>';
+        perUserData.forEach(item => {
+          statsHtml += `<p>${item.username}: ${item.botCount} بوت</p>`;
+        });
+        botsPerUserStats.innerHTML = statsHtml;
+
+      } catch (err) {
+        console.error('خطأ في تحميل إحصائيات البوتات:', err);
+        document.getElementById('botsAnalytics').innerHTML += `
+          <p style="color: red; text-align: center;">تعذر تحميل إحصائيات البوتات، حاول مرة أخرى لاحقًا.</p>
         `;
       }
     }
