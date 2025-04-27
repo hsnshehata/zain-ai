@@ -9,9 +9,6 @@ const rulesController = require('../controllers/rulesController');
 // جلب كل القواعد مع دعم الفلترة والبحث والـ pagination
 router.get('/', authenticate, rulesController.getRules);
 
-// جلب بيانات استخدام القواعد
-router.get('/usage', authenticate, rulesController.getRulesUsage);
-
 // جلب قاعدة محددة
 router.get('/:id', authenticate, async (req, res) => {
   try {
