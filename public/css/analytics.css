@@ -1,3 +1,5 @@
+/* /public/css/analytics.css */
+
 /* analytics.css - Styles for Analytics Page */
 
 /* Analytics Container */
@@ -91,9 +93,7 @@
 }
 
 /* Analytics Sections */
-#rulesAnalytics,
-#feedbackAnalytics,
-#interactionAnalytics {
+#messagesAnalytics {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   padding: 20px;
@@ -101,9 +101,8 @@
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
-#rulesAnalytics h3,
-#feedbackAnalytics h3,
-#interactionAnalytics h3 {
+#messagesAnalytics h3,
+#messagesAnalytics h4 {
   margin-top: 0;
   margin-bottom: 15px;
   color: #fff;
@@ -112,36 +111,8 @@
   padding-bottom: 5px;
 }
 
-#rulesAnalytics p,
-#feedbackAnalytics p,
-#interactionAnalytics p {
-  margin: 8px 0;
-  color: #ddd;
-  font-size: 1em;
-}
-
-/* Top Negative Replies */
-#topNegativeReplies h4 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  color: #fff;
+#messagesAnalytics h4 {
   font-size: 1.2em;
-}
-
-#negativeRepliesList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-#negativeRepliesList li {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 10px;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  color: #ddd;
-  font-size: 0.9em;
-  word-wrap: break-word;
 }
 
 /* Charts */
@@ -150,6 +121,28 @@
   max-height: 150px;
   margin: 20px auto;
   display: block;
+}
+
+#messagesByChannelChart .ct-label {
+  fill: #fff;
+  color: #fff;
+  font-size: 0.9em;
+}
+
+#dailyMessagesChart .ct-label {
+  fill: #fff;
+  color: #fff;
+  font-size: 0.9em;
+}
+
+#dailyMessagesChart .ct-series-a .ct-line {
+  stroke: #007bff;
+  stroke-width: 2px;
+}
+
+#dailyMessagesChart .ct-series-a .ct-point {
+  stroke: #007bff;
+  stroke-width: 8px;
 }
 
 /* Responsive Design */
@@ -182,9 +175,7 @@
     box-sizing: border-box;
   }
 
-  #rulesAnalytics,
-  #feedbackAnalytics,
-  #interactionAnalytics {
+  #messagesAnalytics {
     padding: 15px;
   }
 
