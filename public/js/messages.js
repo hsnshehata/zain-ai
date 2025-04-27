@@ -235,9 +235,14 @@ document.addEventListener('DOMContentLoaded', () => {
                   const fbUser = await fbUserResponse.json();
                   userName = fbUser.name || userId;
                   userNamesCache[userId] = userName;
+                } else {
+                  userName = `مستخدم فيسبوك ${userId}`; // اسم افتراضي لو فيسبوك رفض الطلب
+                  userNamesCache[userId] = userName;
                 }
               } catch (err) {
-                console.error('Error fetching Facebook user name:', err);
+                console.warn('⚠️ فشل في جلب بيانات المستخدم من فيسبوك:', err.message);
+                userName = `مستخدم فيسبوك ${userId}`; // اسم افتراضي في حالة الخطأ
+                userNamesCache[userId] = userName;
               }
             }
           } else if (currentTab === 'whatsapp') {
