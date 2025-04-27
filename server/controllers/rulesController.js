@@ -17,7 +17,10 @@ exports.getRules = async (req, res) => {
     }
 
     let query = { $or: [{ botId }, { type: 'global' }] };
-    
+    if (req.user.role !== 'superadmin') {
+      query = { botId }; // المستخدم العادي يشوف قواعده فقط
+    }
+
     // فلترة حسب نوع القاعدة
     if (type && type !== 'all') {
       query = { ...query, type };
@@ -48,7 +51,7 @@ exports.getRules = async (req, res) => {
     });
   } catch (err) {
     console.error('❌ خطأ في جلب القواعد:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر' });
+    res.status(500).json({ message: 'خطأ في السيرفر أثناء جلب القواعد', error: err.message });
   }
 };
 
@@ -80,24 +83,59 @@ exports.getRulesUsage = async (req, res) => {
 exports.createRule = async (req, res) => {
   const { botId, type, content } = req.body;
 
+  // التحقق من الحقول الأساسية
   if (!botId || !type || !content) {
-    return res.status(400).json({ message: 'جميع الحقول مطلوبة' });
+    return res.status(400).json({ message: 'جميع الحقول مطلوبة (botId, type, content)' });
   }
 
+  // التحقق من صلاحيات السوبر أدمن للقواعد الموحدة
+  if (type === 'global' && req.user.role !== 'superadmin') {
+    return res.status(403).json({ message: 'غير مصرح لك بإنشاء قواعد موحدة' });
+  }
+
+  // التحقق من نوع القاعدة
   const validTypes = ['general', 'products', 'qa', 'global', 'api'];
   if (!validTypes.includes(type)) {
     return res.status(400).json({ message: 'نوع القاعدة غير صالح' });
   }
 
+  // التحقق من هيكلية content بناءً على نوع القاعدة
+  if (type === 'general' || type === 'global') {
+    if (typeof content !== 'string' || content.trim() === '') {
+      return res.status(400).json({ message: 'المحتوى يجب أن يكون سلسلة نصية غير فارغة' });
+    }
+  } else if (type === 'products') {
+    if (!content.product || !content.price || !content.currency) {
+      return res.status(400).json({ message: 'حقول المنتج والسعر والعملة مطلوبة' });
+    }
+    if (typeof content.price !== 'number' || content.price <= 0) {
+      return res.status(400).json({ message: 'السعر يجب أن يكون رقمًا موجبًا' });
+    }
+    if (!['جنيه', 'دولار'].includes(content.currency)) {
+      return res.status(400).json({ message: 'العملة يجب أن تكون جنيه أو دولار' });
+    }
+  } else if (type === 'qa') {
+    if (!content.question || !content.answer) {
+      return res.status(400).json({ message: 'حقول السؤال والإجابة مطلوبة' });
+    }
+    if (typeof content.question !== 'string' || typeof content.answer !== 'string') {
+      return res.status(400).json({ message: 'السؤال والإجابة يجب أن يكونا سلسلتين نصيتين' });
+    }
+  } else if (type === 'api') {
+    if (!content.apiKey || typeof content.apiKey !== 'string' || content.apiKey.trim() === '') {
+      return res.status(400).json({ message: 'مفتاح API يجب أن يكون سلسلة نصية غير فارغة' });
+    }
+  }
+
   try {
-    console.log('📥 إنشاء قاعدة جديدة:', { botId, type, content });
+    console.log('📥 البيانات المرسلة إلى MongoDB:', { botId, type, content });
     const rule = new Rule({ botId, type, content });
     await rule.save();
-    console.log('✅ تم إنشاء القاعدة بنجاح:', rule);
+    console.log('✅ تم حفظ القاعدة بنجاح:', rule);
     res.status(201).json(rule);
   } catch (err) {
     console.error('❌ خطأ في إنشاء القاعدة:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر' });
+    res.status(500).json({ message: 'خطأ في السيرفر أثناء إنشاء القاعدة', error: err.message });
   }
 };
 
@@ -111,6 +149,11 @@ exports.updateRule = async (req, res) => {
       return res.status(404).json({ message: 'القاعدة غير موجودة' });
     }
 
+    if (rule.type === 'global' && req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'غير مصرح لك بتعديل القواعد الموحدة' });
+    }
+
+    // التحقق من نوع القاعدة إذا تم إرساله
     if (type) {
       const validTypes = ['general', 'products', 'qa', 'global', 'api'];
       if (!validTypes.includes(type)) {
@@ -118,7 +161,36 @@ exports.updateRule = async (req, res) => {
       }
     }
 
-    console.log('📥 تعديل قاعدة:', { id: req.params.id, type, content });
+    // التحقق من هيكلية content إذا تم إرساله
+    if (content) {
+      if (type === 'general' || type === 'global') {
+        if (typeof content !== 'string' || content.trim() === '') {
+          return res.status(400).json({ message: 'المحتوى يجب أن يكون سلسلة نصية غير فارغة' });
+        }
+      } else if (type === 'products') {
+        if (!content.product || !content.price || !content.currency) {
+          return res.status(400).json({ message: 'حقول المنتج والسعر والعملة مطلوبة' });
+        }
+        if (typeof content.price !== 'number' || content.price <= 0) {
+          return res.status(400).json({ message: 'السعر يجب أن يكون رقمًا موجبًا' });
+        }
+        if (!['جنيه', 'دولار'].includes(content.currency)) {
+          return res.status(400).json({ message: 'العملة يجب أن تكون جنيه أو دولار' });
+        }
+      } else if (type === 'qa') {
+        if (!content.question || !content.answer) {
+          return res.status(400).json({ message: 'حقول السؤال والإجابة مطلوبة' });
+        }
+        if (typeof content.question !== 'string' || typeof content.answer !== 'string') {
+          return res.status(400).json({ message: 'السؤال والإجابة يجب أن يكونا سلسلتين نصيتين' });
+        }
+      } else if (type === 'api') {
+        if (!content.apiKey || typeof content.apiKey !== 'string' || content.apiKey.trim() === '') {
+          return res.status(400).json({ message: 'مفتاح API يجب أن يكون سلسلة نصية غير فارغة' });
+        }
+      }
+    }
+
     rule.type = type || rule.type;
     rule.content = content || rule.content;
 
@@ -127,7 +199,7 @@ exports.updateRule = async (req, res) => {
     res.status(200).json(rule);
   } catch (err) {
     console.error('❌ خطأ في تعديل القاعدة:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر' });
+    res.status(500).json({ message: 'خطأ في السيرفر أثناء تعديل القاعدة', error: err.message });
   }
 };
 
@@ -139,13 +211,16 @@ exports.deleteRule = async (req, res) => {
       return res.status(404).json({ message: 'القاعدة غير موجودة' });
     }
 
-    console.log('📥 حذف قاعدة:', { id: req.params.id });
+    if (rule.type === 'global' && req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف القواعد الموحدة' });
+    }
+
     await Rule.deleteOne({ _id: req.params.id });
     console.log('✅ تم حذف القاعدة بنجاح');
     res.status(200).json({ message: 'تم حذف القاعدة بنجاح' });
   } catch (err) {
     console.error('❌ خطأ في حذف القاعدة:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر' });
+    res.status(500).json({ message: 'خطأ في السيرفر أثناء حذف القاعدة', error: err.message });
   }
 };
 
@@ -163,7 +238,7 @@ exports.exportRules = async (req, res) => {
     res.status(200).json(rules);
   } catch (err) {
     console.error('❌ خطأ في تصدير القواعد:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر' });
+    res.status(500).json({ message: 'خطأ في السيرفر أثناء تصدير القواعد', error: err.message });
   }
 };
 
@@ -182,6 +257,9 @@ exports.importRules = async (req, res) => {
       if (!validTypes.includes(rule.type) || !rule.content) {
         return res.status(400).json({ message: 'بيانات القاعدة غير صالحة' });
       }
+      if (rule.type === 'global' && req.user.role !== 'superadmin') {
+        return res.status(403).json({ message: 'غير مصرح لك باستيراد قواعد موحدة' });
+      }
       rule.botId = botId; // التأكد من ربط القاعدة بالـ botId
       rule.createdAt = new Date(); // تحديث تاريخ الإنشاء
     }
@@ -191,6 +269,6 @@ exports.importRules = async (req, res) => {
     res.status(201).json({ message: `تم استيراد ${rules.length} قاعدة بنجاح` });
   } catch (err) {
     console.error('❌ خطأ في استيراد القواعد:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر' });
+    res.status(500).json({ message: 'خطأ في السيرفر أثناء استيراد القواعد', error: err.message });
   }
 };
