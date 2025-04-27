@@ -14,6 +14,14 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    if (!token) {
+      content.innerHTML = `
+        <h2>التحليلات</h2>
+        <p style="color: red;">الرجاء تسجيل الدخول لعرض التحليلات.</p>
+      `;
+      return;
+    }
+
     // جلب بيانات المستخدم الحالي عشان نعرف دوره
     let userRole = '';
     try {
@@ -22,13 +30,19 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       if (userResponse.ok) {
         const userData = await userResponse.json();
+        console.log('بيانات المستخدم:', userData); // Debugging
         userRole = userData.role || '';
       } else {
+        console.error('فشل استدعاء /api/users/me، الكود:', userResponse.status);
         throw new Error('فشل في جلب بيانات المستخدم');
       }
     } catch (err) {
       console.error('خطأ في جلب بيانات المستخدم:', err);
-      userRole = ''; // لو حصل خطأ، بنخلّي الدور فاضي عشان ميظهرش قسم البوتات
+      content.innerHTML = `
+        <h2>التحليلات</h2>
+        <p style="color: red;">تعذر جلب بيانات المستخدم، الرجاء تسجيل الدخول مرة أخرى.</p>
+      `;
+      return;
     }
 
     // بناء HTML بناءً على دور المستخدم
