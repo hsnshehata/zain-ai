@@ -84,6 +84,11 @@ async function loadAnalyticsPage() {
   const endDateFilter = document.getElementById('endDateFilter');
   const applyFilterBtn = document.getElementById('applyFilterBtn');
 
+  // متغيرات لتخزين الرسوم البيانية
+  let messagesTypeChart = null;
+  let messagesDailyChart = null;
+  let feedbackChart = null;
+
   // إظهار/إخفاء فلتر التاريخ المخصص بناءً على اختيار الفترة
   timePeriodFilter.addEventListener('change', () => {
     customDateRange.style.display = timePeriodFilter.value === 'custom' ? 'block' : 'none';
@@ -229,9 +234,14 @@ async function loadAnalyticsPage() {
         ? topNegativeReplies.map(([reply, count]) => `<li>${reply} (${count} تقييمات سلبية)</li>`).join('')
         : '<li>لا توجد ردود سلبية حاليًا</li>';
 
+      // تدمير المخططات القديمة قبل إنشاء جديدة
+      if (messagesTypeChart) messagesTypeChart.destroy();
+      if (messagesDailyChart) messagesDailyChart.destroy();
+      if (feedbackChart) feedbackChart.destroy();
+
       // رسم بياني لتوزيع الرسائل حسب النوع
       const messagesTypeChartCtx = document.getElementById('messagesTypeChart').getContext('2d');
-      new Chart(messagesTypeChartCtx, {
+      messagesTypeChart = new Chart(messagesTypeChartCtx, {
         type: 'pie',
         data: {
           labels: ['فيسبوك', 'ويب', 'واتساب'],
@@ -245,7 +255,7 @@ async function loadAnalyticsPage() {
 
       // رسم بياني خطي للتفاعل اليومي
       const messagesDailyChartCtx = document.getElementById('messagesDailyChart').getContext('2d');
-      new Chart(messagesDailyChartCtx, {
+      messagesDailyChart = new Chart(messagesDailyChartCtx, {
         type: 'line',
         data: {
           labels: labels,
@@ -261,7 +271,7 @@ async function loadAnalyticsPage() {
 
       // رسم بياني للتقييمات
       const feedbackChartCtx = document.getElementById('feedbackChart').getContext('2d');
-      new Chart(feedbackChartCtx, {
+      feedbackChart = new Chart(feedbackChartCtx, {
         type: 'pie',
         data: {
           labels: ['إيجابي', 'سلبي'],
