@@ -55,30 +55,6 @@ exports.getRules = async (req, res) => {
   }
 };
 
-// جلب بيانات استخدام القواعد
-exports.getRulesUsage = async (req, res) => {
-  try {
-    const botId = req.query.botId;
-    if (!botId) {
-      return res.status(400).json({ message: 'معرف البوت (botId) مطلوب' });
-    }
-
-    const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] })
-      .sort({ usageCount: -1 }) // ترتيب تنازلي حسب عدد الاستخدامات
-      .limit(10); // أكثر 10 قواعد استخدامًا
-
-    const result = rules.map(rule => ({
-      content: rule.type === 'qa' ? rule.content.answer : rule.content,
-      usageCount: rule.usageCount || 0
-    }));
-
-    res.status(200).json(result);
-  } catch (err) {
-    console.error('❌ خطأ في جلب بيانات استخدام القواعد:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر' });
-  }
-};
-
 // إنشاء قاعدة جديدة
 exports.createRule = async (req, res) => {
   const { botId, type, content } = req.body;
