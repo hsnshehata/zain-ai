@@ -1,8 +1,24 @@
+// /server/routes/users.js
+
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const authenticate = require('../middleware/authenticate');
+
+// جلب بيانات المستخدم الحالي
+router.get('/me', authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password'); // نجيب بيانات المستخدم من غير الباسوورد
+    if (!user) {
+      return res.status(404).json({ message: 'المستخدم غير موجود' });
+    }
+    res.status(200).json(user);
+  } catch (err) {
+    console.error('❌ خطأ في جلب بيانات المستخدم:', err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر' });
+  }
+});
 
 // جلب كل المستخدمين
 router.get('/', authenticate, async (req, res) => {
