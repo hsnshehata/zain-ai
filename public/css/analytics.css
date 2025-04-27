@@ -147,14 +147,6 @@
   word-wrap: break-word;
 }
 
-/* Charts */
-canvas {
-  max-width: 300px;
-  max-height: 150px;
-  margin: 20px auto;
-  display: block;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
   .analytics-container {
@@ -190,10 +182,5 @@ canvas {
   #feedbackAnalytics,
   #interactionAnalytics {
     padding: 15px;
-  }
-
-  canvas {
-    max-width: 100%;
-    max-height: 150px;
   }
 }
