@@ -56,6 +56,18 @@ document.addEventListener('DOMContentLoaded', () => {
               <ul id="negativeRepliesList"></ul>
             </div>
           </div>
+          <div id="rulesAnalytics">
+            <h3>إحصائيات القواعد</h3>
+            <div id="rulesType">
+              <h4>توزيع أنواع القواعد</h4>
+              <div id="rulesTypeChart" class="ct-chart"></div>
+              <div id="rulesTypeStats" class="stats-text"></div>
+            </div>
+            <div id="topUsedRules">
+              <h4>أكثر القواعد استخدامًا</h4>
+              <ul id="topRulesList"></ul>
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -73,11 +85,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // جلب البيانات وعرضها
     await loadMessagesAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
     await loadFeedbackAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
+    await loadRulesAnalytics(selectedBotId, token);
 
     // إعادة جلب البيانات عند تطبيق الفلتر
     applyFilterBtn.addEventListener('click', async () => {
       await loadMessagesAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
       await loadFeedbackAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
+      await loadRulesAnalytics(selectedBotId, token); // القواعد مش هتتأثر بالتاريخ حاليًا
     });
 
     async function loadMessagesAnalytics(botId, token, startDate, endDate) {
@@ -256,6 +270,100 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error('خطأ في تحميل إحصائيات التقييمات:', err);
         document.getElementById('feedbackAnalytics').innerHTML += `
           <p style="color: red; text-align: center;">تعذر تحميل إحصائيات التقييمات، حاول مرة أخرى لاحقًا.</p>
+        `;
+      }
+    }
+
+    async function loadRulesAnalytics(botId, token) {
+      try {
+        // 1. توزيع أنواع القواعد
+        const rulesQuery = new URLSearchParams({ botId });
+        const rulesResponse = await fetch(`/api/rules?${rulesQuery}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (!rulesResponse.ok) {
+          throw new Error('فشل في جلب القواعد');
+        }
+
+        const rulesData = await rulesResponse.json();
+        const rulesTypesCount = {
+          general: 0,
+          global: 0,
+          products: 0,
+          qa: 0,
+          api: 0
+        };
+
+        rulesData.rules.forEach(rule => {
+          if (rulesTypesCount[rule.type] !== undefined) {
+            rulesTypesCount[rule.type]++;
+          }
+        });
+
+        const totalRules = Object.values(rulesTypesCount).reduce((sum, count) => sum + count, 0);
+        const generalPercentage = totalRules > 0 ? ((rulesTypesCount.general / totalRules) * 100).toFixed(1) : 0;
+        const globalPercentage = totalRules > 0 ? ((rulesTypesCount.global / totalRules) * 100).toFixed(1) : 0;
+        const productsPercentage = totalRules > 0 ? ((rulesTypesCount.products / totalRules) * 100).toFixed(1) : 0;
+        const qaPercentage = totalRules > 0 ? ((rulesTypesCount.qa / totalRules) * 100).toFixed(1) : 0;
+        const apiPercentage = totalRules > 0 ? ((rulesTypesCount.api / totalRules) * 100).toFixed(1) : 0;
+
+        // رسم Pie Chart لتوزيع أنواع القواعد
+        new Chartist.Pie('#rulesTypeChart', {
+          series: [
+            rulesTypesCount.general,
+            rulesTypesCount.global,
+            rulesTypesCount.products,
+            rulesTypesCount.qa,
+            rulesTypesCount.api
+          ],
+          labels: ['عامة', 'موحدة', 'أسعار', 'سؤال وجواب', 'API']
+        }, {
+          donut: true,
+          donutWidth: 60,
+          startAngle: 270,
+          total: totalRules,
+          showLabel: true
+        });
+
+        // إضافة الإحصائيات النصية لتوزيع أنواع القواعد
+        const rulesTypeStats = document.getElementById('rulesTypeStats');
+        rulesTypeStats.innerHTML = `
+          <p>إجمالي القواعد: ${totalRules}</p>
+          <p>قواعد عامة: ${rulesTypesCount.general} (${generalPercentage}%)</p>
+          <p>قواعد موحدة: ${rulesTypesCount.global} (${globalPercentage}%)</p>
+          <p>قواعد أسعار: ${rulesTypesCount.products} (${productsPercentage}%)</p>
+          <p>قواعد سؤال وجواب: ${rulesTypesCount.qa} (${qaPercentage}%)</p>
+          <p>قواعد API: ${rulesTypesCount.api} (${apiPercentage}%)</p>
+        `;
+
+        // 2. أكثر القواعد استخدامًا
+        const usageResponse = await fetch(`/api/rules/usage?botId=${botId}`, {
+          headers: { 'Authorization': `Bearer ${token}` },
+        });
+
+        if (!usageResponse.ok) {
+          throw new Error('فشل في جلب بيانات استخدام القواعد');
+        }
+
+        const usageData = await usageResponse.json();
+        const topRulesList = document.getElementById('topRulesList');
+        topRulesList.innerHTML = '';
+
+        if (usageData.length === 0) {
+          topRulesList.innerHTML = '<li>لا توجد قواعد مستخدمة حاليًا.</li>';
+        } else {
+          usageData.slice(0, 3).forEach(rule => {
+            const li = document.createElement('li');
+            li.textContent = `${rule.content} (عدد الاستخدامات: ${rule.usageCount})`;
+            topRulesList.appendChild(li);
+          });
+        }
+
+      } catch (err) {
+        console.error('خطأ في تحميل إحصائيات القواعد:', err);
+        document.getElementById('rulesAnalytics').innerHTML += `
+          <p style="color: red; text-align: center;">تعذر تحميل إحصائيات القواعد، حاول مرة أخرى لاحقًا.</p>
         `;
       }
     }
