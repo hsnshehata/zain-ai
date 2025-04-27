@@ -74,6 +74,22 @@
   transform: translateY(-2px);
 }
 
+/* وضع زر تطبيق الفلتر جنب الـ select */
+.date-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#timePeriodFilter {
+  min-width: 200px;
+}
+
+#customDateRange {
+  display: flex;
+  gap: 10px;
+}
+
 /* Analytics Sections */
 #messagesAnalytics,
 #rulesAnalytics,
@@ -133,8 +149,10 @@
 
 /* Charts */
 canvas {
-  max-width: 100%;
-  margin: 20px 0;
+  max-width: 300px;
+  max-height: 150px;
+  margin: 20px auto;
+  display: block;
 }
 
 /* Responsive Design */
@@ -175,6 +193,7 @@ canvas {
   }
 
   canvas {
-    height: 300px !important;
+    max-width: 100%;
+    max-height: 150px;
   }
 }
