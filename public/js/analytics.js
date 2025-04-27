@@ -14,6 +14,43 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // جلب بيانات المستخدم الحالي عشان نعرف دوره
+    let userRole = '';
+    try {
+      const userResponse = await fetch('/api/users/me', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      });
+      if (userResponse.ok) {
+        const userData = await userResponse.json();
+        userRole = userData.role || '';
+      } else {
+        throw new Error('فشل في جلب بيانات المستخدم');
+      }
+    } catch (err) {
+      console.error('خطأ في جلب بيانات المستخدم:', err);
+      userRole = ''; // لو حصل خطأ، بنخلّي الدور فاضي عشان ميظهرش قسم البوتات
+    }
+
+    // بناء HTML بناءً على دور المستخدم
+    let botsAnalyticsSection = '';
+    if (userRole === 'superadmin') {
+      botsAnalyticsSection = `
+        <div id="botsAnalytics">
+          <h3>إحصائيات البوتات</h3>
+          <div id="botsStatus">
+            <h4>البوتات النشطة مقابل غير النشطة</h4>
+            <div id="botsStatusChart" class="ct-chart"></div>
+            <div id="botsStatusStats" class="stats-text"></div>
+          </div>
+          <div id="botsPerUser">
+            <h4>توزيع البوتات حسب المستخدمين</h4>
+            <div id="botsPerUserChart" class="ct-chart ct-bar-chart"></div>
+            <div id="botsPerUserStats" class="stats-text"></div>
+          </div>
+        </div>
+      `;
+    }
+
     content.innerHTML = `
       <h2>التحليلات</h2>
       <div class="analytics-container">
@@ -63,24 +100,8 @@ document.addEventListener('DOMContentLoaded', () => {
               <div id="rulesTypeChart" class="ct-chart"></div>
               <div id="rulesTypeStats" class="stats-text"></div>
             </div>
-            <div id="topUsedRules">
-              <h4>أكثر القواعد استخدامًا</h4>
-              <ul id="topRulesList"></ul>
-            </div>
           </div>
-          <div id="botsAnalytics">
-            <h3>إحصائيات البوتات</h3>
-            <div id="botsStatus">
-              <h4>البوتات النشطة مقابل غير النشطة</h4>
-              <div id="botsStatusChart" class="ct-chart"></div>
-              <div id="botsStatusStats" class="stats-text"></div>
-            </div>
-            <div id="botsPerUser">
-              <h4>توزيع البوتات حسب المستخدمين</h4>
-              <div id="botsPerUserChart" class="ct-chart ct-bar-chart"></div>
-              <div id="botsPerUserStats" class="stats-text"></div>
-            </div>
-          </div>
+          ${botsAnalyticsSection}
         </div>
       </div>
     `;
@@ -98,15 +119,19 @@ document.addEventListener('DOMContentLoaded', () => {
     // جلب البيانات وعرضها
     await loadMessagesAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
     await loadFeedbackAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
-    await loadRulesAnalytics(selectedBotId, token); // القواعد مش هتتأثر بالتاريخ حاليًا
-    await loadBotsAnalytics(token); // البوتات مش هتتأثر بالتاريخ حاليًا
+    await loadRulesAnalytics(selectedBotId, token);
+    if (userRole === 'superadmin') {
+      await loadBotsAnalytics(token);
+    }
 
     // إعادة جلب البيانات عند تطبيق الفلتر
     applyFilterBtn.addEventListener('click', async () => {
       await loadMessagesAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
       await loadFeedbackAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
-      await loadRulesAnalytics(selectedBotId, token); // القواعد مش هتتأثر بالتاريخ حاليًا
-      await loadBotsAnalytics(token); // البوتات مش هتتأثر بالتاريخ حاليًا
+      await loadRulesAnalytics(selectedBotId, token);
+      if (userRole === 'superadmin') {
+        await loadBotsAnalytics(token);
+      }
     });
 
     async function loadMessagesAnalytics(botId, token, startDate, endDate) {
@@ -351,29 +376,6 @@ document.addEventListener('DOMContentLoaded', () => {
           <p>قواعد سؤال وجواب: ${rulesTypesCount.qa} (${qaPercentage}%)</p>
           <p>قواعد API: ${rulesTypesCount.api} (${apiPercentage}%)</p>
         `;
-
-        // 2. أكثر القواعد استخدامًا
-        const usageResponse = await fetch(`/api/rules/usage?botId=${botId}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
-
-        if (!usageResponse.ok) {
-          throw new Error('فشل في جلب بيانات استخدام القواعد');
-        }
-
-        const usageData = await usageResponse.json();
-        const topRulesList = document.getElementById('topRulesList');
-        topRulesList.innerHTML = '';
-
-        if (usageData.length === 0) {
-          topRulesList.innerHTML = '<li>لا توجد قواعد مستخدمة حاليًا.</li>';
-        } else {
-          usageData.slice(0, 3).forEach(rule => {
-            const li = document.createElement('li');
-            li.textContent = `${rule.content} (عدد الاستخدامات: ${rule.usageCount})`;
-            topRulesList.appendChild(li);
-          });
-        }
 
       } catch (err) {
         console.error('خطأ في تحميل إحصائيات القواعد:', err);
