@@ -172,3 +172,47 @@ body {
 #chatMessages::-webkit-scrollbar-thumb:hover {
   background: #555;
 }
+
+/* Code Block Styling */
+.code-block-container {
+  position: relative;
+  margin: 10px 0;
+  border: 1px solid #555; /* Add visible border around the code block */
+  border-radius: 8px;
+  overflow: hidden;
+  display: inline-block; /* Make the container wrap tightly around the code */
+  max-width: 100%; /* Ensure it doesn't exceed the parent width */
+}
+
+.code-block-container pre {
+  background-color: #2d2d2d;
+  color: #f8f8f2;
+  padding: 15px;
+  margin: 0;
+  border-radius: 0 0 8px 8px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9em;
+  max-height: 400px;
+  white-space: pre-wrap; /* Ensure text wraps */
+  word-wrap: break-word; /* Ensure long words wrap */
+  overflow-wrap: break-word; /* Ensure long words wrap */
+  overflow-x: hidden; /* Prevent horizontal scroll */
+}
+
+.code-block-container .copy-btn {
+  position: absolute;
+  top: 0;
+  left: 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 0 0 4px 4px;
+  cursor: pointer;
+  font-size: 0.8em;
+  transition: background-color 0.3s;
+}
+
+.code-block-container .copy-btn:hover {
+  background-color: #0056b3;
+}
