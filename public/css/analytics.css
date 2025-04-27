@@ -94,7 +94,8 @@
 
 /* Analytics Sections */
 #messagesAnalytics,
-#feedbackAnalytics {
+#feedbackAnalytics,
+#rulesAnalytics {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   padding: 20px;
@@ -104,8 +105,10 @@
 
 #messagesAnalytics h3,
 #feedbackAnalytics h3,
+#rulesAnalytics h3,
 #messagesAnalytics h4,
-#feedbackAnalytics h4 {
+#feedbackAnalytics h4,
+#rulesAnalytics h4 {
   margin-top: 0;
   margin-bottom: 15px;
   color: #fff;
@@ -115,25 +118,29 @@
 }
 
 #messagesAnalytics h4,
-#feedbackAnalytics h4 {
+#feedbackAnalytics h4,
+#rulesAnalytics h4 {
   font-size: 1.2em;
 }
 
-/* Top Negative Replies */
-#topNegativeReplies h4 {
+/* Top Negative Replies and Top Used Rules */
+#topNegativeReplies h4,
+#topUsedRules h4 {
   margin-top: 0;
   margin-bottom: 10px;
   color: #fff;
   font-size: 1.2em;
 }
 
-#negativeRepliesList {
+#negativeRepliesList,
+#topRulesList {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-#negativeRepliesList li {
+#negativeRepliesList li,
+#topRulesList li {
   background: rgba(255, 255, 255, 0.05);
   padding: 10px;
   border-radius: 8px;
@@ -164,7 +171,8 @@
 }
 
 #messagesByChannelChart .ct-label,
-#feedbackRatioChart .ct-label {
+#feedbackRatioChart .ct-label,
+#rulesTypeChart .ct-label {
   fill: #fff;
   color: #fff;
   font-size: 0.9em;
@@ -217,7 +225,8 @@
   }
 
   #messagesAnalytics,
-  #feedbackAnalytics {
+  #feedbackAnalytics,
+  #rulesAnalytics {
     padding: 15px;
   }
 
