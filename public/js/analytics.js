@@ -20,7 +20,7 @@ async function loadAnalyticsPage() {
     return;
   }
 
-  // الواجهة الجديدة
+  // الواجهة الجديدة (بدون رسوم بيانية)
   content.innerHTML = `
     <h2>إحصائيات البوتات</h2>
     <div class="analytics-container">
@@ -51,8 +51,6 @@ async function loadAnalyticsPage() {
           <p id="facebookMessages">رسائل الفيسبوك: جاري التحميل...</p>
           <p id="webMessages">رسائل الويب: جاري التحميل...</p>
           <p id="whatsappMessages">رسائل الواتساب: جاري التحميل...</p>
-          <div id="messagesTypeChart" class="ct-chart ct-perfect-fourth"></div>
-          <div id="messagesDailyChart" class="ct-chart ct-perfect-fourth"></div>
         </div>
         <!-- إحصائيات القواعد -->
         <div id="rulesAnalytics">
@@ -74,7 +72,6 @@ async function loadAnalyticsPage() {
             <h4>أكثر ردود البوت تقييمًا سلبيًا:</h4>
             <ul id="negativeRepliesList"></ul>
           </div>
-          <div id="feedbackChart" class="ct-chart ct-perfect-fourth"></div>
         </div>
         <!-- إحصائيات التفاعل -->
         <div id="interactionAnalytics">
@@ -259,7 +256,7 @@ async function loadAnalyticsPage() {
         .sort((a, b) => b[1] - a[1])
         .slice(0, 3);
 
-      // عرض البيانات النصية أولًا
+      // عرض البيانات الرقمية فقط
       document.getElementById('totalMessages').textContent = `إجمالي الرسائل: ${totalMessages}`;
       document.getElementById('facebookMessages').textContent = `رسائل الفيسبوك: ${facebookMessages}`;
       document.getElementById('webMessages').textContent = `رسائل الويب: ${webMessages}`;
@@ -282,58 +279,6 @@ async function loadAnalyticsPage() {
       negativeRepliesList.innerHTML = topNegativeReplies.length > 0
         ? topNegativeReplies.map(([reply, count]) => `<li>${reply} (${count} تقييمات سلبية)</li>`).join('')
         : '<li>لا توجد ردود سلبية حاليًا</li>';
-
-      // رسم المخططات باستخدام Chartist.js
-      const messagesTypeChartElement = document.getElementById('messagesTypeChart');
-      if (messagesTypeChartElement) {
-        new Chartist.Pie('#messagesTypeChart', {
-          labels: ['فيسبوك', 'ويب', 'واتساب'],
-          series: [facebookMessages, webMessages, whatsappMessages],
-        }, {
-          width: '300px',
-          height: '150px',
-          chartPadding: 10,
-          labelOffset: 30,
-          labelDirection: 'explode',
-          labelInterpolationFnc: function(value) {
-            return value;
-          }
-        });
-      }
-
-      const messagesDailyChartElement = document.getElementById('messagesDailyChart');
-      if (messagesDailyChartElement) {
-        new Chartist.Line('#messagesDailyChart', {
-          labels: labels,
-          series: [dailyMessages],
-        }, {
-          width: '300px',
-          height: '150px',
-          chartPadding: 10,
-          showPoint: true,
-          axisY: {
-            onlyInteger: true,
-            offset: 20,
-          }
-        });
-      }
-
-      const feedbackChartElement = document.getElementById('feedbackChart');
-      if (feedbackChartElement) {
-        new Chartist.Pie('#feedbackChart', {
-          labels: ['إيجابي', 'سلبي'],
-          series: [positiveFeedback, negativeFeedback],
-        }, {
-          width: '300px',
-          height: '150px',
-          chartPadding: 10,
-          labelOffset: 30,
-          labelDirection: 'explode',
-          labelInterpolationFnc: function(value) {
-            return value;
-          }
-        });
-      }
 
       // إظهار المحتوى وإخفاء الـ spinner
       spinner.style.display = 'none';
