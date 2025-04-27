@@ -95,7 +95,8 @@
 /* Analytics Sections */
 #messagesAnalytics,
 #feedbackAnalytics,
-#rulesAnalytics {
+#rulesAnalytics,
+#botsAnalytics {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   padding: 20px;
@@ -106,9 +107,11 @@
 #messagesAnalytics h3,
 #feedbackAnalytics h3,
 #rulesAnalytics h3,
+#botsAnalytics h3,
 #messagesAnalytics h4,
 #feedbackAnalytics h4,
-#rulesAnalytics h4 {
+#rulesAnalytics h4,
+#botsAnalytics h4 {
   margin-top: 0;
   margin-bottom: 15px;
   color: #fff;
@@ -119,7 +122,8 @@
 
 #messagesAnalytics h4,
 #feedbackAnalytics h4,
-#rulesAnalytics h4 {
+#rulesAnalytics h4,
+#botsAnalytics h4 {
   font-size: 1.2em;
 }
 
@@ -170,9 +174,18 @@
   display: block;
 }
 
+.ct-bar-chart {
+  max-width: 500px; /* جعل الـ Bar Chart أعرض شوية */
+  max-height: 200px;
+  margin: 20px auto;
+  display: block;
+}
+
 #messagesByChannelChart .ct-label,
 #feedbackRatioChart .ct-label,
-#rulesTypeChart .ct-label {
+#rulesTypeChart .ct-label,
+#botsStatusChart .ct-label,
+#botsPerUserChart .ct-label {
   fill: #fff;
   color: #fff;
   font-size: 0.9em;
@@ -192,6 +205,11 @@
 #dailyMessagesChart .ct-series-a .ct-point {
   stroke: #007bff;
   stroke-width: 8px;
+}
+
+#botsPerUserChart .ct-series-a .ct-bar {
+  stroke: #007bff;
+  stroke-width: 20px;
 }
 
 /* Responsive Design */
@@ -226,11 +244,13 @@
 
   #messagesAnalytics,
   #feedbackAnalytics,
-  #rulesAnalytics {
+  #rulesAnalytics,
+  #botsAnalytics {
     padding: 15px;
   }
 
-  .ct-chart {
+  .ct-chart,
+  .ct-bar-chart {
     max-width: 100%;
     max-height: 150px;
   }
