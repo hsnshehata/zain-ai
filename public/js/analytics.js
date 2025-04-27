@@ -98,14 +98,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // جلب البيانات وعرضها
     await loadMessagesAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
     await loadFeedbackAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
-    await loadRulesAnalytics(selectedBotId, token);
-    await loadBotsAnalytics(token);
+    await loadRulesAnalytics(selectedBotId, token); // القواعد مش هتتأثر بالتاريخ حاليًا
+    await loadBotsAnalytics(token); // البوتات مش هتتأثر بالتاريخ حاليًا
 
     // إعادة جلب البيانات عند تطبيق الفلتر
     applyFilterBtn.addEventListener('click', async () => {
       await loadMessagesAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
       await loadFeedbackAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
-      await loadRulesAnalytics(selectedBarChart(selectedBotId, token); // القواعد مش هتتأثر بالتاريخ حاليًا
+      await loadRulesAnalytics(selectedBotId, token); // القواعد مش هتتأثر بالتاريخ حاليًا
       await loadBotsAnalytics(token); // البوتات مش هتتأثر بالتاريخ حاليًا
     });
 
