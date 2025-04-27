@@ -12,65 +12,16 @@ async function loadAnalyticsPage() {
     return;
   }
 
-  if (!token) {
-    content.innerHTML = `
-      <h2>إحصائيات البوتات</h2>
-      <p style="color: red;">التوكن غير موجود، يرجى تسجيل الدخول مرة أخرى.</p>
-    `;
-    return;
-  }
-
-  // الواجهة الجديدة مع إحصائيات القواعد، التقييمات، والتفاعل
   content.innerHTML = `
     <h2>إحصائيات البوتات</h2>
     <div class="analytics-container">
       <div class="spinner"><div class="loader"></div></div>
       <div id="analyticsContent" style="display: none;">
-        <!-- فلاتر زمنية -->
-        <div class="filter-group">
-          <label>فلترة حسب الفترة:</label>
-          <div class="date-filter">
-            <select id="timePeriodFilter">
-              <option value="all" selected>طوال فترة الاستخدام</option>
-              <option value="day">يوم</option>
-              <option value="week">أسبوع</option>
-              <option value="month">شهر</option>
-              <option value="custom">تخصيص</option>
-            </select>
-            <div id="customDateRange" style="display: none;">
-              <input type="date" id="startDateFilter" placeholder="من تاريخ" />
-              <input type="date" id="endDateFilter" placeholder="إلى تاريخ" />
-            </div>
-            <button id="applyFilterBtn">تطبيق الفلتر</button>
-          </div>
-        </div>
-        <!-- إحصائيات القواعد -->
-        <div id="rulesAnalytics">
-          <h3>إحصائيات القواعد</h3>
+        <div id="analyticsData">
+          <h3>تفاصيل الأداء</h3>
+          <p id="messagesCount">عدد الرسائل: جاري التحميل...</p>
           <p id="activeRules">عدد القواعد النشطة: جاري التحميل...</p>
-          <p id="generalRules">قواعد عامة: جاري التحميل...</p>
-          <p id="qaRules">قواعد سؤال وجواب: جاري التحميل...</p>
-          <p id="productsRules">قواعد المنتجات: جاري التحميل...</p>
-          <p id="apiRules">قواعد API: جاري التحميل...</p>
-          ${role === 'superadmin' ? '<p id="globalRules">قواعد موحدة: جاري التحميل...</p>' : ''}
-        </div>
-        <!-- إحصائيات التقييمات -->
-        <div id="feedbackAnalytics">
-          <h3>إحصائيات التقييمات</h3>
-          <p id="totalFeedback">إجمالي التقييمات: جاري التحميل...</p>
-          <p id="positiveFeedback">التقييمات الإيجابية: جاري التحميل...</p>
-          <p id="negativeFeedback">التقييمات السلبية: جاري التحميل...</p>
-          <div id="topNegativeReplies" style="margin-top: 20px;">
-            <h4>أكثر ردود البوت تقييمًا سلبيًا:</h4>
-            <ul id="negativeRepliesList"></ul>
-          </div>
-          <div id="feedbackChart" class="ct-chart ct-perfect-fourth"></div>
-        </div>
-        <!-- إحصائيات التفاعل -->
-        <div id="interactionAnalytics">
-          <h3>إحصائيات التفاعل</h3>
-          <p id="peakHours">أوقات الذروة: جاري التحميل...</p>
-          <div id="messagesDailyChart" class="ct-chart ct-perfect-fourth"></div>
+          <div id="messagesChart" class="ct-chart ct-perfect-fourth"></div>
         </div>
       </div>
     </div>
@@ -78,244 +29,56 @@ async function loadAnalyticsPage() {
 
   const analyticsContent = document.getElementById('analyticsContent');
   const spinner = document.querySelector('.spinner');
-  const timePeriodFilter = document.getElementById('timePeriodFilter');
-  const customDateRange = document.getElementById('customDateRange');
-  const startDateFilter = document.getElementById('startDateFilter');
-  const endDateFilter = document.getElementById('endDateFilter');
-  const applyFilterBtn = document.getElementById('applyFilterBtn');
 
-  // إظهار/إخفاء فلتر التاريخ المخصص بناءً على اختيار الفترة
-  timePeriodFilter.addEventListener('change', () => {
-    customDateRange.style.display = timePeriodFilter.value === 'custom' ? 'block' : 'none';
-  });
+  try {
+    spinner.style.display = 'flex';
+    console.log('Fetching analytics for botId:', selectedBotId);
+    const res = await fetch(`/api/analytics?botId=${selectedBotId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
-  // دالة لتحديد نطاق التاريخ بناءً على الفترة المختارة
-  function getDateRange() {
-    const period = timePeriodFilter.value;
-    const now = new Date();
-    let startDate, endDate;
-
-    if (period === 'all') {
-      startDate = null;
-      endDate = null;
-    } else if (period === 'day') {
-      startDate = new Date(now.setHours(0, 0, 0, 0));
-      endDate = new Date(now.setHours(23, 59, 59, 999));
-    } else if (period === 'week') {
-      startDate = new Date(now.setDate(now.getDate() - 6));
-      startDate.setHours(0, 0, 0, 0);
-      endDate = new Date();
-      endDate.setHours(23, 59, 59, 999);
-    } else if (period === 'month') {
-      startDate = new Date(now.setDate(now.getDate() - 29));
-      startDate.setHours(0, 0, 0, 0);
-      endDate = new Date();
-      endDate.setHours(23, 59, 59, 999);
-    } else if (period === 'custom') {
-      startDate = startDateFilter.value ? new Date(startDateFilter.value) : null;
-      endDate = endDateFilter.value ? new Date(endDateFilter.value) : null;
-      if (startDate) startDate.setHours(0, 0, 0, 0);
-      if (endDate) endDate.setHours(23, 59, 59, 999);
+    if (!res.ok) {
+      const errorText = await res.text();
+      throw new Error(`فشل في جلب الإحصائيات: ${res.status} - ${errorText}`);
     }
 
-    return { startDate, endDate };
-  }
+    const analytics = await res.json();
 
-  // دالة لجلب البيانات مع مهلة زمنية (timeout)
-  async function fetchWithTimeout(url, options, timeout = 2000) {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), timeout);
+    // عرض البيانات النصية
+    const adjustedMessagesCount = Math.round((analytics.messagesCount || 0) / 3);
+    document.getElementById('messagesCount').textContent = `عدد الرسائل: ${adjustedMessagesCount}`;
+    document.getElementById('activeRules').textContent = `عدد القواعد النشطة: ${analytics.activeRules || 0}`;
 
-    try {
-      const response = await fetch(url, { ...options, signal: controller.signal });
-      clearTimeout(id);
-      return response;
-    } catch (err) {
-      clearTimeout(id);
-      if (err.name === 'AbortError') {
-        throw new Error(`طلب ${url} تأخر أكثر من ${timeout / 1000} ثواني`);
-      }
-      throw err;
-    }
-  }
-
-  // دالة لتحميل البيانات
-  async function fetchAnalyticsData() {
-    try {
-      spinner.style.display = 'flex';
-      analyticsContent.style.display = 'none'; // إخفاء المحتوى لحين تحميل البيانات
-
-      // جلب بيانات القواعد
-      console.log('Fetching rules for botId:', selectedBotId);
-      const rulesRes = await fetchWithTimeout(`/api/rules?botId=${selectedBotId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }, 2000);
-
-      let rules = [];
-      if (rulesRes.ok) {
-        const rulesData = await rulesRes.json();
-        rules = rulesData.rules || [];
-      } else {
-        const errorText = await rulesRes.text();
-        console.warn(`⚠️ فشل في جلب بيانات القواعد: ${rulesRes.status} - ${errorText}`);
-      }
-
-      const generalRules = rules.filter(rule => rule.type === 'general').length;
-      const qaRules = rules.filter(rule => rule.type === 'qa').length;
-      const productsRules = rules.filter(rule => rule.type === 'products').length;
-      const apiRules = rules.filter(rule => rule.type === 'api').length;
-      const globalRules = role === 'superadmin' ? rules.filter(rule => rule.type === 'global').length : 0;
-
-      // جلب بيانات التقييمات
-      const { startDate, endDate } = getDateRange();
-      console.log('Fetching feedback for botId:', selectedBotId);
-      const feedbackRes = await fetchWithTimeout(`/api/bots/${selectedBotId}/feedback`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }, 2000);
-
-      let feedback = [];
-      if (feedbackRes.ok) {
-        feedback = await feedbackRes.json();
-      } else {
-        const errorText = await feedbackRes.text();
-        console.warn(`⚠️ فشل في جلب بيانات التقييمات: ${feedbackRes.status} - ${errorText}`);
-      }
-
-      const filteredFeedback = feedback.filter(item => {
-        const feedbackDate = new Date(item.timestamp);
-        return (!startDate || feedbackDate >= startDate) && (!endDate || feedbackDate <= endDate);
+    // عرض رسم بياني بسيط باستخدام Chartist.js
+    const chartElement = document.getElementById('messagesChart');
+    if (chartElement) {
+      new Chartist.Pie('#messagesChart', {
+        labels: ['الرسائل', 'القواعد النشطة'],
+        series: [adjustedMessagesCount, analytics.activeRules || 0],
+      }, {
+        width: '300px',
+        height: '150px',
+        chartPadding: 10,
+        labelOffset: 30,
+        labelDirection: 'explode',
+        labelInterpolationFnc: function(value) {
+          return value;
+        }
       });
-
-      const positiveFeedback = filteredFeedback.filter(item => item.feedback === 'positive').length;
-      const negativeFeedback = filteredFeedback.filter(item => item.feedback === 'negative').length;
-      const totalFeedback = filteredFeedback.length;
-
-      // أكثر ردود البوت تقييمًا سلبيًا
-      const negativeReplies = filteredFeedback
-        .filter(item => item.feedback === 'negative')
-        .reduce((acc, item) => {
-          const reply = item.messageContent || 'رد غير متوفر';
-          acc[reply] = (acc[reply] || 0) + 1;
-          return acc;
-        }, {});
-      const topNegativeReplies = Object.entries(negativeReplies)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 3);
-
-      // جلب بيانات التفاعل (هنستخدم نفس بيانات التقييمات لتحليل أوقات الذروة)
-      const messagesByHour = Array(24).fill(0);
-      filteredFeedback.forEach(item => {
-        const hour = new Date(item.timestamp).getHours();
-        messagesByHour[hour]++;
-      });
-      const peakHour = messagesByHour.indexOf(Math.max(...messagesByHour));
-
-      // تحليل التفاعل اليومي (آخر 7 أيام) باستخدام التقييمات
-      const dailyMessages = Array(7).fill(0);
-      const labels = [];
-      const today = new Date();
-      for (let i = 6; i >= 0; i--) {
-        const date = new Date(today);
-        date.setDate(today.getDate() - i);
-        labels.push(date.toLocaleDateString('ar-EG'));
-        const dayStart = new Date(date.setHours(0, 0, 0, 0));
-        const dayEnd = new Date(date.setHours(23, 59, 59, 999));
-        const messagesInDay = filteredFeedback.filter(item => {
-          const feedbackDate = new Date(item.timestamp);
-          return feedbackDate >= dayStart && feedbackDate <= dayEnd;
-        }).length;
-        dailyMessages[6 - i] = messagesInDay;
-      }
-
-      // عرض البيانات الرقمية
-      document.getElementById('activeRules').textContent = `عدد القواعد النشطة: ${rules.length}`;
-      document.getElementById('generalRules').textContent = `قواعد عامة: ${generalRules}`;
-      document.getElementById('qaRules').textContent = `قواعد سؤال وجواب: ${qaRules}`;
-      document.getElementById('productsRules').textContent = `قواعد المنتجات: ${productsRules}`;
-      document.getElementById('apiRules').textContent = `قواعد API: ${apiRules}`;
-      if (role === 'superadmin') {
-        document.getElementById('globalRules').textContent = `قواعد موحدة: ${globalRules}`;
-      }
-      document.getElementById('totalFeedback').textContent = `إجمالي التقييمات: ${totalFeedback}`;
-      document.getElementById('positiveFeedback').textContent = `التقييمات الإيجابية: ${positiveFeedback} (${totalFeedback ? Math.round((positiveFeedback / totalFeedback) * 100) : 0}%)`;
-      document.getElementById('negativeFeedback').textContent = `التقييمات السلبية: ${negativeFeedback} (${totalFeedback ? Math.round((negativeFeedback / totalFeedback) * 100) : 0}%)`;
-      document.getElementById('peakHours').textContent = `أوقات الذروة: الساعة ${peakHour}:00`;
-
-      // عرض أكثر ردود البوت تقييمًا سلبيًا
-      const negativeRepliesList = document.getElementById('negativeRepliesList');
-      negativeRepliesList.innerHTML = topNegativeReplies.length > 0
-        ? topNegativeReplies.map(([reply, count]) => `<li>${reply} (${count} تقييمات سلبية)</li>`).join('')
-        : '<li>لا توجد ردود سلبية حاليًا</li>';
-
-      // عرض رسم بياني للتقييمات باستخدام Chartist.js
-      const feedbackChartElement = document.getElementById('feedbackChart');
-      if (feedbackChartElement) {
-        new Chartist.Pie('#feedbackChart', {
-          labels: ['إيجابي', 'سلبي'],
-          series: [positiveFeedback, negativeFeedback],
-        }, {
-          width: '300px',
-          height: '150px',
-          chartPadding: 10,
-          labelOffset: 30,
-          labelDirection: 'explode',
-          labelInterpolationFnc: function(value) {
-            return value;
-          }
-        });
-      }
-
-      // عرض رسم بياني للتفاعل اليومي باستخدام Chartist.js
-      const messagesDailyChartElement = document.getElementById('messagesDailyChart');
-      if (messagesDailyChartElement) {
-        new Chartist.Line('#messagesDailyChart', {
-          labels: labels,
-          series: [dailyMessages],
-        }, {
-          width: '300px',
-          height: '150px',
-          chartPadding: 10,
-          showPoint: true,
-          axisY: {
-            onlyInteger: true,
-            offset: 20,
-          }
-        });
-      }
-
-      // إظهار المحتوى وإخفاء الـ spinner
-      spinner.style.display = 'none';
-      analyticsContent.style.display = 'block';
-    } catch (err) {
-      console.error('خطأ في جلب الإحصائيات:', err);
-      alert(`خطأ في جلب الإحصائيات: ${err.message}`);
-
-      // عرض قيم افتراضية في حالة الخطأ
-      document.getElementById('activeRules').textContent = `عدد القواعد النشطة: 0`;
-      document.getElementById('generalRules').textContent = `قواعد عامة: 0`;
-      document.getElementById('qaRules').textContent = `قواعد سؤال وجواب: 0`;
-      document.getElementById('productsRules').textContent = `قواعد المنتجات: 0`;
-      document.getElementById('apiRules').textContent = `قواعد API: 0`;
-      if (role === 'superadmin') {
-        document.getElementById('globalRules').textContent = `قواعد موحدة: 0`;
-      }
-      document.getElementById('totalFeedback').textContent = `إجمالي التقييمات: 0`;
-      document.getElementById('positiveFeedback').textContent = `التقييمات الإيجابية: 0 (0%)`;
-      document.getElementById('negativeFeedback').textContent = `التقييمات السلبية: 0 (0%)`;
-      document.getElementById('negativeRepliesList').innerHTML = '<li>لا توجد ردود سلبية حاليًا</li>';
-      document.getElementById('peakHours').textContent = `أوقات الذروة: غير متاح`;
-
-      // إخفاء الـ spinner وإظهار المحتوى حتى لو حصل خطأ
-      spinner.style.display = 'none';
-      analyticsContent.style.display = 'block';
     }
+
+    analyticsContent.style.display = 'block';
+    spinner.style.display = 'none';
+  } catch (err) {
+    console.error('خطأ في جلب الإحصائيات:', err);
+    alert(`خطأ في جلب الإحصائيات: ${err.message}`);
+
+    // عرض قيم افتراضية في حالة الخطأ
+    document.getElementById('messagesCount').textContent = `عدد الرسائل: 0`;
+    document.getElementById('activeRules').textContent = `عدد القواعد النشطة: 0`;
+
+    // إخفاء الـ spinner وإظهار المحتوى حتى لو حصل خطأ
+    spinner.style.display = 'none';
+    analyticsContent.style.display = 'block';
   }
-
-  // التأكد من تحميل الـ DOM قبل استدعاء الدالة
-  document.addEventListener('DOMContentLoaded', () => {
-    fetchAnalyticsData();
-  });
-
-  // إضافة حدث لتطبيق الفلتر
-  applyFilterBtn.addEventListener('click', fetchAnalyticsData);
 }
