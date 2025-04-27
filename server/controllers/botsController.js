@@ -1,13 +1,13 @@
+// /server/controllers/botsController.js
+
 const express = require('express');
-const router = express.Router();
 const Bot = require('../models/Bot');
 const User = require('../models/User');
 const Feedback = require('../models/Feedback');
-const authenticate = require('../middleware/authenticate');
 const axios = require('axios');
 
 // جلب كل البوتات
-router.get('/', authenticate, async (req, res) => {
+exports.getBots = async (req, res) => {
   try {
     const bots = await Bot.find().populate('userId');
     res.status(200).json(bots);
@@ -15,18 +15,27 @@ router.get('/', authenticate, async (req, res) => {
     console.error('❌ خطأ في جلب البوتات:', err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
-});
+};
 
 // جلب التقييمات بناءً على botId مع اسم المستخدم من فيسبوك (التقييمات المرئية فقط)
-router.get('/:id/feedback', authenticate, async (req, res) => {
+exports.getFeedback = async (req, res) => {
   try {
     const botId = req.params.id;
+    const { startDate, endDate } = req.query;
+
     const bot = await Bot.findById(botId);
     if (!bot) {
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
-    const feedback = await Feedback.find({ botId, isVisible: true }).sort({ timestamp: -1 });
+    let query = { botId, isVisible: true };
+    if (startDate || endDate) {
+      query.timestamp = {};
+      if (startDate) query.timestamp.$gte = new Date(startDate);
+      if (endDate) query.timestamp.$lte = new Date(endDate);
+    }
+
+    const feedback = await Feedback.find(query).sort({ timestamp: -1 });
 
     const feedbackWithUsernames = await Promise.all(
       feedback.map(async (item) => {
@@ -56,10 +65,51 @@ router.get('/:id/feedback', authenticate, async (req, res) => {
     console.error('❌ خطأ في جلب التقييمات:', err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
-});
+};
+
+// جلب أكثر الردود السلبية
+exports.getTopNegativeReplies = async (req, res) => {
+  try {
+    const { botId } = req.params;
+    const { startDate, endDate } = req.query;
+
+    let query = { botId, feedback: 'negative', isVisible: true };
+    if (startDate || endDate) {
+      query.timestamp = {};
+      if (startDate) query.timestamp.$gte = new Date(startDate);
+      if (endDate) query.timestamp.$lte = new Date(endDate);
+    }
+
+    const feedback = await Feedback.find(query);
+
+    // تجميع الردود السلبية حسب المحتوى
+    const negativeReplies = {};
+    feedback.forEach(item => {
+      if (item.messageContent) {
+        if (!negativeReplies[item.messageContent]) {
+          negativeReplies[item.messageContent] = 0;
+        }
+        negativeReplies[item.messageContent]++;
+      }
+    });
+
+    // تحويل البيانات لمصفوفة مرتبة
+    const result = Object.keys(negativeReplies)
+      .map(content => ({
+        messageContent: content,
+        count: negativeReplies[content],
+      }))
+      .sort((a, b) => b.count - a.count); // ترتيب تنازلي حسب العدد
+
+    res.status(200).json(result);
+  } catch (err) {
+    console.error('❌ خطأ في جلب الردود السلبية:', err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر' });
+  }
+};
 
 // إخفاء تقييم معين (بدل الحذف)
-router.delete('/:id/feedback/:feedbackId', authenticate, async (req, res) => {
+exports.hideFeedback = async (req, res) => {
   try {
     const feedbackId = req.params.feedbackId;
 
@@ -77,10 +127,10 @@ router.delete('/:id/feedback/:feedbackId', authenticate, async (req, res) => {
     console.error('❌ خطأ في إخفاء التقييم:', err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
-});
+};
 
 // إخفاء جميع التقييمات (إيجابية أو سلبية) دفعة واحدة
-router.delete('/:id/feedback/clear/:type', authenticate, async (req, res) => {
+exports.clearFeedbackByType = async (req, res) => {
   try {
     const botId = req.params.id;
     const type = req.params.type; // 'positive' or 'negative'
@@ -99,10 +149,10 @@ router.delete('/:id/feedback/clear/:type', authenticate, async (req, res) => {
     console.error('❌ خطأ في إخفاء التقييمات:', err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
-});
+};
 
 // إنشاء بوت جديد
-router.post('/', authenticate, async (req, res) => {
+exports.createBot = async (req, res) => {
   if (req.user.role !== 'superadmin') {
     return res.status(403).json({ message: 'غير مصرح لك بإنشاء بوت' });
   }
@@ -128,10 +178,10 @@ router.post('/', authenticate, async (req, res) => {
     console.error('❌ خطأ في إنشاء البوت:', err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
-});
+};
 
 // تعديل بوت
-router.put('/:id', authenticate, async (req, res) => {
+exports.updateBot = async (req, res) => {
   if (req.user.role !== 'superadmin') {
     return res.status(403).json({ message: 'غير مصرح لك بتعديل البوت' });
   }
@@ -154,10 +204,10 @@ router.put('/:id', authenticate, async (req, res) => {
     console.error('❌ خطأ في تعديل البوت:', err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
-});
+};
 
 // حذف بوت
-router.delete('/:id', authenticate, async (req, res) => {
+exports.deleteBot = async (req, res) => {
   if (req.user.role !== 'superadmin') {
     return res.status(403).json({ message: 'غير مصرح لك بحذف البوت' });
   }
@@ -176,6 +226,6 @@ router.delete('/:id', authenticate, async (req, res) => {
     console.error('❌ خطأ في حذف البوت:', err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
-});
+};
 
-module.exports = router;
+module.exports = exports;
