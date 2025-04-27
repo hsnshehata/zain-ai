@@ -1,3 +1,5 @@
+// /server/botEngine.js
+
 const OpenAI = require('openai');
 const mongoose = require('mongoose');
 const axios = require('axios');
@@ -122,6 +124,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     console.log('📡 Calling OpenAI API...');
     let reply = '';
+    let matchedRuleId = null;
 
     // التحقق إذا كان السؤال يتعلق بمواعيد العمل
     if (message.includes('انتوا فاتحين') || message.includes('مواعيد العمل')) {
@@ -151,6 +154,15 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
           workingHours.start = match[1];
           workingHours.end = match[2];
         }
+
+        // ابحث عن القاعدة اللي فيها مواعيد العمل عشان نزوّد usageCount
+        const matchedRule = rules.find(rule => 
+          (rule.type === 'general' || rule.type === 'global') && 
+          rule.content.includes(workingHoursText)
+        );
+        if (matchedRule) {
+          matchedRuleId = matchedRule._id;
+        }
       } else {
         reply = 'لم أجد مواعيد عمل في القواعد. يمكنك إضافتها في القواعد الخاصة بي!';
       }
@@ -166,12 +178,42 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       }
     } else {
       // إذا كان السؤال مش عن مواعيد العمل، نكمل معالجة الرسالة بشكل عادي
-      const response = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages,
-        max_tokens: 700,
-      });
-      reply = response.choices[0].message.content;
+      // نبحث عن قاعدة مطابقة قبل استدعاء OpenAI
+      for (const rule of rules) {
+        if (rule.type === 'qa' && userMessageContent.toLowerCase().includes(rule.content.question.toLowerCase())) {
+          matchedRuleId = rule._id;
+          reply = rule.content.answer;
+          break;
+        } else if (rule.type === 'general' || rule.type === 'global') {
+          if (userMessageContent.toLowerCase().includes(rule.content.toLowerCase())) {
+            matchedRuleId = rule._id;
+            reply = rule.content;
+            break;
+          }
+        } else if (rule.type === 'products') {
+          if (userMessageContent.toLowerCase().includes(rule.content.product.toLowerCase())) {
+            matchedRuleId = rule._id;
+            reply = `المنتج: ${rule.content.product}، السعر: ${rule.content.price} ${rule.content.currency}`;
+            break;
+          }
+        }
+      }
+
+      // إذا ما لقيناش قاعدة مطابقة، نستدعي OpenAI
+      if (!reply) {
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o-mini',
+          messages,
+          max_tokens: 700,
+        });
+        reply = response.choices[0].message.content;
+      }
+    }
+
+    // زيادة usageCount للقاعدة المستخدمة (إذا وجدت)
+    if (matchedRuleId) {
+      await Rule.updateOne({ _id: matchedRuleId }, { $inc: { usageCount: 1 } });
+      console.log(`📈 Incremented usageCount for rule: ${matchedRuleId}`);
     }
 
     // استبدال القيم الديناميكية في الرد
