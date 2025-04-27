@@ -15,16 +15,95 @@
   gap: 30px;
 }
 
-/* Analytics Data Section */
-#analyticsData {
-  background: rgba(255, 255, 255, 0.1);
+/* Filter Group */
+.filter-group {
+  background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   padding: 15px;
   border-radius: 12px;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
 }
 
-#analyticsData h3 {
+.filter-group label {
+  font-weight: bold;
+  color: #fff;
+  margin-right: 10px;
+}
+
+.date-filter {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.date-filter select,
+.date-filter input[type="date"] {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 0.9em;
+  outline: none;
+  transition: background 0.3s;
+}
+
+.date-filter select:focus,
+.date-filter input[type="date"]:focus {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.date-filter button {
+  padding: 8px 15px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.date-filter button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+/* وضع زر تطبيق الفلتر جنب الـ select */
+.date-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#timePeriodFilter {
+  min-width: 200px;
+}
+
+#customDateRange {
+  display: flex;
+  gap: 10px;
+}
+
+/* Analytics Sections */
+#rulesAnalytics,
+#feedbackAnalytics,
+#interactionAnalytics {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}
+
+#rulesAnalytics h3,
+#feedbackAnalytics h3,
+#interactionAnalytics h3 {
   margin-top: 0;
   margin-bottom: 15px;
   color: #fff;
@@ -33,10 +112,36 @@
   padding-bottom: 5px;
 }
 
-#analyticsData p {
+#rulesAnalytics p,
+#feedbackAnalytics p,
+#interactionAnalytics p {
   margin: 8px 0;
   color: #ddd;
   font-size: 1em;
+}
+
+/* Top Negative Replies */
+#topNegativeReplies h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #fff;
+  font-size: 1.2em;
+}
+
+#negativeRepliesList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#negativeRepliesList li {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 10px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  color: #ddd;
+  font-size: 0.9em;
+  word-wrap: break-word;
 }
 
 /* Charts */
@@ -58,7 +163,28 @@
     gap: 20px;
   }
 
-  #analyticsData {
+  .filter-group {
+    padding: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .date-filter {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .date-filter select,
+  .date-filter input[type="date"],
+  .date-filter button {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  #rulesAnalytics,
+  #feedbackAnalytics,
+  #interactionAnalytics {
     padding: 15px;
   }
 
