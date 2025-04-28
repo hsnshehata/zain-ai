@@ -35,11 +35,12 @@ async function loadRulesPage() {
         </div>
         <h3>القواعد الحالية</h3>
         <div class="rules-actions" style="display: flex; gap: 10px; align-items: center;">
-          <div class="form-group" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; direction: rtl;">
-            <input type="text" id="searchInput" placeholder="ابحث في القواعد...">
+          <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
             <label for="searchInput">البحث</label>
+            <input type="text" id="searchInput" placeholder="ابحث في القواعد...">
           </div>
-          <div class="form-group" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; direction: rtl;">
+          <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
+            <label for="typeFilter">فلتر حسب النوع</label>
             <select id="typeFilter" name="typeFilter">
               <option value="all">الكل</option>
               <option value="general">عامة</option>
@@ -48,7 +49,6 @@ async function loadRulesPage() {
               <option value="channels">قنوات</option>
               ${role === 'superadmin' ? '<option value="global">موحدة</option>' : ''}
             </select>
-            <label for="typeFilter">فلتر حسب النوع</label>
           </div>
         </div>
         <div id="rulesList" class="rules-grid"></div>
@@ -100,53 +100,54 @@ async function loadRulesPage() {
 
     if (type === 'general') {
       contentFields.innerHTML = `
-        <div class="form-group" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; direction: rtl;">
-          <textarea id="generalContent" name="generalContent" required placeholder=" "></textarea>
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
           <label for="generalContent">المحتوى (خاص بالبوت المحدد)</label>
+          <textarea id="generalContent" name="generalContent" required placeholder=" "></textarea>
         </div>
       `;
       console.log(`📋 تم تحميل حقل المحتوى العام لنوع general`);
     } else if (type === 'global') {
       contentFields.innerHTML = `
-        <div class="form-group" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; direction: rtl;">
-          <textarea id="globalContent" name="globalContent" required placeholder=" "></textarea>
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
           <label for="globalContent">المحتوى (موحد لكل البوتات)</label>
+          <textarea id="globalContent" name="globalContent" required placeholder=" "></textarea>
         </div>
       `;
       console.log(`📋 تم تحميل حقل المحتوى الموحد لنوع global`);
     } else if (type === 'products') {
       contentFields.innerHTML = `
-        <div class="form-group" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; direction: rtl;">
-          <input type="text" id="product" name="product" required placeholder=" ">
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
           <label for="product">المنتج</label>
+          <input type="text" id="product" name="product" required placeholder=" ">
         </div>
-        <div class="form-group" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; direction: rtl;">
-          <input type="number" id="price" name="price" required placeholder=" " min="0" step="0.01">
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
           <label for="price">السعر</label>
+          <input type="number" id="price" name="price" required placeholder=" " min="0" step="0.01">
         </div>
-        <div class="form-group" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; direction: rtl;">
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
+          <label for="currency">العملة</label>
           <select id="currency" name="currency" required>
             <option value="">اختر العملة</option>
             <option value="جنيه">جنيه</option>
             <option value="دولار">دولار</option>
           </select>
-          <label for="currency">العملة</label>
         </div>
       `;
     } else if (type === 'qa') {
       contentFields.innerHTML = `
-        <div class="form-group" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; direction: rtl;">
-          <input type="text" id="question" name="question" required placeholder=" ">
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
           <label for="question">السؤال</label>
+          <input type="text" id="question" name="question" required placeholder=" ">
         </div>
-        <div class="form-group" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; direction: rtl;">
-          <textarea id="answer" name="answer" required placeholder=" "></textarea>
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
           <label for="answer">الإجابة</label>
+          <textarea id="answer" name="answer" required placeholder=" "></textarea>
         </div>
       `;
     } else if (type === 'channels') {
       contentFields.innerHTML = `
-        <div class="form-group" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; direction: rtl;">
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
+          <label for="platform">المنصة</label>
           <select id="platform" name="platform" required>
             <option value="">اختر المنصة</option>
             <option value="فيسبوك">فيسبوك</option>
@@ -160,15 +161,14 @@ async function loadRulesPage() {
             <option value="خريطة">رابط الخريطة</option>
             <option value="أخرى">أخرى</option>
           </select>
-          <label for="platform">المنصة</label>
         </div>
-        <div class="form-group" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; direction: rtl;">
-          <textarea id="description" name="description" required placeholder=" "></textarea>
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
           <label for="description">الوصف</label>
+          <textarea id="description" name="description" required placeholder=" "></textarea>
         </div>
-        <div class="form-group" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; direction: rtl;">
-          <input type="text" id="value" name="value" required placeholder=" ">
+        <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
           <label for="value">الرابط/الرقم</label>
+          <input type="text" id="value" name="value" required placeholder=" ">
         </div>
       `;
     }
