@@ -32,7 +32,9 @@ exports.getRules = async (req, res) => {
         { 'content.question': { $regex: search, $options: 'i' } },
         { 'content.answer': { $regex: search, $options: 'i' } },
         { 'content.product': { $regex: search, $options: 'i' } },
-        { 'content.apiKey': { $regex: search, $options: 'i' } },
+        { 'content.platform': { $regex: search, $options: 'i' } },
+        { 'content.description': { $regex: search, $options: 'i' } },
+        { 'content.value': { $regex: search, $options: 'i' } },
         { content: { $regex: search, $options: 'i' } },
       ];
     }
@@ -70,7 +72,7 @@ exports.createRule = async (req, res) => {
   }
 
   // التحقق من نوع القاعدة
-  const validTypes = ['general', 'products', 'qa', 'global', 'api'];
+  const validTypes = ['general', 'products', 'qa', 'global', 'channels'];
   if (!validTypes.includes(type)) {
     return res.status(400).json({ message: 'نوع القاعدة غير صالح' });
   }
@@ -97,9 +99,12 @@ exports.createRule = async (req, res) => {
     if (typeof content.question !== 'string' || typeof content.answer !== 'string') {
       return res.status(400).json({ message: 'السؤال والإجابة يجب أن يكونا سلسلتين نصيتين' });
     }
-  } else if (type === 'api') {
-    if (!content.apiKey || typeof content.apiKey !== 'string' || content.apiKey.trim() === '') {
-      return res.status(400).json({ message: 'مفتاح API يجب أن يكون سلسلة نصية غير فارغة' });
+  } else if (type === 'channels') {
+    if (!content.platform || !content.description || !content.value) {
+      return res.status(400).json({ message: 'حقول المنصة والوصف والرابط/الرقم مطلوبة' });
+    }
+    if (typeof content.platform !== 'string' || typeof content.description !== 'string' || typeof content.value !== 'string') {
+      return res.status(400).json({ message: 'المنصة والوصف والرابط/الرقم يجب أن يكونوا سلاسل نصية' });
     }
   }
 
@@ -131,7 +136,7 @@ exports.updateRule = async (req, res) => {
 
     // التحقق من نوع القاعدة إذا تم إرساله
     if (type) {
-      const validTypes = ['general', 'products', 'qa', 'global', 'api'];
+      const validTypes = ['general', 'products', 'qa', 'global', 'channels'];
       if (!validTypes.includes(type)) {
         return res.status(400).json({ message: 'نوع القاعدة غير صالح' });
       }
@@ -160,9 +165,12 @@ exports.updateRule = async (req, res) => {
         if (typeof content.question !== 'string' || typeof content.answer !== 'string') {
           return res.status(400).json({ message: 'السؤال والإجابة يجب أن يكونا سلسلتين نصيتين' });
         }
-      } else if (type === 'api') {
-        if (!content.apiKey || typeof content.apiKey !== 'string' || content.apiKey.trim() === '') {
-          return res.status(400).json({ message: 'مفتاح API يجب أن يكون سلسلة نصية غير فارغة' });
+      } else if (type === 'channels') {
+        if (!content.platform || !content.description || !content.value) {
+          return res.status(400).json({ message: 'حقول المنصة والوصف والرابط/الرقم مطلوبة' });
+        }
+        if (typeof content.platform !== 'string' || typeof content.description !== 'string' || typeof content.value !== 'string') {
+          return res.status(400).json({ message: 'المنصة والوصف والرابط/الرقم يجب أن يكونوا سلاسل نصية' });
         }
       }
     }
@@ -228,7 +236,7 @@ exports.importRules = async (req, res) => {
       return res.status(400).json({ message: 'معرف البوت وقائمة القواعد مطلوبة' });
     }
 
-    const validTypes = ['general', 'products', 'qa', 'global', 'api'];
+    const validTypes = ['general', 'products', 'qa', 'global', 'channels'];
     for (const rule of rules) {
       if (!validTypes.includes(rule.type) || !rule.content) {
         return res.status(400).json({ message: 'بيانات القاعدة غير صالحة' });
