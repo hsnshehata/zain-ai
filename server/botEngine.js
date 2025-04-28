@@ -66,7 +66,8 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
     console.log('📜 Rules found:', rules);
 
-    let systemPrompt = 'أنت بوت ذكي يساعد المستخدمين بناءً على القواعد التالية:\n';
+    // بناء الـ systemPrompt مع إضافة الوقت الحالي
+    let systemPrompt = `أنت بوت ذكي يساعد المستخدمين بناءً على القواعد التالية. الوقت الحالي هو: ${getCurrentTime()}.\n`;
     if (rules.length === 0) {
       systemPrompt += 'لا توجد قواعد محددة، قم بالرد بشكل عام ومفيد.\n';
     } else {
@@ -120,50 +121,40 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       console.log('🖼️ Processing image message');
     }
 
-    console.log('📡 Processing message...');
+    console.log('📡 Calling OpenAI API...');
     let reply = '';
 
-    // التحقق إذا كان السؤال يتعلق بالوقت
-    if (
-      userMessageContent.includes('الوقت') ||
-      userMessageContent.includes('الساعة كام') ||
-      userMessageContent.includes('الساعة') ||
-      userMessageContent.includes('النهاردة')
-    ) {
-      reply = `الوقت الحالي: ${getCurrentTime()}`;
-    } else {
-      // البحث عن قاعدة مطابقة
-      for (const rule of rules) {
-        if (rule.type === 'qa' && userMessageContent.toLowerCase().includes(rule.content.question.toLowerCase())) {
-          reply = rule.content.answer;
+    // البحث عن قاعدة مطابقة قبل استدعاء OpenAI
+    for (const rule of rules) {
+      if (rule.type === 'qa' && userMessageContent.toLowerCase().includes(rule.content.question.toLowerCase())) {
+        reply = rule.content.answer;
+        break;
+      } else if (rule.type === 'general' || rule.type === 'global') {
+        if (userMessageContent.toLowerCase().includes(rule.content.toLowerCase())) {
+          reply = rule.content;
           break;
-        } else if (rule.type === 'general' || rule.type === 'global') {
-          if (userMessageContent.toLowerCase().includes(rule.content.toLowerCase())) {
-            reply = rule.content;
-            break;
-          }
-        } else if (rule.type === 'products') {
-          if (userMessageContent.toLowerCase().includes(rule.content.product.toLowerCase())) {
-            reply = `المنتج: ${rule.content.product}، السعر: ${rule.content.price} ${rule.content.currency}`;
-            break;
-          }
+        }
+      } else if (rule.type === 'products') {
+        if (userMessageContent.toLowerCase().includes(rule.content.product.toLowerCase())) {
+          reply = `المنتج: ${rule.content.product}، السعر: ${rule.content.price} ${rule.content.currency}`;
+          break;
         }
       }
+    }
 
-      // إذا لم يتم العثور على قاعدة، استدعاء OpenAI
-      if (!reply) {
-        const response = await openai.chat.completions.create({
-          model: 'gpt-4o-mini',
-          messages,
-          max_tokens: 700,
-        });
-        reply = response.choices[0].message.content;
-      }
+    // إذا لم يتم العثور على قاعدة، استدعاء OpenAI
+    if (!reply) {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages,
+        max_tokens: 700,
+      });
+      reply = response.choices[0].message.content;
     }
 
     conversation.messages.push({ role: 'assistant', content: reply, timestamp: new Date() });
     await conversation.save();
-    console.log('💬 AssistantAng assistant reply added to conversation:', reply);
+    console.log('💬 Assistant reply added to conversation:', reply);
 
     return reply;
   } catch (err) {
