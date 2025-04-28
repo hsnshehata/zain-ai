@@ -48,51 +48,56 @@
 
 /* Form Group - Align label and input on the same line */
 .form-group {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 15px;
-  direction: rtl;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 15px !important;
+  direction: rtl !important;
+  width: 100% !important;
 }
 
 .form-group label {
-  margin-left: 10px;
-  flex: 0 0 30%;
-  text-align: right;
+  margin-left: 10px !important;
+  flex: 0 0 30% !important;
+  text-align: right !important;
+  max-width: 30% !important;
 }
 
 .form-group input,
 .form-group textarea,
 .form-group select {
-  flex: 0 0 65%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 16px;
+  flex: 0 0 65% !important;
+  max-width: 65% !important;
+  padding: 8px !important;
+  border: 1px solid #ccc !important;
+  border-radius: 4px !important;
+  font-size: 16px !important;
 }
 
 .form-group textarea {
-  resize: vertical;
-  min-height: 80px;
+  resize: vertical !important;
+  min-height: 80px !important;
 }
 
 /* Responsive Adjustments */
 @media (max-width: 600px) {
   .rules-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr !important;
   }
 
   .form-group {
-    flex-direction: column;
-    align-items: flex-end;
+    flex-direction: column !important;
+    align-items: flex-end !important;
   }
 
   .form-group label,
   .form-group input,
   .form-group textarea,
   .form-group select {
-    flex: 1 1 100%;
-    margin-left: 0;
-    margin-bottom: 5px;
+    flex: 1 1 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-bottom: 5px !important;
   }
 }
