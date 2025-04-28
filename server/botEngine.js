@@ -26,6 +26,11 @@ const Conversation = mongoose.model('Conversation', conversationSchema);
 
 const Rule = require('./models/Rule');
 
+// دالة لجلب الوقت الحالي
+function getCurrentTime() {
+  return new Date().toLocaleString('ar-EG', { timeZone: 'Africa/Cairo' });
+}
+
 async function transcribeAudio(audioUrl) {
   const body = new FormData();
   body.append('file', audioUrl);
@@ -95,16 +100,9 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       console.log('💬 Transcribed audio message:', userMessageContent);
     }
 
-    // إضافة رسالة المستخدم مع الـ timestamp
     conversation.messages.push({ role: 'user', content: userMessageContent, timestamp: new Date() });
     await conversation.save();
     console.log('💬 User message added to conversation:', userMessageContent);
-
-    // جلب وقت آخر رسالة من المستخدم
-    const lastUserMessage = conversation.messages
-      .filter(msg => msg.role === 'user')
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
-    const lastMessageTimestamp = lastUserMessage ? new Date(lastUserMessage.timestamp) : new Date();
 
     const messages = [
       { role: 'system', content: systemPrompt },
@@ -122,53 +120,19 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       console.log('🖼️ Processing image message');
     }
 
-    console.log('📡 Calling OpenAI API...');
+    console.log('📡 Processing message...');
     let reply = '';
 
-    // التحقق إذا كان السؤال يتعلق بمواعيد العمل
-    if (message.includes('انتوا فاتحين') || message.includes('مواعيد العمل')) {
-      // تحليل القواعد لاستخراج مواعيد العمل باستخدام OpenAI
-      const timePrompt = `
-        أنت بوت ذكي. القواعد التالية تحتوي على معلومات قد تتضمن مواعيد العمل:
-        ${systemPrompt}
-        السؤال: "${message}"
-        حاول استخراج مواعيد العمل (مثل "من 9 الصبح لـ 5 المغرب" أو "من الساعة 8 للساعة 6") من القواعد.
-        لو لقيت مواعيد عمل، رجعها في صيغة: "من HH:MM إلى HH:MM" (بتوقيت 24 ساعة).
-        لو ما لقيتش مواعيد عمل، رجع: "لم أجد مواعيد عمل في القواعد."
-      `;
-
-      const timeResponse = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [{ role: 'system', content: timePrompt }],
-        max_tokens: 100,
-      });
-
-      let workingHoursText = timeResponse.choices[0].message.content;
-      let workingHours = { start: '09:00', end: '17:00' }; // قيم افتراضية لو ما لقيناش مواعيد
-
-      if (workingHoursText !== 'لم أجد مواعيد عمل في القواعد.') {
-        // استخراج مواعيد العمل من النص (مثال: "من 09:00 إلى 17:00")
-        const match = workingHoursText.match(/من (\d{2}:\d{2}) إلى (\d{2}:\d{2})/);
-        if (match) {
-          workingHours.start = match[1];
-          workingHours.end = match[2];
-        }
-      } else {
-        reply = 'لم أجد مواعيد عمل في القواعد. يمكنك إضافتها في القواعد الخاصة بي!';
-      }
-
-      // إذا لقينا مواعيد عمل، نحسب إذا البوت "فاتح" أو "مغلق"
-      if (!reply) {
-        const now = lastMessageTimestamp;
-        const startTime = new Date(now.toDateString() + ' ' + workingHours.start);
-        const endTime = new Date(now.toDateString() + ' ' + workingHours.end);
-        const isOpen = now >= startTime && now <= endTime;
-
-        reply = `مواعيد العمل من ${workingHours.start} إلى ${workingHours.end}. الوقت دلوقتي ${lastMessageTimestamp.toLocaleString('ar-EG')}. ${isOpen ? 'إحنا فاتحين دلوقتي!' : 'للأسف إحنا مغلقين دلوقتي.'}`;
-      }
+    // التحقق إذا كان السؤال يتعلق بالوقت
+    if (
+      userMessageContent.includes('الوقت') ||
+      userMessageContent.includes('الساعة كام') ||
+      userMessageContent.includes('الساعة') ||
+      userMessageContent.includes('النهاردة')
+    ) {
+      reply = `الوقت الحالي: ${getCurrentTime()}`;
     } else {
-      // إذا كان السؤال مش عن مواعيد العمل، نكمل معالجة الرسالة بشكل عادي
-      // نبحث عن قاعدة مطابقة قبل استدعاء OpenAI
+      // البحث عن قاعدة مطابقة
       for (const rule of rules) {
         if (rule.type === 'qa' && userMessageContent.toLowerCase().includes(rule.content.question.toLowerCase())) {
           reply = rule.content.answer;
@@ -186,7 +150,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         }
       }
 
-      // إذا ما لقيناش قاعدة مطابقة، نستدعي OpenAI
+      // إذا لم يتم العثور على قاعدة، استدعاء OpenAI
       if (!reply) {
         const response = await openai.chat.completions.create({
           model: 'gpt-4o-mini',
@@ -197,17 +161,9 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       }
     }
 
-    // استبدال القيم الديناميكية في الرد
-    if (reply.includes('${lastMessageTimestamp.toLocaleString(\'ar-EG\')}')) {
-      reply = reply.replace('${lastMessageTimestamp.toLocaleString(\'ar-EG\')}', lastMessageTimestamp.toLocaleString('ar-EG'));
-    }
-    if (reply.includes('${lastMessageTimestamp.toISOString()}')) {
-      reply = reply.replace('${lastMessageTimestamp.toISOString()}', lastMessageTimestamp.toISOString());
-    }
-
     conversation.messages.push({ role: 'assistant', content: reply, timestamp: new Date() });
     await conversation.save();
-    console.log('💬 Assistant reply added to conversation:', reply);
+    console.log('💬 AssistantAng assistant reply added to conversation:', reply);
 
     return reply;
   } catch (err) {
