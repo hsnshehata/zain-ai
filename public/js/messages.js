@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUserId = '';
     let currentTab = 'facebook'; // Default tab
     let conversations = [];
-    let userNamesCache = {}; // Cache for Facebook user names
+    let userNamesCache = {}; // Cache for user names
     let webUserCounter = 1; // Counter for web user names
     let currentPage = 1;
     const cardsPerPage = 30;
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
       errorDiv.style.display = 'none';
 
       try {
-        const startDate = startDateFilter.value ? new Date(startDateFilter.value) : null;
+        const startDate = startDateFilter.value ? participouDate(startDateFilter.value) : null;
         const endDate = endDateFilter.value ? new Date(endDateFilter.value) : null;
 
         const response = await fetch(`/api/messages/${botId}?type=${currentTab}${startDate ? `&startDate=${startDate.toISOString()}` : ''}${endDate ? `&endDate=${endDate.toISOString()}` : ''}`, {
@@ -227,38 +227,9 @@ document.addEventListener('DOMContentLoaded', () => {
           if (currentTab === 'whatsapp' && !isWhatsAppUser) continue;
 
           if (currentTab === 'facebook') {
-            if (userNamesCache[userId]) {
-              userName = userNamesCache[userId];
-            } else {
-              // التحقق إذا كان الـ username موجود في بيانات المحادثة نفسها
-              const conv = userConversations[0];
-              if (conv.username) {
-                userName = conv.username;
-                userNamesCache[userId] = userName;
-              } else {
-                // لو مش موجود، نعمل طلب منفصل لجلب الاسم
-                try {
-                  // افترضنا إن فيه endpoint لجلب بيانات المستخدم
-                  const userResponse = await fetch(`/api/users/${userId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` },
-                  });
-                  if (userResponse.ok) {
-                    const userData = await userResponse.json();
-                    console.log(`بيانات المستخدم ${userId}:`, userData);
-                    userName = userData.username || `مستخدم فيسبوك ${userId}`;
-                    userNamesCache[userId] = userName;
-                  } else {
-                    console.error(`فشل في جلب بيانات المستخدم ${userId}:`, userResponse.status);
-                    userName = `مستخدم فيسبوك ${userId}`;
-                    userNamesCache[userId] = userName;
-                  }
-                } catch (err) {
-                  console.error(`خطأ في جلب اسم المستخدم ${userId}:`, err);
-                  userName = `مستخدم فيسبوك ${userId}`;
-                  userNamesCache[userId] = userName;
-                }
-              }
-            }
+            const conv = userConversations[0];
+            userName = conv.username || `مستخدم فيسبوك ${userId}`; // نستخدم الـ username اللي جاي من السيرفر
+            userNamesCache[userId] = userName;
           } else if (currentTab === 'whatsapp') {
             userName = `واتساب ${webUserCounter++}`;
           } else {
