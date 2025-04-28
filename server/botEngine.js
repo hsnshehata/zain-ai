@@ -153,7 +153,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
           ...conversation.messages.map((msg) => ({ role: msg.role, content: msg.content })),
         ];
         const response = await openai.chat.completions.create({
-          model: 'gpt-o4-mini-2025-04-16',
+          model: 'gpt-4.1-mini-2025-04-14',
           messages,
           max_tokens: 700,
         });
