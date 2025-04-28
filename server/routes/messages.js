@@ -1,18 +1,19 @@
 const express = require('express');
 const router = express.Router();
 const Conversation = require('../models/Conversation');
+const Bot = require('../models/Bot'); // استيراد موديل Bot
 const authenticate = require('../middleware/authenticate');
 const request = require('request');
 const messagesController = require('../controllers/messagesController');
 
 // دالة لجلب اسم المستخدم من فيسبوك
-async function getFacebookUsername(userId) {
+async function getFacebookUsername(userId, accessToken) {
   try {
     const response = await new Promise((resolve, reject) => {
       request(
         {
           uri: `https://graph.facebook.com/v22.0/${userId}`,
-          qs: { access_token: process.env.FACEBOOK_ACCESS_TOKEN, fields: 'name' },
+          qs: { access_token: accessToken, fields: 'name' }, // استخدام الـ access_token اللي بييجي كمعامل
           method: 'GET',
         },
         (err, res, body) => {
@@ -56,11 +57,21 @@ router.get('/:botId', authenticate, async (req, res) => {
 
     const conversations = await Conversation.find(query);
 
+    // جلب الـ access_token بتاع البوت من قاعدة البيانات
+    const bot = await Bot.findById(botId);
+    if (!bot) {
+      throw new Error('البوت غير موجود');
+    }
+    const facebookAccessToken = bot.facebookApiKey;
+    if (!facebookAccessToken) {
+      throw new Error('لم يتم العثور على access token لفيسبوك لهذا البوت');
+    }
+
     // إضافة الـ username لكل محادثة
     const conversationsWithUsernames = await Promise.all(conversations.map(async (conv) => {
       let username = conv.userId; // افتراضي
       if (type === 'facebook') {
-        username = await getFacebookUsername(conv.userId);
+        username = await getFacebookUsername(conv.userId, facebookAccessToken);
       }
       return { ...conv._doc, username }; // إضافة الـ username للبيانات
     }));
@@ -79,11 +90,27 @@ router.get('/daily/:botId', authenticate, messagesController.getDailyMessages);
 router.get('/facebook-user/:userId', authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
+
+    // جلب الـ botId من الـ query (لأن ده endpoint منفصل)
+    const { botId } = req.query;
+    if (!botId) {
+      throw new Error('يرجى تحديد botId في الطلب');
+    }
+
+    const bot = await Bot.findById(botId);
+    if (!bot) {
+      throw new Error('البوت غير موجود');
+    }
+    const facebookAccessToken = bot.facebookApiKey;
+    if (!facebookAccessToken) {
+      throw new Error('لم يتم العثور على access token لفيسبوك لهذا البوت');
+    }
+
     const response = await new Promise((resolve, reject) => {
       request(
         {
           uri: `https://graph.facebook.com/v22.0/${userId}`,
-          qs: { access_token: process.env.FACEBOOK_ACCESS_TOKEN, fields: 'name' },
+          qs: { access_token: facebookAccessToken, fields: 'name' },
           method: 'GET',
         },
         (err, res, body) => {
