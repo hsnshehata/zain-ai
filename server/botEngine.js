@@ -141,7 +141,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
             {
               role: 'user',
               content: [
-                { type: 'input_text', text: 'What is in this image?' },
+                { type: 'input_text', text: 'افهم محتوى الصورة و ابحث في القواعد عن منتج او خدمة مشابه لما هو موجود مع وصف مختصر لمحتوى الصورة' },
                 { type: 'input_image', image_url: message },
               ],
             },
