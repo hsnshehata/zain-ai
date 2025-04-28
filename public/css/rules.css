@@ -46,60 +46,9 @@
   flex: 1;
 }
 
-/* Form Group - Align label and input on the same line */
-.form-group {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  margin-bottom: 15px !important;
-  direction: rtl !important;
-  width: 100% !important;
-}
-
-.form-group label {
-  margin-right: 10px !important; /* غيرنا من margin-left لـ margin-right */
-  flex: 0 0 30% !important;
-  text-align: right !important;
-  max-width: 30% !important;
-  order: -1 !important; /* خلينا الـ label يظهر الأول (على اليمين) */
-}
-
-.form-group input,
-.form-group textarea,
-.form-group select {
-  flex: 0 0 65% !important;
-  max-width: 65% !important;
-  padding: 8px !important;
-  border: 1px solid #ccc !important;
-  border-radius: 4px !important;
-  font-size: 16px !important;
-}
-
-.form-group textarea {
-  resize: vertical !important;
-  min-height: 80px !important;
-}
-
 /* Responsive Adjustments */
 @media (max-width: 600px) {
   .rules-grid {
-    grid-template-columns: 1fr !important;
-  }
-
-  .form-group {
-    flex-direction: column !important;
-    align-items: flex-end !important;
-  }
-
-  .form-group label,
-  .form-group input,
-  .form-group textarea,
-  .form-group select {
-    flex: 1 1 100% !important;
-    max-width: 100% !important;
-    margin-right: 0 !important; /* غيرنا من margin-left لـ margin-right */
-    margin-bottom: 5px !important;
-    order: initial !important; /* في الشاشات الصغيرة، نرجع الترتيب الطبيعي */
+    grid-template-columns: 1fr;
   }
 }
