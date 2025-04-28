@@ -1,11 +1,37 @@
-// /server/routes/messages.js
-
 const express = require('express');
 const router = express.Router();
 const Conversation = require('../models/Conversation');
 const authenticate = require('../middleware/authenticate');
 const request = require('request');
 const messagesController = require('../controllers/messagesController');
+
+// دالة لجلب اسم المستخدم من فيسبوك
+async function getFacebookUsername(userId) {
+  try {
+    const response = await new Promise((resolve, reject) => {
+      request(
+        {
+          uri: `https://graph.facebook.com/v22.0/${userId}`,
+          qs: { access_token: process.env.FACEBOOK_ACCESS_TOKEN, fields: 'name' },
+          method: 'GET',
+        },
+        (err, res, body) => {
+          if (err) return reject(err);
+          resolve(JSON.parse(body));
+        }
+      );
+    });
+
+    if (response.error) {
+      throw new Error(response.error.message);
+    }
+
+    return response.name || userId; // لو الاسم مش موجود، نرجع الـ userId كحل احتياطي
+  } catch (err) {
+    console.error(`❌ خطأ في جلب اسم المستخدم ${userId} من فيسبوك:`, err.message);
+    return userId; // لو حصل خطأ، نرجع الـ userId
+  }
+}
 
 // Get conversations for a bot
 router.get('/:botId', authenticate, async (req, res) => {
@@ -29,7 +55,17 @@ router.get('/:botId', authenticate, async (req, res) => {
     }
 
     const conversations = await Conversation.find(query);
-    res.status(200).json(conversations);
+
+    // إضافة الـ username لكل محادثة
+    const conversationsWithUsernames = await Promise.all(conversations.map(async (conv) => {
+      let username = conv.userId; // افتراضي
+      if (type === 'facebook') {
+        username = await getFacebookUsername(conv.userId);
+      }
+      return { ...conv._doc, username }; // إضافة الـ username للبيانات
+    }));
+
+    res.status(200).json(conversationsWithUsernames);
   } catch (err) {
     console.error('Error fetching conversations:', err);
     res.status(500).json({ message: 'خطأ في السيرفر' });
