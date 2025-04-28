@@ -105,7 +105,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     await conversation.save();
     console.log('💬 User message added to conversation:', userMessageContent);
 
-    const messages = [
+    let messages = [
       { role: 'system', content: systemPrompt },
       ...conversation.messages.map((msg) => ({ role: msg.role, content: msg.content })),
     ];
@@ -134,18 +134,19 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     // إذا لم يتم العثور على قاعدة، استدعاء OpenAI
     if (!reply) {
       if (isImage) {
+        // إضافة رسالة الصورة إلى messages
+        messages.push({
+          role: 'user',
+          content: [
+            { type: 'text', text: 'اطلب معلومات عن المنتج الموجود في الصورة' },
+            { type: 'image_url', image_url: { url: message } },
+          ],
+        });
+
         // معالجة الصور باستخدام responses.create
         const response = await openai.responses.create({
           model: 'gpt-4.1-mini-2025-04-14',
-          input: [
-            {
-              role: 'user',
-              content: [
-                { type: 'input_text', text: 'افهم محتوى الصورة و ابحث في القواعد عن منتج او خدمة مشابه لما هو موجود مع وصف مختصر لمحتوى الصورة' },
-                { type: 'input_image', image_url: message },
-              ],
-            },
-          ],
+          messages,
           max_output_tokens: 700,
         });
         reply = response.output_text || 'عذرًا، لم أتمكن من تحليل الصورة.';
