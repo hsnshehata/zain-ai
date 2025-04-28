@@ -78,6 +78,8 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
           systemPrompt += `المنتج: ${rule.content.product}، السعر: ${rule.content.price} ${rule.content.currency}\n`;
         } else if (rule.type === 'qa') {
           systemPrompt += `السؤال: ${rule.content.question}، الإجابة: ${rule.content.answer}\n`;
+        } else if (rule.type === 'channels') {
+          systemPrompt += `قناة التواصل: ${rule.content.platform}، الوصف: ${rule.content.description}، الرابط/الرقم: ${rule.content.value}\n`;
         }
       });
     }
@@ -120,6 +122,11 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       } else if (rule.type === 'products') {
         if (userMessageContent.toLowerCase().includes(rule.content.product.toLowerCase())) {
           reply = `المنتج: ${rule.content.product}، السعر: ${rule.content.price} ${rule.content.currency}`;
+          break;
+        }
+      } else if (rule.type === 'channels') {
+        if (userMessageContent.toLowerCase().includes(rule.content.platform.toLowerCase())) {
+          reply = `قناة التواصل: ${rule.content.platform}\nالوصف: ${rule.content.description}\nالرابط/الرقم: ${rule.content.value}`;
           break;
         }
       }
