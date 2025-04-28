@@ -36,11 +36,11 @@ async function loadRulesPage() {
         <h3>القواعد الحالية</h3>
         <div class="rules-actions" style="display: flex; gap: 10px; align-items: center;">
           <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
-            <label for="searchInput">البحث</label>
+            <label for="searchInput" style="text-align: right;">البحث</label>
             <input type="text" id="searchInput" placeholder="ابحث في القواعد...">
           </div>
           <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
-            <label for="typeFilter">فلتر حسب النوع</label>
+            <label for="typeFilter" style="text-align: right;">فلتر حسب النوع</label>
             <select id="typeFilter" name="typeFilter">
               <option value="all">الكل</option>
               <option value="general">عامة</option>
@@ -101,7 +101,7 @@ async function loadRulesPage() {
     if (type === 'general') {
       contentFields.innerHTML = `
         <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
-          <label for="generalContent">المحتوى (خاص بالبوت المحدد)</label>
+          <label for="generalContent" style="text-align: right;">المحتوى (خاص بالبوت المحدد)</label>
           <textarea id="generalContent" name="generalContent" required placeholder=" "></textarea>
         </div>
       `;
@@ -109,7 +109,7 @@ async function loadRulesPage() {
     } else if (type === 'global') {
       contentFields.innerHTML = `
         <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
-          <label for="globalContent">المحتوى (موحد لكل البوتات)</label>
+          <label for="globalContent" style="text-align: right;">المحتوى (موحد لكل البوتات)</label>
           <textarea id="globalContent" name="globalContent" required placeholder=" "></textarea>
         </div>
       `;
@@ -117,15 +117,15 @@ async function loadRulesPage() {
     } else if (type === 'products') {
       contentFields.innerHTML = `
         <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
-          <label for="product">المنتج</label>
+          <label for="product" style="text-align: right;">المنتج</label>
           <input type="text" id="product" name="product" required placeholder=" ">
         </div>
         <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
-          <label for="price">السعر</label>
+          <label for="price" style="text-align: right;">السعر</label>
           <input type="number" id="price" name="price" required placeholder=" " min="0" step="0.01">
         </div>
         <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
-          <label for="currency">العملة</label>
+          <label for="currency" style="text-align: right;">العملة</label>
           <select id="currency" name="currency" required>
             <option value="">اختر العملة</option>
             <option value="جنيه">جنيه</option>
@@ -136,18 +136,18 @@ async function loadRulesPage() {
     } else if (type === 'qa') {
       contentFields.innerHTML = `
         <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
-          <label for="question">السؤال</label>
+          <label for="question" style="text-align: right;">السؤال</label>
           <input type="text" id="question" name="question" required placeholder=" ">
         </div>
         <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
-          <label for="answer">الإجابة</label>
+          <label for="answer" style="text-align: right;">الإجابة</label>
           <textarea id="answer" name="answer" required placeholder=" "></textarea>
         </div>
       `;
     } else if (type === 'channels') {
       contentFields.innerHTML = `
         <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
-          <label for="platform">المنصة</label>
+          <label for="platform" style="text-align: right;">المنصة</label>
           <select id="platform" name="platform" required>
             <option value="">اختر المنصة</option>
             <option value="فيسبوك">فيسبوك</option>
@@ -163,11 +163,11 @@ async function loadRulesPage() {
           </select>
         </div>
         <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
-          <label for="description">الوصف</label>
+          <label for="description" style="text-align: right;">الوصف</label>
           <textarea id="description" name="description" required placeholder=" "></textarea>
         </div>
         <div class="form-group" style="display: flex; flex-direction: column; align-items: flex-end; direction: rtl;">
-          <label for="value">الرابط/الرقم</label>
+          <label for="value" style="text-align: right;">الرابط/الرقم</label>
           <input type="text" id="value" name="value" required placeholder=" ">
         </div>
       `;
@@ -317,7 +317,7 @@ async function loadRulesPage() {
         const product = document.getElementById('product')?.value;
         const price = parseFloat(document.getElementById('price')?.value);
         const currency = document.getElementById('currency')?.value;
-        if (!product || isNaN(price) || price <= 0 || !currency) {
+        if (!product || isNaN(price) || price <= 0 || ! Distance between the label and the input field is too small, we need to add some margin-bottom to the label to make it look better.urrency) {
           alert('يرجى إدخال جميع الحقول (المنتج، السعر، العملة) بشكل صحيح');
           return;
         }
@@ -474,7 +474,7 @@ async function loadRulesPage() {
           return;
         }
         newContent = { product, price, currency };
-      } else if (rule.type === 'qa') {
+      } else if (type === 'qa') {
         const question = prompt('أدخل السؤال الجديد:', rule.content.question);
         const answer = prompt('أدخل الإجابة الجديدة:', rule.content.answer);
         if (!question || !answer || question.trim() === '' || answer.trim() === '') {
