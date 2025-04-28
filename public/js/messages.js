@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let conversations = [];
     let userNamesCache = {}; // Cache for Facebook user names
     let webUserCounter = 1; // Counter for web user names
-    let current únicas = 1;
+    let currentPage = 1;
     const cardsPerPage = 30;
 
     // Hide spinner and show content
@@ -187,6 +187,9 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error('البيانات المستلمة غير متوقعة');
         }
 
+        // لوج عشان نشوف شكل البيانات
+        console.log('بيانات المحادثات:', conversations);
+
         // Show messages content
         usersLoadingSpinner.style.display = 'none';
         usersList.style.display = 'grid';
@@ -227,22 +230,33 @@ document.addEventListener('DOMContentLoaded', () => {
             if (userNamesCache[userId]) {
               userName = userNamesCache[userId];
             } else {
-              try {
-                const userResponse = await fetch(`/api/users/facebook/${userId}`, {
-                  headers: { 'Authorization': `Bearer ${token}` },
-                });
-                if (userResponse.ok) {
-                  const userData = await userResponse.json();
-                  userName = userData.username || `مستخدم فيسبوك ${userId}`;
-                  userNamesCache[userId] = userName;
-                } else {
+              // التحقق إذا كان الـ username موجود في بيانات المحادثة نفسها
+              const conv = userConversations[0];
+              if (conv.username) {
+                userName = conv.username;
+                userNamesCache[userId] = userName;
+              } else {
+                // لو مش موجود، نعمل طلب منفصل لجلب الاسم
+                try {
+                  // افترضنا إن فيه endpoint لجلب بيانات المستخدم
+                  const userResponse = await fetch(`/api/users/${userId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                  });
+                  if (userResponse.ok) {
+                    const userData = await userResponse.json();
+                    console.log(`بيانات المستخدم ${userId}:`, userData);
+                    userName = userData.username || `مستخدم فيسبوك ${userId}`;
+                    userNamesCache[userId] = userName;
+                  } else {
+                    console.error(`فشل في جلب بيانات المستخدم ${userId}:`, userResponse.status);
+                    userName = `مستخدم فيسبوك ${userId}`;
+                    userNamesCache[userId] = userName;
+                  }
+                } catch (err) {
+                  console.error(`خطأ في جلب اسم المستخدم ${userId}:`, err);
                   userName = `مستخدم فيسبوك ${userId}`;
                   userNamesCache[userId] = userName;
                 }
-              } catch (err) {
-                console.error(`خطأ في جلب اسم المستخدم ${userId}:`, err);
-                userName = `مستخدم فيسبوك ${userId}`;
-                userNamesCache[userId] = userName;
               }
             }
           } else if (currentTab === 'whatsapp') {
