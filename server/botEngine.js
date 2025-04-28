@@ -146,7 +146,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
               ],
             },
           ],
-          max_completion_tokens: 700,
+          max_output_tokens: 700,
         });
         reply = response.output_text || 'عذرًا، لم أتمكن من تحليل الصورة.';
         console.log('🖼️ Image processed:', reply);
@@ -155,7 +155,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         const response = await openai.chat.completions.create({
           model: 'gpt-4.1-mini-2025-04-14',
           messages,
-          max_completion_tokens: 700,
+          max_tokens: 700,
         });
         reply = response.choices[0].message.content;
       }
