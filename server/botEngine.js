@@ -105,12 +105,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     await conversation.save();
     console.log('💬 User message added to conversation:', userMessageContent);
 
-    let messages = [
-      { role: 'system', content: systemPrompt },
-      ...conversation.messages.map((msg) => ({ role: msg.role, content: msg.content })),
-    ];
-
-    console.log('📡 Processing message...');
     let reply = '';
 
     // البحث عن قاعدة مطابقة قبل استدعاء OpenAI
@@ -134,25 +128,30 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     // إذا لم يتم العثور على قاعدة، استدعاء OpenAI
     if (!reply) {
       if (isImage) {
-        // إضافة رسالة الصورة إلى messages
-        messages.push({
-          role: 'user',
-          content: [
-            { type: 'text', text: 'اطلب معلومات عن المنتج الموجود في الصورة' },
-            { type: 'image_url', image_url: { url: message } },
-          ],
-        });
-
-        // معالجة الصور باستخدام responses.create
+        // معالجة الصور باستخدام responses.create مع input
         const response = await openai.responses.create({
           model: 'gpt-4.1-mini-2025-04-14',
-          messages,
+          input: [
+            { role: 'system', content: systemPrompt },
+            ...conversation.messages.map((msg) => ({ role: msg.role, content: msg.content })),
+            {
+              role: 'user',
+              content: [
+                { type: 'input_text', text: 'اطلب معلومات عن المنتج الموجود في الصورة' },
+                { type: 'input_image', image_url: message },
+              ],
+            },
+          ],
           max_output_tokens: 700,
         });
         reply = response.output_text || 'عذرًا، لم أتمكن من تحليل الصورة.';
         console.log('🖼️ Image processed:', reply);
       } else {
         // معالجة النصوص باستخدام chat.completions.create
+        const messages = [
+          { role: 'system', content: systemPrompt },
+          ...conversation.messages.map((msg) => ({ role: msg.role, content: msg.content })),
+        ];
         const response = await openai.chat.completions.create({
           model: 'gpt-4.1-mini-2025-04-14',
           messages,
