@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let conversations = [];
     let userNamesCache = {}; // Cache for Facebook user names
     let webUserCounter = 1; // Counter for web user names
-    let currentPage = 1;
+    let current únicas = 1;
     const cardsPerPage = 30;
 
     // Hide spinner and show content
@@ -227,9 +227,23 @@ document.addEventListener('DOMContentLoaded', () => {
             if (userNamesCache[userId]) {
               userName = userNamesCache[userId];
             } else {
-              // إلغاء جلب بيانات المستخدم من فيسبوك مؤقتًا
-              userName = `مستخدم فيسبوك ${userId}`; // اسم افتراضي
-              userNamesCache[userId] = userName;
+              try {
+                const userResponse = await fetch(`/api/users/facebook/${userId}`, {
+                  headers: { 'Authorization': `Bearer ${token}` },
+                });
+                if (userResponse.ok) {
+                  const userData = await userResponse.json();
+                  userName = userData.username || `مستخدم فيسبوك ${userId}`;
+                  userNamesCache[userId] = userName;
+                } else {
+                  userName = `مستخدم فيسبوك ${userId}`;
+                  userNamesCache[userId] = userName;
+                }
+              } catch (err) {
+                console.error(`خطأ في جلب اسم المستخدم ${userId}:`, err);
+                userName = `مستخدم فيسبوك ${userId}`;
+                userNamesCache[userId] = userName;
+              }
             }
           } else if (currentTab === 'whatsapp') {
             userName = `واتساب ${webUserCounter++}`;
