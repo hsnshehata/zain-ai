@@ -1,3 +1,5 @@
+// /client/rules.js
+
 async function loadRulesPage() {
   const content = document.getElementById('content');
   const role = localStorage.getItem('role');
@@ -22,7 +24,7 @@ async function loadRulesPage() {
           <button class="rule-type-btn active" data-type="general">قواعد عامة</button>
           <button class="rule-type-btn" data-type="products">قائمة الأسعار</button>
           <button class="rule-type-btn" data-type="qa">سؤال وجواب</button>
-          <button class="rule-type-btn" data-type="api">ربط API للمتجر</button>
+          <button class="rule-type-btn" data-type="channels">قنوات التواصل والمنصات</button>
           ${role === 'superadmin' ? '<button class="rule-type-btn" data-type="global">قواعد موحدة</button>' : ''}
         </div>
         <div id="ruleFormContainer" style="display: none;">
@@ -43,7 +45,7 @@ async function loadRulesPage() {
               <option value="general">عامة</option>
               <option value="products">أسعار</option>
               <option value="qa">أسئلة</option>
-              <option value="api">مفتاح API</option>
+              <option value="channels">قنوات</option>
               ${role === 'superadmin' ? '<option value="global">موحدة</option>' : ''}
             </select>
             <label for="typeFilter">فلتر حسب النوع</label>
@@ -142,11 +144,31 @@ async function loadRulesPage() {
           <label for="answer">الإجابة</label>
         </div>
       `;
-    } else if (type === 'api') {
+    } else if (type === 'channels') {
       contentFields.innerHTML = `
         <div class="form-group">
-          <input type="text" id="apiKey" name="apiKey" required placeholder=" ">
-          <label for="apiKey">مفتاح API</label>
+          <select id="platform" name="platform" required>
+            <option value="">اختر المنصة</option>
+            <option value="فيسبوك">فيسبوك</option>
+            <option value="تويتر">تويتر</option>
+            <option value="إنستغرام">إنستغرام</option>
+            <option value="واتساب">واتساب</option>
+            <option value="رقم الاتصال">رقم الاتصال</option>
+            <option value="رقم الأرضي">رقم الأرضي</option>
+            <option value="موقع ويب">موقع ويب</option>
+            <option value="متجر إلكتروني">متجر إلكتروني</option>
+            <option value="خريطة">رابط الخريطة</option>
+            <option value="أخرى">أخرى</option>
+          </select>
+          <label for="platform">المنصة</label>
+        </div>
+        <div class="form-group">
+          <textarea id="description" name="description" required placeholder=" "></textarea>
+          <label for="description">الوصف</label>
+        </div>
+        <div class="form-group">
+          <input type="text" id="value" name="value" required placeholder=" ">
+          <label for="value">الرابط/الرقم</label>
         </div>
       `;
     }
@@ -308,13 +330,15 @@ async function loadRulesPage() {
           return;
         }
         content = { question, answer };
-      } else if (type === 'api') {
-        const apiKey = document.getElementById('apiKey')?.value;
-        if (!apiKey || apiKey.trim() === '') {
-          alert('يرجى إدخال مفتاح API');
+      } else if (type === 'channels') {
+        const platform = document.getElementById('platform')?.value;
+        const description = document.getElementById('description')?.value;
+        const value = document.getElementById('value')?.value;
+        if (!platform || !description || !value || description.trim() === '' || value.trim() === '') {
+          alert('يرجى إدخال جميع الحقول (المنصة، الوصف، الرابط/الرقم) بشكل صحيح');
           return;
         }
-        content = { apiKey };
+        content = { platform, description, value };
       }
 
       try {
@@ -376,8 +400,8 @@ async function loadRulesPage() {
             contentDisplay = `المنتج: ${rule.content.product} | السعر: ${rule.content.price} ${rule.content.currency}`;
           } else if (rule.type === 'qa') {
             contentDisplay = `السؤال: ${rule.content.question} | الإجابة: ${rule.content.answer}`;
-          } else if (rule.type === 'api') {
-            contentDisplay = `مفتاح API: ${rule.content.apiKey}`;
+          } else if (rule.type === 'channels') {
+            contentDisplay = `المنصة: ${rule.content.platform} | الوصف: ${rule.content.description} | الرابط/الرقم: ${rule.content.value}`;
           }
           card.innerHTML = `
             <h4>نوع القاعدة: ${rule.type}</h4>
@@ -458,13 +482,15 @@ async function loadRulesPage() {
           return;
         }
         newContent = { question, answer };
-      } else if (rule.type === 'api') {
-        const apiKey = prompt('أدخل مفتاح API الجديد:', rule.content.apiKey);
-        if (!apiKey || apiKey.trim() === '') {
-          alert('يرجى إدخال مفتاح API صالح');
+      } else if (rule.type === 'channels') {
+        const platform = prompt('أدخل اسم المنصة الجديد:', rule.content.platform);
+        const description = prompt('أدخل الوصف الجديد:', rule.content.description);
+        const value = prompt('أدخل الرابط/الرقم الجديد:', rule.content.value);
+        if (!platform || !description || !value || description.trim() === '' || value.trim() === '') {
+          alert('يرجى إدخال بيانات المنصة والوصف والرابط/الرقم بشكل صحيح');
           return;
         }
-        newContent = { apiKey };
+        newContent = { platform, description, value };
       }
 
       if (newContent) {
