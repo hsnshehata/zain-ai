@@ -17,33 +17,6 @@ async function loadRulesPage() {
 
   content.innerHTML = `
     <h2>إدارة القواعد</h2>
-    <style>
-      .form-group {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 15px;
-        direction: rtl;
-      }
-      .form-group label {
-        margin-left: 10px;
-        flex: 0 0 30%;
-        text-align: right;
-      }
-      .form-group input,
-      .form-group textarea,
-      .form-group select {
-        flex: 0 0 65%;
-        padding: 8px;
-        border: 1px solid #ccc;
-        border-radius: 4px;
-        font-size: 16px;
-      }
-      .form-group textarea {
-        resize: vertical;
-        min-height: 80px;
-      }
-    </style>
     <div class="rules-container">
       <div class="spinner"><div class="loader"></div></div>
       <div id="rulesContent" style="display: none;">
