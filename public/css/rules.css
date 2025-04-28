@@ -58,10 +58,11 @@
 }
 
 .form-group label {
-  margin-left: 10px !important;
+  margin-right: 10px !important; /* غيرنا من margin-left لـ margin-right */
   flex: 0 0 30% !important;
   text-align: right !important;
   max-width: 30% !important;
+  order: -1 !important; /* خلينا الـ label يظهر الأول (على اليمين) */
 }
 
 .form-group input,
@@ -97,7 +98,8 @@
   .form-group select {
     flex: 1 1 100% !important;
     max-width: 100% !important;
-    margin-left: 0 !important;
+    margin-right: 0 !important; /* غيرنا من margin-left لـ margin-right */
     margin-bottom: 5px !important;
+    order: initial !important; /* في الشاشات الصغيرة، نرجع الترتيب الطبيعي */
   }
 }
