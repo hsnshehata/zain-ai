@@ -31,30 +31,6 @@ function getCurrentTime() {
   return new Date().toLocaleString('ar-EG', { timeZone: 'Africa/Cairo' });
 }
 
-// دالة لتحليل السؤال وتحديد إذا كان يستدعي بحث
-async function shouldSearchInternet(query) {
-  try {
-    const prompt = `
-      أنت محلل أسئلة ذكي. قرر إذا كان السؤال التالي يتطلب بحثًا على الإنترنت لجلب بيانات حديثة (مثل الأحداث الجارية، الطقس، الأبراج، أو أي معلومات متغيرة). السؤال: "${query}"
-      إذا كان يتطلب بحثًا، أرجع "نعم" وحدد كلمات مفتاحية للبحث. إذا لم يتطلب، أرجع "لا".
-      أرجع الإجابة بصيغة JSON:
-      {
-        "requiresSearch": "نعم" | "لا",
-        "keywords": "كلمات مفتاحية" | ""
-      }
-    `;
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'system', content: prompt }],
-      max_tokens: 100,
-    });
-    return JSON.parse(response.choices[0].message.content);
-  } catch (err) {
-    console.error('❌ Error analyzing question:', err.message);
-    return { requiresSearch: 'لا', keywords: '' };
-  }
-}
-
 async function transcribeAudio(audioUrl) {
   const body = new FormData();
   body.append('file', audioUrl);
@@ -134,17 +110,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       ...conversation.messages.map((msg) => ({ role: msg.role, content: msg.content })),
     ];
 
-    if (isImage) {
-      messages.push({
-        role: 'user',
-        content: [
-          { type: 'text', text: 'Analyze this image:' },
-          { type: 'image_url', image_url: { url: message } },
-        ],
-      });
-      console.log('🖼️ Processing image message');
-    }
-
     console.log('📡 Processing message...');
     let reply = '';
 
@@ -168,24 +133,27 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     // إذا لم يتم العثور على قاعدة، استدعاء OpenAI
     if (!reply) {
-      // تحليل السؤال لمعرفة إذا كان يتطلب بحث
-      const searchAnalysis = await shouldSearchInternet(userMessageContent);
-      console.log('🔍 Search analysis:', searchAnalysis);
-
-      if (searchAnalysis.requiresSearch === 'نعم') {
-        // استخدام Responses API مع web_search
+      if (isImage) {
+        // معالجة الصور باستخدام responses.create
         const response = await openai.responses.create({
-          model: 'gpt-4o',
-          input: userMessageContent,
-          tools: [{ type: 'web_search' }],
-          messages,
+          model: 'gpt-4.1-mini-2025-04-14',
+          input: [
+            {
+              role: 'user',
+              content: [
+                { type: 'input_text', text: 'What is in this image?' },
+                { type: 'input_image', image_url: message },
+              ],
+            },
+          ],
           max_tokens: 700,
         });
-        reply = response.output?.content?.[0]?.text || 'عذرًا، لم أتمكن من جلب رد مناسب.';
+        reply = response.output_text || 'عذرًا، لم أتمكن من تحليل الصورة.';
+        console.log('🖼️ Image processed:', reply);
       } else {
-        // استخدام Chat Completions API للأسئلة العادية
+        // معالجة النصوص باستخدام chat.completions.create
         const response = await openai.chat.completions.create({
-          model: 'gpt-4o-mini',
+          model: 'gpt-4.1-mini-2025-04-14',
           messages,
           max_tokens: 700,
         });
