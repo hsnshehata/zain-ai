@@ -26,6 +26,7 @@ const chatPageSchema = new mongoose.Schema({
   suggestedQuestionsEnabled: { type: Boolean, default: false },
   suggestedQuestions: [{ type: String }],
   imageUploadEnabled: { type: Boolean, default: false },
+  headerHidden: { type: Boolean, default: false },
   createdAt: { type: Date, default: Date.now },
 });
 
