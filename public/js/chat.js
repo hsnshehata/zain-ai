@@ -31,6 +31,10 @@ document.addEventListener('DOMContentLoaded', async () => {
       chatLogo.style.display = 'none';
     }
 
+    if (settings.headerHidden) {
+      chatHeader.style.display = 'none';
+    }
+
     const isInIframe = window.self !== window.top;
 
     customStyles.textContent = `
@@ -70,18 +74,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       #messageInput {
         color: ${settings?.colors?.inputTextColor || '#ffffff'};
       }
-      #imageInput::file-selector-button {
+      #imageInputBtn {
         background-color: ${settings?.colors?.sendButtonColor || '#6AB04C'};
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: all 0.3s;
-      }
-      #imageInput::file-selector-button:hover {
-        background-color: ${settings?.colors?.sendButtonColor ? darkenColor(settings.colors.sendButtonColor, 10) : '#4A803A'};
-        transform: translateY(-2px);
       }
       .feedback-buttons {
         margin-top: 5px;
@@ -95,19 +89,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         cursor: pointer;
       }
     `;
-
-    function darkenColor(hex, percent) {
-      let r = parseInt(hex.slice(1, 3), 16);
-      let g = parseInt(hex.slice(3, 5), 16);
-      let b = parseInt(hex.slice(5, 7), 16);
-      r = Math.floor(r * (100 - percent) / 100);
-      g = Math.floor(g * (100 - percent) / 100);
-      b = Math.floor(b * (100 - percent) / 100);
-      r = r < 0 ? 0 : r;
-      g = g < 0 ? 0 : g;
-      b = b < 0 ? 0 : b;
-      return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-    }
 
     if (settings.suggestedQuestionsEnabled && settings.suggestedQuestions?.length > 0) {
       suggestedQuestions.style.display = 'block';
@@ -123,9 +104,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     if (settings.imageUploadEnabled) {
-      imageInput.style.display = 'block';
+      imageInput.parentElement.style.display = 'block';
     } else {
-      imageInput.style.display = 'none';
+      imageInput.parentElement.style.display = 'none';
     }
   } catch (err) {
     console.error('خطأ في جلب إعدادات الصفحة:', err);
@@ -189,32 +170,23 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function isCodeResponse(text) {
-    // Enhanced code detection with stricter rules
     const trimmedText = text.trim();
     return (
-      // Check for code block markers
       trimmedText.includes('```') ||
-      // Check for HTML-like structures (but not just plain text with < or >)
       (trimmedText.startsWith('<') && trimmedText.includes('>') && trimmedText.match(/<[a-zA-Z][^>]*>/)) ||
-      // Check for common code keywords (but ensure it's not just plain text)
       trimmedText.match(/\b(function|const|let|var|=>|class)\b/i) ||
-      // Check for CSS-like patterns
       trimmedText.match(/{[^{}]*}/) &&
       trimmedText.match(/:/) ||
-      // Check for code-like patterns (e.g., semicolon, curly braces, etc.)
-      trimmedText.match(/[{}$$  $$;]/) &&
+      trimmedText.match(/[{}$$      $$;]/) &&
       trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/)
     );
   }
 
   function extractCode(text) {
-    // If the text contains a code block (e.g., ```code```), extract it
     const codeBlockMatch = text.match(/```[\s\S]*?```/g);
     if (codeBlockMatch) {
-      // Extract code between ```
       return codeBlockMatch.map(block => block.replace(/```/g, '').trim()).join('\n');
     }
-    // If no code block, return the whole text as code
     return text.trim();
   }
 
@@ -261,7 +233,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       botMessageDiv.setAttribute('data-message-id', messageId);
 
       if (isCodeResponse(data.reply)) {
-        // Handle code response
         const codeText = extractCode(data.reply);
         const codeContainer = document.createElement('div');
         codeContainer.className = 'code-block-container';
@@ -287,7 +258,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         codeContainer.appendChild(pre);
         botMessageDiv.appendChild(codeContainer);
 
-        // If there's additional non-code text, display it separately
         const nonCodeText = data.reply.replace(/```[\s\S]*?```/g, '').trim();
         if (nonCodeText && !isCodeResponse(nonCodeText)) {
           const nonCodeDiv = document.createElement('div');
@@ -295,11 +265,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           botMessageDiv.appendChild(nonCodeDiv);
         }
       } else {
-        // Handle regular text response
         botMessageDiv.appendChild(document.createTextNode(data.reply || 'رد البوت'));
       }
 
-      // Create feedback buttons safely without innerHTML
       const feedbackButtons = document.createElement('div');
       feedbackButtons.className = 'feedback-buttons';
 
@@ -367,7 +335,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         imageInput.value = '';
       } catch (err) {
         console.error('خطأ في معالجة الصورة:', err);
-        const errorMessageDiv = document.createElement('div');
+        const sinteredMessageDiv = document.createElement('div');
         errorMessageDiv.className = 'message bot-message';
         errorMessageDiv.appendChild(document.createTextNode('عذرًا، حدث خطأ أثناء معالجة الصورة.'));
         chatMessages.appendChild(errorMessageDiv);
