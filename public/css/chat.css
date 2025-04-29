@@ -111,7 +111,7 @@ body {
   flex: 1;
   padding: 10px;
   border: none;
-  border-radius: 20px; /* إنبوت بشكل مدوّر شوية */
+  border-radius: 20px;
   font-size: 1em;
   outline: none;
   background-color: rgba(255, 255, 255, 0.1);
@@ -134,7 +134,7 @@ body {
 }
 
 #sendMessageBtn:hover {
-  transform: translateY(-2px); /* نفس تأثير الهافر بتاع باقي الأزرار */
+  transform: translateY(-2px);
   background-color: #5a9b3f; /* لون أغمق شوية للهوفر */
 }
 
@@ -157,7 +157,7 @@ body {
 }
 
 #imageInputBtn:hover {
-  transform: translateY(-2px); /* نفس تأثير الهافر */
+  transform: translateY(-2px);
   background-color: #5a9b3f; /* لون أغمق شوية للهوفر */
 }
 
