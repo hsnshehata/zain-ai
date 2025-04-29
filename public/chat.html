@@ -22,7 +22,7 @@
     <div class="chat-input">
       <input type="text" id="messageInput" placeholder="اكتب رسالتك...">
       <input type="file" id="imageInput" accept="image/*" style="display: none;">
-      <button id="imageUploadBtn" style="
+      <button id="imageInput" style="
         padding: 10px;
         border: none;
         border-radius: 50%;
@@ -51,8 +51,7 @@
   </div>
   <script src="/js/chat.js"></script>
   <script>
-    document.getElementById('imageUploadBtn').addEventListener('click', function() {
-      document.getElementById('imageInput').click();
+    document.getElementById('imageInput').addEventListener('click', function() {
     });
   </script>
 </body>
