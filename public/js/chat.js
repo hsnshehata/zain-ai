@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         background-color: ${settings?.colors?.header || '#2D3436'};
       }
       #chatTitle {
-        color: ${settings?.titleColor || '#ffffff'};
+        color: ${settings?.titleColor || '#ffffff"};
       }
       #chatMessages {
         background-color: ${settings?.colors?.chatAreaBackground || '#3B4A4E'};
@@ -59,6 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       .suggested-question {
         background-color: ${settings?.colors?.button || '#6AB04C'};
+        color: #ffffff; /* لون النص أبيض */
       }
       .user-message {
         background-color: ${settings?.colors?.userMessageBackground || '#6AB04C'};
@@ -92,13 +93,39 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (settings.suggestedQuestionsEnabled && settings.suggestedQuestions?.length > 0) {
       suggestedQuestions.style.display = 'block';
-      settings.suggestedQuestions.forEach(question => {
+      
+      // خلط الأسئلة بشكل عشوائي (Fisher-Yates shuffle)
+      const shuffleArray = (array) => {
+        for (let i = array.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [array[i], array[j]] = [array[j], array[i]];
+        }
+        return array;
+      };
+
+      let questions = shuffleArray([...settings.suggestedQuestions]);
+      let currentIndex = 0;
+
+      // دالة لعرض سؤال واحد
+      const displayNextQuestion = () => {
+        suggestedQuestions.innerHTML = ''; // تفريغ العنصر
+        if (questions.length === 0) return; // لو مفيش أسئلة، نوقف
+
+        const question = questions[currentIndex];
         const button = document.createElement('button');
         button.className = 'suggested-question';
         button.textContent = question;
         button.addEventListener('click', () => sendMessage(question));
         suggestedQuestions.appendChild(button);
-      });
+
+        currentIndex = (currentIndex + 1) % questions.length; // الانتقال للسؤال التالي (دوري)
+      };
+
+      // عرض السؤال الأول فورًا
+      displayNextQuestion();
+
+      // تغيير السؤال كل 3 ثواني
+      setInterval(displayNextQuestion, 3000);
     } else {
       suggestedQuestions.style.display = 'none';
     }
@@ -177,7 +204,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       trimmedText.match(/\b(function|const|let|var|=>|class)\b/i) ||
       trimmedText.match(/{[^{}]*}/) &&
       trimmedText.match(/:/) ||
-      trimmedText.match(/[{}$$      $$;]/) &&
+      trimmedText.match(/[{}$$          $$;]/) &&
       trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/)
     );
   }
@@ -335,7 +362,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         imageInput.value = '';
       } catch (err) {
         console.error('خطأ في معالجة الصورة:', err);
-        const sinteredMessageDiv = document.createElement('div');
+        const errorMessageDiv = document.createElement('div');
         errorMessageDiv.className = 'message bot-message';
         errorMessageDiv.appendChild(document.createTextNode('عذرًا، حدث خطأ أثناء معالجة الصورة.'));
         chatMessages.appendChild(errorMessageDiv);
