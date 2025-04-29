@@ -67,10 +67,13 @@ async function deleteFromImgbb(deleteUrl) {
 // Create a new chat page
 exports.createChatPage = async (req, res) => {
   try {
-    const { userId, botId } = req.body;
+    const { userId, botId, linkId } = req.body;
     if (!userId || !botId) {
       return res.status(400).json({ message: 'User ID and Bot ID are required' });
     }
+
+    // إذا المستخدم مدخلش linkId، هنولد UUID تلقائيًا
+    const finalLinkId = linkId || uuidv4();
 
     const existingPage = await ChatPage.findOne({ botId });
     if (existingPage) {
@@ -78,21 +81,26 @@ exports.createChatPage = async (req, res) => {
       return res.status(200).json({ link: chatLink, chatPageId: existingPage._id, exists: true });
     }
 
-    const linkId = uuidv4();
+    // التحقق إذا كان الـ linkId موجود بالفعل
+    const linkExists = await ChatPage.findOne({ linkId: finalLinkId });
+    if (linkExists) {
+      return res.status(400).json({ message: 'الرابط مستخدم بالفعل، يرجى اختيار رابط آخر' });
+    }
+
     const chatPage = new ChatPage({
       userId,
       botId,
-      linkId,
+      linkId: finalLinkId,
     });
 
     await chatPage.save();
 
-    const chatLink = `${process.env.APP_URL || 'https://zain-ai-a06a.onrender.com'}/chat/${linkId}`;
+    const chatLink = `${process.env.APP_URL || 'https://zain-ai-a06a.onrender.com'}/chat/${finalLinkId}`;
 
     res.status(201).json({ link: chatLink, chatPageId: chatPage._id, exists: false });
   } catch (err) {
     console.error('Error creating chat page:', err);
-    throw err;
+    res.status(500).json({ message: 'خطأ في إنشاء صفحة الدردشة' });
   }
 };
 
@@ -128,6 +136,18 @@ exports.updateChatPage = async (req, res) => {
     }
     const imageUploadEnabled = req.body.imageUploadEnabled === 'true' ? true : req.body.imageUploadEnabled === 'false' ? false : chatPage.imageUploadEnabled;
     const headerHidden = req.body.headerHidden === 'true' ? true : req.body.headerHidden === 'false' ? false : chatPage.headerHidden;
+    let linkId = chatPage.linkId;
+
+    // التحقق إذا كان المستخدم بيحاول يعدل الرابط
+    if (req.body.linkId && req.body.linkId !== chatPage.linkId) {
+      const newLinkId = req.body.linkId;
+      // التحقق إذا كان الرابط الجديد مستخدم بالفعل
+      const linkExists = await ChatPage.findOne({ linkId: newLinkId });
+      if (linkExists) {
+        return res.status(400).json({ message: 'الرابط مستخدم بالفعل، يرجى اختيار رابط آخر' });
+      }
+      linkId = newLinkId;
+    }
 
     let logoUrl = chatPage.logoUrl;
     let logoDeleteUrl = chatPage.logoDeleteUrl;
@@ -155,14 +175,18 @@ exports.updateChatPage = async (req, res) => {
     chatPage.suggestedQuestions = suggestedQuestions;
     chatPage.imageUploadEnabled = imageUploadEnabled;
     chatPage.headerHidden = headerHidden;
+    chatPage.linkId = linkId;
 
     await chatPage.save();
+
+    const updatedChatLink = `${process.env.APP_URL || 'https://zain-ai-a06a.onrender.com'}/chat/${linkId}`;
 
     res.status(200).json({
       message: 'Chat page settings updated successfully',
       logoUrl: chatPage.logoUrl,
       colors: chatPage.colors,
       headerHidden: chatPage.headerHidden,
+      link: updatedChatLink,
     });
   } catch (err) {
     console.error('Error updating chat page:', err);
