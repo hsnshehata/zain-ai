@@ -352,6 +352,24 @@ async function loadChatPage() {
                         </div>
                       </div>
                       <div class="section-with-settings">
+                        <div id="previewSuggestedQuestions" class="suggested-questions" style="
+                          display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};
+                          padding: 8px 15px;
+                          flex-wrap: wrap;
+                          gap: 8px;
+                        ">
+                          <!-- الأسئلة هتتعرض ديناميكيًا هنا -->
+                        </div>
+                        <button class="settings-gear" data-target="suggested-questions-settings" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};" id="suggestedQuestionsGear">⚙️</button>
+                        <div id="suggested-questions-settings" class="settings-popup" style="display: none;">
+                          <button class="close-btn">✕</button>
+                          <div class="color-picker-wrapper">
+                            <label for="buttonColor">لون الأزرار المقترحة:</label>
+                            <input type="color" class="color-input" id="buttonColorInput" data-color-id="buttonColor" value="${data.colors.button}">
+                          </div>
+                        </div>
+                      </div>
+                      <div class="section-with-settings">
                         <div id="previewChatMessages" class="chat-messages" style="
                           padding: 10px;
                           height: 200px;
@@ -407,24 +425,6 @@ async function loadChatPage() {
                           <div class="color-picker-wrapper">
                             <label for="botMessageTextColor">لون نص البوت:</label>
                             <input type="color" class="color-input" id="botMessageTextColorInput" data-color-id="botMessageTextColor" value="${data.colors.botMessageTextColor || '#000000'}">
-                          </div>
-                        </div>
-                      </div>
-                      <div class="section-with-settings">
-                        <div id="previewSuggestedQuestions" class="suggested-questions" style="
-                          display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};
-                          padding: 8px 15px;
-                          flex-wrap: wrap;
-                          gap: 8px;
-                        ">
-                          <!-- الأسئلة هتتعرض ديناميكيًا هنا -->
-                        </div>
-                        <button class="settings-gear" data-target="suggested-questions-settings" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};" id="suggestedQuestionsGear">⚙️</button>
-                        <div id="suggested-questions-settings" class="settings-popup" style="display: none;">
-                          <button class="close-btn">✕</button>
-                          <div class="color-picker-wrapper">
-                            <label for="buttonColor">لون الأزرار المقترحة:</label>
-                            <input type="color" class="color-input" id="buttonColorInput" data-color-id="buttonColor" value="${data.colors.button}">
                           </div>
                         </div>
                       </div>
