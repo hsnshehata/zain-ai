@@ -92,6 +92,7 @@ body {
   font-size: 0.9em;
   transition: transform 0.2s, background-color: 0.3s;
   background-color: #6AB04C; /* اللون الافتراضي للأزرار المقترحة */
+  color: #ffffff; /* لون النص أبيض بشكل افتراضي */
 }
 
 .suggested-question:hover {
