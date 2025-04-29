@@ -72,7 +72,7 @@ async function loadChatPage() {
         userMessageTextColor: '#FFFFFF',
         botMessageBackgroundColor: '#FFEBCC',
         botMessageTextColor: '#111111',
-        buttonColor: '#FF9900',
+        buttonColor那边: '#FF9900',
         inputAreaBackgroundColor: '#FFF5E6',
         inputTextColor: '#111111',
         sendButtonColor: '#FF9900',
@@ -86,7 +86,7 @@ async function loadChatPage() {
         titleColor: '#FFFFFF',
         headerColor: '#2C3E50',
         chatAreaBackgroundColor: '#34495E',
-        textColor: '#FFFFFF',
+        text kidnap: '#FFFFFF',
         userMessageBackgroundColor: '#1ABC9C',
         userMessageTextColor: '#FFFFFF',
         botMessageBackgroundColor: '#2C3E50',
@@ -172,7 +172,7 @@ async function loadChatPage() {
         inputTextColor: '#FFFFFF',
         sendButtonColor: '#8A2BE2',
         containerBackgroundColor: '#6A5ACD',
-        outerBackgroundColor: '#6A5ACD',
+        outerBackgroundColor: '#6A  '#6A5ACD',
       },
     },
     {
@@ -263,7 +263,7 @@ async function loadChatPage() {
         const data = await response.json();
         const floatingButtonCode = `
 <div id="supportButtonContainer" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-  <img id="supportButton" src="https://i.ibb.co/7JJScM0Q/Chat-GPT-Image-20-2025-08-04-13.png" alt="دعم العملاء" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
+  <img id="supportButton" src="https://i.ibb.co/7JScM0Q/Chat-GPT-Image-20-2025-08-04-13.png" alt="دعم العملاء" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
 </div>
 <div id="chatIframeContainer" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
   <div style="position: relative; width: 350px; height: 550px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); background: white;">
@@ -325,7 +325,7 @@ async function loadChatPage() {
                   direction: rtl;
                   font-family: 'Arial', sans-serif;
                 ">
-                  <div class="section-with-settings">
+                  <div class="section-with-settings" id="previewChatHeaderContainer" style="display: ${data.headerHidden ? 'none' : 'block'};">
                     <div id="previewChatHeader" class="chat-header" style="
                       padding: 10px 15px;
                       display: flex;
@@ -445,15 +445,35 @@ async function loadChatPage() {
                         backdrop-filter: blur(5px);
                         -webkit-backdrop-filter: blur(5px);
                       ">
-                      <input type="file" id="previewImageInput" accept="image/*" style="display: ${data.imageUploadEnabled ? 'block' : 'none'};">
-                      <button id="previewSendMessageBtn" style="
-                        padding: 8px 15px;
+                      <label for="previewImageInput" style="
+                        background-color: ${data.colors.sendButtonColor || '#007bff'};
                         border: none;
-                        border-radius: 8px;
+                        border-radius: 50%;
+                        width: 40px;
+                        height: 40px;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
                         cursor: pointer;
-                        font-size: 0.9em;
                         transition: transform 0.2s, background-color: 0.3s;
-                      ">إرسال</button>
+                      ">
+                        <i class="fas fa-image" style="color: #ffffff; font-size: 18px;"></i>
+                        <input type="file" id="previewImageInput" accept="image/*" style="display: none;" ${data.imageUploadEnabled ? '' : 'disabled'}>
+                      </label>
+                      <button id="previewSendMessageBtn" style="
+                        background-color: ${data.colors.sendButtonColor || '#007bff'};
+                        border: none;
+                        border-radius: 50%;
+                        width: 40px;
+                        height: 40px;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        cursor: pointer;
+                        transition: transform 0.2s, background-color: 0.3s;
+                      ">
+                        <i class="fas fa-arrow-up" style="color: #ffffff; font-size: 18px;"></i>
+                      </button>
                     </div>
                     <button class="settings-gear" data-target="input-settings">⚙️</button>
                     <div id="input-settings" class="settings-popup" style="display: none;">
@@ -532,12 +552,32 @@ async function loadChatPage() {
                 </div>
                 <div class="form-group logo-section">
                   <label for="logo">شعار الصفحة (PNG):</label>
-                  <input type="file" id="logo" name="logo" accept="image/png">
+                  <label for="logo" style="
+                    background-color: ${data.colors.sendButtonColor || '#007bff'};
+                    border: none;
+                    border-radius: 50%;
+                    width: 40px;
+                    height: 40px;
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                    cursor: pointer;
+                    transition: transform 0.2s, background-color: 0.3s;
+                  ">
+                    <i class="fas fa-image" style="color: #ffffff; font-size: 18px;"></i>
+                    <input type="file" id="logo" name="logo" accept="image/png" style="display: none;">
+                  </label>
                   <div class="logo-preview-container">
                     <p style="font-size: 0.8em; margin-bottom: 5px;">الشعار الحالي:</p>
                     ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo Preview" class="logo-preview-img" />` : '<p style="font-size: 0.8em;">لا يوجد</p>'}
                   </div>
                   <img id="logoPreview" class="logo-preview-img" style="display: none;" alt="Logo Preview" />
+                </div>
+                <div class="form-group checkbox-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="headerHidden" name="headerHidden" ${data.headerHidden ? 'checked' : ''}>
+                    إخفاء الهيدر
+                  </label>
                 </div>
                 <div class="form-group checkbox-group">
                   <label class="checkbox-label">
@@ -567,6 +607,7 @@ async function loadChatPage() {
 
         const previewChat = document.getElementById('previewChat');
         const previewChatHeader = document.getElementById('previewChatHeader');
+        const previewChatHeaderContainer = document.getElementById('previewChatHeaderContainer');
         const previewChatTitle = document.getElementById('previewChatTitle');
         const previewChatMessages = document.getElementById('previewChatMessages');
         const previewSuggestedQuestions = document.getElementById('previewSuggestedQuestions');
@@ -595,8 +636,10 @@ async function loadChatPage() {
         };
 
         function updatePreviewStyles() {
-          previewChatHeader.style.backgroundColor = colorValues.headerColor;
-          previewChatTitle.style.color = colorValues.titleColor;
+          if (!data.headerHidden) {
+            previewChatHeader.style.backgroundColor = colorValues.headerColor;
+            previewChatTitle.style.color = colorValues.titleColor;
+          }
           previewChatMessages.style.backgroundColor = colorValues.chatAreaBackgroundColor;
           previewChat.style.color = colorValues.textColor;
           previewSendMessageBtn.style.backgroundColor = colorValues.sendButtonColor;
@@ -610,6 +653,7 @@ async function loadChatPage() {
           botMessage.style.color = colorValues.botMessageTextColor;
           previewChat.style.backgroundColor = colorValues.containerBackgroundColor;
           previewContainer.style.backgroundColor = colorValues.outerBackgroundColor;
+          previewImageInput.parentElement.style.backgroundColor = colorValues.sendButtonColor;
 
           document.getElementById('titleColorInput').value = colorValues.titleColor;
           document.getElementById('headerColorInput').value = colorValues.headerColor;
@@ -730,6 +774,11 @@ async function loadChatPage() {
           suggestedQuestionsGear.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
         });
 
+        const headerHiddenCheckbox = document.getElementById('headerHidden');
+        headerHiddenCheckbox.addEventListener('change', () => {
+          previewChatHeaderContainer.style.display = headerHiddenCheckbox.checked ? 'none' : 'block';
+        });
+
         let questions = data.suggestedQuestions || [];
         document.getElementById('addQuestionBtn').addEventListener('click', () => {
           const newQuestionInput = document.getElementById('newQuestion');
@@ -787,7 +836,7 @@ async function loadChatPage() {
         updateQuestionsList();
 
         document.getElementById('imageUploadEnabled').addEventListener('change', (e) => {
-          previewImageInput.style.display = e.target.checked ? 'block' : 'none';
+          previewImageInput.disabled = !e.target.checked;
         });
 
         document.getElementById('customizationForm').addEventListener('submit', async (e) => {
@@ -813,6 +862,7 @@ async function loadChatPage() {
           formData.set('suggestedQuestionsEnabled', formData.get('suggestedQuestionsEnabled') === 'on' ? 'true' : 'false');
           formData.set('suggestedQuestions', JSON.stringify(questions));
           formData.set('imageUploadEnabled', formData.get('imageUploadEnabled') === 'on' ? 'true' : 'false');
+          formData.set('headerHidden', formData.get('headerHidden') === 'on' ? 'true' : 'false');
 
           try {
             const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
@@ -852,6 +902,8 @@ async function loadChatPage() {
               colorValues.outerBackgroundColor = result.colors.outerBackgroundColor || colorValues.outerBackgroundColor;
               updatePreviewStyles();
             }
+            data.headerHidden = result.headerHidden || data.headerHidden;
+            previewChatHeaderContainer.style.display = data.headerHidden ? 'none' : 'block';
             alert('تم حفظ الإعدادات بنجاح!');
           } catch (err) {
             console.error('خطأ في حفظ الإعدادات:', err);
