@@ -444,19 +444,16 @@ async function loadChatPage() {
                         background-color: rgba(255, 255, 255, 0.1);
                         backdrop-filter: blur(5px);
                         -webkit-backdrop-filter: blur(5px);
-                        <input type="file" id="previewImageInput" accept="image/*" style="display: ${data.imageUploadEnabled ? 'block' : 'none'};">
-                        <button id="previewSendMessageBtn" style="
-                          padding: 10px;
-                          border: none;
-                          border-radius: 50%;
-                          cursor: pointer;
-                          font-size: 1em;
-                          transition: transform 0.2s, background-color: 0.3s;
-                          color: black;
-                          display: flex;
-                          align-items: center;
-                          justify-content: center;
-                        "><i class="fas fa-arrow-up"></i></button>
+                      ">
+                      <input type="file" id="previewImageInput" accept="image/*" style="display: ${data.imageUploadEnabled ? 'block' : 'none'};">
+                      <button id="previewSendMessageBtn" style="
+                        padding: 8px 15px;
+                        border: none;
+                        border-radius: 8px;
+                        cursor: pointer;
+                        font-size: 0.9em;
+                        transition: transform 0.2s, background-color: 0.3s;
+                      ">إرسال</button>
                     </div>
                     <button class="settings-gear" data-target="input-settings">⚙️</button>
                     <div id="input-settings" class="settings-popup" style="display: none;">
