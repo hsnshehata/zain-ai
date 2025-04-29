@@ -90,7 +90,7 @@ body {
   border-radius: 20px;
   cursor: pointer;
   font-size: 0.9em;
-  transition: transform 0.2s, background-color 0.3s;
+  transition: transform 0.2s, background-color: 0.3s;
   background-color: #6AB04C; /* اللون الافتراضي للأزرار المقترحة */
 }
 
@@ -130,7 +130,7 @@ body {
   justify-content: center; /* توسيط الأيقونة أفقياً */
   align-items: center; /* توسيط الأيقونة رأسياً */
   cursor: pointer; /* مؤشر الماوس */
-  transition: transform 0.2s, background-color 0.3s; /* تأثير عند الهافر */
+  transition: transform 0.2s, background-color: 0.3s; /* تأثير عند الهافر */
 }
 
 #sendMessageBtn:hover {
@@ -153,7 +153,7 @@ body {
   justify-content: center; /* توسيط الأيقونة أفقياً */
   align-items: center; /* توسيط الأيقونة رأسياً */
   cursor: pointer; /* مؤشر الماوس */
-  transition: transform 0.2s, background-color 0.3s; /* تأثير عند الهافر */
+  transition: transform 0.2s, background-color: 0.3s; /* تأثير عند الهافر */
 }
 
 #imageInputBtn:hover {
@@ -164,6 +164,9 @@ body {
 #imageInputBtn i {
   color: #ffffff; /* لون الأيقونة */
   font-size: 18px; /* حجم الأيقونة */
+  margin: 0; /* إزالة أي هوامش */
+  padding: 0; /* إزالة أي حشوات */
+  line-height: 1; /* ضبط ارتفاع السطر عشان التوسيط */
 }
 
 .feedback-buttons {
@@ -239,7 +242,7 @@ body {
   border-radius: 0 0 4px 4px;
   cursor: pointer;
   font-size: 0.8em;
-  transition: background-color 0.3s;
+  transition: background-color: 0.3s;
 }
 
 .code-block-container .copy-btn:hover {
