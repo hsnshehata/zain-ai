@@ -64,23 +64,7 @@ async function loadChatPage() {
         },
       },
       {
-        name: 'برتقالي دافئ',
-        colors: {
-          titleColor: '#111111',
-          headerColor: '#FFF5E6',
-          chatAreaBackgroundColor: '#FFFAF0',
-          textColor: '#111111',
-          userMessageBackgroundColor: '#FF9900',
-          userMessageTextColor: '#FFFFFF',
-          botMessageBackgroundColor: '#FFEBCC',
-          botMessageTextColor: '#111111',
-          buttonColor: '#FF9900',
-          inputAreaBackgroundColor: '#FFF5E6',
-          inputTextColor: '#111111',
-          sendButtonColor: '#FF9900',
-          containerBackgroundColor: '#FFFAF0',
-          outerBackgroundColor: '#FFF5E6',
-        },
+        name: T
       },
       {
         name: 'تركواز غامق',
@@ -298,7 +282,13 @@ async function loadChatPage() {
                 <label for="chatLink">رابط صفحة الدردشة:</label>
                 <div class="input-group">
                   <input type="text" id="chatLink" value="${data.link}" readonly>
+                  <button id="editLinkBtn" class="submit-btn">تعديل</button>
                   <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
+                </div>
+                <div id="editLinkForm" style="display: none; margin-top: 10px;">
+                  <input type="text" id="newLinkId" placeholder="أدخل الرابط الجديد (أحرف وأرقام فقط، 4 أحرف على الأقل)" style="width: 70%; padding: 5px; margin-right: 5px;">
+                  <button id="saveLinkBtn" class="submit-btn">حفظ</button>
+                  <button id="cancelLinkBtn" class="submit-btn" style="background-color: #dc3545;">إلغاء</button>
                 </div>
               </div>
               <div class="form-group">
@@ -748,6 +738,87 @@ async function loadChatPage() {
               }
             });
 
+            // منطق تعديل الرابط
+            const editLinkBtn = document.getElementById('editLinkBtn');
+            const editLinkForm = document.getElementById('editLinkForm');
+            const newLinkIdInput = document.getElementById('newLinkId');
+            const saveLinkBtn = document.getElementById('saveLinkBtn');
+            const cancelLinkBtn = document.getElementById('cancelLinkBtn');
+            const chatLinkInput = document.getElementById('chatLink');
+            const copyLinkBtn = document.getElementById('copyLinkBtn');
+
+            editLinkBtn.addEventListener('click', () => {
+              editLinkForm.style.display = 'block';
+              editLinkBtn.style.display = 'none';
+              copyLinkBtn.style.display = 'none';
+              // استخراج الجزء الأخير من الرابط لعرضه في حقل التعديل
+              const currentLinkId = chatLinkInput.value.split('/').pop();
+              newLinkIdInput.value = currentLinkId;
+            });
+
+            cancelLinkBtn.addEventListener('click', () => {
+              editLinkForm.style.display = 'none';
+              editLinkBtn.style.display = 'inline-block';
+              copyLinkBtn.style.display = 'inline-block';
+              newLinkIdInput.value = '';
+            });
+
+            saveLinkBtn.addEventListener('click', async () => {
+              const newLinkId = newLinkIdInput.value.trim();
+              if (!newLinkId) {
+                alert('يرجى إدخال رابط صالح');
+                return;
+              }
+
+              // التحقق من صلاحية القيمة (أحرف وأرقام فقط، 4 أحرف على الأقل)
+              if (!/^[a-zA-Z0-9]{4,}$/.test(newLinkId)) {
+                alert('يجب أن يتكون الرابط من أحرف إنجليزية وأرقام فقط، بدون مسافات، ولا يقل طوله عن 4 أحرف');
+                return;
+              }
+
+              try {
+                const formData = new FormData();
+                formData.append('linkId', newLinkId);
+                formData.append('title', data.title);
+                formData.append('titleColor', data.titleColor);
+                formData.append('colors', JSON.stringify(data.colors));
+                formData.append('suggestedQuestionsEnabled', data.suggestedQuestionsEnabled ? 'true' : 'false');
+                formData.append('suggestedQuestions', JSON.stringify(data.suggestedQuestions));
+                formData.append('imageUploadEnabled', data.imageUploadEnabled ? 'true' : 'false');
+                formData.append('headerHidden', data.headerHidden ? 'true' : 'false');
+
+                const response = await fetch(`/api/chat-page/${data.chatPageId}`, {
+                  method: 'PUT',
+                  headers: {
+                    'Authorization': `Bearer ${token}`,
+                  },
+                  body: formData,
+                });
+
+                if (!response.ok) {
+                  const errorData = await response.json();
+                  throw new Error(errorData.message || `فشل في تحديث الرابط: ${response.status}`);
+                }
+
+                const result = await response.json();
+                // تحديث الرابط في حقل العرض
+                chatLinkInput.value = result.link;
+                // تحديث أكواد الـ iframe
+                const newFloatingButtonCode = floatingButtonCode.replace(data.link, result.link);
+                const newFullIframeCode = fullIframeCode.replace(data.link, result.link);
+                document.getElementById('floatingButtonCode').value = newFloatingButtonCode;
+                document.getElementById('fullIframeCode').value = newFullIframeCode;
+                data.link = result.link; // تحديث الرابط في البيانات المحلية
+                editLinkForm.style.display = 'none';
+                editLinkBtn.style.display = 'inline-block';
+                copyLinkBtn.style.display = 'inline-block';
+                alert('تم تحديث الرابط بنجاح!');
+              } catch (err) {
+                console.error('خطأ في تحديث الرابط:', err);
+                alert(err.message || 'فشل في تحديث الرابط، حاول مرة أخرى');
+              }
+            });
+
             document.getElementById('copyFloatingButtonCodeBtn').addEventListener('click', async () => {
               const floatingButtonCodeInput = document.getElementById('floatingButtonCode');
               try {
@@ -949,6 +1020,14 @@ async function loadChatPage() {
                   colorValues.containerBackgroundColor = result.colors.containerBackgroundColor || colorValues.containerBackgroundColor;
                   colorValues.outerBackgroundColor = result.colors.outerBackgroundColor || colorValues.outerBackgroundColor;
                   updatePreviewStyles();
+                }
+                if (result.link) {
+                  chatLinkInput.value = result.link;
+                  const newFloatingButtonCode = floatingButtonCode.replace(data.link, result.link);
+                  const newFullIframeCode = fullIframeCode.replace(data.link, result.link);
+                  document.getElementById('floatingButtonCode').value = newFloatingButtonCode;
+                  document.getElementById('fullIframeCode').value = newFullIframeCode;
+                  data.link = result.link; // تحديث الرابط في البيانات المحلية
                 }
                 data.headerHidden = result.headerHidden || data.headerHidden;
                 previewChatHeaderContainer.style.display = data.headerHidden ? 'none' : 'block';
