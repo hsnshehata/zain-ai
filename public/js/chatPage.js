@@ -417,7 +417,7 @@ async function loadChatPage() {
                           flex-wrap: wrap;
                           gap: 8px;
                         ">
-                          ${data.suggestedQuestions?.map(q => `<button class="suggested-question" style="padding: 6px 12px; border: none; border-radius: 16px; cursor: pointer; font-size: 0.8em; transition: transform 0.2s, background-color: 0.3s;">${q}</button>`).join('') || ''}
+                          <!-- الأسئلة هتتعرض ديناميكيًا هنا -->
                         </div>
                         <button class="settings-gear" data-target="suggested-questions-settings" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};" id="suggestedQuestionsGear">⚙️</button>
                         <div id="suggested-questions-settings" class="settings-popup" style="display: none;">
@@ -650,6 +650,7 @@ async function loadChatPage() {
               previewMessageInput.style.color = colorValues.inputTextColor;
               Array.from(previewSuggestedQuestions.children).forEach(btn => {
                 btn.style.backgroundColor = colorValues.buttonColor;
+                btn.style.color = '#ffffff'; // لون النص أبيض
               });
               userMessage.style.backgroundColor = colorValues.userMessageBackgroundColor;
               userMessage.style.color = colorValues.userMessageTextColor;
@@ -658,6 +659,21 @@ async function loadChatPage() {
               previewChat.style.backgroundColor = colorValues.containerBackgroundColor;
               previewContainer.style.backgroundColor = colorValues.outerBackgroundColor;
               previewImageInputBtn.style.backgroundColor = colorValues.sendButtonColor;
+
+              document.getElementById('titleColorInput').value = colorValues.titleColor;
+              document.getElementById('headerColorInput').value = colorValues.headerColor;
+              document.getElementById('chatAreaBackgroundColorInput').value = colorValues.chatAreaBackgroundColor;
+              document.getElementById('textColorInput').value = colorValues.textColor;
+              document.getElementById('userMessageBackgroundColorInput').value = colorValues.userMessageBackgroundColor;
+              document.getElementById('userMessageTextColorInput').value = colorValues.userMessageTextColor;
+              document.getElementById('botMessageBackgroundColorInput').value = colorValues.botMessageBackgroundColor;
+              document.getElementById('botMessageTextColorInput').value = colorValues.botMessageTextColor;
+              document.getElementById('buttonColorInput').value = colorValues.buttonColor;
+              document.getElementById('inputAreaBackgroundColorInput').value = colorValues.inputAreaBackgroundColor;
+              document.getElementById('inputTextColorInput').value = colorValues.inputTextColor;
+              document.getElementById('sendButtonColorInput').value = colorValues.sendButtonColor;
+              document.getElementById('containerBackgroundColorInput').value = colorValues.containerBackgroundColor;
+              document.getElementById('outerBackgroundColorInput').value = colorValues.outerBackgroundColor;
             }
 
             document.querySelectorAll('.settings-gear').forEach(gear => {
@@ -761,6 +777,11 @@ async function loadChatPage() {
               suggestedQuestionsContainer.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
               previewSuggestedQuestions.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
               suggestedQuestionsGear.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
+              if (suggestedQuestionsEnabledCheckbox.checked) {
+                updatePreviewSuggestedQuestions();
+              } else {
+                previewSuggestedQuestions.innerHTML = ''; // تفريغ الأسئلة إذا تم إلغاء التفعيل
+              }
             });
 
             const headerHiddenCheckbox = document.getElementById('headerHidden');
@@ -799,10 +820,45 @@ async function loadChatPage() {
             }
 
             function updatePreviewSuggestedQuestions() {
-              previewSuggestedQuestions.innerHTML = questions.map(q => `<button class="suggested-question" style="padding: 6px 12px; border: none; border-radius: 16px; cursor: pointer; font-size: 0.8em; transition: transform 0.2s, background-color: 0.3s;">${q}</button>`).join('');
-              Array.from(previewSuggestedQuestions.children).forEach(btn => {
-                btn.style.backgroundColor = colorValues.buttonColor;
-              });
+              // خلط الأسئلة بشكل عشوائي
+              const shuffleArray = (array) => {
+                for (let i = array.length - 1; i > 0; i--) {
+                  const j = Math.floor(Math.random() * (i + 1));
+                  [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+              };
+
+              let shuffledQuestions = shuffleArray([...questions]);
+              let currentIndex = 0;
+
+              // دالة لعرض سؤال واحد
+              const displayNextQuestion = () => {
+                previewSuggestedQuestions.innerHTML = ''; // تفريغ العنصر
+                if (shuffledQuestions.length === 0) return; // لو مفيش أسئلة، نوقف
+
+                const question = shuffledQuestions[currentIndex];
+                const button = document.createElement('button');
+                button.className = 'suggested-question';
+                button.style.padding = '6px 12px';
+                button.style.border = 'none';
+                button.style.borderRadius = '16px';
+                button.style.cursor = 'pointer';
+                button.style.fontSize = '0.8em';
+                button.style.transition = 'transform 0.2s, background-color: 0.3s';
+                button.style.backgroundColor = colorValues.buttonColor;
+                button.style.color = '#ffffff'; // لون النص أبيض
+                button.textContent = question;
+                previewSuggestedQuestions.appendChild(button);
+
+                currentIndex = (currentIndex + 1) % shuffledQuestions.length; // الانتقال للسؤال التالي (دوري)
+              };
+
+              // عرض السؤال الأول فورًا
+              displayNextQuestion();
+
+              // تغيير السؤال كل 3 ثواني
+              setInterval(displayNextQuestion, 3000);
             }
 
             window.editQuestion = (index) => {
@@ -823,6 +879,9 @@ async function loadChatPage() {
             };
 
             updateQuestionsList();
+            if (data.suggestedQuestionsEnabled) {
+              updatePreviewSuggestedQuestions();
+            }
 
             document.getElementById('imageUploadEnabled').addEventListener('change', (e) => {
               previewImageInputBtn.style.display = e.target.checked ? 'flex' : 'none';
