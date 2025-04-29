@@ -64,7 +64,23 @@ async function loadChatPage() {
         },
       },
       {
-        name: T
+        name: 'برتقالي دافئ',
+        colors: {
+          titleColor: '#111111',
+          headerColor: '#FFF5E6',
+          chatAreaBackgroundColor: '#FFFAF0',
+          textColor: '#111111',
+          userMessageBackgroundColor: '#FF9900',
+          userMessageTextColor: '#FFFFFF',
+          botMessageBackgroundColor: '#FFEBCC',
+          botMessageTextColor: '#111111',
+          buttonColor: '#FF9900',
+          inputAreaBackgroundColor: '#FFF5E6',
+          inputTextColor: '#111111',
+          sendButtonColor: '#FF9900',
+          containerBackgroundColor: '#FFFAF0',
+          outerBackgroundColor: '#FFF5E6',
+        },
       },
       {
         name: 'تركواز غامق',
@@ -247,8 +263,8 @@ async function loadChatPage() {
           });
 
           if (response.ok) {
-            const data = await response.json();
-            const floatingButtonCode = `
+            let data = await response.json();
+            let floatingButtonCode = `
 <div id="supportButtonContainer" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
   <img id="supportButton" src="https://i.ibb.co/7JScM0Q/Chat-GPT-Image-20-2025-08-04-13.png" alt="دعم العملاء" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
 </div>
@@ -273,7 +289,7 @@ async function loadChatPage() {
 </script>
             `.trim();
 
-            const fullIframeCode = `
+            let fullIframeCode = `
     <iframe src="${data.link}" style="width: 100%; height: 100%; border: none;" scrolling="no"></iframe>
             `.trim();
 
@@ -804,10 +820,10 @@ async function loadChatPage() {
                 // تحديث الرابط في حقل العرض
                 chatLinkInput.value = result.link;
                 // تحديث أكواد الـ iframe
-                const newFloatingButtonCode = floatingButtonCode.replace(data.link, result.link);
-                const newFullIframeCode = fullIframeCode.replace(data.link, result.link);
-                document.getElementById('floatingButtonCode').value = newFloatingButtonCode;
-                document.getElementById('fullIframeCode').value = newFullIframeCode;
+                floatingButtonCode = floatingButtonCode.replace(data.link, result.link);
+                fullIframeCode = fullIframeCode.replace(data.link, result.link);
+                document.getElementById('floatingButtonCode').value = floatingButtonCode;
+                document.getElementById('fullIframeCode').value = fullIframeCode;
                 data.link = result.link; // تحديث الرابط في البيانات المحلية
                 editLinkForm.style.display = 'none';
                 editLinkBtn.style.display = 'inline-block';
@@ -1023,10 +1039,10 @@ async function loadChatPage() {
                 }
                 if (result.link) {
                   chatLinkInput.value = result.link;
-                  const newFloatingButtonCode = floatingButtonCode.replace(data.link, result.link);
-                  const newFullIframeCode = fullIframeCode.replace(data.link, result.link);
-                  document.getElementById('floatingButtonCode').value = newFloatingButtonCode;
-                  document.getElementById('fullIframeCode').value = newFullIframeCode;
+                  floatingButtonCode = floatingButtonCode.replace(data.link, result.link);
+                  fullIframeCode = fullIframeCode.replace(data.link, result.link);
+                  document.getElementById('floatingButtonCode').value = floatingButtonCode;
+                  document.getElementById('fullIframeCode').value = fullIframeCode;
                   data.link = result.link; // تحديث الرابط في البيانات المحلية
                 }
                 data.headerHidden = result.headerHidden || data.headerHidden;
@@ -1065,6 +1081,33 @@ async function loadChatPage() {
                     throw new Error(`فشل في إنشاء صفحة الدردشة: ${response.status} ${response.statusText}`);
                   }
 
+                  const result = await response.json();
+                  data = {
+                    link: result.link,
+                    chatPageId: result.chatPageId,
+                    title: 'صفحة الدردشة',
+                    titleColor: '#ffffff',
+                    colors: {
+                      header: '#2D3436',
+                      inputAreaBackground: '#3B4A4E',
+                      chatAreaBackground: '#3B4A4E',
+                      text: '#ffffff',
+                      button: '#6AB04C',
+                      userMessageBackground: '#6AB04C',
+                      userMessageTextColor: '#ffffff',
+                      botMessageBackground: '#2D3436',
+                      botMessageTextColor: '#ffffff',
+                      inputTextColor: '#ffffff',
+                      sendButtonColor: '#6AB04C',
+                      containerBackgroundColor: '#3B4A4E',
+                      outerBackgroundColor: '#3B4A4E',
+                    },
+                    logoUrl: null,
+                    suggestedQuestionsEnabled: false,
+                    suggestedQuestions: [],
+                    imageUploadEnabled: false,
+                    headerHidden: false,
+                  };
                   await loadChatPageSettings();
                   resolve();
                 } catch (err) {
