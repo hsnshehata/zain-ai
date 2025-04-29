@@ -3,7 +3,19 @@ const mongoose = require('mongoose');
 const chatPageSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   botId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bot', required: true },
-  linkId: { type: String, required: true, unique: true },
+  linkId: { 
+    type: String, 
+    required: true, 
+    unique: true, // التأكد إن القيمة فريدة
+    trim: true, // إزالة المسافات
+    validate: {
+      validator: function(v) {
+        // التأكد إن القيمة أحرف إنجليزية وأرقام، بدون مسافات، وطولها 4 أحرف على الأقل
+        return /^[a-zA-Z0-9]{4,}$/.test(v);
+      },
+      message: 'يجب أن يتكون الرابط من أحرف إنجليزية وأرقام فقط، بدون مسافات، ولا يقل طوله عن 4 أحرف'
+    }
+  },
   title: { type: String, default: 'صفحة دردشة' },
   titleColor: { type: String, default: '#ffffff' },
   colors: {
