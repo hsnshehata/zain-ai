@@ -446,14 +446,17 @@ async function loadChatPage() {
                         -webkit-backdrop-filter: blur(5px);
                         <input type="file" id="previewImageInput" accept="image/*" style="display: ${data.imageUploadEnabled ? 'block' : 'none'};">
                         <button id="previewSendMessageBtn" style="
-                          padding: 8px 15px;
+                          padding: 10px;
                           border: none;
-                          border-radius: 8px;
+                          border-radius: 50%;
                           cursor: pointer;
-                          font-size: 0.9em;
+                          font-size: 1em;
                           transition: transform 0.2s, background-color: 0.3s;
                           color: black;
-                        ">fas fa-arrow-up</button>
+                          display: flex;
+                          align-items: center;
+                          justify-content: center;
+                        "><i class="fas fa-arrow-up"></i></button>
                     </div>
                     <button class="settings-gear" data-target="input-settings">⚙️</button>
                     <div id="input-settings" class="settings-popup" style="display: none;">
