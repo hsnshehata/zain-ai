@@ -21,6 +21,6 @@ router.post('/', createChatPage);
 router.put('/:id', upload.single('logo'), updateChatPage);
 router.get('/:linkId', getChatPageByLinkId);
 router.get('/bot/:botId', getChatPageByBotId);
-router.post('/feedback', submitFeedback); // API جديد لتسجيل التقييمات
+router.post('/feedback', submitFeedback);
 
 module.exports = router;
