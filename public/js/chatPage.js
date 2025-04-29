@@ -1,5 +1,5 @@
 async function loadChatPage() {
-  return new Promise(async (resolve, reject) => { // هنخليها ترجع Promise
+  return new Promise(async (resolve, reject) => {
     const content = document.getElementById('content');
     const role = localStorage.getItem('role');
     const userId = localStorage.getItem('userId');
@@ -11,7 +11,7 @@ async function loadChatPage() {
         <h2>تخصيص صفحة الدردشة</h2>
         <p style="color: red;">يرجى اختيار بوت من لوحة التحكم أولاً.</p>
       `;
-      resolve(); // ننهي الـ Promise بنجاح
+      resolve();
       return;
     }
 
@@ -256,7 +256,7 @@ async function loadChatPage() {
     ];
 
     async function loadChatPageSettings() {
-      return new Promise(async (resolve, reject) => { // نرجع Promise
+      return new Promise(async (resolve, reject) => {
         try {
           const response = await fetch(`/api/chat-page/bot/${selectedBotId}`, {
             headers: { 'Authorization': `Bearer ${token}` },
@@ -448,20 +448,20 @@ async function loadChatPage() {
                             backdrop-filter: blur(5px);
                             -webkit-backdrop-filter: blur(5px);
                           ">
-                          <label for="previewImageInput" style="
+                          <label id="previewImageInputBtn" for="previewImageInput" style="
+                            display: ${data.imageUploadEnabled ? 'flex' : 'none'};
                             background-color: ${data.colors.sendButtonColor || '#007bff'};
                             border: none;
                             border-radius: 50%;
                             width: 40px;
                             height: 40px;
-                            display: flex;
                             justify-content: center;
                             align-items: center;
                             cursor: pointer;
                             transition: transform 0.2s, background-color: 0.3s;
                           ">
                             <i class="fas fa-image" style="color: #ffffff; font-size: 18px;"></i>
-                            <input type="file" id="previewImageInput" accept="image/*" style="display: none;" ${data.imageUploadEnabled ? '' : 'disabled'}>
+                            <input type="file" id="previewImageInput" accept="image/*" style="display: none;">
                           </label>
                           <button id="previewSendMessageBtn" style="
                             background-color: ${data.colors.sendButtonColor || '#007bff'};
@@ -617,6 +617,7 @@ async function loadChatPage() {
             const previewSendMessageBtn = document.getElementById('previewSendMessageBtn');
             const previewMessageInput = document.getElementById('previewMessageInput');
             const previewImageInput = document.getElementById('previewImageInput');
+            const previewImageInputBtn = document.getElementById('previewImageInputBtn');
             const userMessage = document.querySelector('#previewChatMessages .user-message');
             const botMessage = document.querySelector('#previewChatMessages .bot-message');
             const previewContainer = document.querySelector('.chat-preview-container');
@@ -656,22 +657,7 @@ async function loadChatPage() {
               botMessage.style.color = colorValues.botMessageTextColor;
               previewChat.style.backgroundColor = colorValues.containerBackgroundColor;
               previewContainer.style.backgroundColor = colorValues.outerBackgroundColor;
-              previewImageInput.parentElement.style.backgroundColor = colorValues.sendButtonColor;
-
-              document.getElementById('titleColorInput').value = colorValues.titleColor;
-              document.getElementById('headerColorInput').value = colorValues.headerColor;
-              document.getElementById('chatAreaBackgroundColorInput').value = colorValues.chatAreaBackgroundColor;
-              document.getElementById('textColorInput').value = colorValues.textColor;
-              document.getElementById('userMessageBackgroundColorInput').value = colorValues.userMessageBackgroundColor;
-              document.getElementById('userMessageTextColorInput').value = colorValues.userMessageTextColor;
-              document.getElementById('botMessageBackgroundColorInput').value = colorValues.botMessageBackgroundColor;
-              document.getElementById('botMessageTextColorInput').value = colorValues.botMessageTextColor;
-              document.getElementById('buttonColorInput').value = colorValues.buttonColor;
-              document.getElementById('inputAreaBackgroundColorInput').value = colorValues.inputAreaBackgroundColor;
-              document.getElementById('inputTextColorInput').value = colorValues.inputTextColor;
-              document.getElementById('sendButtonColorInput').value = colorValues.sendButtonColor;
-              document.getElementById('containerBackgroundColorInput').value = colorValues.containerBackgroundColor;
-              document.getElementById('outerBackgroundColorInput').value = colorValues.outerBackgroundColor;
+              previewImageInputBtn.style.backgroundColor = colorValues.sendButtonColor;
             }
 
             document.querySelectorAll('.settings-gear').forEach(gear => {
@@ -839,7 +825,7 @@ async function loadChatPage() {
             updateQuestionsList();
 
             document.getElementById('imageUploadEnabled').addEventListener('change', (e) => {
-              previewImageInput.disabled = !e.target.checked;
+              previewImageInputBtn.style.display = e.target.checked ? 'flex' : 'none';
             });
 
             document.getElementById('customizationForm').addEventListener('submit', async (e) => {
@@ -915,7 +901,7 @@ async function loadChatPage() {
             });
 
             updatePreviewStyles();
-            resolve(); // ننهي الـ Promise بنجاح
+            resolve();
           } else {
             chatPageContent.innerHTML = `
               <button id="createChatPageBtn" class="submit-btn">إنشاء صفحة دردشة</button>
@@ -941,18 +927,18 @@ async function loadChatPage() {
                     throw new Error(`فشل في إنشاء صفحة الدردشة: ${response.status} ${response.statusText}`);
                   }
 
-                  await loadChatPageSettings(); // نستدعيها مع await
-                  resolve(); // ننهي الـ Promise بنجاح
+                  await loadChatPageSettings();
+                  resolve();
                 } catch (err) {
                   console.error('خطأ في إنشاء صفحة الدردشة:', err);
                   chatPageContent.innerHTML = `
                     <p style="color: red;">تعذر إنشاء صفحة الدردشة، حاول مرة أخرى لاحقًا.</p>
                   `;
-                  reject(err); // ننهي الـ Promise بخطأ
+                  reject(err);
                 }
               });
             } else {
-              resolve(); // ننهي الـ Promise بنجاح لو مفيش زر
+              resolve();
             }
           }
         } catch (err) {
@@ -960,21 +946,20 @@ async function loadChatPage() {
           chatPageContent.innerHTML = `
             <p style="color: red;">تعذر جلب صفحة الدردشة، حاول مرة أخرى لاحقًا.</p>
           `;
-          reject(err); // ننهي الـ Promise بخطأ
+          reject(err);
         }
       });
     }
 
     try {
-      await loadChatPageSettings(); // نستدعيها مع await
-      resolve(); // ننهي الـ Promise الأساسي بنجاح
+      await loadChatPageSettings();
+      resolve();
     } catch (err) {
-      reject(err); // ننهي الـ Promise الأساسي بخطأ
+      reject(err);
     }
   });
 }
 
-// استدعاء loadChatPage مع التعامل مع الـ Promise
 loadChatPage().catch(err => {
   console.error('خطأ في تحميل صفحة الدردشة:', err);
 });
