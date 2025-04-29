@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         background-color: ${settings?.colors?.header || '#2D3436'};
       }
       #chatTitle {
-        color: ${settings?.titleColor || '#ffffff"};
+        color: ${settings?.titleColor || '#ffffff'};
       }
       #chatMessages {
         background-color: ${settings?.colors?.chatAreaBackground || '#3B4A4E'};
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       .suggested-question {
         background-color: ${settings?.colors?.button || '#6AB04C'};
-        color: #ffffff; /* لون النص أبيض */
+        color: #ffffff;
       }
       .user-message {
         background-color: ${settings?.colors?.userMessageBackground || '#6AB04C'};
@@ -202,10 +202,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       trimmedText.includes('```') ||
       (trimmedText.startsWith('<') && trimmedText.includes('>') && trimmedText.match(/<[a-zA-Z][^>]*>/)) ||
       trimmedText.match(/\b(function|const|let|var|=>|class)\b/i) ||
-      trimmedText.match(/{[^{}]*}/) &&
-      trimmedText.match(/:/) ||
-      trimmedText.match(/[{}$$          $$;]/) &&
-      trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/)
+      (trimmedText.match(/{[^{}]*}/) && trimmedText.match(/:/)) ||
+      (trimmedText.match(/[{}$$      $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
     );
   }
 
