@@ -1,10 +1,10 @@
-/* bots.css - Futuristic Styles for Bots Page */
+/* bots.css - Futuristic Styles for Bots Page - Fixes */
 
 /* Bots Container */
 .bots-container {
-  display: grid;
-  gap: 1.5rem; /* Use rem for spacing */
-  overflow-y: auto;
+  display: flex; /* Change to flex for better control over actions and grid */
+  flex-direction: column;
+  gap: 1.5rem;
   height: 100%;
 }
 
@@ -13,30 +13,39 @@
   display: flex;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-bottom: 1.5rem;
-  position: sticky;
-  top: 70px; /* Adjust based on header/bot selector height */
+  /* Remove sticky positioning to prevent overlap */
+  /* position: sticky; */
+  /* top: 70px; */
   background: var(--card-background);
   backdrop-filter: var(--backdrop-filter);
   padding: 1rem;
-  z-index: 50; /* Below header/selector */
+  /* z-index: 50; */
   border-radius: 10px;
   border: 1px solid var(--border-color);
   box-shadow: var(--box-shadow);
+  margin-bottom: 1.5rem; /* Ensure space below actions */
 }
 
-/* Users Grid (Assuming this is for bots or related items) */
+/* Users Grid (Bots Grid) */
 .users-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Slightly larger cards */
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* Adjust minmax for better fit */
   gap: 1.5rem;
+  width: 100%; /* Ensure grid takes full width */
 }
 
-/* User Card (Assuming this is for bots or related items) - Inherits .card style now */
+/* User Card (Bot Card) - Inherits .card style */
 .user-card {
   /* Inherit base styles from .card in components.css */
-  min-height: 100px;
+  min-height: 120px; /* Ensure enough height */
   position: relative;
+  display: flex; /* Use flex for internal layout */
+  flex-direction: column;
+  justify-content: space-between; /* Space out content and actions */
+}
+
+.user-card .card-content {
+    flex-grow: 1; /* Allow content to take available space */
 }
 
 .user-card h3 {
@@ -49,15 +58,50 @@
   margin: 0.3rem 0;
   font-size: 0.9em;
   color: var(--text-secondary);
+  word-break: break-word; /* Prevent long text overflow */
 }
+
+/* Bot Card Actions */
+.user-card .card-actions {
+    display: flex;
+    gap: 0.8rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.user-card .card-actions button {
+    flex: 1;
+    /* Use secondary button style */
+    background: var(--input-background);
+    color: var(--primary-accent);
+    border: 1px solid var(--primary-accent);
+    box-shadow: none;
+    padding: 8px 10px; /* Adjust padding */
+    font-size: 0.9em;
+}
+
+.user-card .card-actions button:hover {
+    background: rgba(64, 224, 208, 0.1);
+    box-shadow: 0 0 8px rgba(64, 224, 208, 0.3);
+    transform: translateY(-2px);
+}
+
+.user-card .card-actions button.delete {
+    background: rgba(255, 107, 107, 0.1);
+    color: #FF6B6B;
+    border-color: #FF6B6B;
+}
+
+.user-card .card-actions button.delete:hover {
+    background: rgba(255, 107, 107, 0.2);
+    color: #FF4747;
+    border-color: #FF4747;
+    box-shadow: 0 0 8px rgba(255, 107, 107, 0.4);
+}
+
 
 /* Responsive Adjustments */
-@media (max-width: 768px) {
-  .admin-actions {
-    top: 60px; /* Adjust sticky position for mobile */
-  }
-}
-
 @media (max-width: 600px) {
   .admin-actions {
     flex-direction: column;
@@ -67,7 +111,7 @@
     width: 100%;
   }
   .users-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* Single column on small screens */
   }
 }
 
