@@ -1,159 +1,119 @@
-/* messages.css - Styles for Messages Page */
+/* messages.css - Futuristic Styles for Messages Page */
 
-/* Messages Tabs */
+/* Messages Tabs - Reuse .rule-tabs style or define similar */
 .messages-tabs {
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+  /* Use .rule-type-btn class for tab buttons in HTML */
 }
 
-/* Messages Actions */
+/* Messages Actions & Filters Container */
 .messages-actions {
   display: flex;
   flex-direction: column;
-  gap: 15px;
-  margin-bottom: 20px;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  background: var(--card-background);
+  backdrop-filter: var(--backdrop-filter);
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--box-shadow);
 }
 
 /* Filter Group */
 .filter-group {
   display: flex;
-  gap: 20px;
+  gap: 1.5rem;
   flex-wrap: wrap;
+  align-items: flex-end; /* Align items to bottom */
 }
 
 /* Date Filter */
 .date-filter {
   display: flex;
-  gap: 10px;
+  gap: 0.5rem; /* Reduced gap */
   align-items: center;
+  flex-wrap: wrap;
 }
 
+.date-filter label {
+    color: var(--text-secondary);
+    margin-left: 5px; /* RTL adjustment */
+}
+
+/* Input date styling inherited from components.css */
 .date-filter input[type="date"] {
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  color: #E0E0E0;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s;
+  /* Inherits base input styles */
+  padding: 10px 12px; /* Adjust padding if needed */
 }
 
-.date-filter input[type="date"]:focus {
-  border-color: #FFD700;
-  box-shadow: 0 0 5px #FFD700;
-}
-
+/* Button styling inherited from components.css */
 .date-filter button {
-  padding: 8px 16px;
-  background: #1E88E5;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s;
+  /* Use standard button classes like 'button secondary' in HTML */
+  padding: 10px 20px; /* Adjust padding */
 }
 
-.date-filter button:hover {
-  background: #1565C0;
-  transform: translateY(-2px);
-}
-
-/* Action Buttons */
+/* Action Buttons Container */
 .action-buttons {
   display: flex;
-  gap: 10px;
+  gap: 1rem;
   justify-content: center;
-  margin: 20px 0;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
 }
 
 .action-buttons button {
-  width: 200px;
-  padding: 10px;
-  font-size: 1em;
+  /* Use standard button classes like 'button' or 'button secondary' */
+  min-width: 180px; /* Set minimum width */
 }
 
-/* Desktop-Specific Styles for Chat */
-@media (min-width: 769px) {
-  .chat-header {
-    padding: 15px 30px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
+/* Chat Styles (If specific to this page, otherwise use chat.css/chat-modal.css) */
+/* Assuming these styles are for a chat preview/list within messages page */
 
-  .chat-header h3 {
-    font-size: 1.5em;
-  }
-
-  .chat-messages {
-    padding: 30px;
-    max-height: 400px;
-  }
-
-  .message {
-    max-width: 70%;
-    padding: 15px 25px;
-    font-size: 1.1em;
-  }
-
-  .message p {
-    line-height: 1.6;
-  }
-
-  .message small {
-    font-size: 0.85em;
-  }
-
-  .chat-footer {
-    padding: 15px 30px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .chat-footer button {
-    padding: 12px 24px;
-    font-size: 1em;
-  }
+.chat-list-item {
+    background: var(--input-background);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all var(--transition-speed) ease;
 }
 
-/* Mobile-Specific Styles for Chat */
-@media (max-width: 768px) {
-  .chat-header {
-    padding: 10px 15px;
-  }
+.chat-list-item:hover {
+    background: rgba(64, 224, 208, 0.1);
+    border-color: var(--primary-accent);
+}
 
-  .chat-header h3 {
-    font-size: 1.2em;
-  }
+.chat-list-item h4 {
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+}
 
-  .chat-messages {
-    padding: 15px;
-    max-height: 300px;
-  }
-
-  .message {
-    max-width: 85%;
-    padding: 10px 15px;
-    font-size: 0.95em;
-  }
-
-  .message p {
-    line-height: 1.5;
-  }
-
-  .message small {
-    font-size: 0.7em;
-  }
-
-  .chat-footer {
-    padding: 10px 15px;
-  }
-
-  .chat-footer button {
-    padding: 8px 16px;
+.chat-list-item p {
+    margin: 0;
+    color: var(--text-secondary);
     font-size: 0.9em;
-  }
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
 }
+
+/* Remove specific chat header/message/footer styles if they belong elsewhere */
+/* Keep only if they are specific overrides for the messages page context */
 
 /* Responsive Adjustments */
 @media (max-width: 600px) {
+  .filter-group,
+  .date-filter {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 1rem;
+  }
   .action-buttons {
     flex-direction: column;
     align-items: stretch;
@@ -162,3 +122,4 @@
     width: 100%;
   }
 }
+
