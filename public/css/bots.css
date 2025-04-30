@@ -1,9 +1,9 @@
-/* bots.css - Styles for Bots Page */
+/* bots.css - Futuristic Styles for Bots Page */
 
 /* Bots Container */
 .bots-container {
   display: grid;
-  gap: 20px;
+  gap: 1.5rem; /* Use rem for spacing */
   overflow-y: auto;
   height: 100%;
 }
@@ -11,52 +11,53 @@
 /* Admin Actions Section */
 .admin-actions {
   display: flex;
-  gap: 10px;
+  gap: 1rem;
   flex-wrap: wrap;
-  margin-bottom: 20px;
+  margin-bottom: 1.5rem;
   position: sticky;
-  top: 0;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  padding: 10px;
-  z-index: 100;
-  border-radius: 8px;
+  top: 70px; /* Adjust based on header/bot selector height */
+  background: var(--card-background);
+  backdrop-filter: var(--backdrop-filter);
+  padding: 1rem;
+  z-index: 50; /* Below header/selector */
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--box-shadow);
 }
 
-/* Users Grid */
+/* Users Grid (Assuming this is for bots or related items) */
 .users-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); /* Slightly larger cards */
+  gap: 1.5rem;
 }
 
-/* User Card */
+/* User Card (Assuming this is for bots or related items) - Inherits .card style now */
 .user-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  padding: 10px;
-  border-radius: 12px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s;
-  min-height: 80px;
+  /* Inherit base styles from .card in components.css */
+  min-height: 100px;
   position: relative;
 }
 
 .user-card h3 {
-  margin: 0 0 5px;
-  font-size: 1em;
+  margin: 0 0 0.5rem;
+  font-size: 1.1em;
+  color: var(--text-primary);
 }
 
 .user-card p {
-  margin: 5px 0;
+  margin: 0.3rem 0;
   font-size: 0.9em;
-}
-
-.user-card:hover {
-  transform: translateY(-5px);
+  color: var(--text-secondary);
 }
 
 /* Responsive Adjustments */
+@media (max-width: 768px) {
+  .admin-actions {
+    top: 60px; /* Adjust sticky position for mobile */
+  }
+}
+
 @media (max-width: 600px) {
   .admin-actions {
     flex-direction: column;
@@ -64,17 +65,9 @@
   }
   .admin-actions button {
     width: 100%;
-    padding: 10px;
-    font-size: 0.9em;
   }
   .users-grid {
     grid-template-columns: 1fr;
   }
 }
 
-@media (min-width: 769px) {
-  .admin-actions {
-    display: flex;
-    flex-direction: row;
-  }
-}
