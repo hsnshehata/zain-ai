@@ -1,4 +1,4 @@
-/* preview.css - Futuristic Styles for Chat Preview and Customization Settings */
+/* preview.css - Futuristic Styles & Fixes for Chat Preview and Customization */
 
 /* Preview Settings Container */
 .preview-settings-container {
@@ -21,6 +21,7 @@
   box-shadow: var(--box-shadow);
   border: 1px solid var(--border-color);
   margin-bottom: 1.5rem; /* Consistent margin */
+  position: relative; /* Needed for settings gear */
 }
 
 .preview-section h3,
@@ -61,6 +62,7 @@
   justify-content: center;
   gap: 10px;
   padding: 0.8rem;
+  position: relative; /* For settings gear */
   /* Use dynamic background based on settings */
 }
 
@@ -83,6 +85,7 @@
   padding: 0.8rem;
   overflow-y: auto;
   background: var(--input-background); /* Use input background for message area */
+  position: relative; /* For settings gear */
   /* Inherit scrollbar styles */
 }
 
@@ -117,6 +120,7 @@
   padding: 0.8rem;
   justify-content: center;
   border-top: 1px solid var(--border-color);
+  position: relative; /* For settings gear */
 }
 
 #previewSuggestedQuestions .suggested-question {
@@ -128,10 +132,21 @@
   /* Dynamic background/color based on settings */
 }
 
+/* Preview Chat Footer */
+#previewChatFooter {
+    position: relative; /* For settings gear */
+    border-top: 1px solid var(--border-color);
+    padding: 0.8rem;
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
 /* Preview Inputs & Button inherit from components.css */
 #previewMessageInput {
   /* Inherit base input styles */
   font-size: 0.9em;
+  flex-grow: 1;
 }
 
 #previewSendMessageBtn {
@@ -148,13 +163,13 @@
   background: var(--input-background);
   border: 1px solid var(--border-color);
   border-radius: 50%;
-  width: 35px;
-  height: 35px;
+  width: 30px; /* Smaller gear */
+  height: 30px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 1.1em;
+  font-size: 1em; /* Smaller icon */
   color: var(--text-secondary);
   transition: all var(--transition-speed) ease;
   z-index: 10;
@@ -183,7 +198,7 @@
   flex-direction: column;
   gap: 1rem;
   width: 90%;
-  max-width: 400px;
+  max-width: 450px; /* Wider popup */
   max-height: 85vh;
   overflow-y: auto;
   border: 1px solid var(--border-color);
@@ -225,18 +240,26 @@
     color: var(--text-secondary);
 }
 
-/* Color Picker Wrapper */
+/* Color Picker Wrapper - Ensure label and input are side-by-side */
 .color-picker-wrapper {
   display: flex;
   align-items: center;
+  justify-content: space-between; /* Push label and input apart */
   gap: 10px;
-  margin-bottom: 0.5rem; /* Reduced margin */
+  margin-bottom: 0.8rem; /* Increased margin */
+  padding: 0.5rem 0; /* Add some padding */
+  border-bottom: 1px solid var(--border-color); /* Separator */
+}
+
+.color-picker-wrapper:last-child {
+    border-bottom: none;
 }
 
 .color-picker-wrapper label {
   color: var(--text-secondary);
   font-size: 0.9em;
-  flex-grow: 1;
+  flex-grow: 1; /* Allow label to take space */
+  margin: 0;
 }
 
 /* Color Input */
@@ -249,6 +272,7 @@
   padding: 0;
   background-color: transparent;
   transition: border-color var(--transition-speed) ease;
+  flex-shrink: 0; /* Prevent input from shrinking */
 }
 
 .color-input:hover {
@@ -368,7 +392,7 @@
     color: #FF6B6B;
 }
 
-/* Checkbox Group */
+/* Checkbox Group & Label Styling (Toggle Switch Style) */
 .checkbox-group {
   margin-bottom: 1rem;
   padding: 1rem;
@@ -376,21 +400,64 @@
   background: var(--input-background);
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
+  gap: 1.2rem; /* Increased gap */
   border: 1px solid var(--border-color);
 }
 
 .checkbox-label {
   display: flex;
   align-items: center;
+  justify-content: space-between; /* Push label and switch apart */
   gap: 10px;
   color: var(--text-secondary);
   cursor: pointer;
 }
 
+.checkbox-label span { /* The text part of the label */
+    flex-grow: 1;
+}
+
 .checkbox-label input[type="checkbox"] {
-    /* Style checkbox if needed, or use browser default */
-    accent-color: var(--primary-accent);
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.checkbox-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+  background-color: var(--input-background); /* Use input background */
+  border: 1px solid var(--border-color);
+  border-radius: 28px;
+  transition: all var(--transition-speed) ease;
+  flex-shrink: 0; /* Prevent switch from shrinking */
+}
+
+.checkbox-switch::before {
+  content: "";
+  position: absolute;
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: var(--text-secondary); /* Use secondary text color */
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(0,0,0,0.3);
+  transition: all var(--transition-speed) ease;
+}
+
+input[type="checkbox"]:checked + .checkbox-switch {
+  background-color: var(--primary-accent);
+  border-color: var(--primary-accent);
+  box-shadow: 0 0 8px rgba(64, 224, 208, 0.5); /* Glow effect */
+}
+
+input[type="checkbox"]:checked + .checkbox-switch::before {
+  background-color: var(--deep-space-blue); /* Darker handle when active */
+  transform: translateX(22px);
 }
 
 /* Logo Preview */
