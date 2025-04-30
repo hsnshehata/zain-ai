@@ -582,16 +582,17 @@ async function loadChatPage() {
                       </div>
                       <img id="logoPreview" class="logo-preview-img" style="display: none;" alt="Logo Preview" />
                     </div>
-                    <div class="form-group checkbox-group">
                       <label class="checkbox-label">
+                        <span>إخفاء الهيدر:</span>
                         <input type="checkbox" id="headerHidden" name="headerHidden" ${data.headerHidden ? 'checked' : ''}>
-                        إخفاء الهيدر
+                        <div class="checkbox-switch"></div>
                       </label>
                     </div>
                     <div class="form-group checkbox-group">
                       <label class="checkbox-label">
+                        <span>تفعيل الأسئلة المقترحة:</span>
                         <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled" ${data.suggestedQuestionsEnabled ? 'checked' : ''}>
-                        تفعيل الأسئلة المقترحة
+                         <div class="checkbox-switch"></div>
                       </label>
                       <div id="suggestedQuestionsContainer" class="suggested-questions-container" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
                         <h3>إدارة الأسئلة المقترحة</h3>
@@ -604,8 +605,9 @@ async function loadChatPage() {
                     </div>
                     <div class="form-group checkbox-group">
                       <label class="checkbox-label">
+                        <span>تفعيل إرفاق الصور:</span>
                         <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled" ${data.imageUploadEnabled ? 'checked' : ''}>
-                        تفعيل إرفاق الصور
+                        <div class="checkbox-switch"></div>
                       </label>
                     </div>
                     <button type="submit" class="submit-btn">حفظ الإعدادات</button>
