@@ -1,54 +1,88 @@
-/* rules.css - Styles for Rules Page */
+/* rules.css - Futuristic Styles for Rules Page */
 
 /* Rules Container */
 .rules-container {
   display: grid;
-  gap: 20px;
+  gap: 1.5rem;
 }
 
 /* Rule Tabs */
 .rule-tabs {
   display: flex;
-  gap: 10px;
+  gap: 1rem;
   overflow-x: auto;
-  padding-bottom: 10px;
+  padding-bottom: 1rem;
+  /* Add subtle scrollbar styling if needed, inherits from base.css */
 }
 
 /* Rules Grid */
 .rules-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
+  gap: 1.5rem;
 }
 
-/* Rule Card */
+/* Rule Card - Inherits .card style */
 .rule-card {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  transition: transform 0.3s;
+  /* Inherit base styles from .card in components.css */
+  /* Add any rule-specific styles here if needed */
 }
 
-.rule-card:hover {
-  transform: translateY(-5px);
+.rule-card h4 {
+    margin-bottom: 0.5rem;
+    color: var(--primary-accent);
+}
+
+.rule-card p {
+    margin-bottom: 0.8rem;
 }
 
 /* Card Actions */
 .card-actions {
   display: flex;
-  gap: 10px;
-  margin-top: 10px;
+  gap: 1rem;
+  margin-top: 1rem;
+  border-top: 1px solid var(--border-color);
+  padding-top: 1rem;
 }
 
 .card-actions button {
   flex: 1;
+  /* Use secondary button style for less emphasis */
+  background: var(--input-background);
+  color: var(--primary-accent);
+  border: 1px solid var(--primary-accent);
+  box-shadow: none;
 }
+
+.card-actions button:hover {
+  background: rgba(64, 224, 208, 0.1);
+  box-shadow: 0 0 8px rgba(64, 224, 208, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Specific button styles if needed, e.g., delete button */
+.card-actions button.delete {
+    background: rgba(255, 107, 107, 0.1);
+    color: #FF6B6B;
+    border-color: #FF6B6B;
+}
+
+.card-actions button.delete:hover {
+    background: rgba(255, 107, 107, 0.2);
+    color: #FF4747;
+    border-color: #FF4747;
+    box-shadow: 0 0 8px rgba(255, 107, 107, 0.4);
+}
+
 
 /* Responsive Adjustments */
 @media (max-width: 600px) {
   .rules-grid {
     grid-template-columns: 1fr;
   }
+  .card-actions {
+    flex-direction: column;
+  }
 }
+
