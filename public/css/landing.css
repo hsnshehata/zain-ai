@@ -1,0 +1,348 @@
+/* css/landing.css */
+
+body {
+    font-family: 'Cairo', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    background-color: #f4f7f6; /* Light background for the page */
+    color: #333;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Header */
+.landing-header {
+    background-color: #fff;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    padding: 15px 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.landing-header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-size: 1.8em;
+    font-weight: 700;
+    color: var(--turquoise, #00C4B4); /* Use theme color */
+}
+
+.logo .fa-robot {
+    margin-right: 5px;
+}
+
+.landing-header nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 25px;
+}
+
+.landing-header nav a {
+    text-decoration: none;
+    color: #555;
+    font-weight: 600;
+    transition: color 0.3s ease;
+}
+
+.landing-header nav a:hover,
+.landing-header nav a.active {
+    color: var(--turquoise, #00C4B4);
+}
+
+.landing-header nav .btn {
+    padding: 8px 15px;
+    font-size: 0.9em;
+}
+
+/* Hero Section */
+.hero {
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('images/dashboard_background.jpeg') no-repeat center center/cover;
+    color: #fff;
+    text-align: center;
+    padding: 100px 0;
+}
+
+.hero h1 {
+    font-size: 3em;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+.hero p {
+    font-size: 1.2em;
+    margin-bottom: 30px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.hero .btn-highlight {
+    background-color: var(--turquoise, #00C4B4);
+    color: #fff;
+    padding: 15px 30px;
+    font-size: 1.1em;
+    border: none;
+}
+
+.hero .btn-highlight:hover {
+    background-color: #00a090;
+}
+
+/* Features Section */
+.features {
+    padding: 80px 0;
+    text-align: center;
+}
+
+.features h2 {
+    font-size: 2.5em;
+    margin-bottom: 50px;
+    color: #333;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 30px;
+}
+
+.feature-item {
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-item:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+}
+
+.feature-item i {
+    font-size: 3em;
+    color: var(--turquoise, #00C4B4);
+    margin-bottom: 20px;
+}
+
+.feature-item h3 {
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.feature-item p {
+    font-size: 1em;
+    color: #666;
+    line-height: 1.6;
+}
+
+/* Trial Offer Section */
+.trial-offer {
+    background-color: var(--dark-blue, #1a2a44); /* Use a theme color */
+    color: #fff;
+    padding: 60px 0;
+    text-align: center;
+}
+
+.trial-offer h2 {
+    font-size: 2.2em;
+    margin-bottom: 15px;
+}
+
+.trial-offer h2 .fa-gift {
+    color: #ffd700; /* Gold color for gift icon */
+    margin-left: 10px;
+}
+
+.trial-offer p {
+    font-size: 1.1em;
+    margin-bottom: 30px;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+    opacity: 0.9;
+}
+
+.trial-offer .btn-secondary {
+    background-color: #fff;
+    color: var(--dark-blue, #1a2a44);
+    padding: 12px 25px;
+    font-size: 1em;
+    border: 1px solid #fff;
+}
+
+.trial-offer .btn-secondary:hover {
+    background-color: rgba(255, 255, 255, 0.9);
+}
+
+/* Pricing Section */
+.pricing {
+    padding: 80px 0;
+    background-color: #f9fafa;
+    text-align: center;
+}
+
+.pricing h2 {
+    font-size: 2.5em;
+    margin-bottom: 50px;
+    color: #333;
+}
+
+.pricing-plans {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    flex-wrap: wrap;
+}
+
+.plan {
+    background-color: #fff;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    width: 300px;
+    max-width: 100%;
+    border: 1px solid #eee;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.plan.highlighted {
+    border-color: var(--turquoise, #00C4B4);
+    box-shadow: 0 8px 25px rgba(0, 196, 180, 0.2);
+    transform: scale(1.05);
+}
+
+.plan h3 {
+    font-size: 1.6em;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+.price {
+    font-size: 2.5em;
+    font-weight: 700;
+    color: var(--turquoise, #00C4B4);
+    margin-bottom: 10px;
+}
+
+.price span {
+    display: block;
+    font-size: 0.5em;
+    font-weight: 400;
+    color: #777;
+}
+
+.plan p {
+    font-size: 0.9em;
+    color: #555;
+    margin-bottom: 25px;
+}
+
+.plan p .fa-tags {
+    color: #e74c3c; /* Discount tag color */
+    margin-left: 5px;
+}
+
+.plan ul {
+    list-style: none;
+    padding: 0;
+    margin-bottom: 30px;
+    text-align: right;
+}
+
+.plan ul li {
+    margin-bottom: 10px;
+    color: #555;
+}
+
+.plan ul li .fa-check {
+    color: #2ecc71; /* Checkmark color */
+    margin-left: 8px;
+}
+
+.plan .btn {
+    width: 100%;
+    padding: 12px 0;
+}
+
+.plan.highlighted .btn-highlight {
+    background-color: var(--turquoise, #00C4B4);
+    color: #fff;
+}
+.plan.highlighted .btn-highlight:hover {
+    background-color: #00a090;
+}
+
+/* Footer */
+.landing-footer {
+    background-color: #333;
+    color: #ccc;
+    padding: 20px 0;
+    text-align: center;
+    font-size: 0.9em;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .landing-header .container {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .landing-header nav ul {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 15px;
+    }
+    .hero h1 {
+        font-size: 2.5em;
+    }
+    .hero p {
+        font-size: 1.1em;
+    }
+    .features h2, .pricing h2, .trial-offer h2 {
+        font-size: 2em;
+    }
+    .pricing-plans {
+        flex-direction: column;
+        align-items: center;
+    }
+    .plan {
+        width: 90%;
+    }
+    .plan.highlighted {
+        transform: scale(1);
+    }
+}
+
+@media (max-width: 480px) {
+    .hero h1 {
+        font-size: 2em;
+    }
+    .hero p {
+        font-size: 1em;
+    }
+    .feature-item h3 {
+        font-size: 1.3em;
+    }
+    .plan {
+        padding: 30px;
+    }
+    .price {
+        font-size: 2em;
+    }
+}
+

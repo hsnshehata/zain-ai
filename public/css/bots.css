@@ -1,0 +1,80 @@
+/* bots.css - Styles for Bots Page */
+
+/* Bots Container */
+.bots-container {
+  display: grid;
+  gap: 20px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+/* Admin Actions Section */
+.admin-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  position: sticky;
+  top: 0;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 10px;
+  z-index: 100;
+  border-radius: 8px;
+}
+
+/* Users Grid */
+.users-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+/* User Card */
+.user-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 10px;
+  border-radius: 12px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s;
+  min-height: 80px;
+  position: relative;
+}
+
+.user-card h3 {
+  margin: 0 0 5px;
+  font-size: 1em;
+}
+
+.user-card p {
+  margin: 5px 0;
+  font-size: 0.9em;
+}
+
+.user-card:hover {
+  transform: translateY(-5px);
+}
+
+/* Responsive Adjustments */
+@media (max-width: 600px) {
+  .admin-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .admin-actions button {
+    width: 100%;
+    padding: 10px;
+    font-size: 0.9em;
+  }
+  .users-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 769px) {
+  .admin-actions {
+    display: flex;
+    flex-direction: row;
+  }
+}
