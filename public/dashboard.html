@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>لوحة التحكم</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/components.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="/css/bots.css">
+  <link rel="stylesheet" href="/css/rules.css">
+  <link rel="stylesheet" href="/css/feedback.css">
+  <link rel="stylesheet" href="/css/messages.css">
+  <link rel="stylesheet" href="/css/facebook.css">
+  <link rel="stylesheet" href="/css/analytics.css">
+  <link rel="stylesheet" href="/css/chat-modal.css">
+  <link rel="stylesheet" href="/css/preview.css">
+  <!-- إضافة Chartist.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chartist@0.11.4/dist/chartist.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chartist@0.11.4/dist/chartist.min.js"></script>
+</head>
+<body>
+  <div class="sidebar">
+    <button class="nav-item bots-btn"><i class="fas fa-robot"></i> إدارة البوتات</button>
+    <button class="nav-item rules-btn"><i class="fas fa-book"></i> إدارة القواعد</button>
+    <button class="nav-item chat-page-btn"><i class="fas fa-comment"></i> تخصيص الدردشة</button>
+    <button class="nav-item analytics-btn"><i class="fas fa-chart-bar"></i> التحليلات</button>
+    <button class="nav-item messages-btn"><i class="fas fa-envelope"></i> الرسائـــل</button>
+    <button class="nav-item feedback-btn"><i class="fas fa-star"></i> التقييمات</button>
+    <button class="nav-item facebook-btn"><i class="fas fa-cogs"></i> إعدادات فيسبوك</button>
+    <button class="nav-item logout-btn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+  </div>
+  <div class="dashboard-container">
+    <div class="bot-selector-container">
+      <div class="form-group bot-selector">
+        <select id="botSelectDashboard" name="botSelectDashboard">
+          <option value="">اختر بوت</option>
+        </select>
+        <label for="botSelectDashboard">اختر البوت</label>
+      </div>
+    </div>
+    <h1>لوحة التحكم</h1>
+    <div id="content"></div>
+  </div>
+  <nav class="bottom-nav">
+    <button class="nav-item bots-btn"><i class="fas fa-robot"></i> البوتات</button>
+    <button class="nav-item rules-btn"><i class="fas fa-book"></i> القواعد</button>
+    <button class="nav-item chat-page-btn"><i class="fas fa-comment"></i> الدردشة</button>
+    <button class="nav-item analytics-btn"><i class="fas fa-chart-bar"></i> التحليلات</button>
+    <button class="nav-item messages-btn"><i class="fas fa-envelope"></i> الرسائـــل</button>
+    <button class="nav-item feedback-btn"><i class="fas fa-star"></i> التقييمات</button>
+    <button class="nav-item facebook-btn"><i class="fas fa-cogs"></i> إعدادات فيسبوك</button>
+    <button class="nav-item logout-btn"><i class="fas fa-sign-out-alt"></i> تسجيل الخروج</button>
+  </nav>
+
+  <!-- زر عائم للبوت المساعد -->
+  <div id="assistantButtonContainer" style="position: fixed; bottom: 70px; right: 20px; z-index: 1000;">
+    <img id="assistantButton" src="https://i.ibb.co/7JJScM0Q/Chat-GPT-Image-20-2025-08-04-13.png" alt="المساعد الذكي" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
+  </div>
+
+  <!-- مربع حواري للبوت المساعد -->
+  <div id="assistantChatModal" class="chat-modal" style="display: none;">
+    <div class="chat-modal-content">
+      <div class="chat-header">
+        <h3>المساعد الذكي</h3>
+        <button id="closeAssistantChatBtn" class="chat-close-btn"><i class="fas fa-times"></i></button>
+      </div>
+      <div id="assistantChatMessages" class="chat-messages">
+        <div class="message bot-message">
+          <p>مرحبًا! أنا المساعد الذكي. كيف يمكنني مساعدتك اليوم؟</p>
+          <small id="welcomeTimestamp"></small>
+        </div>
+      </div>
+      <div class="chat-footer">
+        <div class="chat-input">
+          <input type="text" id="assistantMessageInput" placeholder="اكتب رسالتك...">
+          <button id="assistantSendMessageBtn"><i class="fas fa-arrow-up"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/bots.js?v=1.0.2"></script>
+  <script src="/js/rules.js?v=1.0.2"></script>
+  <script src="/js/chatPage.js?v=1.0.2"></script>
+  <script src="/js/analytics.js?v=1.0.2"></script>
+  <script src="/js/users.js?v=1.0.2"></script>
+  <script src="/js/feedback.js?v=1.0.2"></script>
+  <script src="/js/facebook.js?v=1.0.2"></script>
+  <script src="/js/messages.js?v=1.0.2"></script>
+  <script src="/js/auth.js?v=1.0.2"></script>
+  <script src="/js/dashboard.js?v=1.0.2"></script>
+  <script src="/js/assistantBot.js?v=1.0.2"></script>
+  <script>
+    // Toggle light/dark mode
+    document.addEventListener('DOMContentLoaded', () => {
+      const theme = localStorage.getItem('theme') || 'dark';
+      document.body.classList.toggle('light', theme === 'light');
+      document.getElementById('themeToggle')?.addEventListener('click', () => {
+        document.body.classList.toggle('light');
+        localStorage.setItem('theme', document.body.classList.contains('light') ? 'light' : 'dark');
+      });
+    });
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9353242cb8976758',t:'MTc0NTQ3MTkyMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'936156573a107b91',t:'MTc0NTYyMDc3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left0; border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9362eef8eb2b60c7',t:'MTc0NTYzNzUxMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'936a6b1db9e5addQtyM='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
