@@ -1,117 +1,121 @@
-/* feedback.css - Styles for Feedback Page */
+/* feedback.css - Futuristic Styles for Feedback Page */
 
 /* Feedback Container */
 .feedback-container {
-  margin-top: 20px;
+  margin-top: 1.5rem;
 }
 
 /* Feedback Sections */
 .feedback-sections {
   display: flex;
-  gap: 20px;
-  margin-top: 20px;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
   flex-wrap: wrap;
 }
 
-/* Feedback Column */
+/* Feedback Column - Use .card style */
 .feedback-column {
   flex: 1;
   min-width: 300px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  background: var(--card-background);
+  backdrop-filter: var(--backdrop-filter);
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: var(--box-shadow);
+  border: 1px solid var(--border-color);
 }
 
 .feedback-column h3 {
   margin-top: 0;
-  color: #E0E0E0;
+  margin-bottom: 1rem;
+  color: var(--primary-accent);
 }
 
 /* Feedback Grid */
 .feedback-grid {
   display: grid;
-  gap: 15px;
+  gap: 1rem;
 }
 
-/* Feedback Card */
+/* Feedback Card - Use nested .card style or similar */
 .feedback-card {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  padding: 15px;
+  background: var(--input-background); /* Slightly different background for nesting */
+  backdrop-filter: var(--backdrop-filter);
+  padding: 1rem;
   border-radius: 8px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: none; /* Less shadow for nested items */
+  border: 1px solid var(--border-color);
 }
 
 .feedback-card p {
-  margin: 5px 0;
-  color: #E0E0E0;
+  margin: 0.5rem 0;
+  color: var(--text-secondary);
+}
+
+.feedback-card strong {
+    color: var(--text-primary);
 }
 
 /* Feedback Actions */
 .feedback-actions {
-  margin-top: 15px;
+  margin-top: 1.5rem;
   display: flex;
-  gap: 10px;
+  gap: 1rem;
   justify-content: center;
+  flex-wrap: wrap;
 }
 
-/* Action Buttons */
+/* Action Buttons - Use standard button classes */
+/* Assign classes like 'button secondary', 'button delete' in HTML */
+
+/* Example if specific classes are kept: */
 .clear-btn,
 .download-btn,
 .delete-btn {
-  padding: 8px 15px;
+  /* Inherit base button styles or redefine */
+  padding: 10px 20px;
   border: none;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s, transform 0.3s;
+  transition: all var(--transition-speed) ease;
+  font-weight: 600;
 }
 
-.clear-btn {
-  background-color: #dc3545;
-  color: white;
+.clear-btn, .delete-btn {
+  background: rgba(255, 107, 107, 0.1);
+  color: #FF6B6B;
+  border: 1px solid #FF6B6B;
 }
 
-.clear-btn:hover {
-  background-color: #c82333;
+.clear-btn:hover, .delete-btn:hover {
+  background: rgba(255, 107, 107, 0.2);
+  color: #FF4747;
+  border-color: #FF4747;
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.4);
   transform: translateY(-2px);
 }
 
 .download-btn {
-  background-color: #28a745;
-  color: white;
+  /* Use secondary style */
+  background: var(--input-background);
+  color: var(--primary-accent);
+  border: 1px solid var(--primary-accent);
 }
 
 .download-btn:hover {
-  background-color: #218838;
-  transform: translateY(-2px);
-}
-
-.delete-btn {
-  background-color: #ff6b6b;
-  color: white;
-}
-
-.delete-btn:hover {
-  background-color: #e65a5a;
+  background: rgba(64, 224, 208, 0.1);
+  box-shadow: 0 0 8px rgba(64, 224, 208, 0.3);
   transform: translateY(-2px);
 }
 
 /* Feedback Note */
 .feedback-note {
-  margin-top: 20px;
+  margin-top: 1.5rem;
   font-style: italic;
-  color: #E0E0E0;
+  color: var(--text-secondary);
   opacity: 0.8;
   text-align: center;
 }
 
-/* Ensure Proper Direction for Arabic */
-.feedback-container,
-.feedback-column,
-.feedback-card,
-.feedback-actions,
-.feedback-note {
-  direction: rtl;
-}
+/* Remove explicit direction, should be handled globally */
+
