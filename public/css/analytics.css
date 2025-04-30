@@ -1,12 +1,10 @@
-/* /public/css/analytics.css */
-
-/* analytics.css - Styles for Analytics Page */
+/* analytics.css - Futuristic Styles for Analytics Page */
 
 /* Analytics Container */
 .analytics-container {
   display: grid;
-  gap: 20px;
-  padding: 20px;
+  gap: 1.5rem;
+  padding: 1.5rem;
   max-width: 1200px;
   margin: 0 auto;
 }
@@ -14,121 +12,91 @@
 /* Analytics Content */
 #analyticsContent {
   display: grid;
-  gap: 30px;
+  gap: 2rem;
 }
 
-/* Filter Group */
+/* Filter Group - Use .card style */
 .filter-group {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(10px);
-  padding: 15px;
-  border-radius: 12px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  background: var(--card-background);
+  backdrop-filter: var(--backdrop-filter);
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: var(--box-shadow);
+  border: 1px solid var(--border-color);
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 1rem;
   flex-wrap: wrap;
 }
 
 .filter-group label {
-  font-weight: bold;
-  color: #fff;
-  margin-right: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-left: 10px; /* RTL adjustment */
 }
 
+/* Date Filter */
 .date-filter {
   display: flex;
-  gap: 10px;
+  gap: 0.75rem;
   align-items: center;
   flex-wrap: wrap;
 }
 
+/* Select and Input Date inherit from components.css */
 .date-filter select,
 .date-filter input[type="date"] {
-  padding: 8px 12px;
-  border: none;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  color: #fff;
-  font-size: 0.9em;
-  outline: none;
-  transition: background 0.3s;
+  /* Inherit base styles */
+  min-width: 150px; /* Ensure minimum width */
 }
 
-.date-filter select:focus,
-.date-filter input[type="date"]:focus {
-  background: rgba(255, 255, 255, 0.2);
-}
-
+/* Button inherits from components.css */
 .date-filter button {
-  padding: 8px 15px;
-  background-color: #007bff;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.9em;
-  transition: background 0.3s, transform 0.2s;
-}
-
-.date-filter button:hover {
-  background-color: #0056b3;
-  transform: translateY(-2px);
-}
-
-/* وضع زر تطبيق الفلتر جنب الـ select */
-.date-filter {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-#timePeriodFilter {
-  min-width: 200px;
+  /* Use standard button classes like 'button secondary' in HTML */
+  padding: 10px 18px; /* Adjust padding if needed */
 }
 
 #customDateRange {
   display: flex;
-  gap: 10px;
+  gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
-/* Analytics Sections */
+/* Analytics Sections - Use .card style */
 #messagesAnalytics,
 #feedbackAnalytics,
 #rulesAnalytics {
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  padding: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  background: var(--card-background);
+  backdrop-filter: var(--backdrop-filter);
+  padding: 1.5rem;
+  border-radius: 10px;
+  box-shadow: var(--box-shadow);
+  border: 1px solid var(--border-color);
 }
 
 #messagesAnalytics h3,
 #feedbackAnalytics h3,
-#rulesAnalytics h3,
-#messagesAnalytics h4,
-#feedbackAnalytics h4,
-#rulesAnalytics h4 {
+#rulesAnalytics h3 {
   margin-top: 0;
-  margin-bottom: 15px;
-  color: #fff;
+  margin-bottom: 1rem;
+  color: var(--primary-accent);
   font-size: 1.5em;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-  padding-bottom: 5px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
 }
 
 #messagesAnalytics h4,
 #feedbackAnalytics h4,
 #rulesAnalytics h4 {
+  margin-top: 1.5rem; /* Add space before sub-headings */
+  margin-bottom: 0.8rem;
+  color: var(--text-primary);
   font-size: 1.2em;
 }
 
 /* Top Negative Replies */
 #topNegativeReplies h4 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  color: #fff;
-  font-size: 1.2em;
+  margin-top: 0; /* Reset margin for this specific h4 */
 }
 
 #negativeRepliesList {
@@ -138,97 +106,115 @@
 }
 
 #negativeRepliesList li {
-  background: rgba(255, 255, 255, 0.05);
-  padding: 10px;
+  background: var(--input-background);
+  padding: 0.8rem 1rem;
   border-radius: 8px;
-  margin-bottom: 8px;
-  color: #ddd;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
   font-size: 0.9em;
   word-wrap: break-word;
+  border: 1px solid var(--border-color);
 }
 
 /* Stats Text */
 .stats-text {
   text-align: center;
-  color: #ddd;
+  color: var(--text-secondary);
   font-size: 0.9em;
-  margin-top: 15px;
+  margin-top: 1.5rem;
 }
 
 .stats-text p {
   margin: 5px 0;
 }
 
-/* Section Spinner */
+.stats-text strong {
+    color: var(--text-primary);
+}
+
+/* Section Spinner - Use base loader style */
 .section-spinner {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  padding: 2rem;
 }
 
 .section-spinner .loader {
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
-  border-radius: 50%;
-  width: 30px;
-  height: 30px;
-  animation: spin 1s linear infinite;
+  /* Inherits from base.css */
+  width: 35px;
+  height: 35px;
 }
 
 /* Charts */
 .ct-chart {
-  max-width: 300px;
-  max-height: 150px;
-  margin: 20px auto;
+  /* max-width: 300px; Remove fixed width */
+  max-height: 200px; /* Adjust height */
+  margin: 1.5rem auto;
   display: block;
 }
 
-#messagesByChannelChart .ct-label,
-#feedbackRatioChart .ct-label,
-#rulesTypeChart .ct-label {
-  fill: #fff;
-  color: #fff;
-  font-size: 0.9em;
+/* Chart Labels */
+.ct-label {
+  fill: var(--text-secondary);
+  color: var(--text-secondary);
+  font-size: 0.8em;
 }
 
-#dailyMessagesChart .ct-label {
-  fill: #fff;
-  color: #fff;
-  font-size: 0.9em;
+/* Pie Chart Specifics */
+#messagesByChannelChart .ct-series-a .ct-slice-pie,
+#feedbackRatioChart .ct-series-a .ct-slice-pie,
+#rulesTypeChart .ct-series-a .ct-slice-pie {
+  fill: var(--primary-accent);
+}
+#messagesByChannelChart .ct-series-b .ct-slice-pie,
+#feedbackRatioChart .ct-series-b .ct-slice-pie,
+#rulesTypeChart .ct-series-b .ct-slice-pie {
+  fill: var(--cyan-glow);
+}
+#messagesByChannelChart .ct-series-c .ct-slice-pie,
+#feedbackRatioChart .ct-series-c .ct-slice-pie,
+#rulesTypeChart .ct-series-c .ct-slice-pie {
+  fill: var(--slate-gray);
+}
+/* Add more series colors if needed */
+
+/* Line Chart Specifics */
+#dailyMessagesChart .ct-grid {
+  stroke: var(--border-color);
 }
 
 #dailyMessagesChart .ct-series-a .ct-line {
-  stroke: #007bff;
+  stroke: var(--primary-accent);
   stroke-width: 2px;
 }
 
 #dailyMessagesChart .ct-series-a .ct-point {
-  stroke: #007bff;
-  stroke-width: 8px;
+  stroke: var(--primary-accent);
+  stroke-width: 6px;
 }
 
 /* Responsive Design */
 @media (max-width: 768px) {
   .analytics-container {
-    padding: 10px;
-    gap: 15px;
+    padding: 1rem;
+    gap: 1rem;
   }
 
   #analyticsContent {
-    gap: 20px;
+    gap: 1.5rem;
   }
 
   .filter-group {
-    padding: 10px;
+    padding: 1rem;
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
   }
 
   .date-filter {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+    align-items: stretch;
+    gap: 0.75rem;
   }
 
   .date-filter select,
@@ -240,12 +226,12 @@
 
   #messagesAnalytics,
   #feedbackAnalytics,
-  #rulesAnalytics {
-    padding: 15px;
+#rulesAnalytics {
+    padding: 1rem;
   }
 
   .ct-chart {
-    max-width: 100%;
-    max-height: 150px;
+    max-height: 180px;
   }
 }
+
