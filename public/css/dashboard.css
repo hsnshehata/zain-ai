@@ -1,0 +1,152 @@
+/* dashboard.css - Styles for Dashboard Page */
+
+/* Dashboard Container */
+.dashboard-container {
+  max-width: 1200px;
+  margin: 20px auto;
+  padding: 20px;
+  padding-bottom: 80px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  min-height: calc(100vh - 140px);
+  position: relative;
+}
+
+/* Bot Selector Container */
+.bot-selector-container {
+  position: sticky;
+  top: 0;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  padding: 10px;
+  z-index: 100;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+/* Sidebar */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  padding: 20px;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar .nav-item {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  margin: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.sidebar .nav-item:hover {
+  background: #1E88E5;
+  color: white;
+}
+
+/* Bottom Navigation */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  padding: 10px 0;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  height: 60px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.nav-item {
+  background: none;
+  border: none;
+  color: #E0E0E0;
+  font-size: 0.8em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px;
+  transition: color 0.3s;
+  cursor: pointer;
+  min-width: 60px;
+}
+
+.nav-item:hover, .nav-item.active {
+  color: #FFD700;
+}
+
+.nav-item i {
+  margin-bottom: 5px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 600px) {
+  .dashboard-container {
+    margin: 10px;
+    padding: 15px;
+    padding-bottom: 80px;
+    min-height: calc(100vh - 80px);
+    overflow-y: auto;
+  }
+}
+
+@media (min-width: 769px) {
+  .dashboard-container {
+    margin-left: 270px;
+    padding-bottom: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-container {
+    margin-left: 0;
+    padding-bottom: 100px;
+    min-height: calc(100vh - 100px);
+    overflow-y: auto;
+  }
+  .bottom-nav {
+    flex-direction: row;
+    height: 60px;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    justify-content: space-around;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .sidebar {
+    display: none !important;
+  }
+  .bottom-nav {
+    display: flex !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .sidebar {
+    display: flex !important;
+  }
+  .bottom-nav {
+    display: none !important;
+  }
+}
