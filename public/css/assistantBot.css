@@ -1,0 +1,195 @@
+/* public/css/assistantBot.css */
+
+/* Styles specific to the Assistant Bot modal (loaded by assistantBot.js) */
+
+.chat-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1200;
+}
+
+.chat-modal-content {
+  width: 90%;
+  max-width: 600px;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 80vh;
+}
+
+body.dark-mode .chat-modal-content {
+  background-color: var(--dark-card);
+  border: 1px solid var(--dark-border);
+}
+
+body.light-mode .chat-modal-content {
+  background-color: var(--light-card);
+  border: 1px solid var(--light-border);
+}
+
+.chat-header {
+  padding: 15px;
+  border-bottom: 1px solid;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+body.dark-mode .chat-header {
+  border-bottom-color: var(--dark-border);
+}
+
+body.light-mode .chat-header {
+  border-bottom-color: var(--light-border);
+}
+
+.chat-header h3 {
+  margin: 0;
+  font-size: 1.3em;
+}
+
+.chat-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  cursor: pointer;
+}
+
+body.dark-mode .chat-close-btn {
+  color: var(--dark-text);
+}
+
+body.light-mode .chat-close-btn {
+  color: var(--light-text);
+}
+
+.chat-messages {
+  flex-grow: 1;
+  padding: 15px;
+  overflow-y: auto;
+}
+
+.message {
+  margin-bottom: 15px;
+  padding: 10px;
+  border-radius: 6px;
+  max-width: 80%;
+}
+
+.user-message {
+  margin-right: 10px; /* RTL */
+  background-color: var(--turquoise);
+  color: white;
+  align-self: flex-end;
+}
+
+.bot-message {
+  margin-left: 10px; /* RTL */
+  background-color: rgba(128, 128, 128, 0.2);
+}
+
+body.dark-mode .bot-message {
+  color: var(--dark-text);
+}
+
+body.light-mode .bot-message {
+  color: var(--light-text);
+}
+
+.message p {
+  margin: 0 0 5px;
+}
+
+.message small {
+  font-size: 0.85em;
+  opacity: 0.7;
+}
+
+.chat-footer {
+  padding: 15px;
+  border-top: 1px solid;
+}
+
+body.dark-mode .chat-footer {
+  border-top-color: var(--dark-border);
+}
+
+body.light-mode .chat-footer {
+  border-top-color: var(--light-border);
+}
+
+.chat-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chat-input input {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95em;
+  outline: none;
+}
+
+body.dark-mode .chat-input input {
+  background-color: var(--dark-card);
+  color: var(--dark-text);
+}
+
+body.light-mode .chat-input input {
+  background-color: var(--light-card);
+  color: var(--light-text);
+}
+
+.chat-input button {
+  background-color: var(--turquoise);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color var(--transition-speed);
+}
+
+.chat-input button:hover {
+  background-color: var(--button-hover-bg);
+}
+
+.chat-input button i {
+  color: white;
+  font-size: 1.2em;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 576px) {
+  .chat-modal-content {
+    width: 95%;
+    max-height: 90vh;
+  }
+
+  .chat-header h3 {
+    font-size: 1.2em;
+  }
+
+  .message {
+    max-width: 90%;
+    font-size: 0.95em;
+  }
+
+  .chat-input input {
+    font-size: 0.9em;
+  }
+}
