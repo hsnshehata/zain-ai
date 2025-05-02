@@ -1,15 +1,15 @@
+/* public/css/login.css */
+
 /* Styles for Login Page (login.html) */
 
 /* Apply base styles from common.css for consistency */
 body {
-  /* font-family is in common.css */
   margin: 0;
   padding: 0;
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  /* transition is in common.css */
 }
 
 /* Dark/Light mode body styles are in common.css */
@@ -25,11 +25,11 @@ body {
 }
 
 body.dark-mode .login-container {
-  background-color: var(--dark-card-bg, var(--dark-card)); /* Fallback to common card */
+  background-color: var(--dark-card-bg, var(--dark-card));
 }
 
 body.light-mode .login-container {
-  background-color: var(--light-card-bg, var(--light-card)); /* Fallback to common card */
+  background-color: var(--light-card-bg, var(--light-card));
 }
 
 .login-container h1 {
@@ -42,15 +42,36 @@ body.light-mode .login-container {
 /* form-group styles are mostly in common.css */
 .form-group {
   position: relative;
-  /* margin-bottom is in common.css */
 }
 
 /* input styles are mostly in common.css */
 .form-group input {
-  /* width, padding, border, border-radius, font-size, transition, box-sizing are in common.css */
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  box-sizing: border-box;
 }
 
-/* input dark/light mode styles are in common.css */
+body.dark-mode .form-group input {
+  border-color: var(--dark-border);
+  background-color: var(--dark-card);
+  color: var(--dark-text);
+}
+
+body.light-mode .form-group input {
+  border-color: var(--light-border);
+  background-color: var(--light-card);
+  color: var(--light-text);
+}
+
+.form-group input:focus {
+  border-color: var(--turquoise);
+  box-shadow: 0 0 5px rgba(26, 188, 156, 0.5);
+  outline: none;
+}
 
 .form-group label {
   position: absolute;
@@ -60,17 +81,16 @@ body.light-mode .login-container {
   font-size: 1rem;
   transition: all 0.3s ease;
   pointer-events: none;
-  /* Base label styles (display, margin, weight, transition) are in common.css */
 }
 
 body.dark-mode .form-group label {
   color: rgba(224, 224, 224, 0.7);
-  background-color: var(--input-bg-dark); /* Match input background */
+  background-color: var(--dark-card);
 }
 
 body.light-mode .form-group label {
   color: #6c757d;
-  background-color: var(--input-bg-light); /* Match input background */
+  background-color: var(--light-card);
 }
 
 /* Float label effect */
@@ -82,10 +102,8 @@ body.light-mode .form-group label {
   color: var(--turquoise);
 }
 
-/* input:focus styles are in common.css */
-
+/* Submit Button */
 button[type="submit"] {
-  /* Use common button styles */
   background-color: var(--turquoise);
   color: white;
   padding: 12px 20px;
@@ -102,14 +120,25 @@ button[type="submit"]:hover {
   background-color: var(--button-hover-bg);
 }
 
-#error {
-  margin-top: 15px;
-  color: var(--error-color); /* Use common error color */
-  font-size: 0.9rem;
-  min-height: 1.2em; /* Reserve space for error message */
+button[type="submit"]:focus {
+  outline: 2px solid var(--turquoise);
+  outline-offset: 2px;
 }
 
-/* Optional: Add a subtle animation */
+/* Error Message */
+#error {
+  margin-top: 15px;
+  color: var(--error-color);
+  font-size: 0.9rem;
+  min-height: 1.2em;
+  visibility: hidden;
+}
+
+#error[style*="display: block"] {
+  visibility: visible;
+}
+
+/* Animation */
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
@@ -119,3 +148,30 @@ button[type="submit"]:hover {
   animation: fadeIn 0.5s ease-out;
 }
 
+/* Accessibility Improvements */
+@media (prefers-reduced-motion: reduce) {
+  .login-container {
+    animation: none;
+  }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 576px) {
+  .login-container {
+    margin: 20px;
+    padding: 20px;
+  }
+
+  .login-container h1 {
+    font-size: 1.5rem;
+  }
+
+  .form-group input,
+  button[type="submit"] {
+    font-size: 0.95rem;
+  }
+
+  #error {
+    font-size: 0.85rem;
+  }
+}
