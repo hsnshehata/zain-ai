@@ -1,7 +1,13 @@
-// /public/js/analytics.js
+// public/js/analytics.js (Updated for unified error handling and CSS loading)
 
 document.addEventListener('DOMContentLoaded', () => {
   async function loadAnalyticsPage() {
+    // إضافة analytics.css ديناميكيًا
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "/css/analytics.css";
+    document.head.appendChild(link);
+
     const content = document.getElementById('content');
     const token = localStorage.getItem('token');
     const selectedBotId = localStorage.getItem('selectedBotId');
@@ -121,15 +127,10 @@ document.addEventListener('DOMContentLoaded', () => {
             ...(startDate && { startDate }),
             ...(endDate && { endDate }),
           });
-          const response = await fetch(`/api/messages/${botId}?${query}`, {
-            headers: { 'Authorization': `Bearer ${token}` },
-          });
+          const conversations = await handleApiRequest(`/api/messages/${botId}?${query}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }, analyticsContent, `فشل في جلب رسائل ${channel}`);
 
-          if (!response.ok) {
-            throw new Error('فشل في جلب الرسائل');
-          }
-
-          const conversations = await response.json();
           let messageCount = 0;
           conversations.forEach(conv => {
             messageCount += conv.messages.length;
@@ -177,15 +178,10 @@ document.addEventListener('DOMContentLoaded', () => {
           ...(startDate && { startDate }),
           ...(endDate && { endDate }),
         });
-        const dailyResponse = await fetch(`/api/messages/daily/${botId}?${dailyQuery}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
+        const dailyData = await handleApiRequest(`/api/messages/daily/${botId}?${dailyQuery}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }, analyticsContent, 'فشل في جلب معدل الرسائل يوميًا');
 
-        if (!dailyResponse.ok) {
-          throw new Error('فشل في جلب معدل الرسائل يوميًا');
-        }
-
-        const dailyData = await dailyResponse.json();
         const labels = dailyData.map(item => item.date);
         const series = dailyData.map(item => item.count);
 
@@ -212,10 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dailyMessagesStats.style.display = 'block';
 
       } catch (err) {
-        console.error('خطأ في تحميل إحصائيات الرسائل:', err);
-        document.getElementById('messagesAnalytics').innerHTML += `
-          <p style="color: red; text-align: center;">تعذر تحميل إحصائيات الرسائل، حاول مرة أخرى لاحقًا.</p>
-        `;
+        // الخطأ تم التعامل معه في handleApiRequest
       }
     }
 
@@ -230,15 +223,10 @@ document.addEventListener('DOMContentLoaded', () => {
           ...(startDate && { startDate }),
           ...(endDate && { endDate }),
         });
-        const feedbackResponse = await fetch(`/api/bots/${botId}/feedback?${feedbackQuery}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
+        const feedbackData = await handleApiRequest(`/api/bots/${botId}/feedback?${feedbackQuery}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }, analyticsContent, 'فشل في جلب التقييمات');
 
-        if (!feedbackResponse.ok) {
-          throw new Error('فشل في جلب التقييمات');
-        }
-
-        const feedbackData = await feedbackResponse.json();
         let positiveCount = 0;
         let negativeCount = 0;
 
@@ -282,15 +270,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const negativeRepliesSpinner = document.querySelector('#topNegativeReplies .section-spinner');
         const negativeRepliesList = document.getElementById('negativeRepliesList');
 
-        const negativeRepliesResponse = await fetch(`/api/bots/feedback/negative-replies/${botId}?${feedbackQuery}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
+        const negativeRepliesData = await handleApiRequest(`/api/bots/feedback/negative-replies/${botId}?${feedbackQuery}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }, analyticsContent, 'فشل في جلب الردود السلبية');
 
-        if (!negativeRepliesResponse.ok) {
-          throw new Error('فشل في جلب الردود السلبية');
-        }
-
-        const negativeRepliesData = await negativeRepliesResponse.json();
         negativeRepliesList.innerHTML = '';
 
         if (negativeRepliesData.length === 0) {
@@ -308,10 +291,7 @@ document.addEventListener('DOMContentLoaded', () => {
         negativeRepliesList.style.display = 'block';
 
       } catch (err) {
-        console.error('خطأ في تحميل إحصائيات التقييمات:', err);
-        document.getElementById('feedbackAnalytics').innerHTML += `
-          <p style="color: red; text-align: center;">تعذر تحميل إحصائيات التقييمات، حاول مرة أخرى لاحقًا.</p>
-        `;
+        // الخطأ تم التعامل معه في handleApiRequest
       }
     }
 
@@ -323,15 +303,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const rulesTypeStats = document.getElementById('rulesTypeStats');
 
         const rulesQuery = new URLSearchParams({ botId });
-        const rulesResponse = await fetch(`/api/rules?${rulesQuery}`, {
-          headers: { 'Authorization': `Bearer ${token}` },
-        });
+        const rulesData = await handleApiRequest(`/api/rules?${rulesQuery}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }, analyticsContent, 'فشل في جلب القواعد');
 
-        if (!rulesResponse.ok) {
-          throw new Error('فشل في جلب القواعد');
-        }
-
-        const rulesData = await rulesResponse.json();
         const rulesTypesCount = {
           general: 0,
           global: 0,
@@ -387,10 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
         rulesTypeStats.style.display = 'block';
 
       } catch (err) {
-        console.error('خطأ في تحميل إحصائيات القواعد:', err);
-        document.getElementById('rulesAnalytics').innerHTML += `
-          <p style="color: red; text-align: center;">تعذر تحميل إحصائيات القواعد، حاول مرة أخرى لاحقًا.</p>
-        `;
+        // الخطأ تم التعامل معه في handleApiRequest
       }
     }
   }
