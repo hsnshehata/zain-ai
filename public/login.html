@@ -3,11 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="تسجيل الدخول إلى لوحة تحكم Zain AI لإدارة بوتاتك الذكية وتحسين خدمة العملاء.">
+  <meta name="keywords" content="Zain AI, تسجيل الدخول, لوحة تحكم, بوتات ذكية">
+  <meta name="author" content="Zain AI">
   <title>تسجيل الدخول - زين بوت</title>
-  <link rel="stylesheet" href="/css/common.css"> <!-- Common styles -->
-  <link rel="stylesheet" href="/css/login.css"> <!-- Login specific styles -->
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/login.css">
   <link rel="manifest" href="/manifest.json">
-  <!-- Google Fonts for Cairo -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
@@ -30,7 +32,7 @@
   </div>
 
   <script>
-    // Apply theme from localStorage on load
+    // Apply theme from localStorage
     const currentTheme = localStorage.getItem("theme") || "dark";
     document.body.classList.add(currentTheme === "light" ? "light-mode" : "dark-mode");
     if (currentTheme === "light") {
@@ -39,13 +41,15 @@
 
     // Service Worker registration
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/service-worker.js")
-        .then(() => console.log("Service Worker Registered"))
-        .catch((err) => console.error("Service Worker Error:", err));
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register("/service-worker.js")
+          .then(() => console.log("Service Worker Registered"))
+          .catch((err) => console.error("Service Worker Error:", err));
+      });
     }
   </script>
-  <script src="/js/utils.js"></script>
-  <script src="/js/auth.js"></script>
+  <script defer src="/js/utils.js"></script>
+  <script defer src="/js/auth.js"></script>
 
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93949fcfdb5cbfbd',t:'MTc0NjE1ODU1OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
