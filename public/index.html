@@ -1,113 +1,114 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Zain AI - بوتات ذكية لعملك</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/common.css"> <!-- Common styles -->
-    <link rel="stylesheet" href="css/index.css"> <!-- Landing page specific styles -->
-    <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zain AI - بوتات ذكية لعملك</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/common.css"> <!-- Common styles -->
+  <link rel="stylesheet" href="/css/index.css"> <!-- Landing page specific styles -->
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link rel="manifest" href="/manifest.json">
 </head>
-<body>
-    <header class="landing-header">
-        <div class="container">
-            <div class="logo">Zain AI <i class="fas fa-robot"></i></div>
-            <nav>
-                <ul>
-                    <li><a href="#features">المميزات</a></li>
-                    <li><a href="#pricing">الأسعار</a></li>
-                    <li><a href="#trial">التجربة المجانية</a></li>
-                    <li><a href="login.html" class="btn btn-primary">لوحة التحكم / تسجيل الدخول</a></li>
-                </ul>
-            </nav>
-        </div>
-    </header>
+<body class="dark-mode">
+  <header class="landing-header" role="banner">
+    <div class="container">
+      <div class="logo">Zain AI <i class="fas fa-robot"></i></div>
+      <nav aria-label="التنقل الرئيسي">
+        <ul>
+          <li><a href="#features" aria-label="الانتقال إلى قسم المميزات">المميزات</a></li>
+          <li><a href="#pricing" aria-label="الانتقال إلى قسم الأسعار">الأسعار</a></li>
+          <li><a href="#trial" aria-label="الانتقال إلى قسم التجربة المجانية">التجربة المجانية</a></li>
+          <li><a href="/login.html" class="btn btn-primary" aria-label="الانتقال إلى لوحة التحكم أو تسجيل الدخول">لوحة التحكم / تسجيل الدخول</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
 
-    <section class="hero">
-        <div class="container">
-            <h1>أطلق العنان لقوة الذكاء الاصطناعي في خدمة عملائك</h1>
-            <p>مع بوتات Zain AI الذكية، يمكنك أتمتة الردود، تحسين تجربة العملاء، وزيادة كفاءة عملك على مدار الساعة.</p>
-            <a href="#trial" class="btn btn-highlight">ابدأ تجربتك المجانية الآن!</a>
-        </div>
-    </section>
+  <section class="hero" role="region" aria-label="مقدمة Zain AI">
+    <div class="container">
+      <h1>أطلق العنان لقوة الذكاء الاصطناعي في خدمة عملائك</h1>
+      <p>مع بوتات Zain AI الذكية، يمكنك أتمتة الردود، تحسين تجربة العملاء، وزيادة كفاءة عملك على مدار الساعة.</p>
+      <a href="#trial" class="btn btn-highlight" aria-label="ابدأ التجربة المجانية">ابدأ تجربتك المجانية الآن!</a>
+    </div>
+  </section>
 
-    <section id="features" class="features">
-        <div class="container">
-            <h2>لماذا تختار Zain AI؟</h2>
-            <div class="features-grid">
-                <div class="feature-item">
-                    <i class="fas fa-comments"></i>
-                    <h3>ردود فورية وذكية</h3>
-                    <p>بوتات قادرة على فهم استفسارات العملاء والرد عليها بدقة وسرعة فائقة.</p>
-                </div>
-                <div class="feature-item">
-                    <i class="fas fa-cogs"></i>
-                    <h3>تخصيص كامل</h3>
-                    <p>قم بتدريب البوت الخاص بك وتخصيص قواعد الرد بما يتناسب مع طبيعة عملك.</p>
-                </div>
-                <div class="feature-item">
-                    <i class="fas fa-headset"></i>
-                    <h3>دعم متعدد القنوات</h3>
-                    <p>تواصل مع عملائك عبر فيسبوك، واتساب، وموقعك الإلكتروني من لوحة تحكم واحدة.</p>
-                </div>
-                <div class="feature-item">
-                    <i class="fas fa-chart-line"></i>
-                    <h3>تحليلات وتقارير</h3>
-                    <p>احصل على رؤى قيمة حول تفاعلات العملاء وأداء البوت لتحسين مستمر.</p>
-                </div>
-            </div>
+  <section id="features" class="features" role="region" aria-label="مميزات Zain AI">
+    <div class="container">
+      <h2>لماذا تختار Zain AI؟</h2>
+      <div class="features-grid">
+        <div class="feature-item">
+          <i class="fas fa-comments"></i>
+          <h3>ردود فورية وذكية</h3>
+          <p>بوتات قادرة على فهم استفسارات العملاء نص او صوت او صورة والرد عليها بدقة وسرعة فائقة.</p>
         </div>
-    </section>
-
-    <section id="trial" class="trial-offer">
-        <div class="container">
-            <h2><i class="fas fa-gift"></i> فرصة لا تعوض! جرب البوت الذكي مجاناً لمدة شهر كامل</h2>
-            <p>اكتشف الإمكانيات الهائلة لبوتات Zain AI بدون أي التزام. سجل الآن واحصل على وصول كامل لجميع المميزات لمدة 30 يوماً.</p>
-            <a href="login.html" class="btn btn-secondary">سجل وابدأ التجربة المجانية</a>
+        <div class="feature-item">
+          <i class="fas fa-cogs"></i>
+          <h3>تخصيص كامل</h3>
+          <p>قم بتدريب البوت الخاص بك وتخصيص قواعد الرد بما يتناسب مع طبيعة عملك.</p>
         </div>
-    </section>
-
-    <section id="pricing" class="pricing">
-        <div class="container">
-            <h2>خطط أسعار مرنة تناسب احتياجاتك</h2>
-            <div class="pricing-plans">
-                <div class="plan">
-                    <h3>الخطة الشهرية</h3>
-                    <div class="price">2000 <span>جنيه مصري / شهرياً</span></div>
-                    <p>(عرض لفترة محدودة)</p>
-                    <ul>
-                        <li><i class="fas fa-check"></i> بوت ذكي واحد</li>
-                        <li><i class="fas fa-check"></i> دعم متعدد القنوات</li>
-                        <li><i class="fas fa-check"></i> لوحة تحكم متكاملة</li>
-                        <li><i class="fas fa-check"></i> تحليلات أساسية</li>
-                    </ul>
-                    <a href="login.html" class="btn btn-primary">اشترك الآن</a>
-                </div>
-                <div class="plan highlighted">
-                    <h3>الخطة السنوية</h3>
-                    <div class="price">21600 <span>جنيه مصري / سنوياً</span></div>
-                    <p><i class="fas fa-tags"></i> توفير 10% (ما يعادل 2400 جنيه)</p>
-                     <ul>
-                        <li><i class="fas fa-check"></i> كل مميزات الخطة الشهرية</li>
-                        <li><i class="fas fa-check"></i> دعم فني مميز</li>
-                        <li><i class="fas fa-check"></i> تحديثات مستمرة</li>
-                    </ul>
-                    <a href="login.html" class="btn btn-highlight">اشترك سنوياً ووفر</a>
-                </div>
-            </div>
+        <div class="feature-item">
+          <i class="fas fa-headset"></i>
+          <h3>دعم متعدد القنوات</h3>
+          <p>تواصل مع عملائك عبر فيسبوك، واتساب، وموقعك الإلكتروني من لوحة تحكم واحدة.</p>
         </div>
-    </section>
-
-    <footer class="landing-footer">
-        <div class="container">
-            <p>&copy; 2025 Zain AI. جميع الحقوق محفوظة.</p>
-            <!-- Add social media links or other footer content if needed -->
+        <div class="feature-item">
+          <i class="fas fa-chart-line"></i>
+          <h3>تحليلات وتقارير</h3>
+          <p>احصل على رؤى قيمة حول تفاعلات العملاء وأداء البوت لتحسين مستمر.</p>
         </div>
-    </footer>
+      </div>
+    </div>
+  </section>
 
-    <script src="js/landing.js"></script>
+  <section id="trial" class="trial-offer" role="region" aria-label="عرض التجربة المجانية">
+    <div class="container">
+      <h2><i class="fas fa-gift"></i> فرصة لا تعوض! جرب البوت الذكي مجاناً لمدة شهر كامل</h2>
+      <p>اكتشف الإمكانيات الهائلة لبوتات Zain AI بدون أي التزام. سجل الآن واحصل على وصول كامل لجميع المميزات لمدة 30 يوماً.</p>
+      <a href="/login.html" class="btn btn-secondary" aria-label="سجل للحصول على التجربة المجانية">سجل وابدأ التجربة المجانية</a>
+    </div>
+  </section>
+
+  <section id="pricing" class="pricing" role="region" aria-label="خطط الأسعار">
+    <div class="container">
+      <h2>خطط أسعار مرنة تناسب احتياجاتك</h2>
+      <div class="pricing-plans">
+        <div class="plan">
+          <h3>الخطة الشهرية</h3>
+          <div class="price">2000 <span>جنيه مصري / شهرياً</span></div>
+          <p>(عرض لفترة محدودة)</p>
+          <ul>
+            <li><i class="fas fa-check"></i> بوت ذكي واحد</li>
+            <li><i class="fas fa-check"></i> دعم متعدد القنوات</li>
+            <li><i class="fas fa-check"></i> لوحة تحكم متكاملة</li>
+            <li><i class="fas fa-check"></i> تحليلات أساسية</li>
+          </ul>
+          <a href="/login.html" class="btn btn-primary" aria-label="اشترك في الخطة الشهرية">اشترك الآن</a>
+        </div>
+        <div class="plan highlighted">
+          <h3>الخطة السنوية</h3>
+          <div class="price">21600 <span>جنيه مصري / سنوياً</span></div>
+          <p><i class="fas fa-tags"></i> توفير 10% (ما يعادل 2400 جنيه)</p>
+          <ul>
+            <li><i class="fas fa-check"></i> كل مميزات الخطة الشهرية</li>
+            <li><i class="fas fa-check"></i> دعم فني مميز</li>
+            <li><i class="fas fa-check"></i> تحديثات مستمرة</li>
+          </ul>
+          <a href="/login.html" class="btn btn-highlight" aria-label="اشترك في الخطة السنوية">اشترك سنوياً ووفر</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="landing-footer" role="contentinfo">
+    <div class="container">
+      <p>&copy; 2025 Zain AI. جميع الحقوق محفوظة.</p>
+    </div>
+  </footer>
+
+  <script src="/js/utils.js"></script>
+  <script src="/js/landing.js"></script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93949fd01ef31353',t:'MTc0NjE1ODU1OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
-
