@@ -1,6 +1,10 @@
 // public/js/feedback.js (Updated for new dashboard design and unified error handling)
 
 async function loadFeedbackPage() {
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = "/css/feedback.css";
+  document.head.appendChild(link);
   const content = document.getElementById("content");
   const token = localStorage.getItem("token");
   const selectedBotId = localStorage.getItem("selectedBotId");
