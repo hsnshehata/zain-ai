@@ -1,12 +1,11 @@
 // public/service-worker.js
 
-const CACHE_NAME = 'zain-ai-v2';
+const CACHE_NAME = 'zain-ai-v5'; // غيرنا الاسم عشان الكاش يتجدد
 const urlsToCache = [
   '/',
   '/index.html',
   '/login.html',
   '/dashboard_new.html',
-  // CSS Files
   '/css/common.css',
   '/css/index.css',
   '/css/login.css',
@@ -18,7 +17,7 @@ const urlsToCache = [
   '/css/facebook.css',
   '/css/messages.css',
   '/css/assistantBot.css',
-  // JS Files
+  '/css/dashboard.css',
   '/js/utils.js',
   '/js/landing.js',
   '/js/auth.js',
@@ -31,12 +30,10 @@ const urlsToCache = [
   '/js/facebook.js',
   '/js/messages.js',
   '/js/assistantBot.js',
-  // Other Assets
   '/manifest.json',
   '/favicon.ico',
-  // Placeholder icons (replace with actual paths if available)
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
+  '/icons/icon-192.png',
+  '/icons/icon-512.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -75,7 +72,7 @@ self.addEventListener('fetch', (event) => {
   const pathname = requestUrl.pathname;
 
   // Cache-first strategy for app shell assets
-  if (urlsToCache.includes(pathname) || pathname.endsWith('.css') || pathname.endsWith('.js')) {
+  if (urlsToCache.includes(pathname) || pathname.endsWith('.css') || pathname.endsWith('.js') || pathname.endsWith('.png')) {
     event.respondWith(
       caches.match(event.request)
         .then((response) => {
