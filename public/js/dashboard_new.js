@@ -1,4 +1,4 @@
-// public/js/dashboard_new.js (Revised for dynamic CSS loading and unified error handling)
+// public/js/dashboard_new.js
 
 document.addEventListener("DOMContentLoaded", () => {
   const role = localStorage.getItem("role");
@@ -35,10 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Function to load CSS dynamically
   function loadPageCss(page) {
-    // Remove existing page-specific CSS
     document.querySelectorAll('link[data-page-css]').forEach(link => link.remove());
-
-    // Load new CSS if page has a corresponding CSS file
     if (pageCssMap[page]) {
       const link = document.createElement("link");
       link.rel = "stylesheet";
@@ -157,12 +154,14 @@ document.addEventListener("DOMContentLoaded", () => {
     navItems.forEach(item => {
       if (item.dataset.page === "bots" && role === "superadmin") return;
       item.disabled = true;
+      item.style.display = "none"; // Hide disabled items
     });
   };
 
   const enableNavItems = () => {
     navItems.forEach(item => {
       item.disabled = false;
+      item.style.display = "flex"; // Show enabled items
     });
   };
 
@@ -251,6 +250,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (e.currentTarget.disabled) return;
       const page = item.dataset.page;
       loadPageContent(page);
+      if (window.innerWidth <= 992) {
+        sidebar.classList.remove("open"); // Close sidebar on mobile after click
+      }
     });
   });
 
