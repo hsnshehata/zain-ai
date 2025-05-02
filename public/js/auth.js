@@ -1,8 +1,15 @@
-// public/js/auth.js (Updated for unified error handling)
+// public/js/auth.js
 
 document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.querySelector('#loginForm');
   const logoutButtons = document.querySelectorAll('.logout-btn');
+
+  // Check if token exists and redirect to dashboard if on login page
+  const token = localStorage.getItem("token");
+  if (token && window.location.pathname === "/login.html") {
+    window.location.href = "/dashboard_new.html";
+    return;
+  }
 
   // Handle login form submission
   if (loginForm) {
