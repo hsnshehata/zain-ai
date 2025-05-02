@@ -1,5 +1,23 @@
 /* Styles for Dashboard Layout (dashboard_new.html) */
 
+/* CSS Variables */
+:root {
+  --sidebar-width: 250px;
+  --sidebar-width-collapsed: 70px;
+  --header-height: 70px;
+  --transition-speed: 0.3s;
+  --turquoise: #00C4B4;
+  --dark-sidebar: #1A1A2E;
+  --dark-card: #2A2A3E;
+  --dark-text: #E0E0E0;
+  --dark-border: #3A3A4E;
+  --light-sidebar: #F0F2F5;
+  --light-card: #FFFFFF;
+  --light-text: #333333;
+  --light-border: #D1D5DB;
+  --shadow-light: rgba(0, 0, 0, 0.1);
+}
+
 /* Dashboard Layout */
 .dashboard-layout {
   display: flex;
@@ -15,7 +33,7 @@
   height: 100%;
   display: flex;
   flex-direction: column;
-  transition: width var(--transition-speed) ease, background-color var(--transition-speed) ease, transform var(--transition-speed) ease;
+  transition: width var(--transition-speed) ease, transform var(--transition-speed) ease, background-color var(--transition-speed) ease;
   z-index: 1100;
   overflow-y: auto;
   overflow-x: hidden;
@@ -70,7 +88,7 @@ body.light-mode .sidebar-header {
   margin-bottom: 10px;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
+  transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease, opacity var(--transition-speed) ease;
   background: none;
   border: none;
   width: 100%;
@@ -97,16 +115,12 @@ body.light-mode .nav-item {
 
 .nav-item span {
   opacity: 1;
-  transition: opacity 0.2s ease 0.1s; /* Delay fade out */
+  transition: opacity var(--transition-speed) ease;
 }
 
 .nav-item:hover,
 .nav-item.active {
   background-color: var(--turquoise);
-}
-
-body.dark-mode .nav-item:hover,
-body.dark-mode .nav-item.active {
   color: var(--dark-sidebar);
 }
 
@@ -118,8 +132,9 @@ body.light-mode .nav-item.active {
 .nav-item:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background-color: transparent !important; /* Override hover/active */
-  color: gray !important; /* Override hover/active */
+  background-color: transparent !important;
+  color: gray !important;
+  display: none; /* Hide disabled items */
 }
 
 .sidebar-footer {
@@ -128,7 +143,7 @@ body.light-mode .nav-item.active {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap; /* Allow wrapping if needed */
+  flex-wrap: wrap;
 }
 
 body.dark-mode .sidebar-footer {
@@ -162,7 +177,6 @@ body.light-mode .sidebar-footer {
   opacity: 0;
   width: 0;
   overflow: hidden;
-  transition-delay: 0s;
 }
 
 .sidebar.collapsed .nav-item i {
@@ -205,13 +219,13 @@ body.light-mode .sidebar-footer {
 }
 
 body.dark-mode .main-header {
-  background-color: rgba(26, 26, 46, 0.8); /* Dark header with blur */
+  background-color: rgba(26, 26, 46, 0.8);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--dark-border);
 }
 
 body.light-mode .main-header {
-  background-color: rgba(240, 242, 245, 0.8); /* Light header with blur */
+  background-color: rgba(240, 242, 245, 0.8);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--light-border);
 }
@@ -228,7 +242,6 @@ body.light-mode .main-header {
   font-size: 1.5em;
   cursor: pointer;
   padding: 5px;
-  display: none; /* Hidden by default, shown in media query */
 }
 
 body.dark-mode .sidebar-toggle-btn {
@@ -314,14 +327,12 @@ body.light-mode #botSelectDashboard option {
   gap: 10px;
 }
 
-/* page-header h2 dark/light styles are in common.css */
-
 .header-actions {
   display: flex;
   gap: 10px;
 }
 
-/* Theme Toggle Button Specific Style (from common.css, but relevant here) */
+/* Theme Toggle Button */
 .theme-toggle-btn {
   background: none;
   border: none;
@@ -348,27 +359,35 @@ body.light-mode .theme-toggle-btn .fa-moon {
   display: none;
 }
 
-/* Responsive Adjustments for Layout */
+/* Responsive Adjustments for Mobile */
 @media (max-width: 992px) {
   .sidebar {
     transform: translateX(100%); /* RTL: Hide sidebar off-screen to the right */
     box-shadow: none;
+    width: var(--sidebar-width);
   }
   .sidebar.open {
     transform: translateX(0);
-    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2); /* Show shadow when open */
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2);
   }
   body.light-mode .sidebar.open {
-      box-shadow: -5px 0 15px var(--shadow-light);
+    box-shadow: -5px 0 15px var(--shadow-light);
   }
   .main-content {
     margin-right: 0; /* RTL */
   }
   .sidebar.collapsed + .main-content {
-      margin-right: 0; /* Reset margin when sidebar is collapsed and hidden */
+    margin-right: 0;
   }
   .sidebar-toggle-btn {
     display: block;
+  }
+  .nav-item {
+    font-size: 1em;
+    padding: 12px;
+  }
+  .nav-item i {
+    font-size: 1.2em;
   }
 }
 
@@ -380,6 +399,12 @@ body.light-mode .theme-toggle-btn .fa-moon {
   .header-actions {
     width: 100%;
     justify-content: flex-start;
+  }
+  .bot-selector-container {
+    width: 100%;
+  }
+  #botSelectDashboard {
+    width: 100%;
   }
 }
 
@@ -393,5 +418,7 @@ body.light-mode .theme-toggle-btn .fa-moon {
   .page-header h2 {
     font-size: 1.5em;
   }
+  .sidebar-header .logo {
+    font-size: 1.5em;
+  }
 }
-
