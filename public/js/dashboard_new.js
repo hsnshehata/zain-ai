@@ -20,8 +20,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const logoutBtn = document.querySelector(".sidebar-footer .logout-btn");
   const mobileLogoutBtn = document.querySelector(".mobile-nav-bottom .logout-btn");
   const themeToggleButton = document.getElementById("theme-toggle");
+  const sidebar = document.querySelector(".sidebar");
+  const sidebarToggleBtn = document.getElementById("sidebar-toggle");
   const mobileNav = document.querySelector(".mobile-nav-bottom");
   const mobileNavToggle = document.getElementById("mobile-nav-toggle");
+  const mainContent = document.querySelector(".main-content");
 
   // Map of pages to their respective CSS files
   const pageCssMap = {
@@ -74,6 +77,12 @@ document.addEventListener("DOMContentLoaded", () => {
   themeToggleButton.addEventListener("click", () => {
     const newTheme = document.body.classList.contains("dark-mode") ? "light" : "dark";
     applyTheme(newTheme);
+  });
+
+  // --- Sidebar Toggle for Desktop ---
+  sidebarToggleBtn.addEventListener("click", () => {
+    sidebar.classList.toggle("collapsed");
+    mainContent.classList.toggle("collapsed");
   });
 
   // --- Mobile Navigation Toggle ---
