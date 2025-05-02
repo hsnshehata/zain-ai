@@ -24,7 +24,10 @@
   <header class="landing-header" role="banner">
     <div class="container">
       <div class="logo">Zain AI <i class="fas fa-robot"></i></div>
-      <nav aria-label="التنقل الرئيسي">
+      <button class="menu-toggle" aria-label="فتح القائمة" aria-expanded="false">
+        <i class="fas fa-bars"></i>
+      </button>
+      <nav class="nav-menu" aria-label="التنقل الرئيسي">
         <ul>
           <li><a href="#features" aria-label="الانتقال إلى قسم المميزات">المميزات</a></li>
           <li><a href="#pricing" aria-label="الانتقال إلى قسم الأسعار">الأسعار</a></li>
@@ -38,8 +41,11 @@
   <section class="hero" role="region" aria-label="مقدمة Zain AI">
     <div class="container">
       <h1>أطلق العنان لقوة الذكاء الاصطناعي في خدمة عملائك</h1>
-      <p>مع بوتات Zain AI الذكية، يمكنك إتمام كل الردود، تحسين تجربة العملاء، وزيادة كفاءة عملك على مدار الساعة.</p>
-      <a href="#trial" class="btn btn-highlight" aria-label="ابدأ التجربة المجانية">ابدأ تجربتك المجانية الآن!</a>
+      <p>مع بوتات Zain AI الذكية، يمكنك أتمتة الردود، تحسين تجربة العملاء، وزيادة كفاءة عملك على مدار الساعة.</p>
+      <div class="hero-buttons">
+        <a href="#trial" class="btn btn-highlight" aria-label="ابدأ التجربة المجانية">ابدأ تجربتك المجانية الآن!</a>
+        <a href="https://play.google.com/store/apps/details?id=com.zainai.app" class="btn btn-secondary download-app" aria-label="تحميل التطبيق">تحميل التطبيق</a>
+      </div>
     </div>
   </section>
 
@@ -50,7 +56,7 @@
         <div class="feature-item">
           <i class="fas fa-comments"></i>
           <h3>ردود فورية وذكية</h3>
-          <p>بوتات قادرة على فهم استفسارات العملاء نص او صوت او صورة والرد عليها بدقة وسرعة فائقة.</p>
+          <p>بوتات قادرة على فهم استفسارات العملاء والرد عليها بدقة وسرعة فائقة.</p>
         </div>
         <div class="feature-item">
           <i class="fas fa-cogs"></i>
