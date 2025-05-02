@@ -1,7 +1,7 @@
 {
   "name": "Zain AI",
   "short_name": "Zain AI",
-  "start_url": "/",
+  "start_url": "/dashboard_new.html",
   "display": "standalone",
   "background_color": "#1a1a2e",
   "theme_color": "#00C4B4",
