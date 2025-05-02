@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Zain AI">
-  <link rel="apple-touch-icon" href="/icons/icon-192x192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
   <title>لوحة التحكم - زين بوت</title>
   <link rel="stylesheet" href="/css/common.css">
   <link rel="stylesheet" href="/css/dashboard.css">
@@ -62,6 +62,19 @@
         <div class="placeholder"><h2>أهلاً بك في لوحة تحكم زين بوت!</h2><p>اختر قسمًا من القائمة للبدء.</p></div>
       </div>
     </main>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="mobile-nav-bottom">
+      <button class="nav-item-mobile" data-page="bots" aria-label="إدارة البوتات"><i class="fas fa-robot"></i></button>
+      <button class="nav-item-mobile" data-page="rules" aria-label="إدارة القواعد"><i class="fas fa-book"></i></button>
+      <button class="nav-item-mobile" data-page="chat-page" aria-label="تخصيص الدردشة"><i class="fas fa-comment-dots"></i></button>
+      <button class="nav-item-mobile" data-page="analytics" aria-label="التحليلات"><i class="fas fa-chart-pie"></i></button>
+      <button class="nav-item-mobile" data-page="messages" aria-label="الرسائل"><i class="fas fa-envelope-open-text"></i></button>
+      <button class="nav-item-mobile" data-page="feedback" aria-label="التقييمات"><i class="fas fa-star-half-alt"></i></button>
+      <button class="nav-item-mobile" data-page="facebook" aria-label="إعدادات فيسبوك"><i class="fab fa-facebook-f"></i></button>
+      <button class="nav-item-mobile logout-btn" aria-label="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i></button>
+      <button class="nav-toggle-btn" id="mobile-nav-toggle"><i class="fas fa-chevron-up"></i></button>
+    </nav>
   </div>
 
   <div id="assistantButtonContainer" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
@@ -94,6 +107,8 @@
     const token = localStorage.getItem("token");
     if (isMobile && !token) {
       window.location.href = "/login.html";
+    } else if (token && window.location.pathname === "/login.html") {
+      window.location.href = "/dashboard_new.html"; // Redirect to dashboard if token exists
     }
 
     // Apply theme from localStorage
