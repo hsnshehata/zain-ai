@@ -436,6 +436,12 @@ body.light-mode .nav-item-mobile.active {
   }
 }
 
+@media (min-width: 993px) {
+  .mobile-nav-bottom {
+    display: none !important; /* Force hide on desktop */
+  }
+}
+
 @media (max-width: 768px) {
   .page-header {
     flex-direction: column;
