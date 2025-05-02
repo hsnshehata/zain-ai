@@ -1,3 +1,4 @@
+// public/js/assistantBot.js
 document.addEventListener('DOMContentLoaded', () => {
   const assistantButton = document.getElementById('assistantButton');
   const assistantChatModal = document.getElementById('assistantChatModal');
@@ -9,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const ASSISTANT_BOT_ID = '68087d93c0124c9fe05a6996';
   const selectedBotId = localStorage.getItem('selectedBotId');
   let userId = localStorage.getItem('userId') || 'dashboard_user_' + Date.now();
-  let conversationHistory = [];
+  let conversationHistory = JSON.parse(localStorage.getItem(`conversationHistory_${userId}`)) || [];
 
   if (!selectedBotId) {
     assistantChatMessages.innerHTML = `
@@ -20,6 +21,18 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     return;
   }
+
+  // تحديث الـ cache بعد كل رسالة
+  function updateConversationCache() {
+    localStorage.setItem(`conversationHistory_${userId}`, JSON.stringify(conversationHistory.slice(-50))); // نحد 50 رسالة أخيرة
+  }
+
+  // تنظيف الـ cache لو المستخدم غير البوت
+  if (selectedBotId && localStorage.getItem('lastSelectedBotId') !== selectedBotId) {
+    conversationHistory = [];
+    updateConversationCache();
+  }
+  localStorage.setItem('lastSelectedBotId', selectedBotId);
 
   const welcomeTimestamp = document.getElementById('welcomeTimestamp');
   if (welcomeTimestamp) {
@@ -61,17 +74,16 @@ document.addEventListener('DOMContentLoaded', () => {
     assistantMessageInput.value = '';
 
     conversationHistory.push({ role: 'user', content: message });
+    updateConversationCache();
 
     await processMessage(message, lastMessageTimestamp);
   }
 
   async function processMessage(message, lastMessageTimestamp) {
     try {
-      // التحقق من الأوامر البسيطة مباشرة في الكود
       let internalCommand = parseSimpleCommand(message);
 
       if (internalCommand) {
-        // لو الأمر تنفيذي، بننفذه مباشرة
         let retryCount = 0;
         const maxRetries = 3;
 
@@ -87,6 +99,7 @@ document.addEventListener('DOMContentLoaded', () => {
             assistantChatMessages.appendChild(botMessageDiv);
             assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
             conversationHistory.push({ role: 'assistant', content: executionResult.message });
+            updateConversationCache();
             break;
           } catch (err) {
             retryCount++;
@@ -101,6 +114,7 @@ document.addEventListener('DOMContentLoaded', () => {
               assistantChatMessages.appendChild(botMessageDiv);
               assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
               conversationHistory.push({ role: 'assistant', content: errorMessage });
+              updateConversationCache();
               break;
             }
 
@@ -108,7 +122,6 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       } else {
-        // لو الأمر مش تنفيذي، بنمرره للذكاء الاصطناعي عشان يرد رد طبيعي
         const systemPrompt = `
 أنت بوت ذكي اسمه "المساعد الذكي" (ID: ${ASSISTANT_BOT_ID}). مهمتك الرد على المستخدم بطريقة طبيعية وودودة بناءً على الأسئلة أو العبارات اللي مش أوامر تنفيذية (زي "كيف حالك" أو "شكرًا لك").
 
@@ -138,7 +151,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ...conversationHistory,
         ];
 
-        const response = await fetch('/api/bot', {
+        const data = await handleApiRequest('/api/bot', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -150,13 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
             userId,
             history: conversationHistory,
           }),
-        });
+        }, null, 'فشل في معالجة الرسالة');
 
-        if (!response.ok) {
-          throw new Error('فشل في معالجة الرسالة');
-        }
-
-        const data = await response.json();
         const reply = data.reply || 'عذرًا، لم أفهم طلبك. حاول مرة أخرى!';
 
         const botMessageDiv = document.createElement('div');
@@ -168,6 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
         assistantChatMessages.appendChild(botMessageDiv);
         assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
         conversationHistory.push({ role: 'assistant', content: reply });
+        updateConversationCache();
       }
     } catch (err) {
       console.error('خطأ في معالجة الرسالة:', err);
@@ -181,21 +190,21 @@ document.addEventListener('DOMContentLoaded', () => {
       assistantChatMessages.appendChild(botMessageDiv);
       assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
       conversationHistory.push({ role: 'assistant', content: errorMessage });
+      updateConversationCache();
     }
   }
 
   // دالة لتحليل الأوامر البسيطة مباشرة
   function parseSimpleCommand(message) {
-    // تحسين التعرف على الأوامر بحيث يشمل كل الصفحات
     const navigateMatch = message.match(/(?:انتقل إلى|انتقل الي|افتح|افتح صفحة|مكمن تفتح) صفحة (القواعد|الرسايل|الرسائل|التقييمات|إعدادات فيسبوك|الفيسبوك|البوتات|التحليلات|تخصيص الدردشة)/i);
     if (navigateMatch) {
       const pageMap = {
         'القواعد': 'rules',
-        'الرسايل': 'messages', // أضفنا "الرسايل" كبديل لـ "الرسائل"
+        'الرسايل': 'messages',
         'الرسائل': 'messages',
         'التقييمات': 'feedback',
         'إعدادات فيسبوك': 'facebook',
-        'الفيسبوك': 'facebook', // أضفنا "الفيسبوك" كبديل لـ "إعدادات فيسبوك"
+        'الفيسبوك': 'facebook',
         'البوتات': 'bots',
         'التحليلات': 'analytics',
         'تخصيص الدردشة': 'chat-page',
@@ -211,7 +220,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const addRuleMatch = message.match(/(?:أضف|ضيف) قاعدة(?: جديدة)?(?::\s*|\s+)(.+)/);
     if (addRuleMatch) {
       const content = addRuleMatch[1].trim();
-      let type = 'general'; // افتراضيًا القاعدة عامة
+      let type = 'general';
       if (content.includes('السؤال:') && content.includes('الإجابة:')) {
         type = 'qa';
       } else if (content.includes('بسعر')) {
@@ -294,7 +303,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!command.botId || !command.type || !command.content) {
           throw new Error('الأمر غير صالح: يجب تحديد botId وtype وcontent');
         }
-        const addRuleResp = await fetch('/api/rules', {
+        const addRuleResp = await handleApiRequest('/api/rules', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -305,10 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
             type: command.type,
             content: command.content,
           }),
-        });
-        if (!addRuleResp.ok) {
-          throw new Error('فشل في إضافة قاعدة: ' + (await addRuleResp.text()));
-        }
+        }, null, 'فشل في إضافة قاعدة');
         window.location.hash = 'rules';
         if (typeof window.loadRulesPage === 'function') {
           window.loadRulesPage();
@@ -319,13 +325,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!command.botId || !command.searchTerm) {
           throw new Error('الأمر غير صالح: يجب تحديد botId وsearchTerm');
         }
-        const searchRuleResponse = await fetch(`/api/rules?botId=${command.botId}&search=${encodeURIComponent(command.searchTerm)}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        });
-        if (!searchRuleResponse.ok) {
-          throw new Error('فشل في البحث عن القاعدة: ' + (await searchRuleResponse.text()));
-        }
-        const { rules } = await searchRuleResponse.json();
+        const searchRuleResponse = await handleApiRequest(`/api/rules?botId=${command.botId}&search=${encodeURIComponent(command.searchTerm)}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }, null, 'فشل في البحث عن القاعدة');
+        const { rules } = searchRuleResponse;
         if (rules.length === 0) {
           return { message: `لم أجد أي قاعدة تحتوي على "${command.searchTerm}"` };
         }
@@ -346,14 +349,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!command.botId || !command.startDate || !command.endDate) {
           throw new Error('الأمر غير صالح: يجب تحديد botId وstartDate وendDate');
         }
-        const searchMessagesResponse = await fetch(`/api/messages/${command.botId}?type=${command.type || 'all'}&startDate=${command.startDate}&endDate=${command.endDate}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        });
-        if (!searchMessagesResponse.ok) {
-          throw new Error('فشل في البحث عن الرسائل: ' + (await searchMessagesResponse.text()));
-        }
-        const messagesData = await searchMessagesResponse.json();
-        const messagesCount = messagesData.length;
+        const searchMessagesResponse = await handleApiRequest(`/api/messages/${command.botId}?type=${command.type || 'all'}&startDate=${command.startDate}&endDate=${command.endDate}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }, null, 'فشل في البحث عن الرسائل');
+        const messagesCount = searchMessagesResponse.length;
         window.location.hash = 'messages';
         if (typeof window.loadMessagesPage === 'function') {
           window.loadMessagesPage();
@@ -367,14 +366,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!command.botId || !command.type) {
           throw new Error('الأمر غير صالح: يجب تحديد botId وtype');
         }
-        const searchFeedbackResponse = await fetch(`/api/bots/${command.botId}/feedback`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        });
-        if (!searchFeedbackResponse.ok) {
-          throw new Error('فشل في البحث عن التقييمات: ' + (await searchFeedbackResponse.text()));
-        }
-        const feedbackData = await searchFeedbackResponse.json();
-        const filteredFeedback = feedbackData.filter(item => item.feedback === command.type);
+        const searchFeedbackResponse = await handleApiRequest(`/api/bots/${command.botId}/feedback`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }, null, 'فشل في البحث عن التقييمات');
+        const filteredFeedback = searchFeedbackResponse.filter(item => item.feedback === command.type);
         window.location.hash = 'feedback';
         if (typeof window.loadFeedbackPage === 'function') {
           window.loadFeedbackPage();
@@ -393,14 +388,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!command.botId || !command.userName || !command.newReply || !command.type) {
           throw new Error('الأمر غير صالح: يجب تحديد botId وuserName وnewReply وtype');
         }
-        const messagesResponse = await fetch(`/api/messages/${command.botId}?type=${command.type}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        });
-        if (!messagesResponse.ok) {
-          throw new Error('فشل في جلب المحادثات: ' + (await messagesResponse.text()));
-        }
-        const messageConversations = await messagesResponse.json();
-        const userConversation = messageConversations.find(conv => conv.userId.includes(command.userName));
+        const messagesResponse = await handleApiRequest(`/api/messages/${command.botId}?type=${command.type}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }, null, 'فشل في جلب المحادثات');
+        const userConversation = messagesResponse.find(conv => conv.userId.includes(command.userName));
         if (!userConversation) {
           throw new Error(`لم يتم العثور على محادثة مع "${command.userName}"`);
         }
@@ -416,7 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error('لم يتم العثور على سؤال من المستخدم في المحادثة');
         }
         const question = messages[lastUserMessageIndex].content;
-        const editRuleResp = await fetch('/api/rules', {
+        const editRuleResp = await handleApiRequest('/api/rules', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -427,10 +418,7 @@ document.addEventListener('DOMContentLoaded', () => {
             type: 'qa',
             content: { question, answer: command.newReply },
           }),
-        });
-        if (!editRuleResp.ok) {
-          throw new Error('فشل في تعديل رد البوت: ' + (await editRuleResp.text()));
-        }
+        }, null, 'فشل في تعديل رد البوت');
         window.location.hash = 'messages';
         if (typeof window.loadMessagesPage === 'function') {
           window.loadMessagesPage();
@@ -441,25 +429,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!command.botId || !command.settings) {
           throw new Error('الأمر غير صالح: يجب تحديد botId وsettings');
         }
-        const chatPageResponse = await fetch(`/api/chat-page/bot/${command.botId}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        });
-        if (!chatPageResponse.ok) {
-          throw new Error('فشل في جلب بيانات صفحة الدردشة: ' + (await chatPageResponse.text()));
-        }
-        const chatPageData = await chatPageResponse.json();
-        const chatPageId = chatPageData.chatPageId;
-        const updateSettingsResponse = await fetch(`/api/chat-page/${chatPageId}`, {
+        const chatPageResponse = await handleApiRequest(`/api/chat-page/bot/${command.botId}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }, null, 'فشل في جلب بيانات صفحة الدردشة');
+        const chatPageId = chatPageResponse.chatPageId;
+        const updateSettingsResponse = await handleApiRequest(`/api/chat-page/${chatPageId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },
           body: JSON.stringify(command.settings),
-        });
-        if (!updateSettingsResponse.ok) {
-          throw new Error('فشل في تعديل إعدادات صفحة الدردشة: ' + (await updateSettingsResponse.text()));
-        }
+        }, null, 'فشل في تعديل إعدادات صفحة الدردشة');
         window.location.hash = 'chat-page';
         if (typeof window.loadChatPage === 'function') {
           window.loadChatPage();
@@ -470,25 +451,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!command.botId || !command.colors) {
           throw new Error('الأمر غير صالح: يجب تحديد botId وcolors');
         }
-        const chatPageColorResponse = await fetch(`/api/chat-page/bot/${command.botId}`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        });
-        if (!chatPageColorResponse.ok) {
-          throw new Error('فشل في جلب بيانات صفحة الدردشة: ' + (await chatPageColorResponse.text()));
-        }
-        const chatPageColorData = await chatPageColorResponse.json();
-        const chatPageColorId = chatPageColorData.chatPageId;
-        const updateColorsResponse = await fetch(`/api/chat-page/${chatPageColorId}`, {
+        const chatPageColorResponse = await handleApiRequest(`/api/chat-page/bot/${command.botId}`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }, null, 'فشل في جلب بيانات صفحة الدردشة');
+        const chatPageColorId = chatPageColorResponse.chatPageId;
+        const updateColorsResponse = await handleApiRequest(`/api/chat-page/${chatPageColorId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },
           body: JSON.stringify({ colors: command.colors }),
-        });
-        if (!updateColorsResponse.ok) {
-          throw new Error('فشل في تعديل ألوان صفحة الدردشة: ' + (await updateColorsResponse.text()));
-        }
+        }, null, 'فشل في تعديل ألوان صفحة الدردشة');
         window.location.hash = 'chat-page';
         if (typeof window.loadChatPage === 'function') {
           window.loadChatPage();
@@ -499,17 +473,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!command.botId || !command.settingKey || command.value === undefined) {
           throw new Error('الأمر غير صالح: يجب تحديد botId وsettingKey وvalue');
         }
-        const updateFacebookResponse = await fetch(`/api/bots/${command.botId}/settings`, {
+        const updateFacebookResponse = await handleApiRequest(`/api/bots/${command.botId}/settings`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },
           body: JSON.stringify({ [command.settingKey]: command.value }),
-        });
-        if (!updateFacebookResponse.ok) {
-          throw new Error('فشل في تعديل إعدادات فيسبوك: ' + (await updateFacebookResponse.text()));
-        }
+        }, null, 'فشل في تعديل إعدادات فيسبوك');
         window.location.hash = 'facebook';
         if (typeof window.loadFacebookPage === 'function') {
           window.loadFacebookPage();
@@ -520,7 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!command.name) {
           throw new Error('الأمر غير صالح: يجب تحديد name');
         }
-        const createBotResponse = await fetch('/api/bots', {
+        const createBotResponse = await handleApiRequest('/api/bots', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -532,10 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
             facebookApiKey: command.facebookApiKey || '',
             facebookPageId: command.facebookPageId || '',
           }),
-        });
-        if (!createBotResponse.ok) {
-          throw new Error('فشل في إنشاء البوت: ' + (await createBotResponse.text()));
-        }
+        }, null, 'فشل في إنشاء البوت');
         window.location.hash = 'bots';
         if (typeof window.loadBotsPage === 'function') {
           window.loadBotsPage();
@@ -546,18 +514,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!command.botId) {
           throw new Error('الأمر غير صالح: يجب تحديد botId');
         }
-        const analyticsResponse = await fetch(`/api/bots/${command.botId}/analytics`, {
-          headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
-        });
-        if (!analyticsResponse.ok) {
-          throw new Error('فشل في جلب الإحصائيات: ' + (await analyticsResponse.text()));
-        }
-        const analyticsData = await analyticsResponse.json();
+        const analyticsResponse = await handleApiRequest(`/api/bots/${command.botId}/analytics`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        }, null, 'فشل في جلب الإحصائيات');
         window.location.hash = 'analytics';
         if (typeof window.loadAnalyticsPage === 'function') {
           window.loadAnalyticsPage();
         }
-        return { message: `إحصائيات البوت:\nعدد الرسائل: ${analyticsData.messagesCount}\nالقواعد النشطة: ${analyticsData.activeRules}` };
+        return { message: `إحصائيات البوت:\nعدد الرسائل: ${analyticsResponse.messagesCount}\nالقواعد النشطة: ${analyticsResponse.activeRules}` };
 
       default:
         throw new Error('الأمر غير مدعوم: ' + command.action);
@@ -571,7 +535,7 @@ document.addEventListener('DOMContentLoaded', () => {
 حاول إعادة صياغة الأمر بشكل صحيح بناءً على الخطأ. ارجع الأمر الجديد في صيغة JSON مع إضافة "secretCode": "EXECUTE_NOW".
 `;
 
-    const retryResponse = await fetch('/api/bot', {
+    const retryData = await handleApiRequest('/api/bot', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -583,13 +547,8 @@ document.addEventListener('DOMContentLoaded', () => {
         userId,
         history: conversationHistory,
       }),
-    });
+    }, null, 'فشل في إعادة صياغة الأمر');
 
-    if (!retryResponse.ok) {
-      throw new Error('فشل في إعادة صياغة الأمر');
-    }
-
-    const retryData = await retryResponse.json();
     return JSON.parse(retryData.reply);
   }
 });
