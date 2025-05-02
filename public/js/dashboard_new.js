@@ -16,11 +16,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const content = document.getElementById("content");
   const botSelect = document.getElementById("botSelectDashboard");
   const navItems = document.querySelectorAll(".sidebar-nav .nav-item");
+  const mobileNavItems = document.querySelectorAll(".mobile-nav-bottom .nav-item-mobile");
   const logoutBtn = document.querySelector(".sidebar-footer .logout-btn");
+  const mobileLogoutBtn = document.querySelector(".mobile-nav-bottom .logout-btn");
   const themeToggleButton = document.getElementById("theme-toggle");
-  const sidebar = document.querySelector(".sidebar");
-  const sidebarToggleBtn = document.getElementById("sidebar-toggle");
-  const mainContent = document.querySelector(".main-content");
+  const mobileNav = document.querySelector(".mobile-nav-bottom");
+  const mobileNavToggle = document.getElementById("mobile-nav-toggle");
 
   // Map of pages to their respective CSS files
   const pageCssMap = {
@@ -75,29 +76,12 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTheme(newTheme);
   });
 
-  // --- Sidebar Toggle ---
-  sidebarToggleBtn.addEventListener("click", () => {
-    if (window.innerWidth <= 992) {
-      sidebar.classList.toggle("open");
-    } else {
-      sidebar.classList.toggle("collapsed");
-      mainContent.classList.toggle("collapsed");
-    }
-  });
-
-  // Close sidebar when clicking outside on mobile
-  mainContent.addEventListener("click", () => {
-    if (window.innerWidth <= 992 && sidebar.classList.contains("open")) {
-      sidebar.classList.remove("open");
-    }
-  });
-
-  // Adjust sidebar state on resize
-  window.addEventListener("resize", () => {
-    if (window.innerWidth > 992) {
-      sidebar.classList.remove("open");
-    }
-  });
+  // --- Mobile Navigation Toggle ---
+  if (mobileNavToggle) {
+    mobileNavToggle.addEventListener("click", () => {
+      mobileNav.classList.toggle("collapsed");
+    });
+  }
 
   // --- Bot Selector ---
   async function populateBotSelect() {
@@ -156,6 +140,11 @@ document.addEventListener("DOMContentLoaded", () => {
       item.disabled = true;
       item.style.display = "none"; // Hide disabled items
     });
+    mobileNavItems.forEach(item => {
+      if (item.dataset.page === "bots" && role === "superadmin") return;
+      item.disabled = true;
+      item.style.display = "none"; // Hide disabled items on mobile
+    });
   };
 
   const enableNavItems = () => {
@@ -163,11 +152,24 @@ document.addEventListener("DOMContentLoaded", () => {
       item.disabled = false;
       item.style.display = "flex"; // Show enabled items
     });
+    mobileNavItems.forEach(item => {
+      item.disabled = false;
+      item.style.display = "flex"; // Show enabled items on mobile
+      if (item.dataset.page === "bots" && role !== "superadmin") {
+        item.style.display = "none"; // Hide bots page for non-superadmin
+      }
+    });
   };
 
   // --- Page Loading Logic ---
   const setActiveButton = (page) => {
     navItems.forEach(item => {
+      item.classList.remove("active");
+      if (item.dataset.page === page) {
+        item.classList.add("active");
+      }
+    });
+    mobileNavItems.forEach(item => {
       item.classList.remove("active");
       if (item.dataset.page === page) {
         item.classList.add("active");
@@ -236,12 +238,9 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error(`Error loading page ${page}:`, error);
       content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>${error.message || "حدث خطأ أثناء تحميل محتوى الصفحة."}</p></div>`;
     }
-
-    if (window.innerWidth <= 992 && sidebar.classList.contains("open")) {
-      sidebar.classList.remove("open");
-    }
   };
 
+  // --- Navigation Events ---
   navItems.forEach(item => {
     if (item.dataset.page === "bots" && role !== "superadmin") {
       item.style.display = "none";
@@ -250,9 +249,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (e.currentTarget.disabled) return;
       const page = item.dataset.page;
       loadPageContent(page);
-      if (window.innerWidth <= 992) {
-        sidebar.classList.remove("open"); // Close sidebar on mobile after click
-      }
+    });
+  });
+
+  mobileNavItems.forEach(item => {
+    if (item.dataset.page === "bots" && role !== "superadmin") {
+      item.style.display = "none";
+    }
+    item.addEventListener("click", (e) => {
+      if (e.currentTarget.disabled) return;
+      const page = item.dataset.page;
+      loadPageContent(page);
     });
   });
 
@@ -265,14 +272,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let pageToLoad = null;
 
+    // Set initial page based on user role, ignoring hash on first load
+    if (role === "superadmin") {
+      pageToLoad = "bots";
+    } else {
+      pageToLoad = "rules";
+    }
+
+    // If there's a hash and it's a valid page, use it
     if (hash && validPages.includes(hash)) {
+      pageToLoad = hash;
       if (hash === "bots" && role !== "superadmin") {
         pageToLoad = "rules";
-      } else {
-        pageToLoad = hash;
       }
-    } else {
-      pageToLoad = (role === "superadmin") ? "bots" : "rules";
     }
 
     if (validPages.includes(pageToLoad)) {
@@ -310,6 +322,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   logoutBtn.addEventListener("click", logoutUser);
+  if (mobileLogoutBtn) {
+    mobileLogoutBtn.addEventListener("click", logoutUser);
+  }
 
   // --- Assistant Bot ---
   const assistantButton = document.getElementById("assistantButton");
