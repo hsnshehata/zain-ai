@@ -1,4 +1,4 @@
-// public/js/feedback.js (Updated for new dashboard design)
+// public/js/feedback.js (Updated for new dashboard design and unified error handling)
 
 async function loadFeedbackPage() {
   const content = document.getElementById("content");
@@ -16,13 +16,13 @@ async function loadFeedbackPage() {
   }
 
   if (!token) {
-      content.innerHTML = `
-        <div class="placeholder error">
-          <h2><i class="fas fa-exclamation-triangle"></i> تسجيل الدخول مطلوب</h2>
-          <p>يرجى تسجيل الدخول لعرض التقييمات.</p>
-        </div>
-      `;
-      return;
+    content.innerHTML = `
+      <div class="placeholder error">
+        <h2><i class="fas fa-exclamation-triangle"></i> تسجيل الدخول مطلوب</h2>
+        <p>يرجى تسجيل الدخول لعرض التقييمات.</p>
+      </div>
+    `;
+    return;
   }
 
   // Main structure for the feedback page
@@ -39,8 +39,8 @@ async function loadFeedbackPage() {
           <div class="column-header">
             <h3><i class="fas fa-thumbs-up"></i> التقييمات الإيجابية</h3>
             <div class="column-actions">
-                <button onclick="downloadFeedback(\'positive\')" class="btn btn-secondary btn-sm" title="تنزيل CSV"><i class="fas fa-download"></i></button>
-                <button onclick="clearFeedback(\'positive\')" class="btn btn-danger btn-sm" title="حذف الكل"><i class="fas fa-trash-alt"></i></button>
+                <button onclick="downloadFeedback('positive')" class="btn btn-secondary btn-sm" title="تنزيل CSV"><i class="fas fa-download"></i></button>
+                <button onclick="clearFeedback('positive')" class="btn btn-danger btn-sm" title="حذف الكل"><i class="fas fa-trash-alt"></i></button>
             </div>
           </div>
           <div id="positiveFeedbackList" class="feedback-list"></div>
@@ -52,8 +52,8 @@ async function loadFeedbackPage() {
            <div class="column-header">
              <h3><i class="fas fa-thumbs-down"></i> التقييمات السلبية</h3>
              <div class="column-actions">
-                <button onclick="downloadFeedback(\'negative\')" class="btn btn-secondary btn-sm" title="تنزيل CSV"><i class="fas fa-download"></i></button>
-                <button onclick="clearFeedback(\'negative\')" class="btn btn-danger btn-sm" title="حذف الكل"><i class="fas fa-trash-alt"></i></button>
+                <button onclick="downloadFeedback('negative')" class="btn btn-secondary btn-sm" title="تنزيل CSV"><i class="fas fa-download"></i></button>
+                <button onclick="clearFeedback('negative')" class="btn btn-danger btn-sm" title="حذف الكل"><i class="fas fa-trash-alt"></i></button>
             </div>
           </div>
           <div id="negativeFeedbackList" class="feedback-list"></div>
@@ -88,21 +88,9 @@ async function loadFeedback(botId, token) {
   negativeList.innerHTML = "";
 
   try {
-    const res = await fetch(`/api/bots/${botId}/feedback`, {
+    const feedbackData = await handleApiRequest(`/api/bots/${botId}/feedback`, {
       headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (res.status === 401) {
-      alert("جلسة غير صالحة، يرجى تسجيل الدخول مرة أخرى.");
-      logoutUser(); // Assumes logoutUser is globally available
-      return;
-    }
-
-    const feedbackData = await res.json();
-
-    if (!res.ok) {
-      throw new Error(feedbackData.message || "فشل في جلب التقييمات");
-    }
+    }, positiveError, "تعذر تحميل التقييمات");
 
     const positiveFeedback = feedbackData.filter(item => item.feedback === "positive");
     const negativeFeedback = feedbackData.filter(item => item.feedback === "negative");
@@ -110,7 +98,7 @@ async function loadFeedback(botId, token) {
     // Populate Positive Feedback
     if (positiveFeedback.length === 0) {
       positiveList.innerHTML = 
-`<div class="card placeholder-card"><p>لا توجد تقييمات إيجابية.</p></div>`;
+        `<div class="card placeholder-card"><p>لا توجد تقييمات إيجابية.</p></div>`;
     } else {
       positiveFeedback.forEach(item => positiveList.appendChild(createFeedbackCard(item, botId)));
     }
@@ -118,16 +106,13 @@ async function loadFeedback(botId, token) {
     // Populate Negative Feedback
     if (negativeFeedback.length === 0) {
       negativeList.innerHTML = 
-`<div class="card placeholder-card"><p>لا توجد تقييمات سلبية.</p></div>`;
+        `<div class="card placeholder-card"><p>لا توجد تقييمات سلبية.</p></div>`;
     } else {
       negativeFeedback.forEach(item => negativeList.appendChild(createFeedbackCard(item, botId)));
     }
 
   } catch (err) {
-    console.error("❌ Error loading feedback:", err);
-    positiveError.textContent = `تعذر تحميل التقييمات الإيجابية: ${err.message}`;
-    negativeError.textContent = `تعذر تحميل التقييمات السلبية: ${err.message}`;
-    positiveError.style.display = "block";
+    negativeError.textContent = positiveError.textContent; // Sync error messages
     negativeError.style.display = "block";
   } finally {
     positiveSpinner.style.display = "none";
@@ -145,7 +130,7 @@ function createFeedbackCard(item, botId) {
         <p><strong><i class="fas fa-clock"></i> التاريخ:</strong> ${new Date(item.timestamp).toLocaleString("ar-EG")}</p>
     </div>
     <div class="card-footer">
-        <button class="btn-icon btn-delete" onclick="deleteFeedback(\'${item._id}\", \'${botId}\')" title="حذف التقييم">
+        <button class="btn-icon btn-delete" onclick="deleteFeedback('${item._id}', '${botId}')" title="حذف التقييم">
             <i class="fas fa-trash-alt"></i>
         </button>
     </div>
@@ -162,31 +147,15 @@ async function deleteFeedback(feedbackId, botId) {
 
   if (confirm("هل أنت متأكد من حذف هذا التقييم؟")) {
     const token = localStorage.getItem("token");
-    // Find the card and show a local spinner/disabled state if desired
-    // For simplicity, we rely on the main list spinners during reload
     try {
-      const res = await fetch(`/api/bots/${botId}/feedback/${feedbackId}`, {
+      await handleApiRequest(`/api/bots/${botId}/feedback/${feedbackId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.status === 401) {
-        alert("جلسة غير صالحة، يرجى تسجيل الدخول مرة أخرى.");
-        logoutUser();
-        return;
-      }
-
-      const responseData = await res.json();
-
-      if (!res.ok) {
-        throw new Error(responseData.message || "فشل في حذف التقييم");
-      }
-
+      }, document.getElementById("positiveError"), "فشل في حذف التقييم");
       alert("تم حذف التقييم بنجاح");
-      await loadFeedback(botId, token); // Reload feedback list
+      await loadFeedback(botId, token);
     } catch (err) {
-      console.error("❌ Error deleting feedback:", err);
-      alert(`فشل حذف التقييم: ${err.message}`);
+      // الخطأ تم التعامل معه في handleApiRequest
     }
   }
 }
@@ -210,32 +179,15 @@ async function clearFeedback(type) {
     document.getElementById(errorId).style.display = "none";
 
     try {
-      const res = await fetch(`/api/bots/${botId}/feedback/clear/${type}`, {
+      await handleApiRequest(`/api/bots/${botId}/feedback/clear/${type}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.status === 401) {
-        alert("جلسة غير صالحة، يرجى تسجيل الدخول مرة أخرى.");
-        logoutUser();
-        return;
-      }
-
-      const responseData = await res.json();
-
-      if (!res.ok) {
-        throw new Error(responseData.message || `فشل في حذف التقييمات ${typeName}`);
-      }
-
+      }, document.getElementById(errorId), `فشل في حذف التقييمات ${typeName}`);
       alert(`تم حذف التقييمات ${typeName} بنجاح`);
       document.getElementById(listId).innerHTML = 
-`<div class="card placeholder-card"><p>لا توجد تقييمات ${typeName}.</p></div>`; // Update list immediately
-
+        `<div class="card placeholder-card"><p>لا توجد تقييمات ${typeName}.</p></div>`;
     } catch (err) {
-      console.error(`❌ Error clearing ${type} feedback:`, err);
-      const errorEl = document.getElementById(errorId);
-      errorEl.textContent = `فشل حذف التقييمات: ${err.message}`;
-      errorEl.style.display = "block";
+      // الخطأ تم التعامل معه في handleApiRequest
     } finally {
       document.getElementById(spinnerId).style.display = "none";
     }
@@ -252,25 +204,13 @@ async function downloadFeedback(type) {
 
   const spinnerId = type === "positive" ? "positiveSpinner" : "negativeSpinner";
   const errorId = type === "positive" ? "positiveError" : "negativeError";
-  document.getElementById(spinnerId).style.display = "flex"; // Show spinner during fetch
+  document.getElementById(spinnerId).style.display = "flex";
   document.getElementById(errorId).style.display = "none";
 
   try {
-    const res = await fetch(`/api/bots/${botId}/feedback?type=${type}`, { // Fetch only specific type
+    const feedback = await handleApiRequest(`/api/bots/${botId}/feedback?type=${type}`, {
       headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (res.status === 401) {
-      alert("جلسة غير صالحة، يرجى تسجيل الدخول مرة أخرى.");
-      logoutUser();
-      return;
-    }
-
-    const feedback = await res.json();
-
-    if (!res.ok) {
-      throw new Error(feedback.message || "فشل في جلب التقييمات للتنزيل");
-    }
+    }, document.getElementById(errorId), "فشل في جلب التقييمات للتنزيل");
 
     if (feedback.length === 0) {
       alert(`لا توجد تقييمات ${type === "positive" ? "إيجابية" : "سلبية"} للتنزيل.`);
@@ -278,17 +218,16 @@ async function downloadFeedback(type) {
     }
 
     // Generate CSV content
-    const csvHeader = "\ufeffالمستخدم,رد البوت,التقييم,التاريخ\n"; // UTF-8 BOM for Excel
+    const csvHeader = "\ufeffالمستخدم,رد البوت,التقييم,التاريخ\n";
     const csvRows = feedback.map(item => {
-        const user = escapeCsvField(item.username || item.userId || "غير معروف");
-        const message = escapeCsvField(item.messageContent || "غير متوفر");
-        const rating = type === "positive" ? "إيجابي" : "سلبي";
-        const date = new Date(item.timestamp).toLocaleString("ar-EG");
-        return `${user},${message},${rating},${date}`;
+      const user = escapeCsvField(item.username || item.userId || "غير معروف");
+      const message = escapeCsvField(item.messageContent || "غير متوفر");
+      const rating = type === "positive" ? "إيجابي" : "سلبي";
+      const date = new Date(item.timestamp).toLocaleString("ar-EG");
+      return `${user},${message},${rating},${date}`;
     });
     const csvContent = csvHeader + csvRows.join("\n");
 
-    // Create and trigger download link
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -299,44 +238,37 @@ async function downloadFeedback(type) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
   } catch (err) {
-    console.error(`❌ Error downloading ${type} feedback:`, err);
-    const errorEl = document.getElementById(errorId);
-    errorEl.textContent = `فشل تنزيل التقييمات: ${err.message}`;
-    errorEl.style.display = "block";
+    // الخطأ تم التعامل معه في handleApiRequest
   } finally {
-      document.getElementById(spinnerId).style.display = "none"; // Hide spinner
+    document.getElementById(spinnerId).style.display = "none";
   }
 }
 
 // Helper function to escape CSV fields containing commas or quotes
 function escapeCsvField(field) {
-    if (typeof field !== "string") {
-        field = String(field);
-    }
-    // If the field contains a comma, double quote, or newline, enclose it in double quotes
-    if (field.includes(",") || field.includes("\"") || field.includes("\n")) {
-        // Escape existing double quotes by doubling them
-        return `"${field.replace(/"/g, "\"\"")}"`;
-    }
-    return field;
+  if (typeof field !== "string") {
+    field = String(field);
+  }
+  if (field.includes(",") || field.includes("\"") || field.includes("\n")) {
+    return `"${field.replace(/"/g, "\"\"")}"`;
+  }
+  return field;
 }
 
-// Helper function to escape HTML (Corrected)
+// Helper function to escape HTML
 function escapeHtml(unsafe) {
-    if (typeof unsafe !== "string") return unsafe;
-    return unsafe
-         .replace(/&/g, "&amp;")
-         .replace(/</g, "&lt;")
-         .replace(/>/g, "&gt;")
-         .replace(/"/g, "&quot;")
-         .replace(/\n/g, "<br>"); // Corrected regex for newline
- }
+  if (typeof unsafe !== "string") return unsafe;
+  return unsafe
+       .replace(/&/g, "&amp;")
+       .replace(/</g, "&lt;")
+       .replace(/>/g, "&gt;")
+       .replace(/"/g, "&quot;")
+       .replace(/\n/g, "<br>");
+}
 
 // Make functions globally accessible
 window.loadFeedbackPage = loadFeedbackPage;
 window.deleteFeedback = deleteFeedback;
 window.clearFeedback = clearFeedback;
 window.downloadFeedback = downloadFeedback;
-
