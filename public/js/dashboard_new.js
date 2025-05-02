@@ -1,4 +1,4 @@
-// public/js/dashboard_new.js (Revised for button functionality, consistency, and unified error handling)
+// public/js/dashboard_new.js (Revised for dynamic CSS loading and unified error handling)
 
 document.addEventListener("DOMContentLoaded", () => {
   const role = localStorage.getItem("role");
@@ -7,8 +7,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Redirect to login if no token
   if (!token) {
-    if (window.location.pathname !== "/index.html") {
-      window.location.href = "/index.html";
+    if (window.location.pathname !== "/login.html") {
+      window.location.href = "/login.html";
     }
     return;
   }
@@ -21,6 +21,42 @@ document.addEventListener("DOMContentLoaded", () => {
   const sidebar = document.querySelector(".sidebar");
   const sidebarToggleBtn = document.getElementById("sidebar-toggle");
   const mainContent = document.querySelector(".main-content");
+
+  // Map of pages to their respective CSS files
+  const pageCssMap = {
+    bots: "/css/bots.css",
+    rules: "/css/rules.css",
+    "chat-page": "/css/chatPage.css",
+    analytics: "/css/analytics.css",
+    messages: "/css/messages.css",
+    feedback: "/css/feedback.css",
+    facebook: "/css/facebook.css",
+  };
+
+  // Function to load CSS dynamically
+  function loadPageCss(page) {
+    // Remove existing page-specific CSS
+    document.querySelectorAll('link[data-page-css]').forEach(link => link.remove());
+
+    // Load new CSS if page has a corresponding CSS file
+    if (pageCssMap[page]) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = pageCssMap[page];
+      link.dataset.pageCss = page;
+      document.head.appendChild(link);
+    }
+  }
+
+  // Load assistantBot.css when assistant modal is shown
+  function loadAssistantCss() {
+    if (!document.querySelector('link[href="/css/assistantBot.css"]')) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "/css/assistantBot.css";
+      document.head.appendChild(link);
+    }
+  }
 
   // --- Theme Handling ---
   const applyTheme = (theme) => {
@@ -146,6 +182,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     enableNavItems();
 
+    // Load page-specific CSS
+    loadPageCss(page);
+
     if (!selectedBotId && !(role === "superadmin" && page === "bots")) {
       content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض هذا القسم.</p></div>`;
       disableNavItems();
@@ -254,7 +293,7 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.removeItem("selectedBotId");
     localStorage.removeItem("theme");
     console.log("Logout initiated, localStorage cleared");
-    window.location.href = "/index.html";
+    window.location.href = "/login.html";
 
     try {
       await handleApiRequest("/api/auth/logout", {
@@ -273,6 +312,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // --- Assistant Bot ---
   const assistantButton = document.getElementById("assistantButton");
   if (assistantButton) {
+    assistantButton.addEventListener("click", loadAssistantCss);
     console.log("Assistant button found.");
   } else {
     console.warn("Assistant button element not found.");
