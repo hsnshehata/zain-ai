@@ -4,50 +4,49 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تسجيل الدخول - زين بوت</title>
-  <link rel="stylesheet" href="css/common.css"> <!-- Common styles -->
-  <link rel="stylesheet" href="css/login.css"> <!-- Login specific styles -->
+  <link rel="stylesheet" href="/css/common.css"> <!-- Common styles -->
+  <link rel="stylesheet" href="/css/login.css"> <!-- Login specific styles -->
   <link rel="manifest" href="/manifest.json">
-  <!-- Add Google Fonts if Cairo is used -->
+  <!-- Google Fonts for Cairo -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="dark-mode"> <!-- Default to dark mode -->
-
+<body class="dark-mode">
   <div class="login-container">
     <h1>تسجيل الدخول</h1>
     <form id="loginForm">
       <div class="form-group">
-        <input type="text" id="username" required placeholder=" ">
+        <input type="text" id="username" required placeholder=" " aria-label="اسم المستخدم">
         <label for="username">اسم المستخدم</label>
       </div>
       <div class="form-group">
-        <input type="password" id="password" required placeholder=" ">
+        <input type="password" id="password" required placeholder=" " aria-label="كلمة المرور">
         <label for="password">كلمة المرور</label>
       </div>
-      <button type="submit">تسجيل الدخول</button>
+      <button type="submit" aria-label="تسجيل الدخول">تسجيل الدخول</button>
     </form>
-    <p id="error"></p>
+    <p id="error" role="alert"></p>
   </div>
 
   <script>
     // Apply theme from localStorage on load
-    const currentTheme = localStorage.getItem("theme") || "dark"; // Default to dark
+    const currentTheme = localStorage.getItem("theme") || "dark";
+    document.body.classList.add(currentTheme === "light" ? "light-mode" : "dark-mode");
     if (currentTheme === "light") {
-      document.body.classList.replace("dark-mode", "light-mode");
-    } else {
-      document.body.classList.add("dark-mode"); // Ensure dark-mode is present
+      document.body.classList.remove("dark-mode");
     }
 
-    // Service Worker registration (optional, keep if needed)
+    // Service Worker registration
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/service-worker.js")
         .then(() => console.log("Service Worker Registered"))
         .catch((err) => console.error("Service Worker Error:", err));
     }
   </script>
-  <script src="/js/auth.js"></script> <!-- Auth logic remains the same -->
+  <script src="/js/utils.js"></script>
+  <script src="/js/auth.js"></script>
 
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93949fcfdb5cbfbd',t:'MTc0NjE1ODU1OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
-
