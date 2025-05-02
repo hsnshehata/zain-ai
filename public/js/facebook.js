@@ -1,4 +1,4 @@
-// public/js/facebook.js (Updated for new dashboard design)
+// public/js/facebook.js (Updated for new dashboard design and unified error handling)
 
 document.addEventListener("DOMContentLoaded", () => {
   async function loadFacebookPage() {
@@ -17,13 +17,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (!token) {
-        content.innerHTML = `
-          <div class="placeholder error">
-            <h2><i class="fas fa-exclamation-triangle"></i> تسجيل الدخول مطلوب</h2>
-            <p>يرجى تسجيل الدخول لعرض إعدادات فيسبوك.</p>
-          </div>
-        `;
-        return;
+      content.innerHTML = `
+        <div class="placeholder error">
+          <h2><i class="fas fa-exclamation-triangle"></i> تسجيل الدخول مطلوب</h2>
+          <p>يرجى تسجيل الدخول لعرض إعدادات فيسبوك.</p>
+        </div>
+      `;
+      return;
     }
 
     // Main structure for the Facebook settings page
@@ -173,28 +173,18 @@ document.addEventListener("DOMContentLoaded", () => {
       errorMessage.style.display = "none";
 
       try {
-        const response = await fetch(`/api/bots/${botId}/settings`, {
+        const settings = await handleApiRequest(`/api/bots/${botId}/settings`, {
           headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (response.status === 401) {
-          throw new Error("جلسة غير صالحة، يرجى تسجيل الدخول مرة أخرى.");
-        }
-        if (!response.ok) {
-          throw new Error(`فشل جلب الإعدادات: ${response.statusText}`);
-        }
-
-        const settings = await response.json();
+        }, errorMessage, "حدث خطأ أثناء تحميل الإعدادات");
 
         // Populate API Keys
         fbApiKeyInput.value = settings.facebookApiKey || "";
         fbPageIdInput.value = settings.facebookPageId || "";
 
-        // Populate Webhook Info (Assuming these are derived or fixed)
-        // Replace with actual logic to get webhook URL and verify token
-        const webhookBaseUrl = window.location.origin; // Or your specific API base URL
+        // Populate Webhook Info
+        const webhookBaseUrl = window.location.origin;
         webhookUrlInput.value = `${webhookBaseUrl}/api/webhook/facebook/${botId}`;
-        verifyTokenInput.value = settings.facebookVerifyToken || "قم بإنشاء رمز وحفظه"; // Ideally, this is generated and stored securely
+        verifyTokenInput.value = settings.facebookVerifyToken || "قم بإنشاء رمز وحفظه";
 
         // Populate Toggles
         toggles.forEach(toggle => {
@@ -204,132 +194,100 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         });
 
-        settingsContainer.style.display = "grid"; // Show the grid layout
+        settingsContainer.style.display = "grid";
 
       } catch (err) {
-        console.error("❌ Error loading Facebook settings:", err);
-        errorMessage.textContent = err.message || "حدث خطأ أثناء تحميل الإعدادات.";
-        errorMessage.style.display = "block";
-        if (err.message.includes("جلسة غير صالحة")) {
-            logoutUser(); // Assumes logoutUser is global
-        }
+        // الخطأ تم التعامل معه في handleApiRequest
       } finally {
         loadingSpinner.style.display = "none";
       }
     }
 
     async function saveApiKeys(botId) {
-        const apiKey = fbApiKeyInput.value.trim();
-        const pageId = fbPageIdInput.value.trim();
-        apiKeysError.style.display = "none";
+      const apiKey = fbApiKeyInput.value.trim();
+      const pageId = fbPageIdInput.value.trim();
+      apiKeysError.style.display = "none";
 
-        // Basic validation
-        if (!apiKey || !pageId) {
-            apiKeysError.textContent = "يرجى إدخال مفتاح API ومعرف الصفحة.";
-            apiKeysError.style.display = "block";
-            return;
-        }
+      if (!apiKey || !pageId) {
+        apiKeysError.textContent = "يرجى إدخال مفتاح API ومعرف الصفحة.";
+        apiKeysError.style.display = "block";
+        return;
+      }
 
-        saveApiKeysBtn.disabled = true;
-        saveApiKeysBtn.innerHTML = 
-`<i class="fas fa-spinner fa-spin"></i> جار الحفظ...`;
+      saveApiKeysBtn.disabled = true;
+      saveApiKeysBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جار الحفظ...`;
 
-        try {
-            const response = await fetch(`/api/bots/${botId}/settings`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ facebookApiKey: apiKey, facebookPageId: pageId }),
-            });
+      try {
+        await handleApiRequest(`/api/bots/${botId}/settings`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ facebookApiKey: apiKey, facebookPageId: pageId }),
+        }, apiKeysError, "فشل حفظ معلومات الربط");
 
-            if (response.status === 401) throw new Error("جلسة غير صالحة");
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.message || "فشل حفظ معلومات الربط");
-            }
-
-            alert("تم حفظ معلومات الربط بنجاح!");
-            // Optionally update webhook info if it depends on these keys
-
-        } catch (err) {
-            console.error("❌ Error saving API keys:", err);
-            apiKeysError.textContent = err.message;
-            apiKeysError.style.display = "block";
-             if (err.message.includes("جلسة غير صالحة")) logoutUser();
-        } finally {
-            saveApiKeysBtn.disabled = false;
-            saveApiKeysBtn.innerHTML = 
-`<i class="fas fa-save"></i> حفظ معلومات الربط`;
-        }
+        alert("تم حفظ معلومات الربط بنجاح!");
+      } catch (err) {
+        // الخطأ تم التعامل معه في handleApiRequest
+      } finally {
+        saveApiKeysBtn.disabled = false;
+        saveApiKeysBtn.innerHTML = `<i class="fas fa-save"></i> حفظ معلومات الربط`;
+      }
     }
 
     async function updateWebhookSetting(botId, key, value) {
-        togglesError.style.display = "none";
-        // Disable the specific toggle during update? Maybe not necessary for quick updates.
-        try {
-            const response = await fetch(`/api/bots/${botId}/settings`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({ [key]: value }),
-            });
+      togglesError.style.display = "none";
 
-            if (response.status === 401) throw new Error("جلسة غير صالحة");
-            if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.message || `فشل تحديث إعداد ${key}`);
-            }
+      try {
+        await handleApiRequest(`/api/bots/${botId}/settings`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ [key]: value }),
+        }, togglesError, `فشل تحديث إعداد ${key}`);
 
-            console.log(`✅ Updated ${key} to ${value} for bot ${botId}`);
-
-        } catch (err) {
-            console.error(`❌ Error updating ${key}:`, err);
-            togglesError.textContent = err.message;
-            togglesError.style.display = "block";
-            // Revert toggle state on error
-            const toggleInput = document.querySelector(`input[data-setting-key="${key}"]`);
-            if (toggleInput) toggleInput.checked = !value;
-            if (err.message.includes("جلسة غير صالحة")) logoutUser();
-        }
+        console.log(`✅ Updated ${key} to ${value} for bot ${botId}`);
+      } catch (err) {
+        const toggleInput = document.querySelector(`input[data-setting-key="${key}"]`);
+        if (toggleInput) toggleInput.checked = !value;
+        // الخطأ تم التعامل معه في handleApiRequest
+      }
     }
 
     function copyToClipboard(text, btn) {
-        navigator.clipboard.writeText(text).then(() => {
-            const originalIcon = btn.innerHTML;
-            btn.innerHTML = 
-`<i class="fas fa-check"></i> تم النسخ`;
-            setTimeout(() => { btn.innerHTML = originalIcon; }, 1500);
-        }).catch(err => {
-            console.error("فشل النسخ:", err);
-            alert("فشل النسخ إلى الحافظة.");
-        });
+      navigator.clipboard.writeText(text).then(() => {
+        const originalIcon = btn.innerHTML;
+        btn.innerHTML = `<i class="fas fa-check"></i> تم النسخ`;
+        setTimeout(() => { btn.innerHTML = originalIcon; }, 1500);
+      }).catch(err => {
+        console.error("فشل النسخ:", err);
+        alert("فشل النسخ إلى الحافظة.");
+      });
     }
 
     // --- Event Listeners ---
     saveApiKeysBtn.addEventListener("click", () => saveApiKeys(selectedBotId));
 
     toggles.forEach(toggle => {
-        toggle.addEventListener("change", (e) => {
-            const key = e.target.dataset.settingKey;
-            const value = e.target.checked;
-            if (key) {
-                updateWebhookSetting(selectedBotId, key, value);
-            }
-        });
+      toggle.addEventListener("change", (e) => {
+        const key = e.target.dataset.settingKey;
+        const value = e.target.checked;
+        if (key) {
+          updateWebhookSetting(selectedBotId, key, value);
+        }
+      });
     });
 
     copyWebhookUrlBtn.addEventListener("click", (e) => copyToClipboard(webhookUrlInput.value, e.currentTarget));
     copyVerifyTokenBtn.addEventListener("click", (e) => copyToClipboard(verifyTokenInput.value, e.currentTarget));
 
     // --- Initial Load ---
-    await loadBotSettings(selectedBotId);
+    loadBotSettings(selectedBotId);
   }
 
   // Make loadFacebookPage globally accessible
   window.loadFacebookPage = loadFacebookPage;
 });
-
