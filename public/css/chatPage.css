@@ -1,0 +1,156 @@
+/* public/css/chatPage.css */
+
+/* Styles specific to the Chat Page customization (loaded by loadChatPage) */
+
+.chat-settings-container {
+  margin-top: 20px;
+}
+
+.chat-settings-container h3 {
+  font-size: 1.5em;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Settings Card */
+.settings-card {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.settings-card .card-header {
+  padding-bottom: 10px;
+  border-bottom: 1px solid;
+  margin-bottom: 15px;
+}
+
+body.dark-mode .settings-card .card-header {
+  border-bottom-color: var(--dark-border);
+}
+
+body.light-mode .settings-card .card-header {
+  border-bottom-color: var(--light-border);
+}
+
+.settings-card .card-header h3 {
+  font-size: 1.3em;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-card .card-body {
+  padding-bottom: 10px;
+}
+
+.settings-card .form-group {
+  margin-bottom: 15px;
+}
+
+.settings-card .form-group label {
+  font-size: 1em;
+  margin-bottom: 5px;
+}
+
+/* Color Picker */
+.color-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.color-picker input[type="color"] {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+}
+
+.color-picker input[type="text"] {
+  flex-grow: 1;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* Preview Section */
+.chat-preview {
+  margin-top: 20px;
+  padding: 15px;
+  border-radius: 6px;
+  border: 1px solid;
+}
+
+body.dark-mode .chat-preview {
+  border-color: var(--dark-border);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+body.light-mode .chat-preview {
+  border-color: var(--light-border);
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.chat-preview h4 {
+  font-size: 1.2em;
+  margin-bottom: 10px;
+}
+
+.preview-message {
+  padding: 10px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  max-width: 80%;
+}
+
+.preview-message.user {
+  background-color: var(--turquoise);
+  color: white;
+  margin-right: 10px; /* RTL */
+}
+
+.preview-message.bot {
+  background-color: rgba(128, 128, 128, 0.2);
+  margin-left: 10px; /* RTL */
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .chat-settings-container {
+    margin-top: 15px;
+  }
+
+  .settings-card .card-header h3 {
+    font-size: 1.2em;
+  }
+
+  .color-picker {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .color-picker input[type="color"] {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+@media (max-width: 576px) {
+  .chat-preview h4 {
+    font-size: 1.1em;
+  }
+
+  .preview-message {
+    max-width: 90%;
+    font-size: 0.95em;
+  }
+}
