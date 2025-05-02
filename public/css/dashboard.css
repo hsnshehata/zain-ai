@@ -157,10 +157,6 @@ body.light-mode .sidebar-footer {
   flex-grow: 1;
 }
 
-.sidebar-footer .theme-toggle-btn {
-  margin-left: 10px; /* RTL */
-}
-
 /* Main Content Area */
 .main-content {
   flex-grow: 1;
@@ -198,6 +194,12 @@ body.light-mode .main-header {
   display: flex;
   align-items: center;
   gap: 20px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .sidebar-toggle-btn {
@@ -273,6 +275,30 @@ body.light-mode #botSelectDashboard option {
 .page-content {
   padding: 25px;
   flex-grow: 1;
+}
+
+/* Dashboard Footer */
+.dashboard-footer {
+  padding: 15px 25px;
+  text-align: center;
+  border-top: 1px solid;
+}
+
+body.dark-mode .dashboard-footer {
+  border-top-color: var(--dark-border);
+  background-color: var(--dark-sidebar);
+  color: var(--dark-text);
+}
+
+body.light-mode .dashboard-footer {
+  border-top-color: var(--light-border);
+  background-color: var(--light-sidebar);
+  color: var(--light-text);
+}
+
+.dashboard-footer p {
+  margin: 0;
+  font-size: 0.9em;
 }
 
 .page-header {
@@ -432,7 +458,10 @@ body.light-mode .nav-item-mobile.active {
     display: none; /* Hide toggle button on mobile */
   }
   .page-content {
-    padding-bottom: 70px; /* Add padding to avoid overlap with bottom nav */
+    padding-bottom: 80px; /* Increased padding to avoid overlap with bottom nav */
+  }
+  .dashboard-footer {
+    padding-bottom: 80px; /* Ensure footer is not overlapped by bottom nav */
   }
 }
 
