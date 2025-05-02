@@ -21,10 +21,23 @@ document.addEventListener('DOMContentLoaded', () => {
           behavior: 'smooth',
           block: 'start',
         });
-        // Update focus for accessibility
         targetElement.setAttribute('tabindex', '-1');
         targetElement.focus({ preventScroll: true });
+        // Close menu on mobile after clicking a link
+        const navMenu = document.querySelector('.nav-menu');
+        const menuToggle = document.querySelector('.menu-toggle');
+        navMenu.classList.remove('active');
+        menuToggle.setAttribute('aria-expanded', 'false');
       }
     });
+  });
+
+  // Toggle navigation menu on hamburger click
+  const menuToggle = document.querySelector('.menu-toggle');
+  const navMenu = document.querySelector('.nav-menu');
+  menuToggle.addEventListener('click', () => {
+    const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
+    navMenu.classList.toggle('active');
+    menuToggle.setAttribute('aria-expanded', !isExpanded);
   });
 });
