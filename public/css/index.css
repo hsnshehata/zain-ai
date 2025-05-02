@@ -36,6 +36,24 @@
   margin-right: 5px;
 }
 
+.landing-header .menu-toggle {
+  background: none;
+  border: none;
+  color: var(--dark-text);
+  font-size: 1.5em;
+  cursor: pointer;
+  display: none;
+}
+
+.landing-header .menu-toggle:focus {
+  outline: 2px solid var(--turquoise);
+  outline-offset: 2px;
+}
+
+.landing-header nav.nav-menu {
+  transition: transform 0.3s ease-in-out;
+}
+
 .landing-header nav ul {
   list-style: none;
   padding: 0;
@@ -91,6 +109,13 @@
   opacity: 0.9;
 }
 
+.hero-buttons {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
 .btn-highlight {
   background-color: var(--turquoise);
   color: var(--dark-bg);
@@ -105,6 +130,22 @@
 }
 
 .btn-highlight:focus {
+  outline: 2px solid var(--turquoise);
+  outline-offset: 2px;
+}
+
+.download-app {
+  background-color: #6c757d;
+  color: white;
+  padding: 12px 25px;
+  font-size: 1.1rem;
+}
+
+.download-app:hover {
+  background-color: #5a6268;
+}
+
+.download-app:focus {
   outline: 2px solid var(--turquoise);
   outline-offset: 2px;
 }
@@ -309,15 +350,66 @@ body.dark-mode .pricing {
   opacity: 0.7;
 }
 
-/* Responsive adjustments */
+/* Responsive Adjustments */
+@media (max-width: 992px) {
+  .landing-header .menu-toggle {
+    display: block;
+  }
+
+  .landing-header nav.nav-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 100%;
+    background-color: rgba(26, 26, 46, 0.95);
+    transform: translateY(-100%);
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .landing-header nav.nav-menu.active {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .landing-header nav ul {
+    flex-direction: column;
+    padding: 15px;
+    gap: 15px;
+  }
+
+  .landing-header nav ul li {
+    width: 100%;
+    text-align: center;
+  }
+
+  .landing-header nav a {
+    display: block;
+    padding: 10px;
+    font-size: 1.1em;
+  }
+
+  .landing-header nav a.btn {
+    width: 100%;
+  }
+}
+
+@media (min-width: 993px) {
+  .landing-header nav.nav-menu {
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .landing-header nav ul {
+    flex-direction: row;
+  }
+}
+
 @media (max-width: 768px) {
   .landing-header .container {
     flex-direction: column;
-    gap: 15px;
-  }
-  .landing-header nav ul {
-    flex-wrap: wrap;
-    justify-content: center;
     gap: 15px;
   }
   .hero h1 {
@@ -348,5 +440,8 @@ body.dark-mode .pricing {
   }
   .plan.highlighted {
     transform: none;
+  }
+  .landing-header nav.nav-menu {
+    transition: none;
   }
 }
