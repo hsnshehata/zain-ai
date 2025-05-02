@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
         disableNavItems();
       }
 
-      loadPageBasedOnHash();
+      loadInitialPage();
     } catch (err) {
       content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>خطأ في جلب البوتات. حاول تحديث الصفحة.</p></div>`;
       disableNavItems();
@@ -125,7 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (selectedBotId) {
       localStorage.setItem("selectedBotId", selectedBotId);
       enableNavItems();
-      loadPageBasedOnHash();
+      loadInitialPage();
     } else {
       localStorage.removeItem("selectedBotId");
       content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض المحتوى.</p></div>`;
@@ -264,28 +264,22 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // --- Initial Page Load ---
-  const loadPageBasedOnHash = () => {
-    const hash = window.location.hash.substring(1);
+  const loadInitialPage = () => {
     const validPages = Array.from(navItems)
       .filter(item => item.style.display !== "none")
       .map(item => item.dataset.page);
 
     let pageToLoad = null;
 
-    // Set initial page based on user role, ignoring hash on first load
+    // Set initial page based on user role
     if (role === "superadmin") {
       pageToLoad = "bots";
     } else {
       pageToLoad = "rules";
     }
 
-    // If there's a hash and it's a valid page, use it
-    if (hash && validPages.includes(hash)) {
-      pageToLoad = hash;
-      if (hash === "bots" && role !== "superadmin") {
-        pageToLoad = "rules";
-      }
-    }
+    // Clear any existing hash to prevent loading wrong page
+    window.location.hash = pageToLoad;
 
     if (validPages.includes(pageToLoad)) {
       loadPageContent(pageToLoad);
@@ -296,6 +290,18 @@ document.addEventListener("DOMContentLoaded", () => {
       disableNavItems();
     }
   };
+
+  // --- Load page based on hash only after initial load ---
+  window.addEventListener('hashchange', () => {
+    const hash = window.location.hash.substring(1);
+    const validPages = Array.from(navItems)
+      .filter(item => item.style.display !== "none")
+      .map(item => item.dataset.page);
+
+    if (hash && validPages.includes(hash)) {
+      loadPageContent(hash);
+    }
+  });
 
   // --- Logout ---
   async function logoutUser() {
