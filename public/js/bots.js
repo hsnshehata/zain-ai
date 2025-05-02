@@ -1,6 +1,10 @@
 // public/js/bots.js (Updated for new dashboard design and unified error handling)
 
 async function loadBotsPage() {
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = "/css/bots.css";
+  document.head.appendChild(link);
   const content = document.getElementById("content");
   const role = localStorage.getItem("role");
   const userId = localStorage.getItem("userId");
