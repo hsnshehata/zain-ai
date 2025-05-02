@@ -1,4 +1,4 @@
-// public/js/bots.js (Updated for new dashboard design)
+// public/js/bots.js (Updated for new dashboard design and unified error handling)
 
 async function loadBotsPage() {
   const content = document.getElementById("content");
@@ -46,7 +46,7 @@ async function loadBotsPage() {
   const errorMessage = document.getElementById("errorMessage");
   const showCreateUserBtn = document.getElementById("showCreateUserBtn");
   const showCreateBotBtn = document.getElementById("showCreateBotBtn");
-  const botSearchInput = document.getElementById("botSearchInput"); // Added search input reference
+  const botSearchInput = document.getElementById("botSearchInput");
 
   let allUsers = []; // Store all fetched users for local filtering
 
@@ -61,65 +61,62 @@ async function loadBotsPage() {
       const botMatch = user.bots && user.bots.some(bot => bot.name.toLowerCase().includes(searchTerm));
       return usernameMatch || botMatch;
     });
-    renderUsersGrid(filteredUsers, usersGrid); // Render filtered results
+    renderUsersGrid(filteredUsers, usersGrid);
   });
 
   try {
     loadingSpinner.style.display = "flex";
     errorMessage.style.display = "none";
-    usersGrid.innerHTML = ""; // Clear previous content
+    usersGrid.innerHTML = "";
     await fetchUsersAndBots(usersGrid, loadingSpinner, errorMessage);
   } catch (err) {
-    console.error("خطأ في تحميل صفحة البوتات:", err);
-    errorMessage.textContent = "تعذر تحميل البيانات. حاول تحديث الصفحة.";
-    errorMessage.style.display = "block";
-    loadingSpinner.style.display = "none";
+    // الخطأ تم التعامل معه في handleApiRequest
   }
 }
 
 // Function to render the user grid
 function renderUsersGrid(usersToRender, gridElement) {
-    gridElement.innerHTML = ""; // Clear grid before adding new cards
+  gridElement.innerHTML = ""; // Clear grid before adding new cards
 
-    if (usersToRender.length === 0) {
-      gridElement.innerHTML = 
-        '<div class="card placeholder-card"><p>لا يوجد مستخدمين أو بوتات تطابق البحث.</p></div>';
-      return;
-    }
+  if (usersToRender.length === 0) {
+    gridElement.innerHTML = 
+      '<div class="card placeholder-card"><p>لا يوجد مستخدمين أو بوتات تطابق البحث.</p></div>';
+    return;
+  }
 
-    usersToRender.forEach((user) => {
-      const botsHtml = user.bots && user.bots.length > 0
-        ? user.bots.map(bot => `
-            <div class="bot-entry">
-              <span><i class="fas fa-robot"></i> ${bot.name} ${bot.facebookPageId ? 
-                `<a href="https://facebook.com/${bot.facebookPageId}" target="_blank" title="صفحة فيسبوك"><i class="fab fa-facebook-square"></i></a>` : ''}</span>
-              <div class="bot-actions">
-                <button class="btn-icon btn-edit" onclick="showEditBotForm(document.getElementById('formContainer'), '${bot._id}', '${bot.name}', '${bot.facebookApiKey || ''}', '${bot.facebookPageId || ''}', '${user._id}')" title="تعديل البوت"><i class="fas fa-edit"></i></button>
-                <button class="btn-icon btn-delete" onclick="deleteBot('${bot._id}')" title="حذف البوت"><i class="fas fa-trash-alt"></i></button>
-              </div>
+  usersToRender.forEach((user) => {
+    const botsHtml = user.bots && user.bots.length > 0
+      ? user.bots.map(bot => `
+          <div class="bot-entry">
+            <span><i class="fas fa-robot"></i> ${bot.name} ${bot.facebookPageId ? 
+              `<a href="https://facebook.com/${bot.facebookPageId}" target="_blank" title="صفحة فيسبوك"><i class="fab fa-facebook-square"></i></a>` : ''}</span>
+            <div class="bot-actions">
+              <button class="btn-icon btn-edit" onclick="showEditBotForm(document.getElementById('formContainer'), '${bot._id}', '${bot.name}', '${bot.facebookApiKey || ''}', '${bot.facebookPageId || ''}', '${user._id}')" title="تعديل البوت"><i class="fas fa-edit"></i></button>
+              <button class="btn-icon btn-delete" onclick="deleteBot('${bot._id}')" title="حذف البوت"><i class="fas fa-trash-alt"></i></button>
             </div>
-          `).join("")
-        : '<p class="no-bots">لا توجد بوتات لهذا المستخدم.</p>';
+          </div>
+        `).join("")
+      : '<p class="no-bots">لا توجد بوتات لهذا المستخدم.</p>';
 
-      const card = document.createElement("div");
-      card.className = "card user-bot-card"; // Use a more specific class
-      card.innerHTML = `
-        <div class="card-header">
-          <h4><i class="fas fa-user-circle"></i> ${user.username}</h4>
-          <span class="user-role ${user.role}">${user.role === 'superadmin' ? 'مدير عام' : 'مستخدم'}</span>
-        </div>
-        <div class="card-body">
-          <h5>البوتات:</h5>
-          <div class="bots-list">${botsHtml}</div>
-        </div>
-        <div class="card-footer">
-          <button class="btn btn-sm btn-outline-secondary" onclick="showEditUserForm(document.getElementById('formContainer'), '${user._id}', '${user.username}', '${user.role}')"><i class="fas fa-user-edit"></i> تعديل المستخدم</button>
-          ${user.role !== 'superadmin' ? 
-          `<button class="btn btn-sm btn-outline-danger" onclick="deleteUser('${user._id}')"><i class="fas fa-user-times"></i> حذف المستخدم</button>` : ''}
-        </div>
-      `;
-      gridElement.appendChild(card);
-    });
+    const card = document.createElement("div");
+    card.className = "card user-bot-card";
+    card.innerHTML = `
+      <div class="card-header">
+        <h4><i class="fas fa-user-circle"></i> ${user.username}</h4>
+        <span class="user-role ${user.role}">${user.role === 'superadmin' ? 'مدير عام' : 'مستخدم'}</span>
+      </div>
+      <div class="card-body">
+        <h5>البوتات:</h5>
+        <div class="bots-list">${botsHtml}</div>
+      </div>
+      <div class="card-footer">
+        <button class="btn btn-sm btn-outline-secondary" onclick="showEditUserForm(document.getElementById('formContainer'), '${user._id}', '${user.username}', '${user.role}')"><i class="fas fa-user-edit"></i> تعديل المستخدم</button>
+        ${user.role !== 'superadmin' ? 
+        `<button class="btn btn-sm btn-outline-danger" onclick="deleteUser('${user._id}')"><i class="fas fa-user-times"></i> حذف المستخدم</button>` : ''}
+      </div>
+    `;
+    gridElement.appendChild(card);
+  });
 }
 
 async function fetchUsersAndBots(gridElement, spinner, errorElement) {
@@ -127,29 +124,14 @@ async function fetchUsersAndBots(gridElement, spinner, errorElement) {
   try {
     spinner.style.display = "flex";
     errorElement.style.display = "none";
-
-    const res = await fetch("/api/users?populate=bots", { // Ensure bots are populated
+    allUsers = await handleApiRequest("/api/users?populate=bots", {
       headers: { Authorization: `Bearer ${token}` },
-    });
-
-    if (!res.ok) {
-        if (res.status === 401) {
-            alert("جلسة غير صالحة، يرجى تسجيل الدخول مرة أخرى.");
-            logoutUser(); // Assumes logoutUser is globally available from dashboard_new.js
-            return;
-        }
-      throw new Error(`فشل في جلب المستخدمين: ${res.statusText}`);
-    }
-    allUsers = await res.json(); // Store fetched users globally within the scope
-
-    renderUsersGrid(allUsers, gridElement); // Initial render with all users
-
+    }, errorElement, "فشل في جلب المستخدمين");
+    renderUsersGrid(allUsers, gridElement);
     spinner.style.display = "none";
   } catch (err) {
-    console.error("خطأ في جلب المستخدمين والبوتات:", err);
-    errorElement.textContent = err.message || "خطأ في جلب المستخدمين.";
-    errorElement.style.display = "block";
     spinner.style.display = "none";
+    // الخطأ تم التعامل معه في handleApiRequest
   }
 }
 
@@ -194,27 +176,19 @@ function showCreateUserForm(container) {
     errorEl.style.display = "none";
 
     try {
-      const res = await fetch("/api/users", {
+      await handleApiRequest("/api/users", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify({ username, password, role }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert("تم إنشاء المستخدم بنجاح!");
-        hideForm(container);
-        await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
-      } else {
-        errorEl.textContent = data.message || "فشل في إنشاء المستخدم";
-        errorEl.style.display = "block";
-      }
+      }, errorEl, "فشل في إنشاء المستخدم");
+      alert("تم إنشاء المستخدم بنجاح!");
+      hideForm(container);
+      await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
     } catch (err) {
-      console.error("خطأ في إنشاء المستخدم:", err);
-      errorEl.textContent = "خطأ في الاتصال بالخادم";
-      errorEl.style.display = "block";
+      // الخطأ تم التعامل معه في handleApiRequest
     }
   });
 }
@@ -263,48 +237,36 @@ function showEditUserForm(container, userId, currentUsername, currentRole) {
     }
 
     try {
-      const res = await fetch(`/api/users/${userId}`, {
+      await handleApiRequest(`/api/users/${userId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify(updateData),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert("تم تعديل المستخدم بنجاح!");
-        hideForm(container);
-        await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
-      } else {
-        errorEl.textContent = data.message || "فشل في تعديل المستخدم";
-        errorEl.style.display = "block";
-      }
+      }, errorEl, "فشل في تعديل المستخدم");
+      alert("تم تعديل المستخدم بنجاح!");
+      hideForm(container);
+      await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
     } catch (err) {
-      console.error("خطأ في تعديل المستخدم:", err);
-      errorEl.textContent = "خطأ في الاتصال بالخادم";
-      errorEl.style.display = "block";
+      // الخطأ تم التعامل معه في handleApiRequest
     }
   });
 }
 
 async function deleteUser(userId) {
   if (confirm("هل أنت متأكد من حذف هذا المستخدم؟ سيتم حذف جميع البوتات المرتبطة به.")) {
+    const errorEl = document.getElementById("errorMessage");
+    errorEl.style.display = "none";
     try {
-      const res = await fetch(`/api/users/${userId}`, {
+      await handleApiRequest(`/api/users/${userId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert("تم حذف المستخدم بنجاح");
-        await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
-      } else {
-        alert(data.message || "فشل في حذف المستخدم");
-      }
+      }, errorEl, "فشل في حذف المستخدم");
+      alert("تم حذف المستخدم بنجاح");
+      await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
     } catch (err) {
-      console.error("خطأ في حذف المستخدم:", err);
-      alert("خطأ في الاتصال بالخادم");
+      // الخطأ تم التعامل معه في handleApiRequest
     }
   }
 }
@@ -354,25 +316,20 @@ function showCreateBotForm(container) {
 
   // Populate user select
   const userSelect = document.getElementById("botUserId");
-  fetch("/api/users", {
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  })
-    .then((res) => {
-        if (!res.ok) throw new Error("فشل جلب المستخدمين");
-        return res.json();
-    })
-    .then((users) => {
-      userSelect.innerHTML = "<option value=\"\">اختر مستخدم</option>"; // Clear loading/error message
+  try {
+    handleApiRequest("/api/users", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    }, document.getElementById("botFormError"), "فشل في جلب المستخدمين").then(users => {
+      userSelect.innerHTML = "<option value=\"\">اختر مستخدم</option>";
       users.forEach((user) => {
         userSelect.innerHTML += `<option value="${user._id}">${user.username}</option>`;
       });
-    })
-    .catch((err) => {
-      console.error("خطأ في جلب المستخدمين للنموذج:", err);
+    }).catch(() => {
       userSelect.innerHTML = "<option value=\"\">خطأ في تحميل المستخدمين</option>";
-      document.getElementById("botFormError").textContent = "خطأ في جلب قائمة المستخدمين.";
-      document.getElementById("botFormError").style.display = "block";
     });
+  } catch (err) {
+    // الخطأ تم التعامل معه في handleApiRequest
+  }
 
   document.getElementById("createBotForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -384,38 +341,30 @@ function showCreateBotForm(container) {
     errorEl.style.display = "none";
 
     if (!userId) {
-        errorEl.textContent = "يرجى اختيار المستخدم المالك للبوت.";
-        errorEl.style.display = "block";
-        return;
+      errorEl.textContent = "يرجى اختيار المستخدم المالك للبوت.";
+      errorEl.style.display = "block";
+      return;
     }
     if (facebookApiKey && !facebookPageId) {
-        errorEl.textContent = "يرجى إدخال معرف صفحة فيسبوك طالما تم إدخال مفتاح API.";
-        errorEl.style.display = "block";
-        return;
+      errorEl.textContent = "يرجى إدخال معرف صفحة فيسبوك طالما تم إدخال مفتاح API.";
+      errorEl.style.display = "block";
+      return;
     }
 
     try {
-      const res = await fetch("/api/bots", {
+      await handleApiRequest("/api/bots", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert("تم إنشاء البوت بنجاح!");
-        hideForm(container);
-        await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
-      } else {
-        errorEl.textContent = data.message || "فشل في إنشاء البوت";
-        errorEl.style.display = "block";
-      }
+      }, errorEl, "فشل في إنشاء البوت");
+      alert("تم إنشاء البوت بنجاح!");
+      hideForm(container);
+      await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
     } catch (err) {
-      console.error("خطأ في إنشاء البوت:", err);
-      errorEl.textContent = "خطأ في الاتصال بالخادم";
-      errorEl.style.display = "block";
+      // الخطأ تم التعامل معه في handleApiRequest
     }
   });
 }
@@ -465,25 +414,20 @@ function showEditBotForm(container, botId, currentName, currentApiKey, currentPa
 
   // Populate user select
   const userSelect = document.getElementById("editBotUserId");
-  fetch("/api/users", {
-    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  })
-    .then((res) => {
-        if (!res.ok) throw new Error("فشل جلب المستخدمين");
-        return res.json();
-    })
-    .then((users) => {
+  try {
+    handleApiRequest("/api/users", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    }, document.getElementById("editBotFormError"), "فشل في جلب المستخدمين").then(users => {
       userSelect.innerHTML = "<option value=\"\">اختر مستخدم</option>";
       users.forEach((user) => {
         userSelect.innerHTML += `<option value="${user._id}" ${user._id === ownerUserId ? 'selected' : ''}>${user.username}</option>`;
       });
-    })
-    .catch((err) => {
-      console.error("خطأ في جلب المستخدمين للنموذج:", err);
+    }).catch(() => {
       userSelect.innerHTML = "<option value=\"\">خطأ في تحميل المستخدمين</option>";
-      document.getElementById("editBotFormError").textContent = "خطأ في جلب قائمة المستخدمين.";
-      document.getElementById("editBotFormError").style.display = "block";
     });
+  } catch (err) {
+    // الخطأ تم التعامل معه في handleApiRequest
+  }
 
   document.getElementById("editBotForm").addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -495,83 +439,68 @@ function showEditBotForm(container, botId, currentName, currentApiKey, currentPa
     errorEl.style.display = "none";
 
     if (!userId) {
-        errorEl.textContent = "يرجى اختيار المستخدم المالك للبوت.";
-        errorEl.style.display = "block";
-        return;
+      errorEl.textContent = "يرجى اختيار المستخدم المالك للبوت.";
+      errorEl.style.display = "block";
+      return;
     }
     if (facebookApiKey && !facebookPageId) {
-        errorEl.textContent = "يرجى إدخال معرف صفحة فيسبوك طالما تم إدخال مفتاح API.";
-        errorEl.style.display = "block";
-        return;
+      errorEl.textContent = "يرجى إدخال معرف صفحة فيسبوك طالما تم إدخال مفتاح API.";
+      errorEl.style.display = "block";
+      return;
     }
 
     try {
-      const res = await fetch(`/api/bots/${botId}`, {
+      await handleApiRequest(`/api/bots/${botId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert("تم تعديل البوت بنجاح!");
-        hideForm(container);
-        await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
-        // Update bot selector in header if the edited bot was selected
-        const botSelectDashboard = document.getElementById('botSelectDashboard');
-        if (botSelectDashboard && botSelectDashboard.value === botId) {
-            const option = botSelectDashboard.querySelector(`option[value="${botId}"]`);
-            if (option) option.textContent = name; // Update name in dropdown
-        }
-      } else {
-        errorEl.textContent = data.message || "فشل في تعديل البوت";
-        errorEl.style.display = "block";
+      }, errorEl, "فشل في تعديل البوت");
+      alert("تم تعديل البوت بنجاح!");
+      hideForm(container);
+      await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
+      // Update bot selector in header if the edited bot was selected
+      const botSelectDashboard = document.getElementById('botSelectDashboard');
+      if (botSelectDashboard && botSelectDashboard.value === botId) {
+        const option = botSelectDashboard.querySelector(`option[value="${botId}"]`);
+        if (option) option.textContent = name;
       }
     } catch (err) {
-      console.error("خطأ في تعديل البوت:", err);
-      errorEl.textContent = "خطأ في الاتصال بالخادم";
-      errorEl.style.display = "block";
+      // الخطأ تم التعامل معه في handleApiRequest
     }
   });
 }
 
 async function deleteBot(botId) {
   if (confirm("هل أنت متأكد من حذف هذا البوت؟ سيتم حذف جميع قواعده ورسائله.")) {
+    const errorEl = document.getElementById("errorMessage");
+    errorEl.style.display = "none";
     try {
-      const res = await fetch(`/api/bots/${botId}`, {
+      await handleApiRequest(`/api/bots/${botId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert("تم حذف البوت بنجاح");
-        await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
-        // Remove bot from header selector if it was deleted
-        const botSelectDashboard = document.getElementById('botSelectDashboard');
-        if (botSelectDashboard && botSelectDashboard.value === botId) {
-            localStorage.removeItem('selectedBotId');
-            botSelectDashboard.value = ''; // Reset selection
-            // Optionally reload the current page or show placeholder
-            const currentHash = window.location.hash.substring(1);
-            if (currentHash && currentHash !== 'bots') {
-                loadPageContent('bots'); // Go back to bots page or another default
-            } else {
-                 document.getElementById('content').innerHTML = `<div class="placeholder"><h2>تم حذف البوت المحدد</h2><p>يرجى اختيار بوت آخر أو إنشاء بوت جديد.</p></div>`;
-            }
+      }, errorEl, "فشل في حذف البوت");
+      alert("تم حذف البوت بنجاح");
+      await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
+      // Remove bot from header selector if it was deleted
+      const botSelectDashboard = document.getElementById('botSelectDashboard');
+      if (botSelectDashboard && botSelectDashboard.value === botId) {
+        localStorage.removeItem('selectedBotId');
+        botSelectDashboard.value = '';
+        const currentHash = window.location.hash.substring(1);
+        if (currentHash && currentHash !== 'bots') {
+          loadPageContent('bots');
+        } else {
+          document.getElementById('content').innerHTML = `<div class="placeholder"><h2>تم حذف البوت المحدد</h2><p>يرجى اختيار بوت آخر أو إنشاء بوت جديد.</p></div>`;
         }
-        // Refresh bot list in header
-        if (typeof populateBotSelect === 'function') { // Check if function exists from dashboard_new.js
-            populateBotSelect();
-        }
-
-      } else {
-        alert(data.message || "فشل في حذف البوت");
+      }
+      if (typeof populateBotSelect === 'function') {
+        populateBotSelect();
       }
     } catch (err) {
-      console.error("خطأ في حذف البوت:", err);
-      alert("خطأ في الاتصال بالخادم");
+      // الخطأ تم التعامل معه في handleApiRequest
     }
   }
 }
@@ -581,7 +510,7 @@ function hideForm(container) {
   container.style.display = "none";
 }
 
-// Make functions globally accessible if they are called via onclick
+// Make functions globally accessible
 window.showCreateUserForm = showCreateUserForm;
 window.showEditUserForm = showEditUserForm;
 window.deleteUser = deleteUser;
@@ -589,5 +518,4 @@ window.showCreateBotForm = showCreateBotForm;
 window.showEditBotForm = showEditBotForm;
 window.deleteBot = deleteBot;
 window.hideForm = hideForm;
-window.loadBotsPage = loadBotsPage; // Ensure loadBotsPage is globally accessible for dashboard_new.js
-
+window.loadBotsPage = loadBotsPage;
