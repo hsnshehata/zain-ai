@@ -2,6 +2,10 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   async function loadFacebookPage() {
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = "/css/facebook.css";
+  document.head.appendChild(link);
     const content = document.getElementById("content");
     const token = localStorage.getItem("token");
     const selectedBotId = localStorage.getItem("selectedBotId");
