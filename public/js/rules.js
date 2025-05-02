@@ -1,6 +1,10 @@
 // public/js/rules.js (Updated for new dashboard design and unified error handling)
 
 async function loadRulesPage() {
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = "/css/rules.css";
+  document.head.appendChild(link);
   const content = document.getElementById("content");
   if (!content) {
     console.error("خطأ: عنصر content غير موجود في الـ DOM");
