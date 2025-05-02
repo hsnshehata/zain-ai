@@ -3,11 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Zain AI تقدم بوتات ذكية لأتمتة خدمة العملاء، تحسين تجربة العملاء، وزيادة كفاءة الأعمال عبر فيسبوك، واتساب، والويب.">
+  <meta name="keywords" content="Zain AI, بوتات ذكية, خدمة عملاء, ذكاء اصطناعي, أتمتة">
+  <meta name="author" content="Zain AI">
+  <!-- Open Graph Tags -->
+  <meta property="og:title" content="Zain AI - بوتات ذكية لعملك">
+  <meta property="og:description" content="اكتشف بوتات Zain AI الذكية لأتمتة خدمة العملاء وتحسين تجربة العملاء على مدار الساعة.">
+  <meta property="og:image" content="https://via.placeholder.com/1200x630/1a1a2e/00C4B4?text=Zain+AI">
+  <meta property="og:url" content="https://yourwebsite.com">
+  <meta property="og:type" content="website">
   <title>Zain AI - بوتات ذكية لعملك</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/common.css"> <!-- Common styles -->
-  <link rel="stylesheet" href="/css/index.css"> <!-- Landing page specific styles -->
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/index.css">
   <link rel="icon" href="/favicon.ico" type="image/x-icon">
   <link rel="manifest" href="/manifest.json">
 </head>
@@ -29,7 +38,7 @@
   <section class="hero" role="region" aria-label="مقدمة Zain AI">
     <div class="container">
       <h1>أطلق العنان لقوة الذكاء الاصطناعي في خدمة عملائك</h1>
-      <p>مع بوتات Zain AI الذكية، يمكنك أتمتة الردود، تحسين تجربة العملاء، وزيادة كفاءة عملك على مدار الساعة.</p>
+      <p>مع بوتات Zain AI الذكية، يمكنك إتمام كل الردود، تحسين تجربة العملاء، وزيادة كفاءة عملك على مدار الساعة.</p>
       <a href="#trial" class="btn btn-highlight" aria-label="ابدأ التجربة المجانية">ابدأ تجربتك المجانية الآن!</a>
     </div>
   </section>
@@ -103,12 +112,29 @@
 
   <footer class="landing-footer" role="contentinfo">
     <div class="container">
-      <p>&copy; 2025 Zain AI. جميع الحقوق محفوظة.</p>
+      <p>© 2025 Zain AI. جميع الحقوق محفوظة.</p>
     </div>
   </footer>
 
-  <script src="/js/utils.js"></script>
-  <script src="/js/landing.js"></script>
+  <script>
+    // Apply theme from localStorage
+    const currentTheme = localStorage.getItem("theme") || "dark";
+    document.body.classList.add(currentTheme === "light" ? "light-mode" : "dark-mode");
+    if (currentTheme === "light") {
+      document.body.classList.remove("dark-mode");
+    }
+
+    // Service Worker registration
+    if ("serviceWorker" in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register("/service-worker.js")
+          .then(() => console.log("Service Worker Registered"))
+          .catch((err) => console.error("Service Worker Error:", err));
+      });
+    }
+  </script>
+  <script defer src="/js/utils.js"></script>
+  <script defer src="/js/landing.js"></script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93949fd01ef31353',t:'MTc0NjE1ODU1OC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
