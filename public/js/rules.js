@@ -1,4 +1,4 @@
-// public/js/rules.js (Updated for new dashboard design)
+// public/js/rules.js (Updated for new dashboard design and unified error handling)
 
 async function loadRulesPage() {
   const content = document.getElementById("content");
@@ -79,91 +79,84 @@ async function loadRulesPage() {
   const paginationContainer = document.getElementById("pagination");
 
   let currentPage = 1;
-  const rulesPerPage = 20; // Adjust as needed
+  const rulesPerPage = 20;
 
   showAddRuleBtn.addEventListener("click", () => showAddRuleForm(ruleFormContainer, selectedBotId, role));
 
   const triggerLoadRules = () => {
-      loadRules(selectedBotId, rulesList, token, typeFilter.value, searchInput.value, currentPage, rulesPerPage, paginationContainer, loadingSpinner, errorMessage);
+    loadRules(selectedBotId, rulesList, token, typeFilter.value, searchInput.value, currentPage, rulesPerPage, paginationContainer, loadingSpinner, errorMessage);
   };
 
   searchInput.addEventListener("input", () => {
-      currentPage = 1;
-      triggerLoadRules();
+    currentPage = 1;
+    triggerLoadRules();
   });
 
   typeFilter.addEventListener("change", () => {
-      currentPage = 1;
-      triggerLoadRules();
+    currentPage = 1;
+    triggerLoadRules();
   });
 
   // Export/Import functionality
   exportRulesBtn.addEventListener('click', async () => {
-      try {
-          loadingSpinner.style.display = 'flex';
-          const response = await fetch(`/api/rules/export?botId=${selectedBotId}`, {
-              headers: { 'Authorization': `Bearer ${token}` },
-          });
-          if (!response.ok) throw new Error('فشل في تصدير القواعد');
-          const rules = await response.json();
-          const blob = new Blob([JSON.stringify(rules, null, 2)], { type: 'application/json' });
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `rules_${selectedBotId}_${new Date().toISOString().split('T')[0]}.json`;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          window.URL.revokeObjectURL(url);
-          loadingSpinner.style.display = 'none';
-      } catch (err) {
-          console.error('خطأ في تصدير القواعد:', err);
-          errorMessage.textContent = 'خطأ في تصدير القواعد.';
-          errorMessage.style.display = 'block';
-          loadingSpinner.style.display = 'none';
-      }
+    try {
+      loadingSpinner.style.display = 'flex';
+      errorMessage.style.display = 'none';
+      const rules = await handleApiRequest(`/api/rules/export?botId=${selectedBotId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, errorMessage, 'فشل في تصدير القواعد');
+      const blob = new Blob([JSON.stringify(rules, null, 2)], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rules_${selectedBotId}_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      loadingSpinner.style.display = 'none';
+    } catch (err) {
+      loadingSpinner.style.display = 'none';
+      // الخطأ تم التعامل معه في handleApiRequest
+    }
   });
 
   importRulesBtn.addEventListener('click', () => importRulesInput.click());
 
   importRulesInput.addEventListener('change', async (event) => {
-      const file = event.target.files[0];
-      if (!file) return;
-      loadingSpinner.style.display = 'flex';
-      errorMessage.style.display = 'none';
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-          try {
-              const rulesToImport = JSON.parse(e.target.result);
-              const response = await fetch('/api/rules/import', {
-                  method: 'POST',
-                  headers: {
-                      'Authorization': `Bearer ${token}`,
-                      'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({ botId: selectedBotId, rules: rulesToImport }),
-              });
-              const result = await response.json();
-              if (!response.ok) throw new Error(result.message || 'فشل في استيراد القواعد');
-              alert(result.message || 'تم استيراد القواعد بنجاح');
-              currentPage = 1;
-              triggerLoadRules(); // Refresh the list
-          } catch (err) {
-              console.error('خطأ في استيراد القواعد:', err);
-              errorMessage.textContent = `خطأ في استيراد القواعد: ${err.message}`;
-              errorMessage.style.display = 'block';
-              loadingSpinner.style.display = 'none';
-          } finally {
-              importRulesInput.value = ''; // Reset file input
-          }
-      };
-      reader.onerror = () => {
-          errorMessage.textContent = 'فشل في قراءة الملف.';
-          errorMessage.style.display = 'block';
-          loadingSpinner.style.display = 'none';
-          importRulesInput.value = '';
-      };
-      reader.readAsText(file);
+    const file = event.target.files[0];
+    if (!file) return;
+    loadingSpinner.style.display = 'flex';
+    errorMessage.style.display = 'none';
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const rulesToImport = JSON.parse(e.target.result);
+        const result = await handleApiRequest('/api/rules/import', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ botId: selectedBotId, rules: rulesToImport }),
+        }, errorMessage, 'فشل في استيراد القواعد');
+        alert(result.message || 'تم استيراد القواعد بنجاح');
+        currentPage = 1;
+        triggerLoadRules();
+      } catch (err) {
+        importRulesInput.value = '';
+        // الخطأ تم التعامل معه في handleApiRequest
+      } finally {
+        loadingSpinner.style.display = 'none';
+      }
+    };
+    reader.onerror = () => {
+      errorMessage.textContent = 'فشل في قراءة الملف.';
+      errorMessage.style.display = 'block';
+      loadingSpinner.style.display = 'none';
+      importRulesInput.value = '';
+    };
+    reader.readAsText(file);
   });
 
   // Initial load
@@ -173,7 +166,7 @@ async function loadRulesPage() {
 async function loadRules(botId, listElement, token, type, search, page, limit, paginationContainer, spinner, errorElement) {
   spinner.style.display = "flex";
   errorElement.style.display = "none";
-  listElement.innerHTML = ""; // Clear previous rules
+  listElement.innerHTML = "";
 
   try {
     let url = `/api/rules?botId=${botId}&page=${page}&limit=${limit}`;
@@ -184,20 +177,10 @@ async function loadRules(botId, listElement, token, type, search, page, limit, p
       url += `&search=${encodeURIComponent(search)}`;
     }
 
-    const res = await fetch(url, {
+    const data = await handleApiRequest(url, {
       headers: { Authorization: `Bearer ${token}` },
-    });
+    }, errorElement, "فشل في جلب القواعد");
 
-    if (!res.ok) {
-        if (res.status === 401) {
-            alert("جلسة غير صالحة، يرجى تسجيل الدخول مرة أخرى.");
-            logoutUser();
-            return;
-        }
-      throw new Error(`فشل في جلب القواعد: ${res.statusText}`);
-    }
-
-    const data = await res.json();
     const rules = data.rules;
     const totalRules = data.totalRules;
     const totalPages = data.totalPages;
@@ -211,15 +194,12 @@ async function loadRules(botId, listElement, token, type, search, page, limit, p
     }
 
     setupPagination(paginationContainer, page, totalPages, (newPage) => {
-        loadRules(botId, listElement, token, type, search, newPage, limit, paginationContainer, spinner, errorElement);
+      loadRules(botId, listElement, token, type, search, newPage, limit, paginationContainer, spinner, errorElement);
     });
 
   } catch (err) {
-    console.error("خطأ في جلب القواعد:", err);
-    errorElement.textContent = err.message || "خطأ في جلب القواعد.";
-    errorElement.style.display = "block";
-  } finally {
     spinner.style.display = "none";
+    // الخطأ تم التعامل معه في handleApiRequest
   }
 }
 
@@ -274,14 +254,14 @@ function createRuleCard(rule) {
 }
 
 function getRuleTypeName(type) {
-    switch (type) {
-        case "general": return "عامة";
-        case "products": return "أسعار";
-        case "qa": return "سؤال وجواب";
-        case "channels": return "قنوات";
-        case "global": return "موحدة";
-        default: return type;
-    }
+  switch (type) {
+    case "general": return "عامة";
+    case "products": return "أسعار";
+    case "qa": return "سؤال وجواب";
+    case "channels": return "قنوات";
+    case "global": return "موحدة";
+    default: return type;
+  }
 }
 
 function showAddRuleForm(container, botId, role) {
@@ -326,61 +306,50 @@ function showAddRuleForm(container, botId, role) {
     let contentData;
 
     try {
-        contentData = getRuleContentFromForm(contentFieldsContainer, type);
-        if (!contentData) return; // Error handled within getRuleContentFromForm
+      contentData = getRuleContentFromForm(contentFieldsContainer, type);
+      if (!contentData) return;
     } catch (err) {
-        errorEl.textContent = err.message;
-        errorEl.style.display = "block";
-        return;
+      errorEl.textContent = err.message;
+      errorEl.style.display = "block";
+      return;
     }
 
     const ruleData = { botId, type, content: contentData };
     if (type === 'global') {
-        delete ruleData.botId; // Global rules don't have a botId
+      delete ruleData.botId;
     }
 
     try {
-      const res = await fetch("/api/rules", {
+      await handleApiRequest("/api/rules", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
         body: JSON.stringify(ruleData),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert("تم إضافة القاعدة بنجاح!");
-        hideForm(container);
-        // Refresh the list
-        const currentTypeFilter = document.getElementById("typeFilter").value;
-        const currentSearch = document.getElementById("searchInput").value;
-        loadRules(botId, document.getElementById("rulesList"), localStorage.getItem("token"), currentTypeFilter, currentSearch, 1, rulesPerPage, document.getElementById("pagination"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
-      } else {
-        errorEl.textContent = data.message || "فشل في إضافة القاعدة";
-        errorEl.style.display = "block";
-      }
+      }, errorEl, "فشل في إضافة القاعدة");
+      alert("تم إضافة القاعدة بنجاح!");
+      hideForm(container);
+      const currentTypeFilter = document.getElementById("typeFilter").value;
+      const currentSearch = document.getElementById("searchInput").value;
+      loadRules(botId, document.getElementById("rulesList"), localStorage.getItem("token"), currentTypeFilter, currentSearch, 1, rulesPerPage, document.getElementById("pagination"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
     } catch (err) {
-      console.error("خطأ في إضافة القاعدة:", err);
-      errorEl.textContent = "خطأ في الاتصال بالخادم";
-      errorEl.style.display = "block";
+      // الخطأ تم التعامل معه في handleApiRequest
     }
   });
 }
 
 async function showEditRuleForm(container, ruleId) {
   const token = localStorage.getItem("token");
-  const errorEl = document.getElementById("errorMessage"); // Use main error display
+  const errorEl = document.getElementById("errorMessage");
   errorEl.style.display = "none";
   container.innerHTML = '<div class="form-card"><div class="spinner"><div class="loader"></div></div></div>';
   container.style.display = "block";
 
   try {
-    const res = await fetch(`/api/rules/${ruleId}`, {
+    const rule = await handleApiRequest(`/api/rules/${ruleId}`, {
       headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) throw new Error("فشل في جلب تفاصيل القاعدة");
-    const rule = await res.json();
+    }, errorEl, "فشل في جلب تفاصيل القاعدة");
 
     container.innerHTML = `
       <div class="form-card">
@@ -406,55 +375,44 @@ async function showEditRuleForm(container, ruleId) {
       let contentData;
 
       try {
-          contentData = getRuleContentFromForm(contentFieldsContainer, rule.type);
-          if (!contentData) return; // Error handled within getRuleContentFromForm
+        contentData = getRuleContentFromForm(contentFieldsContainer, rule.type);
+        if (!contentData) return;
       } catch (err) {
-          editErrorEl.textContent = err.message;
-          editErrorEl.style.display = "block";
-          return;
+        editErrorEl.textContent = err.message;
+        editErrorEl.style.display = "block";
+        return;
       }
 
       try {
-        const updateRes = await fetch(`/api/rules/${ruleId}`, {
+        await handleApiRequest(`/api/rules/${ruleId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ content: contentData }), // Only content can be updated
-        });
-        const data = await updateRes.json();
-        if (updateRes.ok) {
-          alert("تم تعديل القاعدة بنجاح!");
-          hideForm(container);
-          // Refresh the list
-          const botId = localStorage.getItem("selectedBotId");
-          const currentTypeFilter = document.getElementById("typeFilter").value;
-          const currentSearch = document.getElementById("searchInput").value;
-          const currentPage = parseInt(document.querySelector('.pagination .active')?.textContent || '1');
-          loadRules(botId, document.getElementById("rulesList"), token, currentTypeFilter, currentSearch, currentPage, rulesPerPage, document.getElementById("pagination"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
-        } else {
-          editErrorEl.textContent = data.message || "فشل في تعديل القاعدة";
-          editErrorEl.style.display = "block";
-        }
+          body: JSON.stringify({ content: contentData }),
+        }, editErrorEl, "فشل في تعديل القاعدة");
+        alert("تم تعديل القاعدة بنجاح!");
+        hideForm(container);
+        const botId = localStorage.getItem("selectedBotId");
+        const currentTypeFilter = document.getElementById("typeFilter").value;
+        const currentSearch = document.getElementById("searchInput").value;
+        const currentPage = parseInt(document.querySelector('.pagination .active')?.textContent || '1');
+        loadRules(botId, document.getElementById("rulesList"), token, currentTypeFilter, currentSearch, currentPage, rulesPerPage, document.getElementById("pagination"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
       } catch (err) {
-        console.error("خطأ في تعديل القاعدة:", err);
-        editErrorEl.textContent = "خطأ في الاتصال بالخادم";
-        editErrorEl.style.display = "block";
+        // الخطأ تم التعامل معه في handleApiRequest
       }
     });
 
   } catch (err) {
-    console.error("خطأ في عرض نموذج التعديل:", err);
-    errorEl.textContent = "خطأ في تحميل بيانات القاعدة للتعديل.";
-    errorEl.style.display = "block";
     container.innerHTML = "";
     container.style.display = "none";
+    // الخطأ تم التعامل معه في handleApiRequest
   }
 }
 
 function loadRuleContentFields(container, type, currentContent = null) {
-  container.innerHTML = ""; // Clear previous fields
+  container.innerHTML = "";
   switch (type) {
     case "general":
       container.innerHTML = `
@@ -487,7 +445,6 @@ function loadRuleContentFields(container, type, currentContent = null) {
           <select id="currency" name="currency" required>
             <option value="جنيه" ${currentContent?.currency === 'جنيه' ? 'selected' : ''}>جنيه</option>
             <option value="دولار" ${currentContent?.currency === 'دولار' ? 'selected' : ''}>دولار</option>
-            <!-- Add other currencies if needed -->
           </select>
         </div>
       `;
@@ -532,37 +489,37 @@ function loadRuleContentFields(container, type, currentContent = null) {
       `;
       break;
     default:
-        container.innerHTML = '<p class="error-message">نوع قاعدة غير معروف.</p>';
+      container.innerHTML = '<p class="error-message">نوع قاعدة غير معروف.</p>';
   }
 }
 
 function getRuleContentFromForm(container, type) {
-    switch (type) {
-        case "general":
-        case "global":
-            const content = container.querySelector("#ruleContent")?.value.trim();
-            if (!content) throw new Error("يرجى إدخال المحتوى.");
-            return content;
-        case "products":
-            const product = container.querySelector("#product")?.value.trim();
-            const price = parseFloat(container.querySelector("#price")?.value);
-            const currency = container.querySelector("#currency")?.value;
-            if (!product || isNaN(price) || price <= 0 || !currency) throw new Error("يرجى ملء جميع حقول المنتج بشكل صحيح.");
-            return { product, price, currency };
-        case "qa":
-            const question = container.querySelector("#question")?.value.trim();
-            const answer = container.querySelector("#answer")?.value.trim();
-            if (!question || !answer) throw new Error("يرجى إدخال السؤال والإجابة.");
-            return { question, answer };
-        case "channels":
-            const platform = container.querySelector("#platform")?.value;
-            const description = container.querySelector("#description")?.value.trim();
-            const value = container.querySelector("#value")?.value.trim();
-            if (!platform || !description || !value) throw new Error("يرجى ملء جميع حقول القناة بشكل صحيح.");
-            return { platform, description, value };
-        default:
-            throw new Error("نوع قاعدة غير صالح.");
-    }
+  switch (type) {
+    case "general":
+    case "global":
+      const content = container.querySelector("#ruleContent")?.value.trim();
+      if (!content) throw new Error("يرجى إدخال المحتوى.");
+      return content;
+    case "products":
+      const product = container.querySelector("#product")?.value.trim();
+      const price = parseFloat(container.querySelector("#price")?.value);
+      const currency = container.querySelector("#currency")?.value;
+      if (!product || isNaN(price) || price <= 0 || !currency) throw new Error("يرجى ملء جميع حقول المنتج بشكل صحيح.");
+      return { product, price, currency };
+    case "qa":
+      const question = container.querySelector("#question")?.value.trim();
+      const answer = container.querySelector("#answer")?.value.trim();
+      if (!question || !answer) throw new Error("يرجى إدخال السؤال والإجابة.");
+      return { question, answer };
+    case "channels":
+      const platform = container.querySelector("#platform")?.value;
+      const description = container.querySelector("#description")?.value.trim();
+      const value = container.querySelector("#value")?.value.trim();
+      if (!platform || !description || !value) throw new Error("يرجى ملء جميع حقول القناة بشكل صحيح.");
+      return { platform, description, value };
+    default:
+      throw new Error("نوع قاعدة غير صالح.");
+  }
 }
 
 async function deleteRule(ruleId) {
@@ -571,84 +528,77 @@ async function deleteRule(ruleId) {
     const errorElement = document.getElementById("errorMessage");
     errorElement.style.display = "none";
     try {
-      const res = await fetch(`/api/rules/${ruleId}`, {
+      await handleApiRequest(`/api/rules/${ruleId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert("تم حذف القاعدة بنجاح");
-        // Refresh the list
-        const botId = localStorage.getItem("selectedBotId");
-        const currentTypeFilter = document.getElementById("typeFilter").value;
-        const currentSearch = document.getElementById("searchInput").value;
-        const currentPage = parseInt(document.querySelector('.pagination .active')?.textContent || '1');
-        loadRules(botId, document.getElementById("rulesList"), token, currentTypeFilter, currentSearch, currentPage, rulesPerPage, document.getElementById("pagination"), document.getElementById("loadingSpinner"), errorElement);
-      } else {
-        throw new Error(data.message || "فشل في حذف القاعدة");
-      }
+      }, errorElement, "فشل في حذف القاعدة");
+      alert("تم حذف القاعدة بنجاح");
+      const botId = localStorage.getItem("selectedBotId");
+      const currentTypeFilter = document.getElementById("typeFilter").value;
+      const currentSearch = document.getElementById("searchInput").value;
+      const currentPage = parseInt(document.querySelector('.pagination .active')?.textContent || '1');
+      loadRules(botId, document.getElementById("rulesList"), token, currentTypeFilter, currentSearch, currentPage, rulesPerPage, document.getElementById("pagination"), document.getElementById("loadingSpinner"), errorElement);
     } catch (err) {
-      console.error("خطأ في حذف القاعدة:", err);
-      errorElement.textContent = err.message;
-      errorElement.style.display = "block";
+      // الخطأ تم التعامل معه في handleApiRequest
     }
   }
 }
 
 function setupPagination(container, currentPage, totalPages, onPageClick) {
-    container.innerHTML = '';
-    if (totalPages <= 1) {
-        container.style.display = 'none';
-        return;
+  container.innerHTML = '';
+  if (totalPages <= 1) {
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = 'flex';
+
+  const createPageButton = (pageNumber, text = null, isActive = false, isDisabled = false) => {
+    const button = document.createElement('button');
+    button.textContent = text || pageNumber;
+    button.disabled = isDisabled;
+    if (isActive) button.classList.add('active');
+    button.addEventListener('click', () => {
+      if (!isDisabled && !isActive) onPageClick(pageNumber);
+    });
+    return button;
+  };
+
+  // Previous Button
+  container.appendChild(createPageButton(currentPage - 1, 'السابق', false, currentPage === 1));
+
+  // Dynamic page numbers with ellipsis
+  const maxButtons = 5;
+  let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+  let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+  if (endPage === totalPages) {
+    startPage = Math.max(1, totalPages - maxButtons + 1);
+  }
+
+  if (startPage > 1) {
+    container.appendChild(createPageButton(1));
+    if (startPage > 2) {
+      const ellipsis = document.createElement('span');
+      ellipsis.textContent = '...';
+      container.appendChild(ellipsis);
     }
-    container.style.display = 'flex';
+  }
 
-    const createPageButton = (pageNumber, text = null, isActive = false, isDisabled = false) => {
-        const button = document.createElement('button');
-        button.textContent = text !== null ? text : pageNumber;
-        button.disabled = isDisabled;
-        if (isActive) {
-            button.classList.add('active');
-        }
-        button.addEventListener('click', () => {
-            if (!isDisabled && !isActive) {
-                onPageClick(pageNumber);
-            }
-        });
-        return button;
-    };
+  for (let i = startPage; i <= endPage; i++) {
+    container.appendChild(createPageButton(i, null, i === currentPage));
+  }
 
-    // Previous Button
-    container.appendChild(createPageButton(currentPage - 1, 'السابق', false, currentPage === 1));
-
-    // Page Numbers (simplified for brevity, consider adding ellipsis for many pages)
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, currentPage + 2);
-
-    if (startPage > 1) {
-        container.appendChild(createPageButton(1));
-        if (startPage > 2) {
-            const ellipsis = document.createElement('span');
-            ellipsis.textContent = '...';
-            container.appendChild(ellipsis);
-        }
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) {
+      const ellipsis = document.createElement('span');
+      ellipsis.textContent = '...';
+      container.appendChild(ellipsis);
     }
+    container.appendChild(createPageButton(totalPages));
+  }
 
-    for (let i = startPage; i <= endPage; i++) {
-        container.appendChild(createPageButton(i, null, i === currentPage));
-    }
-
-    if (endPage < totalPages) {
-        if (endPage < totalPages - 1) {
-            const ellipsis = document.createElement('span');
-            ellipsis.textContent = '...';
-            container.appendChild(ellipsis);
-        }
-        container.appendChild(createPageButton(totalPages));
-    }
-
-    // Next Button
-    container.appendChild(createPageButton(currentPage + 1, 'التالي', false, currentPage === totalPages));
+  // Next Button
+  container.appendChild(createPageButton(currentPage + 1, 'التالي', false, currentPage === totalPages));
 }
 
 // --- Helper Functions ---
@@ -658,23 +608,21 @@ function hideForm(container) {
 }
 
 function escapeHtml(unsafe) {
-    if (typeof unsafe !== 'string') {
-        // Handle numbers, booleans, etc.
-        if (unsafe === null || unsafe === undefined) return '';
-        return String(unsafe);
-    }
-    return unsafe
-         .replace(/&/g, "&amp;")
-         .replace(/</g, "&lt;")
-         .replace(/>/g, "&gt;")
-         .replace(/"/g, "&quot;")
-         .replace(/'/g, "&#039;");
- }
+  if (typeof unsafe !== 'string') {
+    if (unsafe === null || unsafe === undefined) return '';
+    return String(unsafe);
+  }
+  return unsafe
+       .replace(/&/g, "&amp;")
+       .replace(/</g, "&lt;")
+       .replace(/>/g, "&gt;")
+       .replace(/"/g, "&quot;")
+       .replace(/'/g, "&#039;");
+}
 
 // Make functions globally accessible
 window.loadRulesPage = loadRulesPage;
 window.showAddRuleForm = showAddRuleForm;
 window.showEditRuleForm = showEditRuleForm;
 window.deleteRule = deleteRule;
-window.hideForm = hideForm; // Make hideForm global as it's used in onclick
-
+window.hideForm = hideForm;
