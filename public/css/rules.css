@@ -1,2 +1,123 @@
-/* Styles for Rules Management Section */
+/* public/css/rules.css */
 
+/* Styles specific to the Rules page (loaded by loadRulesPage) */
+
+.rules-management-container {
+  margin-top: 20px;
+}
+
+.rules-management-container h3 {
+  font-size: 1.5em;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Rule Card */
+.rule-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.rule-card .card-body {
+  padding-bottom: 10px;
+}
+
+.rule-card p {
+  margin: 8px 0;
+}
+
+.rule-card p strong {
+  font-weight: 600;
+  margin-left: 5px; /* RTL */
+}
+
+.rule-type-badge {
+  font-size: 0.9em;
+  padding: 5px 10px;
+  border-radius: 4px;
+  background-color: var(--turquoise);
+  color: white;
+}
+
+.rule-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.rule-type-general .rule-type-badge {
+  background-color: #6c757d;
+}
+
+.rule-type-products .rule-type-badge {
+  background-color: #28a745;
+}
+
+.rule-type-qa .rule-type-badge {
+  background-color: #17a2b8;
+}
+
+.rule-type-channels .rule-type-badge {
+  background-color: #ffc107;
+}
+
+.rule-type-global .rule-type-badge {
+  background-color: #dc3545;
+}
+
+/* Form Card for Add/Edit Rule */
+.form-card {
+  margin-bottom: 20px;
+  padding: 20px;
+}
+
+.form-card h3 {
+  font-size: 1.4em;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* Filters Bar (already in common.css but can override specifics here) */
+.filters-bar {
+  margin-bottom: 25px;
+}
+
+/* Rules Grid */
+.rules-grid {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .rules-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+
+  .filters-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters-bar .form-group {
+    min-width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .rule-card p {
+    font-size: 0.95em;
+  }
+
+  .rule-type-badge {
+    font-size: 0.85em;
+  }
+}
