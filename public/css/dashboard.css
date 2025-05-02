@@ -1,0 +1,397 @@
+/* Styles for Dashboard Layout (dashboard_new.html) */
+
+/* Dashboard Layout */
+.dashboard-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  position: fixed;
+  top: 0;
+  right: 0; /* RTL */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  transition: width var(--transition-speed) ease, background-color var(--transition-speed) ease, transform var(--transition-speed) ease;
+  z-index: 1100;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+body.dark-mode .sidebar {
+  background-color: var(--dark-sidebar);
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2); /* Shadow on the left */
+}
+
+body.light-mode .sidebar {
+  background-color: var(--light-sidebar);
+  box-shadow: -5px 0 15px var(--shadow-light); /* Shadow on the left */
+}
+
+.sidebar-header {
+  padding: 20px;
+  text-align: center;
+  border-bottom: 1px solid;
+  margin-bottom: 20px;
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+body.dark-mode .sidebar-header {
+  border-bottom-color: var(--dark-border);
+}
+
+body.light-mode .sidebar-header {
+  border-bottom-color: var(--light-border);
+}
+
+.sidebar .logo {
+  font-size: 1.8em;
+  font-weight: bold;
+  color: var(--turquoise);
+  white-space: nowrap;
+  transition: opacity var(--transition-speed) ease;
+}
+
+.sidebar-nav {
+  flex-grow: 1;
+  padding: 0 15px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: right;
+  font-size: 1.1em;
+  white-space: nowrap;
+}
+
+body.dark-mode .nav-item {
+  color: var(--dark-text);
+}
+
+body.light-mode .nav-item {
+  color: var(--light-text);
+}
+
+.nav-item i {
+  margin-left: 15px; /* RTL */
+  font-size: 1.3em;
+  width: 25px; /* Fixed width for icon alignment */
+  text-align: center;
+  transition: margin var(--transition-speed) ease;
+}
+
+.nav-item span {
+  opacity: 1;
+  transition: opacity 0.2s ease 0.1s; /* Delay fade out */
+}
+
+.nav-item:hover,
+.nav-item.active {
+  background-color: var(--turquoise);
+}
+
+body.dark-mode .nav-item:hover,
+body.dark-mode .nav-item.active {
+  color: var(--dark-sidebar);
+}
+
+body.light-mode .nav-item:hover,
+body.light-mode .nav-item.active {
+  color: var(--light-sidebar);
+}
+
+.nav-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: transparent !important; /* Override hover/active */
+  color: gray !important; /* Override hover/active */
+}
+
+.sidebar-footer {
+  padding: 15px;
+  border-top: 1px solid;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap; /* Allow wrapping if needed */
+}
+
+body.dark-mode .sidebar-footer {
+  border-top-color: var(--dark-border);
+}
+
+body.light-mode .sidebar-footer {
+  border-top-color: var(--light-border);
+}
+
+.sidebar-footer .nav-item {
+  margin-bottom: 0;
+  flex-grow: 1;
+}
+
+.sidebar-footer .theme-toggle-btn {
+  margin-left: 10px; /* RTL */
+}
+
+/* Collapsed Sidebar Styles */
+.sidebar.collapsed {
+  width: var(--sidebar-width-collapsed);
+}
+
+.sidebar.collapsed .sidebar-header .logo {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.sidebar.collapsed .nav-item span {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+  transition-delay: 0s;
+}
+
+.sidebar.collapsed .nav-item i {
+  margin-left: 0; /* RTL */
+}
+
+.sidebar.collapsed .sidebar-footer {
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar.collapsed .sidebar-footer .nav-item {
+  justify-content: center;
+}
+
+/* Main Content Area */
+.main-content {
+  flex-grow: 1;
+  margin-right: var(--sidebar-width); /* RTL */
+  transition: margin-right var(--transition-speed) ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar.collapsed + .main-content {
+  margin-right: var(--sidebar-width-collapsed); /* RTL */
+}
+
+/* Main Header */
+.main-header {
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 25px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  transition: background-color var(--transition-speed) ease;
+}
+
+body.dark-mode .main-header {
+  background-color: rgba(26, 26, 46, 0.8); /* Dark header with blur */
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--dark-border);
+}
+
+body.light-mode .main-header {
+  background-color: rgba(240, 242, 245, 0.8); /* Light header with blur */
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--light-border);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.sidebar-toggle-btn {
+  background: none;
+  border: none;
+  font-size: 1.5em;
+  cursor: pointer;
+  padding: 5px;
+  display: none; /* Hidden by default, shown in media query */
+}
+
+body.dark-mode .sidebar-toggle-btn {
+  color: var(--dark-text);
+}
+
+body.light-mode .sidebar-toggle-btn {
+  color: var(--light-text);
+}
+
+.bot-selector-container {
+  position: relative;
+}
+
+.form-group.bot-selector {
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-group.bot-selector label {
+  font-size: 0.9em;
+  opacity: 0.8;
+  white-space: nowrap;
+}
+
+#botSelectDashboard {
+  padding: 8px 30px 8px 15px; /* RTL padding */
+  border-radius: 6px;
+  border: 1px solid;
+  min-width: 150px;
+  font-size: 1em;
+  appearance: none;
+  background-repeat: no-repeat;
+  background-position: left 10px center; /* RTL */
+}
+
+body.dark-mode #botSelectDashboard {
+  background-color: var(--dark-card);
+  color: var(--dark-text);
+  border-color: var(--dark-border);
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%23e0e0e0" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+}
+
+body.light-mode #botSelectDashboard {
+  background-color: var(--light-card);
+  color: var(--light-text);
+  border-color: var(--light-border);
+  background-image: url('data:image/svg+xml;utf8,<svg fill="%23333333" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+}
+
+body.dark-mode #botSelectDashboard option {
+  background: var(--dark-card);
+  color: var(--dark-text);
+}
+
+body.light-mode #botSelectDashboard option {
+  background: var(--light-card);
+  color: var(--light-text);
+}
+
+/* Page Content Area */
+.page-content {
+  padding: 25px;
+  flex-grow: 1;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.page-header h2 {
+  margin: 0;
+  font-size: 1.8em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* page-header h2 dark/light styles are in common.css */
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+/* Theme Toggle Button Specific Style (from common.css, but relevant here) */
+.theme-toggle-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.5em;
+  padding: 5px;
+}
+
+.theme-toggle-btn .fa-sun {
+  display: none;
+  color: #f39c12;
+}
+
+.theme-toggle-btn .fa-moon {
+  display: block;
+  color: #bdc3c7;
+}
+
+body.light-mode .theme-toggle-btn .fa-sun {
+  display: block;
+}
+
+body.light-mode .theme-toggle-btn .fa-moon {
+  display: none;
+}
+
+/* Responsive Adjustments for Layout */
+@media (max-width: 992px) {
+  .sidebar {
+    transform: translateX(100%); /* RTL: Hide sidebar off-screen to the right */
+    box-shadow: none;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+    box-shadow: -5px 0 15px rgba(0, 0, 0, 0.2); /* Show shadow when open */
+  }
+  body.light-mode .sidebar.open {
+      box-shadow: -5px 0 15px var(--shadow-light);
+  }
+  .main-content {
+    margin-right: 0; /* RTL */
+  }
+  .sidebar.collapsed + .main-content {
+      margin-right: 0; /* Reset margin when sidebar is collapsed and hidden */
+  }
+  .sidebar-toggle-btn {
+    display: block;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .header-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 576px) {
+  .main-header {
+    padding: 0 15px;
+  }
+  .page-content {
+    padding: 15px;
+  }
+  .page-header h2 {
+    font-size: 1.5em;
+  }
+}
+
