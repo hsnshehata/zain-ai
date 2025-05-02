@@ -1,2 +1,160 @@
-/* Styles for Bots Management Section */
+/* public/css/bots.css */
 
+/* Styles specific to the Bots page (loaded by loadBotsPage) */
+
+.bots-users-container {
+  margin-top: 20px;
+}
+
+.bots-users-container h3 {
+  font-size: 1.5em;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* User and Bot Card */
+.user-bot-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-bot-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 15px;
+  border-bottom: 1px solid;
+}
+
+body.dark-mode .user-bot-card .card-header {
+  border-bottom-color: var(--dark-border);
+}
+
+body.light-mode .user-bot-card .card-header {
+  border-bottom-color: var(--light-border);
+}
+
+.user-bot-card .card-header h4 {
+  margin: 0;
+  font-size: 1.3em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-bot-card .user-role {
+  font-size: 0.9em;
+  padding: 5px 10px;
+  border-radius: 4px;
+}
+
+.user-role.superadmin {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.user-role.user {
+  background-color: #6c757d;
+  color: white;
+}
+
+.user-bot-card .card-body h5 {
+  font-size: 1.1em;
+  margin: 15px 0 10px;
+}
+
+.bots-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bot-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-radius: 6px;
+  transition: background-color var(--transition-speed);
+}
+
+body.dark-mode .bot-entry {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+body.light-mode .bot-entry {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.bot-entry:hover {
+  background-color: var(--turquoise);
+  color: white;
+}
+
+.bot-entry span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bot-entry a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.bot-entry a:hover {
+  text-decoration: underline;
+}
+
+.bot-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.no-bots {
+  opacity: 0.7;
+  font-style: italic;
+  margin: 10px 0;
+}
+
+/* Form Card for Create/Edit User/Bot */
+.form-card {
+  margin-bottom: 20px;
+  padding: 20px;
+}
+
+.form-card h3 {
+  font-size: 1.4em;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+  .user-bot-card .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .bot-entry {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .bot-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
