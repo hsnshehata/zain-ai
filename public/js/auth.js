@@ -1,4 +1,5 @@
-// public/js/auth.js
+// public/js/auth.js (Updated for unified error handling)
+
 document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.querySelector('#loginForm');
   const logoutButtons = document.querySelectorAll('.logout-btn');
@@ -19,35 +20,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       try {
-        const response = await fetch('/api/auth/login', {
+        const data = await handleApiRequest('/api/auth/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ username, password }),
-        });
+        }, errorDiv, 'فشل تسجيل الدخول');
 
-        if (!response.ok) {
-          // Check content type before parsing as JSON
-          const contentType = response.headers.get("content-type");
-          let errorMsg = 'فشل تسجيل الدخول';
-          if (contentType && contentType.indexOf("application/json") !== -1) {
-              try {
-                  const errorData = await response.json();
-                  errorMsg = errorData.message || errorMsg;
-              } catch (jsonError) {
-                  console.error("Error parsing JSON error response:", jsonError);
-                  errorMsg = `فشل تسجيل الدخول (استجابة غير صالحة: ${response.statusText})`;
-              }
-          } else {
-              errorMsg = `فشل تسجيل الدخول (استجابة غير متوقعة من الخادم: ${response.status})`;
-              // Optionally log the response text for debugging if needed
-              // console.error("Non-JSON response:", await response.text());
-          }
-          throw new Error(errorMsg);
-        }
-
-        const data = await response.json();
         if (data.success) {
           // Store user data in localStorage
           localStorage.setItem('token', data.token);
@@ -61,9 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error(data.message || 'فشل تسجيل الدخول');
         }
       } catch (err) {
-        console.error('❌ Error during login:', err);
-        errorDiv.style.display = 'block';
-        errorDiv.textContent = err.message || 'حدث خطأ أثناء تسجيل الدخول، حاول مرة أخرى';
+        // الخطأ تم التعامل معه في handleApiRequest
       }
     });
   }
@@ -75,32 +53,24 @@ document.addEventListener('DOMContentLoaded', () => {
       const errorDiv = document.querySelector('#error');
 
       try {
-        const response = await fetch('/api/auth/logout', {
+        await handleApiRequest('/api/auth/logout', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ username }),
-        });
+        }, errorDiv, 'فشل تسجيل الخروج');
 
-        const data = await response.json();
-        if (response.ok && data.success) {
-          // Clear localStorage
-          localStorage.removeItem('token');
-          localStorage.removeItem('role');
-          localStorage.removeItem('userId');
-          localStorage.removeItem('username');
-          console.log('✅ Logout successful, localStorage cleared');
-          window.location.href = '/';
-        } else {
-          throw new Error(data.message || 'فشل تسجيل الخروج');
-        }
+        // Clear localStorage
+        localStorage.removeItem('token');
+        localStorage.removeItem('role');
+        localStorage.removeItem('userId');
+        localStorage.removeItem('username');
+        console.log('✅ Logout successful, localStorage cleared');
+        window.location.href = '/';
       } catch (err) {
-        console.error('❌ Error during logout:', err);
-        if (errorDiv) {
-          errorDiv.style.display = 'block';
-          errorDiv.textContent = err.message || 'حدث خطأ أثناء تسجيل الخروج';
-        } else {
+        // الخطأ تم التعامل معه في handleApiRequest
+        if (!errorDiv) {
           alert('حدث خطأ أثناء تسجيل الخروج، حاول مرة أخرى');
         }
       }
