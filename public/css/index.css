@@ -4,7 +4,7 @@
 
 /* تحديث أساسي للصفحة */
 body {
-  background: linear-gradient(135deg, #1a1a2e 0%, #2a2a4e 100%); /* خلفية جديدة بتدرج */
+  background: linear-gradient(135deg, #1a1a2e 0%, #2a2a4e 100%);
   font-family: 'Cairo', sans-serif;
   color: white;
 }
@@ -12,7 +12,7 @@ body {
 /* تحديث Container */
 .container {
   width: 90%;
-  max-width: 1000px; /* تصغير الحاوية من 1200px لـ 1000px */
+  max-width: 1000px;
   margin: 0 auto;
 }
 
@@ -23,13 +23,14 @@ body {
   position: sticky;
   top: 0;
   z-index: 1000;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* ظل جديد */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .landing-header .container {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
 }
 
 .landing-header .logo {
@@ -42,16 +43,16 @@ body {
 
 .landing-header .logo i {
   margin-right: 10px;
-  color: #ffd700; /* لون أيقونة ذهبي */
+  color: #ffd700;
 }
 
 .landing-header .menu-toggle {
   background: none;
   border: none;
-  color: var(--dark-text);
+  color: white;
   font-size: 1.5em;
   cursor: pointer;
-  display: none;
+  display: none; /* مخفي افتراضياً على الشاشات الكبيرة */
 }
 
 .landing-header .menu-toggle:focus {
@@ -69,20 +70,19 @@ body {
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 25px; /* تصغير المسافة بين الروابط */
+  gap: 25px;
 }
 
 .landing-header nav a {
   color: white;
   text-decoration: none;
   font-weight: 600;
-  padding: 8px 12px; /* تصغير البادينج */
+  padding: 8px 12px;
   border-radius: 5px;
   transition: background 0.3s ease, color 0.3s ease;
 }
 
-.landing-header nav a:hover,
-.landing-header nav a.btn:hover {
+.landing-header nav a:hover {
   background-color: var(--turquoise);
   color: #1a1a2e;
 }
@@ -92,18 +92,25 @@ body {
   outline-offset: 2px;
 }
 
-.landing-header nav a.btn {
+.landing-header .always-visible {
   background-color: var(--turquoise);
   color: #1a1a2e;
   font-weight: bold;
-  padding: 8px 18px; /* تصغير البادينج */
+  padding: 8px 18px;
+  border-radius: 5px;
+  text-decoration: none;
+}
+
+.landing-header .always-visible:hover {
+  background-color: #00e0c4;
+  color: white;
 }
 
 /* Hero Section */
 .hero {
   background: linear-gradient(rgba(26, 26, 46, 0.9), rgba(26, 26, 46, 0.7)), url("public/placeholder-bot.png") center/cover no-repeat;
   color: white;
-  padding: 100px 0; /* تصغير البادينج */
+  padding: 100px 0;
   text-align: center;
   position: relative;
   border-bottom: 5px solid var(--turquoise);
@@ -126,16 +133,16 @@ body {
 }
 
 .hero h1 {
-  font-size: 3.2em; /* تصغير الخط شوية */
+  font-size: 3.2em;
   margin-bottom: 20px;
   font-weight: 800;
   text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .hero p {
-  font-size: 1.2em; /* تصغير الخط */
+  font-size: 1.2em;
   margin-bottom: 35px;
-  max-width: 700px; /* تصغير العرض */
+  max-width: 700px;
   margin-left: auto;
   margin-right: auto;
   opacity: 0.9;
@@ -143,7 +150,7 @@ body {
 
 .hero-buttons {
   display: flex;
-  gap: 15px; /* تصغير المسافة */
+  gap: 15px;
   justify-content: center;
   flex-wrap: wrap;
 }
@@ -152,8 +159,8 @@ body {
   background: linear-gradient(45deg, var(--turquoise), #00e0c4);
   color: #1a1a2e;
   font-weight: bold;
-  padding: 12px 25px; /* تصغير البادينج */
-  font-size: 1.1rem; /* تصغير الخط */
+  padding: 12px 25px;
+  font-size: 1.1rem;
   border-radius: 50px;
   box-shadow: 0 5px 15px rgba(0, 196, 180, 0.4);
   transition: transform 0.2s ease, box-shadow 0.3s ease;
@@ -173,12 +180,12 @@ body {
 .download-app {
   background: linear-gradient(45deg, #6c757d, #8a9298);
   color: white;
-  padding: 12px 25px; /* تصغير البادينج */
-  font-size: 1.1rem; /* تصغير الخط */
+  padding: 12px 25px;
+  font-size: 1.1rem;
   border-radius: 50px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
   transition: transform 0.2s ease, box-shadow 0.3s ease;
-  display: none; /* مخفي من البداية زي ما اتفقنا */
+  display: none;
 }
 
 .download-app:hover {
@@ -193,7 +200,7 @@ body {
 
 /* Features Section */
 .features {
-  padding: 80px 0; /* تصغير البادينج */
+  padding: 80px 0;
   background: linear-gradient(180deg, #2a2a4e 0%, #1a1a2e 100%);
 }
 
@@ -203,7 +210,7 @@ body.dark-mode .features {
 
 .features h2 {
   text-align: center;
-  font-size: 2.5em; /* تصغير الخط */
+  font-size: 2.5em;
   margin-bottom: 50px;
   color: white;
   text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);
@@ -211,14 +218,14 @@ body.dark-mode .features {
 
 .features-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); /* تصغير العناصر */
-  gap: 30px; /* تصغير المسافات */
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 30px;
 }
 
 .feature-item {
   text-align: center;
-  padding: 30px; /* تصغير البادينج */
-  border-radius: 12px; /* تصغير الـ border-radius */
+  padding: 30px;
+  border-radius: 12px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
@@ -235,24 +242,24 @@ body.light-mode .feature-item {
 }
 
 .feature-item:hover {
-  transform: translateY(-8px); /* تصغير التأثير */
+  transform: translateY(-8px);
   box-shadow: 0 10px 25px rgba(0, 196, 180, 0.3);
 }
 
 .feature-item i {
-  font-size: 3em; /* تصغير الأيقونة */
+  font-size: 3em;
   color: var(--turquoise);
   margin-bottom: 20px;
 }
 
 .feature-item h3 {
-  font-size: 1.6em; /* تصغير الخط */
+  font-size: 1.6em;
   margin-bottom: 12px;
   color: white;
 }
 
 .feature-item p {
-  font-size: 0.95em; /* تصغير الخط */
+  font-size: 0.95em;
   opacity: 0.85;
   line-height: 1.6;
   color: #d3d3d3;
@@ -262,14 +269,14 @@ body.light-mode .feature-item {
 .trial-offer {
   background: linear-gradient(45deg, #1a1a2e, #2a2a4e);
   color: white;
-  padding: 60px 0; /* تصغير البادينج */
+  padding: 60px 0;
   text-align: center;
   border-top: 5px solid var(--turquoise);
   border-bottom: 5px solid var(--turquoise);
 }
 
 .trial-offer h2 {
-  font-size: 2.2em; /* تصغير الخط */
+  font-size: 2.2em;
   margin-bottom: 15px;
   color: white;
 }
@@ -280,9 +287,9 @@ body.light-mode .feature-item {
 }
 
 .trial-offer p {
-  font-size: 1.1em; /* تصغير الخط */
+  font-size: 1.1em;
   margin-bottom: 25px;
-  max-width: 600px; /* تصغير العرض */
+  max-width: 600px;
   margin-left: auto;
   margin-right: auto;
   opacity: 0.9;
@@ -290,7 +297,7 @@ body.light-mode .feature-item {
 
 /* Pricing Section */
 .pricing {
-  padding: 80px 0; /* تصغير البادينج */
+  padding: 80px 0;
   background: linear-gradient(180deg, #1a1a2e 0%, #2a2a4e 100%);
 }
 
@@ -300,7 +307,7 @@ body.dark-mode .pricing {
 
 .pricing h2 {
   text-align: center;
-  font-size: 2.5em; /* تصغير الخط */
+  font-size: 2.5em;
   margin-bottom: 50px;
   color: white;
   text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);
@@ -310,22 +317,22 @@ body.dark-mode .pricing {
   display: flex;
   justify-content: center;
   align-items: stretch;
-  gap: 30px; /* تصغير المسافات */
+  gap: 30px;
   flex-wrap: wrap;
 }
 
 .plan {
   flex: 1;
-  min-width: 280px; /* تصغير العرض */
-  max-width: 340px; /* تصغير العرض */
+  min-width: 280px;
+  max-width: 340px;
   text-align: center;
   display: flex;
   flex-direction: column;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 12px; /* تصغير الـ border-radius */
-  padding: 25px; /* تصغير البادينج */
+  border-radius: 12px;
+  padding: 25px;
   transition: transform 0.3s ease;
 }
 
@@ -336,13 +343,13 @@ body.dark-mode .pricing {
 }
 
 .plan h3 {
-  font-size: 1.6em; /* تصغير الخط */
+  font-size: 1.6em;
   margin-bottom: 20px;
   color: white;
 }
 
 .plan .price {
-  font-size: 2.8em; /* تصغير الخط */
+  font-size: 2.8em;
   font-weight: bold;
   color: var(--turquoise);
   margin-bottom: 8px;
@@ -357,7 +364,7 @@ body.dark-mode .pricing {
 }
 
 .plan p {
-  font-size: 0.9em; /* تصغير الخط */
+  font-size: 0.9em;
   opacity: 0.9;
   margin-bottom: 25px;
   color: #d3d3d3;
@@ -377,17 +384,17 @@ body.dark-mode .pricing {
 }
 
 .plan ul li {
-  margin-bottom: 12px; /* تصغير المسافة */
+  margin-bottom: 12px;
   display: flex;
   align-items: center;
   gap: 8px;
   color: #d3d3d3;
-  font-size: 0.95em; /* تصغير الخط */
+  font-size: 0.95em;
 }
 
 .plan ul li i {
   color: var(--turquoise);
-  font-size: 1.2em; /* تصغير الأيقونة */
+  font-size: 1.2em;
 }
 
 .plan .btn {
@@ -395,10 +402,10 @@ body.dark-mode .pricing {
   width: 100%;
   background: linear-gradient(45deg, var(--turquoise), #00e0c4);
   color: #1a1a2e;
-  padding: 12px; /* تصغير البادينج */
+  padding: 12px;
   border-radius: 50px;
   font-weight: bold;
-  font-size: 1.1rem; /* تصغير الخط */
+  font-size: 1.1rem;
   transition: transform 0.2s ease, box-shadow 0.3s ease;
 }
 
@@ -412,7 +419,7 @@ body.dark-mode .pricing {
 .landing-footer {
   background: linear-gradient(45deg, #1a1a2e, #2a2a4e);
   color: #d3d3d3;
-  padding: 25px 0; /* تصغير البادينج */
+  padding: 25px 0;
   text-align: center;
   margin-top: 40px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -421,13 +428,13 @@ body.dark-mode .pricing {
 .landing-footer p {
   margin: 0;
   opacity: 0.8;
-  font-size: 0.95em; /* تصغير الخط */
+  font-size: 0.95em;
 }
 
 /* Responsive Adjustments */
 @media (max-width: 992px) {
   .landing-header .menu-toggle {
-    display: block;
+    display: block; /* ظهور زرار الـ hamburger على الموبايل */
   }
 
   .landing-header nav.nav-menu {
@@ -449,8 +456,8 @@ body.dark-mode .pricing {
 
   .landing-header nav ul {
     flex-direction: column;
-    padding: 15px; /* تصغير البادينج */
-    gap: 15px; /* تصغير المسافات */
+    padding: 15px;
+    gap: 15px;
   }
 
   .landing-header nav ul li {
@@ -460,12 +467,13 @@ body.dark-mode .pricing {
 
   .landing-header nav a {
     display: block;
-    padding: 12px; /* تصغير البادينج */
-    font-size: 1.1em; /* تصغير الخط */
+    padding: 12px;
+    font-size: 1.1em;
   }
 
-  .landing-header nav a.btn {
-    width: 100%;
+  .landing-header .always-visible {
+    padding: 6px 12px; /* تصغير البادينج عشان يناسب الموبايل */
+    font-size: 0.9em; /* تصغير الخط */
   }
 }
 
@@ -483,25 +491,35 @@ body.dark-mode .pricing {
 
 @media (max-width: 768px) {
   .landing-header .container {
-    flex-direction: column;
-    gap: 15px; /* تصغير المسافة */
+    flex-direction: row;
+    gap: 8px;
   }
+
+  .landing-header .logo {
+    font-size: 1.5em;
+  }
+
   .hero h1 {
-    font-size: 2.5em; /* تصغير الخط */
+    font-size: 2.5em;
   }
+
   .hero p {
-    font-size: 1em; /* تصغير الخط */
+    font-size: 1em;
   }
+
   .features h2, .pricing h2, .trial-offer h2 {
-    font-size: 2em; /* تصغير الخط */
+    font-size: 2em;
   }
+
   .pricing-plans {
     flex-direction: column;
     align-items: center;
   }
+
   .plan {
-    max-width: 85%; /* تصغير العرض */
+    max-width: 85%;
   }
+
   .plan.highlighted {
     transform: scale(1);
   }
@@ -512,12 +530,15 @@ body.dark-mode .pricing {
   .feature-item:hover {
     transform: none;
   }
+
   .plan.highlighted {
     transform: none;
   }
+
   .landing-header nav.nav-menu {
     transition: none;
   }
+
   .btn-highlight:hover, .download-app:hover, .plan .btn:hover {
     transform: none;
   }
