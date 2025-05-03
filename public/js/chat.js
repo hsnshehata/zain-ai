@@ -43,7 +43,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
       .chat-container {
         background-color: ${settings?.colors?.containerBackgroundColor || '#ffffff'};
-        color: ${settings?.colors?.text || '#ffffff'};
       }
       #chatHeader {
         background-color: ${settings?.colors?.header || '#2D3436'};
@@ -114,6 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const question = questions[currentIndex];
         const button = document.createElement('button');
         button.className = 'suggested-question';
+        button.style.textAlign = 'center'; // Ensure centering of the button content
         button.textContent = question;
         button.addEventListener('click', () => sendMessage(question));
         suggestedQuestions.appendChild(button);
@@ -203,7 +203,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       (trimmedText.startsWith('<') && trimmedText.includes('>') && trimmedText.match(/<[a-zA-Z][^>]*>/)) ||
       trimmedText.match(/\b(function|const|let|var|=>|class)\b/i) ||
       (trimmedText.match(/{[^{}]*}/) && trimmedText.match(/:/)) ||
-      (trimmedText.match(/[{}$$      $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
+      (trimmedText.match(/[{}$$              $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
     );
   }
 
