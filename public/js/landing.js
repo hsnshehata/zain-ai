@@ -35,17 +35,20 @@ document.addEventListener('DOMContentLoaded', () => {
   // Toggle navigation menu on hamburger click
   const menuToggle = document.querySelector('.menu-toggle');
   const navMenu = document.querySelector('.nav-menu');
-  menuToggle.addEventListener('click', () => {
-    const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
-    navMenu.classList.toggle('active');
-    menuToggle.setAttribute('aria-expanded', !isExpanded);
-  });
+  if (menuToggle) { // نتأكد إن الزرار موجود
+    menuToggle.addEventListener('click', () => {
+      const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
+      navMenu.classList.toggle('active');
+      menuToggle.setAttribute('aria-expanded', !isExpanded);
+    });
+  }
 
   // Handle PWA installation
   let deferredPrompt;
   const installButton = document.getElementById('installAppBtn');
 
   window.addEventListener('beforeinstallprompt', (e) => {
+    console.log("beforeinstallprompt event fired");
     // Prevent the mini-infobar from appearing on mobile
     e.preventDefault();
     // Stash the event so it can be triggered later
