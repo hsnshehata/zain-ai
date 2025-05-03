@@ -2,10 +2,10 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   async function loadFacebookPage() {
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = "/css/facebook.css";
-  document.head.appendChild(link);
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "/css/facebook.css";
+    document.head.appendChild(link);
     const content = document.getElementById("content");
     const token = localStorage.getItem("token");
     const selectedBotId = localStorage.getItem("selectedBotId");
@@ -55,8 +55,8 @@ document.addEventListener("DOMContentLoaded", () => {
               <label for="fbPageId">معرف صفحة فيسبوك (Page ID)</label>
               <input type="text" id="fbPageId" class="form-control" placeholder="أدخل معرف الصفحة الرقمي">
             </div>
-             <button id="saveApiKeysBtn" class="btn btn-primary"><i class="fas fa-save"></i> حفظ معلومات الربط</button>
-             <p id="apiKeysError" class="error-message small-error" style="display: none;"></p>
+            <button id="saveApiKeysBtn" class="btn btn-primary"><i class="fas fa-save"></i> حفظ معلومات الربط</button>
+            <p id="apiKeysError" class="error-message small-error" style="display: none;"></p>
           </div>
         </div>
 
@@ -79,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             </div>
             <p class="info-text">تأكد من الاشتراك في حقول Webhook التالية على الأقل: <code>messages</code>, <code>messaging_postbacks</code>.</p>
-            <p class="info-text">قد تحتاج أيضًا إلى: <code>messaging_optins</code>, <code>message_reactions</code>, <code>messaging_referrals</code>, <code>message_edits</code>, <code>inbox_labels</code> بناءً على الإعدادات التي تفعلها أدناه.</p>
+            <p class="info-text">قد تحتاج أيضًا إلى: <code>messaging_optins</code perigee, <code>message_reactions</code>, <code>messaging_referrals</code>, <code>message_edits</code>, <code>inbox_labels</code> بناءً على الإعدادات التي تفعلها أدناه.</p>
           </div>
         </div>
 
@@ -177,24 +177,24 @@ document.addEventListener("DOMContentLoaded", () => {
       errorMessage.style.display = "none";
 
       try {
-        const settings = await handleApiRequest(`/api/bots/${botId}/settings`, {
+        const bot = await handleApiRequest(`/api/bots/${botId}`, {
           headers: { Authorization: `Bearer ${token}` },
-        }, errorMessage, "حدث خطأ أثناء تحميل الإعدادات");
+        }, errorMessage, "حدث خطأ أثناء تحميل إعدادات البوت");
 
         // Populate API Keys
-        fbApiKeyInput.value = settings.facebookApiKey || "";
-        fbPageIdInput.value = settings.facebookPageId || "";
+        fbApiKeyInput.value = bot.facebookApiKey || "";
+        fbPageIdInput.value = bot.facebookPageId || "";
 
         // Populate Webhook Info
         const webhookBaseUrl = window.location.origin;
         webhookUrlInput.value = `${webhookBaseUrl}/api/webhook/facebook/${botId}`;
-        verifyTokenInput.value = settings.facebookVerifyToken || "hassanshehata";
+        verifyTokenInput.value = bot.facebookVerifyToken || "hassanshehata";
 
         // Populate Toggles
         toggles.forEach(toggle => {
           const key = toggle.dataset.settingKey;
-          if (key && settings.hasOwnProperty(key)) {
-            toggle.checked = settings[key];
+          if (key && bot.hasOwnProperty(key)) {
+            toggle.checked = bot[key];
           }
         });
 
@@ -212,8 +212,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const pageId = fbPageIdInput.value.trim();
       apiKeysError.style.display = "none";
 
-      if (!apiKey || !pageId) {
-        apiKeysError.textContent = "يرجى إدخال مفتاح API ومعرف الصفحة.";
+      if (apiKey && !pageId) {
+        apiKeysError.textContent = "يرجى إدخال معرف صفحة فيسبوك طالما تم إدخال مفتاح API.";
         apiKeysError.style.display = "block";
         return;
       }
@@ -222,13 +222,22 @@ document.addEventListener("DOMContentLoaded", () => {
       saveApiKeysBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جار الحفظ...`;
 
       try {
-        await handleApiRequest(`/api/bots/${botId}/settings`, {
-          method: "PATCH",
+        // Fetch current bot data to preserve the name
+        const bot = await handleApiRequest(`/api/bots/${botId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }, apiKeysError, "فشل في جلب بيانات البوت");
+
+        await handleApiRequest(`/api/bots/${botId}`, {
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ facebookApiKey: apiKey, facebookPageId: pageId }),
+          body: JSON.stringify({
+            name: bot.name, // Preserve the bot name
+            facebookApiKey: apiKey || undefined,
+            facebookPageId: pageId || undefined,
+          }),
         }, apiKeysError, "فشل حفظ معلومات الربط");
 
         alert("تم حفظ معلومات الربط بنجاح!");
