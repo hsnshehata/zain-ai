@@ -35,7 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Toggle navigation menu on hamburger click
   const menuToggle = document.querySelector('.menu-toggle');
   const navMenu = document.querySelector('.nav-menu');
-  if (menuToggle) { // نتأكد إن الزرار موجود
+  if (menuToggle) {
     menuToggle.addEventListener('click', () => {
       const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
       navMenu.classList.toggle('active');
@@ -49,18 +49,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   window.addEventListener('beforeinstallprompt', (e) => {
     console.log("beforeinstallprompt event fired");
-    // Prevent the mini-infobar from appearing on mobile
     e.preventDefault();
-    // Stash the event so it can be triggered later
     deferredPrompt = e;
-    // Show the install button
     installButton.style.display = 'inline-block';
 
     installButton.addEventListener('click', (e) => {
       e.preventDefault();
-      // Show the install prompt
       deferredPrompt.prompt();
-      // Wait for the user to respond to the prompt
       deferredPrompt.userChoice.then((choiceResult) => {
         if (choiceResult.outcome === 'accepted') {
           console.log('User accepted the A2HS prompt');
@@ -68,13 +63,11 @@ document.addEventListener('DOMContentLoaded', () => {
           console.log('User dismissed the A2HS prompt');
         }
         deferredPrompt = null;
-        // Hide the install button after prompt
         installButton.style.display = 'none';
       });
     });
   });
 
-  // Hide the install button if the app is already installed
   window.addEventListener('appinstalled', () => {
     console.log('PWA was installed');
     installButton.style.display = 'none';
