@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <button id="saveApiKeysBtn" class="btn btn-primary"><i class="fas fa-save"></i> حفظ معلومات الربط</button>
             <p id="apiKeysError" class="error-message small-error" style="display: none;"></p>
-          </div>
+          </div 
         </div>
 
         <div class="card settings-card">
@@ -79,7 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             </div>
             <p class="info-text">تأكد من الاشتراك في حقول Webhook التالية على الأقل: <code>messages</code>, <code>messaging_postbacks</code>.</p>
-            <p class="info-text">قد تحتاج أيضًا إلى: <code>messaging_optins</code perigee, <code>message_reactions</code>, <code>messaging_referrals</code>, <code>message_edits</code>, <code>inbox_labels</code> بناءً على الإعدادات التي تفعلها أدناه.</p>
+            <p class="info-text">قد تحتاج أيضًا إلى: <code>messaging_optins</code>, <code>message_reactions</code>, <code>messaging_referrals</code>, <code>message_edits</code>, <code>inbox_labels</code> بناءً على الإعدادات التي تفعلها أدناه.</p>
           </div>
         </div>
 
@@ -238,11 +238,19 @@ document.addEventListener("DOMContentLoaded", () => {
             facebookApiKey: apiKey || undefined,
             facebookPageId: pageId || undefined,
           }),
-        }, apiKeysError, "فشل حفظ معلومات الربط");
+        }, apiKeysError, null); // null عشان نتحكم في رسالة الخطأ بنفسنا
 
         alert("تم حفظ معلومات الربط بنجاح!");
       } catch (err) {
-        // الخطأ تم التعامل معه في handleApiRequest
+        // معالجة أخطاء محددة
+        if (err.status === 403) {
+          apiKeysError.textContent = "غير مصرح لك بتعديل هذا البوت. تأكد إنك صاحب البوت أو لديك صلاحيات المدير.";
+        } else if (err.status === 400) {
+          apiKeysError.textContent = err.message || "تأكد من إدخال معرف صفحة فيسبوك مع مفتاح API.";
+        } else {
+          apiKeysError.textContent = err.message || "فشل حفظ معلومات الربط. حاول مرة أخرى.";
+        }
+        apiKeysError.style.display = "block";
       } finally {
         saveApiKeysBtn.disabled = false;
         saveApiKeysBtn.innerHTML = `<i class="fas fa-save"></i> حفظ معلومات الربط`;
