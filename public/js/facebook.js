@@ -188,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Populate Webhook Info
         const webhookBaseUrl = window.location.origin;
         webhookUrlInput.value = `${webhookBaseUrl}/api/webhook/facebook/${botId}`;
-        verifyTokenInput.value = settings.facebookVerifyToken || "قم بإنشاء رمز وحفظه";
+        verifyTokenInput.value = settings.facebookVerifyToken || "hassanshehata";
 
         // Populate Toggles
         toggles.forEach(toggle => {
