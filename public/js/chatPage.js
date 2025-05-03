@@ -44,7 +44,6 @@ async function loadChatPage() {
           botMessageBackgroundColor: '#F5F5DC',
           botMessageTextColor: '#4A3C31',
           buttonColor: '#DAA520',
-          inputAreaBackgroundColor: '#FDF5E6',
           inputTextColor: '#4A3C31',
           sendButtonColor: '#DAA520',
           containerBackgroundColor: '#FFF8DC',
@@ -62,7 +61,6 @@ async function loadChatPage() {
           botMessageBackgroundColor: '#D9EDF7',
           botMessageTextColor: '#222222',
           buttonColor: '#00B7EB',
-          inputAreaBackgroundColor: '#E6F3FA',
           inputTextColor: '#222222',
           sendButtonColor: '#00B7EB',
           containerBackgroundColor: '#E6F3FA',
@@ -80,7 +78,6 @@ async function loadChatPage() {
           botMessageBackgroundColor: '#FFEBCC',
           botMessageTextColor: '#111111',
           buttonColor: '#FF9900',
-          inputAreaBackgroundColor: '#FFF5E6',
           inputTextColor: '#111111',
           sendButtonColor: '#FF9900',
           containerBackgroundColor: '#FFFAF0',
@@ -98,7 +95,6 @@ async function loadChatPage() {
           botMessageBackgroundColor: '#2C3E50',
           botMessageTextColor: '#FFFFFF',
           buttonColor: '#1ABC9C',
-          inputAreaBackgroundColor: '#34495E',
           inputTextColor: '#FFFFFF',
           sendButtonColor: '#1ABC9C',
           containerBackgroundColor: '#34495E',
@@ -116,7 +112,6 @@ async function loadChatPage() {
           botMessageBackgroundColor: '#1A1A1A',
           botMessageTextColor: '#FFFFFF',
           buttonColor: '#E74C3C',
-          inputAreaBackgroundColor: '#262626',
           inputTextColor: '#FFFFFF',
           sendButtonColor: '#E74C3C',
           containerBackgroundColor: '#262626',
@@ -134,7 +129,6 @@ async function loadChatPage() {
           botMessageBackgroundColor: '#2D3436',
           botMessageTextColor: '#FFFFFF',
           buttonColor: '#6AB04C',
-          inputAreaBackgroundColor: '#3B4A4E',
           inputTextColor: '#FFFFFF',
           sendButtonColor: '#6AB04C',
           containerBackgroundColor: '#3B4A4E',
@@ -152,7 +146,6 @@ async function loadChatPage() {
           botMessageBackgroundColor: '#C0C0C0',
           botMessageTextColor: '#333333',
           buttonColor: '#B0C4DE',
-          inputAreaBackgroundColor: '#E8ECEF',
           inputTextColor: '#333333',
           sendButtonColor: '#B0C4DE',
           containerBackgroundColor: '#E8ECEF',
@@ -170,7 +163,6 @@ async function loadChatPage() {
           botMessageBackgroundColor: '#4B0082',
           botMessageTextColor: '#FFFFFF',
           buttonColor: '#8A2BE2',
-          inputAreaBackgroundColor: '#6A5ACD',
           inputTextColor: '#FFFFFF',
           sendButtonColor: '#8A2BE2',
           containerBackgroundColor: '#6A5ACD',
@@ -188,7 +180,6 @@ async function loadChatPage() {
           botMessageBackgroundColor: '#FFD1DC',
           botMessageTextColor: '#4A2F39',
           buttonColor: '#FF69B4',
-          inputAreaBackgroundColor: '#FFE4E1',
           inputTextColor: '#4A2F39',
           sendButtonColor: '#FF69B4',
           containerBackgroundColor: '#FFF0F5',
@@ -206,7 +197,6 @@ async function loadChatPage() {
           botMessageBackgroundColor: '#2E8B57',
           botMessageTextColor: '#FFFFFF',
           buttonColor: '#228B22',
-          inputAreaBackgroundColor: '#3CB371',
           inputTextColor: '#FFFFFF',
           sendButtonColor: '#228B22',
           containerBackgroundColor: '#3CB371',
@@ -224,7 +214,6 @@ async function loadChatPage() {
           botMessageBackgroundColor: '#1C2526',
           botMessageTextColor: '#FFD700',
           buttonColor: '#FFD700',
-          inputAreaBackgroundColor: '#2A2F32',
           inputTextColor: '#FFD700',
           sendButtonColor: '#FFD700',
           containerBackgroundColor: '#2A2F32',
@@ -242,7 +231,6 @@ async function loadChatPage() {
           botMessageBackgroundColor: '#F5F5DC',
           botMessageTextColor: '#5C4033',
           buttonColor: '#DEB887',
-          inputAreaBackgroundColor: '#FAEBD7',
           inputTextColor: '#5C4033',
           sendButtonColor: '#DEB887',
           containerBackgroundColor: '#FAEBD7',
@@ -492,10 +480,6 @@ async function loadChatPage() {
                       <div id="input-settings" class="settings-popup" style="display: none;">
                         <button class="close-btn">✕</button>
                         <div class="color-picker-wrapper">
-                          <label for="inputAreaBackgroundColor">لون خلفية منطقة الإدخال:</label>
-                          <input type="color" class="color-input" id="inputAreaBackgroundColorInput" data-color-id="inputAreaBackgroundColor" value="${data.colors.inputAreaBackground}">
-                        </div>
-                        <div class="color-picker-wrapper">
                           <label for="inputTextColor">لون نص مربع الإدخال:</label>
                           <input type="color" class="color-input" id="inputTextColorInput" data-color-id="inputTextColor" value="${data.colors.inputTextColor || '#333333'}">
                         </div>
@@ -533,7 +517,7 @@ async function loadChatPage() {
                             background: linear-gradient(
                               45deg,
                               ${scheme.colors.headerColor} 20%,
-                              ${scheme.colors.inputAreaBackgroundColor} 20%, ${scheme.colors.inputAreaBackgroundColor} 40%,
+                              ${scheme.colors.inputTextColor} 20%, ${scheme.colors.inputTextColor} 40%,
                               ${scheme.colors.userMessageBackgroundColor} 40%, ${scheme.colors.userMessageBackgroundColor} 60%,
                               ${scheme.colors.botMessageBackgroundColor} 60%, ${scheme.colors.botMessageBackgroundColor} 80%,
                               ${scheme.colors.buttonColor} 80%
@@ -640,7 +624,6 @@ async function loadChatPage() {
             botMessageBackgroundColor: data.colors.botMessageBackground || '#e9ecef',
             botMessageTextColor: data.colors.botMessageTextColor || '#000000',
             buttonColor: data.colors.button,
-            inputAreaBackgroundColor: data.colors.inputAreaBackground,
             inputTextColor: data.colors.inputTextColor || '#333333',
             sendButtonColor: data.colors.sendButtonColor || '#007bff',
             containerBackgroundColor: data.colors.containerBackgroundColor || '#ffffff',
@@ -658,7 +641,7 @@ async function loadChatPage() {
             Array.from(previewSuggestedQuestions.children).forEach(btn => {
               btn.style.backgroundColor = colorValues.buttonColor;
               btn.style.color = '#ffffff';
-              btn.style.textAlign = 'center'; // Ensure centering of the button content
+              btn.style.textAlign = 'center';
             });
             userMessage.style.backgroundColor = colorValues.userMessageBackgroundColor;
             userMessage.style.color = colorValues.userMessageTextColor;
@@ -676,7 +659,6 @@ async function loadChatPage() {
             document.getElementById('botMessageBackgroundColorInput').value = colorValues.botMessageBackgroundColor;
             document.getElementById('botMessageTextColorInput').value = colorValues.botMessageTextColor;
             document.getElementById('buttonColorInput').value = colorValues.buttonColor;
-            document.getElementById('inputAreaBackgroundColorInput').value = colorValues.inputAreaBackgroundColor;
             document.getElementById('inputTextColorInput').value = colorValues.inputTextColor;
             document.getElementById('sendButtonColorInput').value = colorValues.sendButtonColor;
             document.getElementById('containerBackgroundColorInput').value = colorValues.containerBackgroundColor;
@@ -920,7 +902,7 @@ async function loadChatPage() {
               button.style.transition = 'transform 0.2s, background-color: 0.3s';
               button.style.backgroundColor = colorValues.buttonColor;
               button.style.color = '#ffffff';
-              button.style.textAlign = 'center'; // Ensure centering of the button content
+              button.style.textAlign = 'center';
               button.textContent = question;
               previewSuggestedQuestions.appendChild(button);
 
@@ -964,7 +946,6 @@ async function loadChatPage() {
             formData.set('titleColor', colorValues.titleColor);
             formData.set('colors', JSON.stringify({
               header: colorValues.headerColor,
-              inputAreaBackground: colorValues.inputAreaBackgroundColor,
               chatAreaBackground: colorValues.chatAreaBackgroundColor,
               button: colorValues.buttonColor,
               userMessageBackground: colorValues.userMessageBackgroundColor,
@@ -997,7 +978,6 @@ async function loadChatPage() {
               }
               if (result.colors) {
                 colorValues.headerColor = result.colors.header || colorValues.headerColor;
-                colorValues.inputAreaBackgroundColor = result.colors.inputAreaBackground || colorValues.inputAreaBackgroundColor;
                 colorValues.chatAreaBackgroundColor = result.colors.chatAreaBackground || colorValues.chatAreaBackgroundColor;
                 colorValues.buttonColor = result.colors.button || colorValues.buttonColor;
                 colorValues.userMessageBackgroundColor = result.colors.userMessageBackground || colorValues.userMessageBackgroundColor;
@@ -1056,7 +1036,6 @@ async function loadChatPage() {
                   titleColor: '#ffffff',
                   colors: {
                     header: '#2D3436',
-                    inputAreaBackground: '#3B4A4E',
                     chatAreaBackground: '#3B4A4E',
                     button: '#6AB04C',
                     userMessageBackground: '#6AB04C',
