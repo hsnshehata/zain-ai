@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="section-spinner">
                 <div class="loader"></div>
               </div>
-              <div class="chart-container"><canvas id="messagesByChannelChart" style="display: none;"></canvas></div>
+              <div id="messagesByChannelChart" class="ct-chart" style="display: none;"></div>
               <div id="messagesByChannelStats" class="stats-text" style="display: none;"></div>
             </div>
             <div id="dailyMessages">
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="section-spinner">
                 <div class="loader"></div>
               </div>
-              <div class="chart-container"><canvas id="dailyMessagesChart" style="display: none;"></canvas></div>
+              <div id="dailyMessagesChart" class="ct-chart" style="display: none;"></div>
               <div id="dailyMessagesStats" class="stats-text" style="display: none;"></div>
             </div>
           </div>
@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="section-spinner">
                 <div class="loader"></div>
               </div>
-              <div class="chart-container"><canvas id="feedbackRatioChart" style="display: none;"></canvas></div>
+              <div id="feedbackRatioChart" class="ct-chart" style="display: none;"></div>
               <div id="feedbackRatioStats" class="stats-text" style="display: none;"></div>
             </div>
             <div id="topNegativeReplies">
@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="section-spinner">
                 <div class="loader"></div>
               </div>
-              <div class="chart-container"><canvas id="rulesTypeChart" style="display: none;"></canvas></div>
+              <div id="rulesTypeChart" class="ct-chart" style="display: none;"></div>
               <div id="rulesTypeStats" class="stats-text" style="display: none;"></div>
             </div>
           </div>
@@ -112,16 +112,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function loadMessagesAnalytics(botId, token, startDate, endDate) {
-      const messagesByChannelSpinner = document.querySelector('#messagesByChannel .section-spinner');
-      const messagesByChannelChart = document.getElementById('messagesByChannelChart');
-      const messagesByChannelStats = document.getElementById('messagesByChannelStats');
-      const dailyMessagesSpinner = document.querySelector('#dailyMessages .section-spinner');
-      const dailyMessagesChart = document.getElementById('dailyMessagesChart');
-      const dailyMessagesStats = document.getElementById('dailyMessagesStats');
-
       try {
         // 1. عدد الرسائل حسب القناة
-        console.log("بجيب توزيع الرسائل حسب القناة من الـ API...");
+        const messagesByChannelSpinner = document.querySelector('#messagesByChannel .section-spinner');
+        const messagesByChannelChart = document.getElementById('messagesByChannelChart');
+        const messagesByChannelStats = document.getElementById('messagesByChannelStats');
 
         const channels = ['facebook', 'web', 'whatsapp'];
         const messagesByChannelData = { facebook: 0, web: 0, whatsapp: 0 };
@@ -143,41 +138,22 @@ document.addEventListener('DOMContentLoaded', () => {
           messagesByChannelData[channel] = messageCount;
         }
 
-        console.log("توزيع الرسائل حسب القناة جت بنجاح:", messagesByChannelData);
-
         const totalMessages = messagesByChannelData.facebook + messagesByChannelData.web + messagesByChannelData.whatsapp;
 
         // رسم Pie Chart لتوزيع الرسائل حسب القناة
-        const messagesByChannelCtx = document.getElementById('messagesByChannelChart').getContext('2d');
-        new Chart(messagesByChannelCtx, {
-          type: 'doughnut',
-          data: {
-            labels: ['فيسبوك', 'ويب', 'واتساب'],
-            datasets: [{
-              data: [
-                messagesByChannelData.facebook,
-                messagesByChannelData.web,
-                messagesByChannelData.whatsapp
-              ],
-              backgroundColor: ['#28a745', '#17a2b8', '#dc3545'],
-              borderWidth: 1
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-              legend: {
-                position: 'top',
-                labels: {
-                  font: {
-                    size: 14,
-                    family: 'Cairo'
-                  }
-                }
-              }
-            }
-          }
+        new Chartist.Pie('#messagesByChannelChart', {
+          series: [
+            messagesByChannelData.facebook,
+            messagesByChannelData.web,
+            messagesByChannelData.whatsapp
+          ],
+          labels: ['فيسبوك', 'ويب', 'واتساب']
+        }, {
+          donut: true,
+          donutWidth: 60,
+          startAngle: 270,
+          total: totalMessages,
+          showLabel: true
         });
 
         // إضافة الإحصائيات النصية للرسائل
@@ -194,7 +170,9 @@ document.addEventListener('DOMContentLoaded', () => {
         messagesByChannelStats.style.display = 'block';
 
         // 2. معدل الرسائل يوميًا
-        console.log("بجيب معدل الرسائل يوميًا من الـ API...");
+        const dailyMessagesSpinner = document.querySelector('#dailyMessages .section-spinner');
+        const dailyMessagesChart = document.getElementById('dailyMessagesChart');
+        const dailyMessagesStats = document.getElementById('dailyMessagesStats');
 
         const dailyQuery = new URLSearchParams({
           ...(startDate && { startDate }),
@@ -204,54 +182,17 @@ document.addEventListener('DOMContentLoaded', () => {
           headers: { Authorization: `Bearer ${token}` },
         }, analyticsContent, 'فشل في جلب معدل الرسائل يوميًا');
 
-        console.log("معدل الرسائل يوميًا جت بنجاح:", dailyData);
-
         const labels = dailyData.map(item => item.date);
         const series = dailyData.map(item => item.count);
 
         // رسم Line Chart لمعدل الرسائل يوميًا
-        const dailyMessagesCtx = document.getElementById('dailyMessagesChart').getContext('2d');
-        new Chart(dailyMessagesCtx, {
-          type: 'line',
-          data: {
-            labels: labels,
-            datasets: [{
-              label: 'عدد الرسائل',
-              data: series,
-              borderColor: '#00C4B4',
-              fill: false,
-              tension: 0.1
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            scales: {
-              x: {
-                ticks: {
-                  font: {
-                    family: 'Cairo'
-                  }
-                }
-              },
-              y: {
-                beginAtZero: true,
-                ticks: {
-                  font: {
-                    family: 'Cairo'
-                  }
-                }
-              }
-            },
-            plugins: {
-              legend: {
-                labels: {
-                  font: {
-                    family: 'Cairo'
-                  }
-                }
-              }
-            }
+        new Chartist.Line('#dailyMessagesChart', {
+          labels: labels,
+          series: [series]
+        }, {
+          fullWidth: true,
+          chartPadding: {
+            right: 40
           }
         });
 
@@ -267,28 +208,16 @@ document.addEventListener('DOMContentLoaded', () => {
         dailyMessagesStats.style.display = 'block';
 
       } catch (err) {
-        console.error("حصل خطأ في جلب بيانات الرسائل:", err);
-        // بنخفي السبينر حتى لو حصل خطأ
-        messagesByChannelSpinner.style.display = 'none';
-        messagesByChannelStats.innerHTML = '<p style="color: red;">فشل في جلب توزيع الرسائل. حاول تاني لاحقًا.</p>';
-        messagesByChannelChart.style.display = 'none';
-
-        dailyMessagesSpinner.style.display = 'none';
-        dailyMessagesStats.innerHTML = '<p style="color: red;">فشل في جلب معدل الرسائل يوميًا. حاول تاني لاحقًا.</p>';
-        dailyMessagesChart.style.display = 'none';
+        // الخطأ تم التعامل معه في handleApiRequest
       }
     }
 
     async function loadFeedbackAnalytics(botId, token, startDate, endDate) {
-      const feedbackRatioSpinner = document.querySelector('#feedbackRatio .section-spinner');
-      const feedbackRatioChart = document.getElementById('feedbackRatioChart');
-      const feedbackRatioStats = document.getElementById('feedbackRatioStats');
-      const negativeRepliesSpinner = document.querySelector('#topNegativeReplies .section-spinner');
-      const negativeRepliesList = document.getElementById('negativeRepliesList');
-
       try {
         // 1. نسبة التقييمات الإيجابية مقابل السلبية
-        console.log("بجيب بيانات التقييمات من الـ API...");
+        const feedbackRatioSpinner = document.querySelector('#feedbackRatio .section-spinner');
+        const feedbackRatioChart = document.getElementById('feedbackRatioChart');
+        const feedbackRatioStats = document.getElementById('feedbackRatioStats');
 
         const feedbackQuery = new URLSearchParams({
           ...(startDate && { startDate }),
@@ -297,8 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const feedbackData = await handleApiRequest(`/api/bots/${botId}/feedback?${feedbackQuery}`, {
           headers: { Authorization: `Bearer ${token}` },
         }, analyticsContent, 'فشل في جلب التقييمات');
-
-        console.log("البيانات جت بنجاح:", feedbackData);
 
         let positiveCount = 0;
         let negativeCount = 0;
@@ -316,32 +243,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const negativePercentage = totalFeedback > 0 ? ((negativeCount / totalFeedback) * 100).toFixed(1) : 0;
 
         // رسم Pie Chart لنسبة التقييمات
-        const feedbackRatioCtx = document.getElementById('feedbackRatioChart').getContext('2d');
-        new Chart(feedbackRatioCtx, {
-          type: 'doughnut',
-          data: {
-            labels: ['إيجابية', 'سلبية'],
-            datasets: [{
-              data: [positiveCount, negativeCount],
-              backgroundColor: ['#28a745', '#dc3545'],
-              borderWidth: 1
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-              legend: {
-                position: 'top',
-                labels: {
-                  font: {
-                    size: 14,
-                    family: 'Cairo'
-                  }
-                }
-              }
-            }
-          }
+        new Chartist.Pie('#feedbackRatioChart', {
+          series: [positiveCount, negativeCount],
+          labels: ['إيجابية', 'سلبية']
+        }, {
+          donut: true,
+          donutWidth: 60,
+          startAngle: 270,
+          total: totalFeedback,
+          showLabel: true
         });
 
         // إضافة الإحصائيات النصية للتقييمات
@@ -357,13 +267,12 @@ document.addEventListener('DOMContentLoaded', () => {
         feedbackRatioStats.style.display = 'block';
 
         // 2. أكثر الردود السلبية
-        console.log("بجيب الردود السلبية من الـ API...");
+        const negativeRepliesSpinner = document.querySelector('#topNegativeReplies .section-spinner');
+        const negativeRepliesList = document.getElementById('negativeRepliesList');
 
         const negativeRepliesData = await handleApiRequest(`/api/bots/feedback/negative-replies/${botId}?${feedbackQuery}`, {
           headers: { Authorization: `Bearer ${token}` },
         }, analyticsContent, 'فشل في جلب الردود السلبية');
-
-        console.log("الردود السلبية جت بنجاح:", negativeRepliesData);
 
         negativeRepliesList.innerHTML = '';
 
@@ -382,33 +291,21 @@ document.addEventListener('DOMContentLoaded', () => {
         negativeRepliesList.style.display = 'block';
 
       } catch (err) {
-        console.error("حصل خطأ في جلب بيانات التقييمات:", err);
-        // بنخفي السبينر حتى لو حصل خطأ
-        feedbackRatioSpinner.style.display = 'none';
-        feedbackRatioStats.innerHTML = '<p style="color: red;">فشل في جلب التقييمات. حاول تاني لاحقًا.</p>';
-        feedbackRatioChart.style.display = 'none';
-
-        negativeRepliesSpinner.style.display = 'none';
-        negativeRepliesList.innerHTML = '<li style="color: red;">فشل في جلب الردود السلبية.</li>';
-        negativeRepliesList.style.display = 'block';
+        // الخطأ تم التعامل معه في handleApiRequest
       }
     }
 
     async function loadRulesAnalytics(botId, token) {
-      const rulesTypeSpinner = document.querySelector('#rulesType .section-spinner');
-      const rulesTypeChart = document.getElementById('rulesTypeChart');
-      const rulesTypeStats = document.getElementById('rulesTypeStats');
-
       try {
         // 1. توزيع أنواع القواعد
-        console.log("بجيب توزيع أنواع القواعد من الـ API...");
+        const rulesTypeSpinner = document.querySelector('#rulesType .section-spinner');
+        const rulesTypeChart = document.getElementById('rulesTypeChart');
+        const rulesTypeStats = document.getElementById('rulesTypeStats');
 
         const rulesQuery = new URLSearchParams({ botId });
         const rulesData = await handleApiRequest(`/api/rules?${rulesQuery}`, {
           headers: { Authorization: `Bearer ${token}` },
         }, analyticsContent, 'فشل في جلب القواعد');
-
-        console.log("توزيع أنواع القواعد جت بنجاح:", rulesData);
 
         const rulesTypesCount = {
           general: 0,
@@ -432,38 +329,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const apiPercentage = totalRules > 0 ? ((rulesTypesCount.api / totalRules) * 100).toFixed(1) : 0;
 
         // رسم Pie Chart لتوزيع أنواع القواعد
-        const rulesTypeCtx = document.getElementById('rulesTypeChart').getContext('2d');
-        new Chart(rulesTypeCtx, {
-          type: 'doughnut',
-          data: {
-            labels: ['عامة', 'موحدة', 'أسعار', 'سؤال وجواب', 'API'],
-            datasets: [{
-              data: [
-                rulesTypesCount.general,
-                rulesTypesCount.global,
-                rulesTypesCount.products,
-                rulesTypesCount.qa,
-                rulesTypesCount.api
-              ],
-              backgroundColor: ['#28a745', '#dc3545', '#17a2b8', '#ffc107', '#6c757d'],
-              borderWidth: 1
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: true,
-            plugins: {
-              legend: {
-                position: 'top',
-                labels: {
-                  font: {
-                    size: 14,
-                    family: 'Cairo'
-                  }
-                }
-              }
-            }
-          }
+        new Chartist.Pie('#rulesTypeChart', {
+          series: [
+            rulesTypesCount.general,
+            rulesTypesCount.global,
+            rulesTypesCount.products,
+            rulesTypesCount.qa,
+            rulesTypesCount.api
+          ],
+          labels: ['عامة', 'موحدة', 'أسعار', 'سؤال وجواب', 'API']
+        }, {
+          donut: true,
+          donutWidth: 60,
+          startAngle: 270,
+          total: totalRules,
+          showLabel: true
         });
 
         // إضافة الإحصائيات النصية لتوزيع أنواع القواعد
@@ -482,11 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
         rulesTypeStats.style.display = 'block';
 
       } catch (err) {
-        console.error("حصل خطأ في جلب بيانات القواعد:", err);
-        // بنخفي السبينر حتى لو حصل خطأ
-        rulesTypeSpinner.style.display = 'none';
-        rulesTypeStats.innerHTML = '<p style="color: red;">فشل في جلب توزيع القواعد. حاول تاني لاحقًا.</p>';
-        rulesTypeChart.style.display = 'none';
+        // الخطأ تم التعامل معه في handleApiRequest
       }
     }
   }
