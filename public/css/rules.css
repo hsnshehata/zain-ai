@@ -96,6 +96,18 @@
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
 }
 
+/* Spinner Adjustments for Rules Page */
+.hidden-spinner {
+  visibility: hidden !important; /* بنخفي الـ Spinner بصرياً */
+  position: absolute; /* بنحطه برا الصفحة عشان ميأثرش على الـ Layout */
+  top: -9999px;
+  left: -9999px;
+}
+
+.spinner[style*="display: none"] .loader {
+  display: none !important; /* بنخفي الـ loader كمان لما الـ spinner يبقى مخفي */
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .rules-grid {
