@@ -251,9 +251,9 @@ async function loadChatPage() {
   <img id="supportButton" src="https://i.ibb.co/7JJScM0Q/zain-ai.png" alt="دعم العملاء" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
 </div>
 <div id="chatIframeContainer" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-  <div style="position: relative; width: 350px; height: 550px; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); background: white;">
-    <button id="closeChatIframe" style="position: absolute; top: 10px; left: 10px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer;">✕</button>
-    <iframe src="${data.link}" style="width: 100%; height: 100%; border: none; border-radius: 8px;" scrolling="no"></iframe>
+  <div style="position: relative; width: 350px; height: 530px; background: white; overflow: hidden;">
+    <button id="closeChatIframe" style="position: absolute; top: 10px; left: 10px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; z-index: 1;">✕</button>
+    <iframe src="${data.link}" style="position: absolute; top: -20px; width: 100%; height: 550px; border: none; border-radius: 8px;" scrolling="no"></iframe>
   </div>
 </div>
 <script>
@@ -269,7 +269,7 @@ async function loadChatPage() {
     supportButton.style.display = 'block';
   });
 </script>
-            `.trim();
+                `.trim();
 
           let fullIframeCode = `
     <iframe src="${data.link}" style="width: 100%; height: 100%; border: none;" scrolling="no"></iframe>
