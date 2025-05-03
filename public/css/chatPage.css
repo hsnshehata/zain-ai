@@ -79,6 +79,7 @@ body.light-mode .chat-container {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+  justify-content: center;
 }
 
 .suggested-question {
@@ -87,7 +88,7 @@ body.light-mode .chat-container {
   border-radius: 16px;
   cursor: pointer;
   font-size: 0.8em;
-  transition: transform 0.2s, background-color 0.3s;
+  transition: transform 0.2s, background-color: 0.3s;
 }
 
 .chat-messages {
@@ -174,8 +175,7 @@ body.light-mode .chat-input {
 }
 
 .color-scheme-btn {
-  flex: 1 1 calc(33.33% - 10px);
-  max-width: calc(33.33% - 10px);
+  flex: 1 1 auto;
   padding: 6px 12px;
   border: none;
   border-radius: 16px;
@@ -216,7 +216,7 @@ body.light-mode .chat-input {
 /* Checkbox Group */
 .checkbox-group {
   display: flex;
-  align-items: center;
+  flex-direction: column;
   gap: 10px;
 }
 
@@ -299,6 +299,13 @@ body.light-mode .questions-list li {
   color: white;
 }
 
+.suggested-questions-note {
+  font-size: 0.9em;
+  color: #888;
+  margin-top: 15px;
+  text-align: right;
+}
+
 /* Settings Popup */
 .settings-popup {
   position: absolute;
@@ -332,18 +339,21 @@ body.light-mode .settings-popup {
 }
 
 .color-picker-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   margin-bottom: 10px;
 }
 
 .color-picker-wrapper label {
   font-size: 0.9em;
-  margin-bottom: 5px;
-  display: block;
+  margin-bottom: 0;
+  flex: 1;
 }
 
 .color-picker-wrapper input[type="color"] {
-  width: 40px;
-  height: 40px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: none;
   cursor: pointer;
@@ -366,6 +376,19 @@ body.light-mode .settings-popup {
   background-color: var(--button-hover-bg);
 }
 
+/* Input Group Container for Buttons Below */
+.input-group-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.input-group-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .preview-settings-container {
@@ -377,12 +400,13 @@ body.light-mode .settings-popup {
   }
 
   .color-schemes-buttons {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .color-scheme-btn {
-    max-width: 100%;
+    flex: 1 1 auto;
   }
 
   .settings-popup {
