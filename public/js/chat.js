@@ -68,6 +68,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         background-color: ${settings?.colors?.botMessageBackground || '#2D3436'};
         color: ${settings?.colors?.botMessageTextColor || '#ffffff'};
       }
+      .chat-input {
+        background-color: ${settings?.colors?.containerBackgroundColor || '#ffffff'};
+      }
       #messageInput {
         color: ${settings?.colors?.inputTextColor || '#ffffff'};
       }
