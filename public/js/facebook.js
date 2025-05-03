@@ -90,7 +90,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="setting-item toggle-item">
               <div class="setting-info">
                 <h4>رسائل الترحيب (Opt-ins)</h4>
-                <p>استقبال إشعارات عندما يبدأ مستخدم جديد محادثة.</p>
+                <p>إرسال رسالة ترحيب من البوت بمجرد فتح دردشة مع الصفحة لأول مرة قبل بدء المحادثة .</p>
               </div>
               <label class="switch">
                 <input type="checkbox" id="messagingOptinsToggle" data-setting-key="messagingOptinsEnabled">
@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="setting-item toggle-item">
               <div class="setting-info">
                 <h4>ردود الفعل (Reactions)</h4>
-                <p>استقبال إشعارات عندما يتفاعل المستخدم مع رسالة.</p>
+                <p>تسمح للبوت بالردود على عمليات التفاعل مع الرسالة مثل اعجاب او قلب .</p>
               </div>
               <label class="switch">
                 <input type="checkbox" id="messageReactionsToggle" data-setting-key="messageReactionsEnabled">
@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="setting-item toggle-item">
               <div class="setting-info">
                 <h4>تعديلات الرسائل (Edits)</h4>
-                <p>استقبال إشعارات عندما يقوم المستخدم بتعديل رسالة.</p>
+                <p> استقبال إشعارات عندما يقوم المستخدم بتعديل رسالة وتوليد رد جديد بناء على التعديل.</p>
               </div>
               <label class="switch">
                 <input type="checkbox" id="messageEditsToggle" data-setting-key="messageEditsEnabled">
@@ -134,7 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="setting-item toggle-item">
               <div class="setting-info">
                 <h4>تصنيفات المحادثات (Labels)</h4>
-                <p>استقبال إشعارات عند إضافة أو إزالة تصنيف لمحادثة (يتطلب صلاحيات خاصة).</p>
+                <p>تسمح للبوت بوضع تصنيفات و تعديل حالات المحادثة (يتطلب اعدادت صلاحيات صفحة خاص ).</p>
               </div>
               <label class="switch">
                 <input type="checkbox" id="inboxLabelsToggle" data-setting-key="inboxLabelsEnabled">
