@@ -367,38 +367,6 @@ input:checked + .slider:before {
     margin-bottom: 20px;
 }
 
-/* Adjust Chartist styles for themes */
-body.dark-mode .ct-label {
-  fill: var(--dark-text);
-  color: var(--dark-text);
-}
-body.light-mode .ct-label {
-  fill: var(--light-text);
-  color: var(--light-text);
-}
-body.dark-mode .ct-grid {
-  stroke: var(--dark-border);
-}
-body.light-mode .ct-grid {
-  stroke: var(--light-border);
-}
-body.dark-mode .ct-series-a .ct-line,
-body.dark-mode .ct-series-a .ct-point {
-  stroke: var(--turquoise);
-}
-body.dark-mode .ct-series-b .ct-line,
-body.dark-mode .ct-series-b .ct-point {
-  stroke: #ffc107; /* Example secondary color */
-}
-body.light-mode .ct-series-a .ct-line,
-body.light-mode .ct-series-a .ct-point {
-  stroke: var(--turquoise);
-}
-body.light-mode .ct-series-b .ct-line,
-body.light-mode .ct-series-b .ct-point {
-  stroke: #ff9800; /* Example secondary color */
-}
-
 /* Pagination */
 .pagination {
     display: flex;
@@ -541,4 +509,3 @@ body.dark-mode .loader {
     grid-template-columns: 1fr; /* Stack cards on very small screens */
   }
 }
-
