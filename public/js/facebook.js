@@ -2,14 +2,13 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   async function loadFacebookPage() {
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "/css/facebook.css";
-    document.head.appendChild(link);
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = "/css/facebook.css";
+  document.head.appendChild(link);
     const content = document.getElementById("content");
     const token = localStorage.getItem("token");
     const selectedBotId = localStorage.getItem("selectedBotId");
-    const role = localStorage.getItem("role");
 
     if (!selectedBotId) {
       content.innerHTML = `
@@ -26,47 +25,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="placeholder error">
           <h2><i class="fas fa-exclamation-triangle"></i> تسجيل الدخول مطلوب</h2>
           <p>يرجى تسجيل الدخول لعرض إعدادات فيسبوك.</p>
-        </div>
-      `;
-      return;
-    }
-
-    // تحقق إذا كان الـ selectedBotId متاح للمستخدم
-    let bots = [];
-    try {
-      bots = await handleApiRequest("/api/bots", {
-        headers: { Authorization: `Bearer ${token}` },
-      }, null, null); // null عشان نتحكم في الخطأ بنفسنا
-
-      if (!Array.isArray(bots)) {
-        throw new Error("فشل في جلب قايمة البوتات. حاول مرة أخرى.");
-      }
-
-      if (bots.length === 0) {
-        content.innerHTML = `
-          <div class="placeholder error">
-            <h2><i class="fas fa-exclamation-triangle"></i> لا توجد بوتات متاحة</h2>
-            <p>ليس لديك أي بوتات متاحة حاليًا. تواصل مع المدير لإنشاء بوت جديد.</p>
-          </div>
-        `;
-        return;
-      }
-
-      const isBotAccessible = bots.some(bot => bot._id === selectedBotId);
-      if (!isBotAccessible) {
-        content.innerHTML = `
-          <div class="placeholder error">
-            <h2><i class="fas fa-exclamation-triangle"></i> بوت غير متاح</h2>
-            <p>البوت المختار غير متاح أو ليس لديك صلاحية للوصول إليه. يرجى اختيار بوت آخر.</p>
-          </div>
-        `;
-        return;
-      }
-    } catch (err) {
-      content.innerHTML = `
-        <div class="placeholder error">
-          <h2><i class="fas fa-exclamation-triangle"></i> خطأ في التحقق</h2>
-          <p>حدث خطأ أثناء التحقق من البوت المختار: ${err.message || 'حاول مرة أخرى أو اختيار بوت آخر.'}</p>
         </div>
       `;
       return;
@@ -97,8 +55,8 @@ document.addEventListener("DOMContentLoaded", () => {
               <label for="fbPageId">معرف صفحة فيسبوك (Page ID)</label>
               <input type="text" id="fbPageId" class="form-control" placeholder="أدخل معرف الصفحة الرقمي">
             </div>
-            <button id="saveApiKeysBtn" class="btn btn-primary"><i class="fas fa-save"></i> حفظ معلومات الربط</button>
-            <p id="apiKeysError" class="error-message small-error" style="display: none;"></p>
+             <button id="saveApiKeysBtn" class="btn btn-primary"><i class="fas fa-save"></i> حفظ معلومات الربط</button>
+             <p id="apiKeysError" class="error-message small-error" style="display: none;"></p>
           </div>
         </div>
 
@@ -219,24 +177,24 @@ document.addEventListener("DOMContentLoaded", () => {
       errorMessage.style.display = "none";
 
       try {
-        const bot = await handleApiRequest(`/api/bots/${botId}`, {
+        const settings = await handleApiRequest(`/api/bots/${botId}/settings`, {
           headers: { Authorization: `Bearer ${token}` },
-        }, errorMessage, "حدث خطأ أثناء تحميل إعدادات البوت");
+        }, errorMessage, "حدث خطأ أثناء تحميل الإعدادات");
 
         // Populate API Keys
-        fbApiKeyInput.value = bot.facebookApiKey || "";
-        fbPageIdInput.value = bot.facebookPageId || "";
+        fbApiKeyInput.value = settings.facebookApiKey || "";
+        fbPageIdInput.value = settings.facebookPageId || "";
 
         // Populate Webhook Info
         const webhookBaseUrl = window.location.origin;
         webhookUrlInput.value = `${webhookBaseUrl}/api/webhook/facebook/${botId}`;
-        verifyTokenInput.value = bot.facebookVerifyToken || "hassanshehata";
+        verifyTokenInput.value = settings.facebookVerifyToken || "hassanshehata";
 
         // Populate Toggles
         toggles.forEach(toggle => {
           const key = toggle.dataset.settingKey;
-          if (key && bot.hasOwnProperty(key)) {
-            toggle.checked = bot[key];
+          if (key && settings.hasOwnProperty(key)) {
+            toggle.checked = settings[key];
           }
         });
 
@@ -254,8 +212,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const pageId = fbPageIdInput.value.trim();
       apiKeysError.style.display = "none";
 
-      if (apiKey && !pageId) {
-        apiKeysError.textContent = "يرجى إدخال معرف صفحة فيسبوك طالما تم إدخال مفتاح API.";
+      if (!apiKey || !pageId) {
+        apiKeysError.textContent = "يرجى إدخال مفتاح API ومعرف الصفحة.";
         apiKeysError.style.display = "block";
         return;
       }
@@ -264,37 +222,18 @@ document.addEventListener("DOMContentLoaded", () => {
       saveApiKeysBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جار الحفظ...`;
 
       try {
-        // Fetch current bot data to preserve the name
-        const bot = await handleApiRequest(`/api/bots/${botId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }, apiKeysError, "فشل في جلب بيانات البوت");
-
-        await handleApiRequest(`/api/bots/${botId}`, {
-          method: "PUT",
+        await handleApiRequest(`/api/bots/${botId}/settings`, {
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            name: bot.name, // Preserve the bot name
-            facebookApiKey: apiKey || undefined,
-            facebookPageId: pageId || undefined,
-          }),
-        }, apiKeysError, null); // null عشان نتحكم في رسالة الخطأ بنفسنا
+          body: JSON.stringify({ facebookApiKey: apiKey, facebookPageId: pageId }),
+        }, apiKeysError, "فشل حفظ معلومات الربط");
 
         alert("تم حفظ معلومات الربط بنجاح!");
       } catch (err) {
-        // معالجة أخطاء محددة
-        if (err.status === 403) {
-          apiKeysError.textContent = "غير مصرح لك بتعديل هذا البوت. تأكد إنك صاحب البوت أو لديك صلاحيات المدير.";
-        } else if (err.status === 404) {
-          apiKeysError.textContent = "البوت المختار غير موجود. يرجى اختيار بوت آخر.";
-        } else if (err.status === 400) {
-          apiKeysError.textContent = err.message || "تأكد من إدخال معرف صفحة فيسبوك مع مفتاح API.";
-        } else {
-          apiKeysError.textContent = err.message || "فشل حفظ معلومات الربط. حاول مرة أخرى.";
-        }
-        apiKeysError.style.display = "block";
+        // الخطأ تم التعامل معه في handleApiRequest
       } finally {
         saveApiKeysBtn.disabled = false;
         saveApiKeysBtn.innerHTML = `<i class="fas fa-save"></i> حفظ معلومات الربط`;
