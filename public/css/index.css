@@ -33,6 +33,13 @@ body {
   flex-wrap: wrap;
 }
 
+/* تجميع زرار الـ hamburger وزرار لوحة التحكم في حاوية واحدة */
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* المسافة بين زرار الـ hamburger وزرار لوحة التحكم */
+}
+
 .landing-header .logo {
   font-size: 2em;
   font-weight: bold;
@@ -52,7 +59,7 @@ body {
   color: white;
   font-size: 1.5em;
   cursor: pointer;
-  display: none; /* مخفي افتراضياً على الشاشات الكبيرة */
+  display: none;
 }
 
 .landing-header .menu-toggle:focus {
@@ -434,7 +441,7 @@ body.dark-mode .pricing {
 /* Responsive Adjustments */
 @media (max-width: 992px) {
   .landing-header .menu-toggle {
-    display: block; /* ظهور زرار الـ hamburger على الموبايل */
+    display: block;
   }
 
   .landing-header nav.nav-menu {
@@ -472,8 +479,8 @@ body.dark-mode .pricing {
   }
 
   .landing-header .always-visible {
-    padding: 6px 12px; /* تصغير البادينج عشان يناسب الموبايل */
-    font-size: 0.9em; /* تصغير الخط */
+    padding: 6px 12px;
+    font-size: 0.9em;
   }
 }
 
