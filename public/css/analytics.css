@@ -95,40 +95,11 @@ body.light-mode .rulesAnalytics {
   background-color: rgba(0, 0, 0, 0.03);
 }
 
-/* Chartist Charts */
-.ct-chart {
-  height: 300px;
-  margin-bottom: 15px;
-}
-
-.ct-label {
-  font-size: 0.9em;
-  fill: var(--dark-text);
-}
-
-body.light-mode .ct-label {
-  fill: var(--light-text);
-}
-
-.ct-series-a .ct-slice-donut {
-  fill: #28a745; /* Green for positive or general */
-}
-
-.ct-series-b .ct-slice-donut {
-  fill: #dc3545; /* Red for negative */
-}
-
-.ct-series-c .ct-slice-donut {
-  fill: #17a2b8; /* Cyan for whatsapp or products */
-}
-
-.ct-series-a .ct-line,
-.ct-series-a .ct-point {
-  stroke: var(--turquoise);
-}
-
-.ct-grid {
-  stroke: rgba(128, 128, 128, 0.3);
+/* Chart Containers */
+.chart-container {
+  width: 100%;
+  max-width: 400px; /* بنحدد أقصى عرض للدايرة */
+  margin: 0 auto 15px; /* بنركز الدايرة في النص */
 }
 
 /* Stats Text */
@@ -190,8 +161,8 @@ body.light-mode #negativeRepliesList li {
     width: 100%;
   }
 
-  .ct-chart {
-    height: 250px;
+  .chart-container {
+    max-width: 300px; /* بنقلل العرض على الشاشات الصغيرة */
   }
 }
 
@@ -211,5 +182,9 @@ body.light-mode #negativeRepliesList li {
   .stats-text,
   #negativeRepliesList li {
     font-size: 0.9em;
+  }
+
+  .chart-container {
+    max-width: 250px; /* بنقلل العرض أكتر على الشاشات الصغيرة جدًا */
   }
 }
