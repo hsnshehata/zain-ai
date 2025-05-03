@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="section-spinner">
                 <div class="loader"></div>
               </div>
-              <div id="messagesByChannelChart" class="ct-chart" style="display: none;"></div>
+              <div class="chart-container"><canvas id="messagesByChannelChart" style="display: none;"></canvas></div>
               <div id="messagesByChannelStats" class="stats-text" style="display: none;"></div>
             </div>
             <div id="dailyMessages">
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="section-spinner">
                 <div class="loader"></div>
               </div>
-              <div id="dailyMessagesChart" class="ct-chart" style="display: none;"></div>
+              <div class="chart-container"><canvas id="dailyMessagesChart" style="display: none;"></canvas></div>
               <div id="dailyMessagesStats" class="stats-text" style="display: none;"></div>
             </div>
           </div>
@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="section-spinner">
                 <div class="loader"></div>
               </div>
-              <div id="feedbackRatioChart" class="ct-chart" style="display: none;"></div>
+              <div class="chart-container"><canvas id="feedbackRatioChart" style="display: none;"></canvas></div>
               <div id="feedbackRatioStats" class="stats-text" style="display: none;"></div>
             </div>
             <div id="topNegativeReplies">
@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="section-spinner">
                 <div class="loader"></div>
               </div>
-              <div id="rulesTypeChart" class="ct-chart" style="display: none;"></div>
+              <div class="chart-container"><canvas id="rulesTypeChart" style="display: none;"></canvas></div>
               <div id="rulesTypeStats" class="stats-text" style="display: none;"></div>
             </div>
           </div>
@@ -141,19 +141,36 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalMessages = messagesByChannelData.facebook + messagesByChannelData.web + messagesByChannelData.whatsapp;
 
         // رسم Pie Chart لتوزيع الرسائل حسب القناة
-        new Chartist.Pie('#messagesByChannelChart', {
-          series: [
-            messagesByChannelData.facebook,
-            messagesByChannelData.web,
-            messagesByChannelData.whatsapp
-          ],
-          labels: ['فيسبوك', 'ويب', 'واتساب']
-        }, {
-          donut: true,
-          donutWidth: 60,
-          startAngle: 270,
-          total: totalMessages,
-          showLabel: true
+        const messagesByChannelCtx = document.getElementById('messagesByChannelChart').getContext('2d');
+        new Chart(messagesByChannelCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['فيسبوك', 'ويب', 'واتساب'],
+            datasets: [{
+              data: [
+                messagesByChannelData.facebook,
+                messagesByChannelData.web,
+                messagesByChannelData.whatsapp
+              ],
+              backgroundColor: ['#28a745', '#17a2b8', '#dc3545'],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  font: {
+                    size: 14,
+                    family: 'Cairo'
+                  }
+                }
+              }
+            }
+          }
         });
 
         // إضافة الإحصائيات النصية للرسائل
@@ -186,13 +203,48 @@ document.addEventListener('DOMContentLoaded', () => {
         const series = dailyData.map(item => item.count);
 
         // رسم Line Chart لمعدل الرسائل يوميًا
-        new Chartist.Line('#dailyMessagesChart', {
-          labels: labels,
-          series: [series]
-        }, {
-          fullWidth: true,
-          chartPadding: {
-            right: 40
+        const dailyMessagesCtx = document.getElementById('dailyMessagesChart').getContext('2d');
+        new Chart(dailyMessagesCtx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'عدد الرسائل',
+              data: series,
+              borderColor: '#00C4B4',
+              fill: false,
+              tension: 0.1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            scales: {
+              x: {
+                ticks: {
+                  font: {
+                    family: 'Cairo'
+                  }
+                }
+              },
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  font: {
+                    family: 'Cairo'
+                  }
+                }
+              }
+            },
+            plugins: {
+              legend: {
+                labels: {
+                  font: {
+                    family: 'Cairo'
+                  }
+                }
+              }
+            }
           }
         });
 
@@ -243,15 +295,32 @@ document.addEventListener('DOMContentLoaded', () => {
         const negativePercentage = totalFeedback > 0 ? ((negativeCount / totalFeedback) * 100).toFixed(1) : 0;
 
         // رسم Pie Chart لنسبة التقييمات
-        new Chartist.Pie('#feedbackRatioChart', {
-          series: [positiveCount, negativeCount],
-          labels: ['إيجابية', 'سلبية']
-        }, {
-          donut: true,
-          donutWidth: 60,
-          startAngle: 270,
-          total: totalFeedback,
-          showLabel: true
+        const feedbackRatioCtx = document.getElementById('feedbackRatioChart').getContext('2d');
+        new Chart(feedbackRatioCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['إيجابية', 'سلبية'],
+            datasets: [{
+              data: [positiveCount, negativeCount],
+              backgroundColor: ['#28a745', '#dc3545'],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  font: {
+                    size: 14,
+                    family: 'Cairo'
+                  }
+                }
+              }
+            }
+          }
         });
 
         // إضافة الإحصائيات النصية للتقييمات
@@ -329,21 +398,38 @@ document.addEventListener('DOMContentLoaded', () => {
         const apiPercentage = totalRules > 0 ? ((rulesTypesCount.api / totalRules) * 100).toFixed(1) : 0;
 
         // رسم Pie Chart لتوزيع أنواع القواعد
-        new Chartist.Pie('#rulesTypeChart', {
-          series: [
-            rulesTypesCount.general,
-            rulesTypesCount.global,
-            rulesTypesCount.products,
-            rulesTypesCount.qa,
-            rulesTypesCount.api
-          ],
-          labels: ['عامة', 'موحدة', 'أسعار', 'سؤال وجواب', 'API']
-        }, {
-          donut: true,
-          donutWidth: 60,
-          startAngle: 270,
-          total: totalRules,
-          showLabel: true
+        const rulesTypeCtx = document.getElementById('rulesTypeChart').getContext('2d');
+        new Chart(rulesTypeCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['عامة', 'موحدة', 'أسعار', 'سؤال وجواب', 'API'],
+            datasets: [{
+              data: [
+                rulesTypesCount.general,
+                rulesTypesCount.global,
+                rulesTypesCount.products,
+                rulesTypesCount.qa,
+                rulesTypesCount.api
+              ],
+              backgroundColor: ['#28a745', '#dc3545', '#17a2b8', '#ffc107', '#6c757d'],
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                position: 'top',
+                labels: {
+                  font: {
+                    size: 14,
+                    family: 'Cairo'
+                  }
+                }
+              }
+            }
+          }
         });
 
         // إضافة الإحصائيات النصية لتوزيع أنواع القواعد
