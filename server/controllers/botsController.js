@@ -9,14 +9,7 @@ const axios = require('axios');
 // جلب كل البوتات
 exports.getBots = async (req, res) => {
   try {
-    let bots;
-    if (req.user.role === 'superadmin') {
-      // الـ superadmin يشوف كل البوتات
-      bots = await Bot.find().populate('userId');
-    } else {
-      // المستخدم العادي يشوف بس البوتات بتاعته
-      bots = await Bot.find({ userId: req.user._id }).populate('userId');
-    }
+    const bots = await Bot.find().populate('userId');
     res.status(200).json(bots);
   } catch (err) {
     console.error('❌ خطأ في جلب البوتات:', err.message, err.stack);
@@ -189,6 +182,10 @@ exports.createBot = async (req, res) => {
 
 // تعديل بوت
 exports.updateBot = async (req, res) => {
+  if (req.user.role !== 'superadmin') {
+    return res.status(403).json({ message: 'غير مصرح لك بتعديل البوت' });
+  }
+
   const { name, facebookApiKey, facebookPageId } = req.body;
 
   try {
@@ -197,30 +194,9 @@ exports.updateBot = async (req, res) => {
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
-    // تحقق إذا كان المستخدم هو صاحب البوت أو superadmin
-    const isOwner = bot.userId.toString() === req.user._id.toString();
-    const isSuperadmin = req.user.role === 'superadmin';
-
-    if (!isOwner && !isSuperadmin) {
-      return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا البوت' });
-    }
-
-    // إذا كان المستخدم عادي (مش superadmin)، يقدر يعدّل facebookApiKey و facebookPageId بس
-    if (!isSuperadmin) {
-      if (name !== undefined) {
-        return res.status(403).json({ message: 'غير مصرح لك بتعديل اسم البوت' });
-      }
-      if (facebookApiKey && !facebookPageId) {
-        return res.status(400).json({ message: 'معرف صفحة الفيسبوك مطلوب عند إدخال مفتاح API' });
-      }
-      bot.facebookApiKey = facebookApiKey !== undefined ? facebookApiKey : bot.facebookApiKey;
-      bot.facebookPageId = facebookPageId !== undefined ? facebookPageId : bot.facebookPageId;
-    } else {
-      // الـ superadmin يقدر يعدّل كل حاجة
-      bot.name = name || bot.name;
-      bot.facebookApiKey = facebookApiKey !== undefined ? facebookApiKey : bot.facebookApiKey;
-      bot.facebookPageId = facebookPageId !== undefined ? facebookPageId : bot.facebookPageId;
-    }
+    bot.name = name || bot.name;
+    bot.facebookApiKey = facebookApiKey !== undefined ? facebookApiKey : bot.facebookApiKey;
+    bot.facebookPageId = facebookPageId !== undefined ? facebookPageId : bot.facebookPageId;
 
     await bot.save();
     res.status(200).json(bot);
