@@ -2,8 +2,14 @@
 
 /* Styles for Landing Page (index.html) */
 
-/* Ensure base body styles from common.css apply */
+/* تحديث أساسي للصفحة */
+body {
+  background: linear-gradient(135deg, #1a1a2e 0%, #2a2a4e 100%); /* خلفية جديدة بتدرج */
+  font-family: 'Cairo', sans-serif;
+  color: white;
+}
 
+/* تحديث Container */
 .container {
   width: 90%;
   max-width: 1200px;
@@ -12,12 +18,12 @@
 
 /* Landing Header */
 .landing-header {
-  background-color: rgba(26, 26, 46, 0.9);
-  padding: 15px 0;
+  background-color: rgba(26, 26, 46, 0.95);
+  padding: 20px 0;
   position: sticky;
   top: 0;
   z-index: 1000;
-  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* ظل جديد */
 }
 
 .landing-header .container {
@@ -27,13 +33,16 @@
 }
 
 .landing-header .logo {
-  font-size: 1.8em;
+  font-size: 2em;
   font-weight: bold;
   color: var(--turquoise);
+  display: flex;
+  align-items: center;
 }
 
 .landing-header .logo i {
-  margin-right: 5px;
+  margin-right: 10px;
+  color: #ffd700; /* لون أيقونة ذهبي */
 }
 
 .landing-header .menu-toggle {
@@ -60,19 +69,22 @@
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 25px;
+  gap: 30px;
 }
 
 .landing-header nav a {
-  color: var(--dark-text);
+  color: white;
   text-decoration: none;
   font-weight: 600;
-  transition: color var(--transition-speed);
+  padding: 10px 15px;
+  border-radius: 5px;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 .landing-header nav a:hover,
 .landing-header nav a.btn:hover {
-  color: var(--turquoise);
+  background-color: var(--turquoise);
+  color: #1a1a2e;
 }
 
 .landing-header nav a:focus {
@@ -81,26 +93,192 @@
 }
 
 .landing-header nav a.btn {
-  padding: 8px 15px;
-  font-size: 0.9rem;
-  color: white;
+  background-color: var(--turquoise);
+  color: #1a1a2e;
+  font-weight: bold;
+  padding: 10px 20px;
 }
 
 /* Hero Section */
 .hero {
-  background: linear-gradient(rgba(26, 26, 46, 0.8), rgba(26, 26, 46, 0.8)), url("public/placeholder-bot.png") center/cover no-repeat;
+  background: linear-gradient(rgba(26, 26, 46, 0.9), rgba(26, 26, 46, 0.7)), url("public/placeholder-bot.png") center/cover no-repeat;
   color: white;
-  padding: 100px 0;
+  padding: 120px 0;
   text-align: center;
+  position: relative;
+  border-bottom: 5px solid var(--turquoise);
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(0, 196, 180, 0.2) 0%, transparent 70%);
+  z-index: 0;
+}
+
+.hero .container {
+  position: relative;
+  z-index: 1;
 }
 
 .hero h1 {
-  font-size: 3em;
-  margin-bottom: 20px;
-  font-weight: 700;
+  font-size: 3.5em;
+  margin-bottom: 25px;
+  font-weight: 800;
+  text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .hero p {
+  font-size: 1.3em;
+  margin-bottom: 40px;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  opacity: 0.9;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-highlight {
+  background: linear-gradient(45deg, var(--turquoise), #00e0c4);
+  color: #1a1a2e;
+  font-weight: bold;
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  border-radius: 50px;
+  box-shadow: 0 5px 15px rgba(0, 196, 180, 0.4);
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.btn-highlight:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 196, 180, 0.6);
+  color: white;
+}
+
+.btn-highlight:focus {
+  outline: 3px solid #ffd700;
+  outline-offset: 2px;
+}
+
+.download-app {
+  background: linear-gradient(45deg, #6c757d, #8a9298);
+  color: white;
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  border-radius: 50px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  display: none; /* مخفي من البداية زي ما اتفقنا */
+}
+
+.download-app:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+}
+
+.download-app:focus {
+  outline: 3px solid #ffd700;
+  outline-offset: 2px;
+}
+
+/* Features Section */
+.features {
+  padding: 100px 0;
+  background: linear-gradient(180deg, #2a2a4e 0%, #1a1a2e 100%);
+}
+
+body.dark-mode .features {
+  background: linear-gradient(180deg, #2a2a4e 0%, #1a1a2e 100%);
+}
+
+.features h2 {
+  text-align: center;
+  font-size: 2.8em;
+  margin-bottom: 60px;
+  color: white;
+  text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 40px;
+}
+
+.feature-item {
+  text-align: center;
+  padding: 40px;
+  border-radius: 15px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .feature-item {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+body.light-mode .feature-item {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.feature-item:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 10px 25px rgba(0, 196, 180, 0.3);
+}
+
+.feature-item i {
+  font-size: 3.5em;
+  color: var(--turquoise);
+  margin-bottom: 25px;
+}
+
+.feature-item h3 {
+  font-size: 1.8em;
+  margin-bottom: 15px;
+  color: white;
+}
+
+.feature-item p {
+  opacity: 0.85;
+  line-height: 1.7;
+  color: #d3d3d3;
+}
+
+/* Trial Offer Section */
+.trial-offer {
+  background: linear-gradient(45deg, #1a1a2e, #2a2a4e);
+  color: white;
+  padding: 80px 0;
+  text-align: center;
+  border-top: 5px solid var(--turquoise);
+  border-bottom: 5px solid var(--turquoise);
+}
+
+.trial-offer h2 {
+  font-size: 2.5em;
+  margin-bottom: 20px;
+  color: white;
+}
+
+.trial-offer h2 i {
+  color: #ffd700;
+  margin-left: 15px;
+}
+
+.trial-offer p {
   font-size: 1.2em;
   margin-bottom: 30px;
   max-width: 700px;
@@ -109,187 +287,64 @@
   opacity: 0.9;
 }
 
-.hero-buttons {
-  display: flex;
-  gap: 15px;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-
-.btn-highlight {
-  background-color: var(--turquoise);
-  color: var(--dark-bg);
-  font-weight: bold;
-  padding: 12px 25px;
-  font-size: 1.1rem;
-}
-
-.btn-highlight:hover {
-  background-color: var(--button-hover-bg);
-  color: white;
-}
-
-.btn-highlight:focus {
-  outline: 2px solid var(--turquoise);
-  outline-offset: 2px;
-}
-
-.download-app {
-  background-color: #6c757d;
-  color: white;
-  padding: 12px 25px;
-  font-size: 1.1rem;
-}
-
-.download-app:hover {
-  background-color: #5a6268;
-}
-
-.download-app:focus {
-  outline: 2px solid var(--turquoise);
-  outline-offset: 2px;
-}
-
-/* Features Section */
-.features {
-  padding: 80px 0;
-  background-color: var(--light-bg);
-}
-
-body.dark-mode .features {
-  background-color: var(--dark-bg);
-}
-
-.features h2 {
-  text-align: center;
-  font-size: 2.5em;
-  margin-bottom: 50px;
-}
-
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 30px;
-}
-
-.feature-item {
-  text-align: center;
-  padding: 30px;
-  border-radius: 10px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-body.dark-mode .feature-item {
-  background-color: var(--dark-card);
-  box-shadow: 0 4px 10px var(--shadow-dark);
-}
-
-body.light-mode .feature-item {
-  background-color: var(--light-card);
-  box-shadow: 0 4px 10px var(--shadow-light);
-}
-
-.feature-item:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 10px 20px var(--shadow-dark);
-}
-
-body.light-mode .feature-item:hover {
-  box-shadow: 0 10px 20px var(--shadow-light);
-}
-
-.feature-item i {
-  font-size: 3em;
-  color: var(--turquoise);
-  margin-bottom: 20px;
-}
-
-.feature-item h3 {
-  font-size: 1.5em;
-  margin-bottom: 10px;
-}
-
-.feature-item p {
-  opacity: 0.8;
-  line-height: 1.6;
-}
-
-/* Trial Offer Section */
-.trial-offer {
-  background-color: var(--dark-sidebar);
-  color: white;
-  padding: 60px 0;
-  text-align: center;
-}
-
-.trial-offer h2 {
-  font-size: 2.2em;
-  margin-bottom: 15px;
-  color: white;
-}
-
-.trial-offer h2 i {
-  color: #ffd700;
-  margin-left: 10px;
-}
-
-.trial-offer p {
-  font-size: 1.1em;
-  margin-bottom: 25px;
-  max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
-  opacity: 0.9;
-}
-
 /* Pricing Section */
 .pricing {
-  padding: 80px 0;
-  background-color: var(--light-bg);
+  padding: 100px 0;
+  background: linear-gradient(180deg, #1a1a2e 0%, #2a2a4e 100%);
 }
 
 body.dark-mode .pricing {
-  background-color: var(--dark-bg);
+  background: linear-gradient(180deg, #1a1a2e 0%, #2a2a4e 100%);
 }
 
 .pricing h2 {
   text-align: center;
-  font-size: 2.5em;
-  margin-bottom: 50px;
+  font-size: 2.8em;
+  margin-bottom: 60px;
+  color: white;
+  text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);
 }
 
 .pricing-plans {
   display: flex;
   justify-content: center;
   align-items: stretch;
-  gap: 30px;
+  gap: 40px;
   flex-wrap: wrap;
 }
 
 .plan {
   flex: 1;
-  min-width: 300px;
-  max-width: 350px;
+  min-width: 320px;
+  max-width: 380px;
   text-align: center;
   display: flex;
   flex-direction: column;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 30px;
+  transition: transform 0.3s ease;
 }
 
 .plan.highlighted {
-  border: 2px solid var(--turquoise);
+  border: 3px solid var(--turquoise);
   transform: scale(1.05);
+  background: rgba(0, 196, 180, 0.1);
 }
 
 .plan h3 {
-  font-size: 1.6em;
-  margin-bottom: 20px;
+  font-size: 1.8em;
+  margin-bottom: 25px;
+  color: white;
 }
 
 .plan .price {
-  font-size: 2.5em;
+  font-size: 3em;
   font-weight: bold;
   color: var(--turquoise);
-  margin-bottom: 5px;
+  margin-bottom: 10px;
 }
 
 .plan .price span {
@@ -297,12 +352,14 @@ body.dark-mode .pricing {
   font-size: 0.5em;
   font-weight: normal;
   opacity: 0.7;
+  color: #d3d3d3;
 }
 
 .plan p {
-  font-size: 0.9em;
-  opacity: 0.8;
-  margin-bottom: 25px;
+  font-size: 1em;
+  opacity: 0.9;
+  margin-bottom: 30px;
+  color: #d3d3d3;
 }
 
 .plan p i {
@@ -313,41 +370,54 @@ body.dark-mode .pricing {
 .plan ul {
   list-style: none;
   padding: 0;
-  margin: 0 0 30px 0;
+  margin: 0 0 40px 0;
   text-align: right;
   flex-grow: 1;
 }
 
 .plan ul li {
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   display: flex;
   align-items: center;
   gap: 10px;
+  color: #d3d3d3;
 }
 
 .plan ul li i {
-  color: var(--success-color);
-  font-size: 1.2em;
+  color: var(--turquoise);
+  font-size: 1.3em;
 }
 
 .plan .btn {
   margin-top: auto;
   width: 100%;
+  background: linear-gradient(45deg, var(--turquoise), #00e0c4);
+  color: #1a1a2e;
+  padding: 15px;
+  border-radius: 50px;
+  font-weight: bold;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
+}
+
+.plan .btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 196, 180, 0.4);
+  color: white;
 }
 
 /* Landing Footer */
 .landing-footer {
-  background-color: var(--dark-bg);
-  color: var(--dark-text);
-  padding: 20px 0;
+  background: linear-gradient(45deg, #1a1a2e, #2a2a4e);
+  color: #d3d3d3;
+  padding: 30px 0;
   text-align: center;
   margin-top: 50px;
-  border-top: 1px solid var(--dark-border);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .landing-footer p {
   margin: 0;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 /* Responsive Adjustments */
@@ -361,7 +431,7 @@ body.dark-mode .pricing {
     top: 100%;
     right: 0;
     width: 100%;
-    background-color: rgba(26, 26, 46, 0.95);
+    background: linear-gradient(45deg, #1a1a2e, #2a2a4e);
     transform: translateY(-100%);
     opacity: 0;
     visibility: hidden;
@@ -375,8 +445,8 @@ body.dark-mode .pricing {
 
   .landing-header nav ul {
     flex-direction: column;
-    padding: 15px;
-    gap: 15px;
+    padding: 20px;
+    gap: 20px;
   }
 
   .landing-header nav ul li {
@@ -386,8 +456,8 @@ body.dark-mode .pricing {
 
   .landing-header nav a {
     display: block;
-    padding: 10px;
-    font-size: 1.1em;
+    padding: 15px;
+    font-size: 1.2em;
   }
 
   .landing-header nav a.btn {
@@ -410,16 +480,16 @@ body.dark-mode .pricing {
 @media (max-width: 768px) {
   .landing-header .container {
     flex-direction: column;
-    gap: 15px;
+    gap: 20px;
   }
   .hero h1 {
-    font-size: 2.5em;
+    font-size: 2.8em;
   }
   .hero p {
-    font-size: 1em;
+    font-size: 1.1em;
   }
   .features h2, .pricing h2, .trial-offer h2 {
-    font-size: 2em;
+    font-size: 2.2em;
   }
   .pricing-plans {
     flex-direction: column;
@@ -443,5 +513,8 @@ body.dark-mode .pricing {
   }
   .landing-header nav.nav-menu {
     transition: none;
+  }
+  .btn-highlight:hover, .download-app:hover, .plan .btn:hover {
+    transform: none;
   }
 }
