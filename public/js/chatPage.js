@@ -370,6 +370,7 @@ async function loadChatPage() {
                         flex-wrap: wrap;
                         gap: 8px;
                         justify-content: center;
+                        text-align: center;
                       ">
                         <!-- الأسئلة هتتعرض ديناميكيًا هنا -->
                       </div>
@@ -657,6 +658,7 @@ async function loadChatPage() {
             Array.from(previewSuggestedQuestions.children).forEach(btn => {
               btn.style.backgroundColor = colorValues.buttonColor;
               btn.style.color = '#ffffff';
+              btn.style.textAlign = 'center'; // Ensure centering of the button content
             });
             userMessage.style.backgroundColor = colorValues.userMessageBackgroundColor;
             userMessage.style.color = colorValues.userMessageTextColor;
@@ -918,6 +920,7 @@ async function loadChatPage() {
               button.style.transition = 'transform 0.2s, background-color: 0.3s';
               button.style.backgroundColor = colorValues.buttonColor;
               button.style.color = '#ffffff';
+              button.style.textAlign = 'center'; // Ensure centering of the button content
               button.textContent = question;
               previewSuggestedQuestions.appendChild(button);
 
