@@ -40,6 +40,15 @@ document.addEventListener('DOMContentLoaded', () => {
       const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
       navMenu.classList.toggle('active');
       menuToggle.setAttribute('aria-expanded', !isExpanded);
+      // تغيير الأيقونة بين fa-bars و fa-times
+      const icon = menuToggle.querySelector('i');
+      if (isExpanded) {
+        icon.classList.remove('fa-times');
+        icon.classList.add('fa-bars');
+      } else {
+        icon.classList.remove('fa-bars');
+        icon.classList.add('fa-times');
+      }
     });
   }
 
