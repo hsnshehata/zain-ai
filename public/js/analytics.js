@@ -185,14 +185,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const labels = dailyData.map(item => item.date);
         const series = dailyData.map(item => item.count);
 
-        // رسم Line Chart لمعدل الرسائل يوميًا
-        new Chartist.Line('#dailyMessagesChart', {
+        // رسم Bar Chart لمعدل الرسائل يوميًا
+        new Chartist.Bar('#dailyMessagesChart', {
           labels: labels,
           series: [series]
         }, {
           fullWidth: true,
           chartPadding: {
-            right: 40
+            right: 40,
+            top: 20,
+            bottom: 20
+          },
+          axisX: {
+            labelOffset: {
+              x: 0,
+              y: 5
+            },
+            labelInterpolationFnc: function(value, index) {
+              return labels[index]; // التأكد من إن كل تاريخ بيظهر مظبوط
+            }
+          },
+          axisY: {
+            onlyInteger: true // عشان نضمن إن الأرقام على المحور Y تكون أعداد صحيحة
           }
         });
 
