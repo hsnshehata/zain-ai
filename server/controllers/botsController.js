@@ -9,7 +9,14 @@ const axios = require('axios');
 // جلب كل البوتات
 exports.getBots = async (req, res) => {
   try {
-    const bots = await Bot.find().populate('userId');
+    let bots;
+    if (req.user.role === 'superadmin') {
+      // الـ superadmin يشوف كل البوتات
+      bots = await Bot.find().populate('userId');
+    } else {
+      // المستخدم العادي يشوف بس البوتات بتاعته
+      bots = await Bot.find({ userId: req.user._id }).populate('userId');
+    }
     res.status(200).json(bots);
   } catch (err) {
     console.error('❌ خطأ في جلب البوتات:', err.message, err.stack);
