@@ -326,8 +326,8 @@ body.light-mode .settings-popup {
 
 .settings-popup .close-btn {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: -10px;
+  left: -10px;
   background: var(--error-color);
   color: white;
   border: none;
@@ -343,6 +343,7 @@ body.light-mode .settings-popup {
   align-items: center;
   gap: 10px;
   margin-bottom: 10px;
+  padding-left: 10px;
 }
 
 .color-picker-wrapper label {
@@ -386,7 +387,7 @@ body.light-mode .settings-popup {
 .input-group-buttons {
   display: flex;
   gap: 10px;
-  justify-content: flex-end;
+  justify-content: flex-start; /* Changed to flex-start for RTL to align buttons on the right */
 }
 
 /* Responsive Adjustments */
