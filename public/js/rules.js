@@ -64,7 +64,7 @@ async function loadRulesPage() {
 
       <h3><i class="fas fa-list-ul"></i> القواعد الحالية</h3>
       <div id="rulesList" class="grid-container rules-grid"></div>
-      <div id="loadingSpinner" class="spinner" style="display: none;"><div class="loader"></div></div>
+      <div id="loadingSpinner" class="spinner hidden-spinner" style="display: none;"><div class="loader"></div></div>
       <div id="errorMessage" class="error-message" style="display: none;"></div>
       <div id="pagination" class="pagination"></div>
     </div>
@@ -169,6 +169,7 @@ async function loadRulesPage() {
 
 async function loadRules(botId, listElement, token, type, search, page, limit, paginationContainer, spinner, errorElement) {
   spinner.style.display = "flex";
+  console.log("الـ Spinner ظهر دلوقتي");
   errorElement.style.display = "none";
   listElement.innerHTML = "";
 
@@ -202,8 +203,10 @@ async function loadRules(botId, listElement, token, type, search, page, limit, p
     });
 
   } catch (err) {
+    console.error("حصل خطأ في جلب القواعد:", err);
+  } finally {
     spinner.style.display = "none";
-    // الخطأ تم التعامل معه في handleApiRequest
+    console.log("الـ Spinner اتخفى دلوقتي");
   }
 }
 
