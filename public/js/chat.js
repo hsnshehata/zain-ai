@@ -68,9 +68,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         background-color: ${settings?.colors?.botMessageBackground || '#2D3436'};
         color: ${settings?.colors?.botMessageTextColor || '#ffffff'};
       }
-      .chat-input {
-        background-color: ${settings?.colors?.inputAreaBackground || '#3B4A4E'};
-      }
       #messageInput {
         color: ${settings?.colors?.inputTextColor || '#ffffff'};
       }
@@ -113,7 +110,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         const question = questions[currentIndex];
         const button = document.createElement('button');
         button.className = 'suggested-question';
-        button.style.textAlign = 'center'; // Ensure centering of the button content
+        button.style.textAlign = 'center';
+        button.style.margin = '0 auto';
+        button.style.display = 'block';
         button.textContent = question;
         button.addEventListener('click', () => sendMessage(question));
         suggestedQuestions.appendChild(button);
@@ -203,7 +202,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       (trimmedText.startsWith('<') && trimmedText.includes('>') && trimmedText.match(/<[a-zA-Z][^>]*>/)) ||
       trimmedText.match(/\b(function|const|let|var|=>|class)\b/i) ||
       (trimmedText.match(/{[^{}]*}/) && trimmedText.match(/:/)) ||
-      (trimmedText.match(/[{}$$              $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
+      (trimmedText.match(/[{}$$          $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
     );
   }
 
