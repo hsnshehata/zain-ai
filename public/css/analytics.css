@@ -145,6 +145,12 @@ body.light-mode #negativeRepliesList li {
   min-height: 100px;
 }
 
+/* تغيير لون التواريخ في الوضع الداكن */
+body.dark-mode .ct-label {
+  fill: var(--dark-text); /* اللون الفاتح في الوضع الداكن */
+  color: var(--dark-text);
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .analytics-container {
