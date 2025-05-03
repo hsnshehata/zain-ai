@@ -498,6 +498,10 @@ body.light-mode .placeholder h2 {
   min-height: 200px;
 }
 
+.spinner[style*="display: none"] {
+  min-height: 0; /* بنلغي الـ min-height لما الـ spinner يبقى مخفي */
+}
+
 .loader {
   border: 5px solid var(--light-border);
   border-top: 5px solid var(--turquoise);
