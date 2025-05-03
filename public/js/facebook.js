@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const content = document.getElementById("content");
     const token = localStorage.getItem("token");
     const selectedBotId = localStorage.getItem("selectedBotId");
+    const role = localStorage.getItem("role");
 
     if (!selectedBotId) {
       content.innerHTML = `
@@ -25,6 +26,32 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="placeholder error">
           <h2><i class="fas fa-exclamation-triangle"></i> تسجيل الدخول مطلوب</h2>
           <p>يرجى تسجيل الدخول لعرض إعدادات فيسبوك.</p>
+        </div>
+      `;
+      return;
+    }
+
+    // تحقق إذا كان الـ selectedBotId متاح للمستخدم
+    try {
+      const bots = await handleApiRequest("/api/bots", {
+        headers: { Authorization: `Bearer ${token}` },
+      }, null, null); // null عشان نتحكم في الخطأ بنفسنا
+
+      const isBotAccessible = bots.some(bot => bot._id === selectedBotId);
+      if (!isBotAccessible) {
+        content.innerHTML = `
+          <div class="placeholder error">
+            <h2><i class="fas fa-exclamation-triangle"></i> بوت غير متاح</h2>
+            <p>البوت المختار غير متاح أو ليس لديك صلاحية للوصول إليه. يرجى اختيار بوت آخر.</p>
+          </div>
+        `;
+        return;
+      }
+    } catch (err) {
+      content.innerHTML = `
+        <div class="placeholder error">
+          <h2><i class="fas fa-exclamation-triangle"></i> خطأ في التحقق</h2>
+          <p>حدث خطأ أثناء التحقق من البوت المختار. يرجى المحاولة مرة أخرى أو اختيار بوت آخر.</p>
         </div>
       `;
       return;
@@ -57,7 +84,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <button id="saveApiKeysBtn" class="btn btn-primary"><i class="fas fa-save"></i> حفظ معلومات الربط</button>
             <p id="apiKeysError" class="error-message small-error" style="display: none;"></p>
-          </div 
+          </div>
         </div>
 
         <div class="card settings-card">
@@ -245,6 +272,8 @@ document.addEventListener("DOMContentLoaded", () => {
         // معالجة أخطاء محددة
         if (err.status === 403) {
           apiKeysError.textContent = "غير مصرح لك بتعديل هذا البوت. تأكد إنك صاحب البوت أو لديك صلاحيات المدير.";
+        } else if (err.status === 404) {
+          apiKeysError.textContent = "البوت المختار غير موجود. يرجى اختيار بوت آخر.";
         } else if (err.status === 400) {
           apiKeysError.textContent = err.message || "تأكد من إدخال معرف صفحة فيسبوك مع مفتاح API.";
         } else {
