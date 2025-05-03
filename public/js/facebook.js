@@ -32,10 +32,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // تحقق إذا كان الـ selectedBotId متاح للمستخدم
+    let bots = [];
     try {
-      const bots = await handleApiRequest("/api/bots", {
+      bots = await handleApiRequest("/api/bots", {
         headers: { Authorization: `Bearer ${token}` },
       }, null, null); // null عشان نتحكم في الخطأ بنفسنا
+
+      if (!Array.isArray(bots)) {
+        throw new Error("فشل في جلب قايمة البوتات. حاول مرة أخرى.");
+      }
+
+      if (bots.length === 0) {
+        content.innerHTML = `
+          <div class="placeholder error">
+            <h2><i class="fas fa-exclamation-triangle"></i> لا توجد بوتات متاحة</h2>
+            <p>ليس لديك أي بوتات متاحة حاليًا. تواصل مع المدير لإنشاء بوت جديد.</p>
+          </div>
+        `;
+        return;
+      }
 
       const isBotAccessible = bots.some(bot => bot._id === selectedBotId);
       if (!isBotAccessible) {
@@ -51,7 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
       content.innerHTML = `
         <div class="placeholder error">
           <h2><i class="fas fa-exclamation-triangle"></i> خطأ في التحقق</h2>
-          <p>حدث خطأ أثناء التحقق من البوت المختار. يرجى المحاولة مرة أخرى أو اختيار بوت آخر.</p>
+          <p>حدث خطأ أثناء التحقق من البوت المختار: ${err.message || 'حاول مرة أخرى أو اختيار بوت آخر.'}</p>
         </div>
       `;
       return;
