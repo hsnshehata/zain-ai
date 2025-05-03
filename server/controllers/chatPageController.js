@@ -1,3 +1,5 @@
+// server/controllers/chatPageController.js
+
 const { v4: uuidv4 } = require('uuid');
 const ChatPage = require('../models/ChatPage');
 const Feedback = require('../models/Feedback');
@@ -72,8 +74,14 @@ exports.createChatPage = async (req, res) => {
       return res.status(400).json({ message: 'User ID and Bot ID are required' });
     }
 
-    // إذا المستخدم مدخلش linkId، هنولد UUID تلقائيًا
-    const finalLinkId = linkId || uuidv4();
+    // إذا المستخدم مدخلش linkId، هنولد UUID تلقائيًا ونظبطه عشان يكون مناسب
+    let finalLinkId = linkId;
+    if (!finalLinkId) {
+      // نولد UUID ونزيل الفواصل منه
+      const rawUuid = uuidv4().replace(/-/g, '');
+      // ناخد أول 12 حرف بس عشان ميبقاش طويل أوي وفي نفس الوقت يفي بالشرط بتاع 4 أحرف على الأقل
+      finalLinkId = rawUuid.substring(0, 12);
+    }
 
     const existingPage = await ChatPage.findOne({ botId });
     if (existingPage) {
