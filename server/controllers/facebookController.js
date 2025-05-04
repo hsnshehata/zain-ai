@@ -1,8 +1,12 @@
 const request = require('request');
+const NodeCache = require('node-cache');
 const Bot = require('../models/Bot');
 const { processMessage } = require('../botEngine');
 const Conversation = require('../models/Conversation');
 const Feedback = require('../models/Feedback');
+
+// إعداد cache لتخزين الـ webhook events مؤقتاً (5 دقايق)
+const webhookCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 
 const handleMessage = async (req, res) => {
   try {
@@ -14,6 +18,14 @@ const handleMessage = async (req, res) => {
       console.log('❌ Invalid webhook event: Not a page object');
       return res.sendStatus(404);
     }
+
+    // فحص تكرار الـ webhook event
+    const eventHash = JSON.stringify(body);
+    if (webhookCache.get(eventHash)) {
+      console.log('⚠️ Duplicate webhook event detected, skipping...');
+      return res.status(200).send('EVENT_RECEIVED');
+    }
+    webhookCache.set(eventHash, true);
 
     for (const entry of body.entry) {
       const pageId = entry.id;
@@ -47,19 +59,19 @@ const handleMessage = async (req, res) => {
           await conversation.save();
           console.log(`📋 Created new conversation for bot ${bot._id} and user ${senderPsid}`);
 
-          // إرسال رسالة ترحيب إذا كان messaging_optins مفعل
           if (bot.messagingOptinsEnabled) {
             const welcomeMessage = 'مرحبًا! أنا هنا لمساعدتك. كيف يمكنني مساعدتك اليوم؟';
             await sendMessage(senderPsid, welcomeMessage, bot.facebookApiKey);
             conversation.messages.push({
               role: 'assistant',
               content: welcomeMessage,
+              messageId: `welcome_${Date.now()}`,
             });
             await conversation.save();
           }
         }
 
-        // التعامل مع الـ messaging_optins (إذا كان حدث اشتراك)
+        // التعامل مع الـ messaging_optins
         if (webhookEvent.optin && bot.messagingOptinsEnabled) {
           console.log(`📩 Opt-in event received from ${senderPsid}`);
           const welcomeMessage = 'مرحبًا بك! شكرًا لاشتراكك. كيف يمكنني مساعدتك؟';
@@ -67,6 +79,7 @@ const handleMessage = async (req, res) => {
           conversation.messages.push({
             role: 'assistant',
             content: welcomeMessage,
+            messageId: `optin_${Date.now()}`,
           });
           await conversation.save();
         }
@@ -77,16 +90,8 @@ const handleMessage = async (req, res) => {
           const emoji = webhookEvent.reaction.emoji || '';
           console.log(`😊 Reaction received from ${senderPsid}: ${reactionType}`);
 
-          // بناء رسالة ببيانات الـ reaction وتمريرها للذكاء الاصطناعي
-          const reactionMessage = `المستخدم تفاعل مع الرسالة بـ ${reactionType}${emoji ? ` (${emoji})` : ''}`;
-          const responseText = await processMessage(bot._id, senderPsid, reactionMessage);
-
-          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
-          conversation.messages.push({
-            role: 'assistant',
-            content: responseText,
-          });
-          await conversation.save();
+          const reactionMessage = `شكرًا على تفاعلك بـ ${reactionType}${emoji ? ` (${emoji})` : ''}!`;
+          await sendMessage(senderPsid, reactionMessage, bot.facebookApiKey);
         }
 
         // التعامل مع الـ messaging_referrals
@@ -95,7 +100,6 @@ const handleMessage = async (req, res) => {
           const referralRef = webhookEvent.referral.ref || 'unknown';
           console.log(`📈 Referral received from ${senderPsid}: Source=${referralSource}, Ref=${referralRef}`);
 
-          // بناء رسالة ببيانات المصدر وتمريرها للذكاء الاصطناعي
           const referralMessage = `وصلت إلى البوت من مصدر: ${referralSource} (Ref: ${referralRef})`;
           const responseText = await processMessage(bot._id, senderPsid, referralMessage);
 
@@ -103,6 +107,7 @@ const handleMessage = async (req, res) => {
           conversation.messages.push({
             role: 'assistant',
             content: responseText,
+            messageId: `referral_${Date.now()}`,
           });
           await conversation.save();
         }
@@ -112,29 +117,37 @@ const handleMessage = async (req, res) => {
           const editedMessage = webhookEvent.message_edit.text;
           const messageId = webhookEvent.message_edit.mid;
           console.log(`✍️ Edited message received from ${senderPsid}: ${editedMessage}`);
+
+          const existingMessage = conversation.messages.find(msg => msg.messageId === messageId && msg.role === 'user');
+          if (existingMessage) {
+            existingMessage.content = editedMessage;
+            existingMessage.timestamp = new Date();
+            console.log(`✅ Updated existing message with ID ${messageId}`);
+          } else {
+            conversation.messages.push({
+              role: 'user',
+              content: editedMessage,
+              messageId: messageId,
+            });
+            console.log(`✅ Added new edited message with ID ${messageId}`);
+          }
+
           const responseText = await processMessage(bot._id, senderPsid, editedMessage);
-          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
-          conversation.messages.push({
-            role: 'user',
-            content: editedMessage,
-            messageId: messageId,
-          });
           conversation.messages.push({
             role: 'assistant',
             content: responseText,
-            messageId: messageId,
+            messageId: `response_${messageId}`,
           });
           await conversation.save();
+          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
         }
 
-        // التعامل مع الـ inbox_labels (افتراضيًا، بناءً على منطق معين)
+        // التعامل مع الـ inbox_labels
         if (bot.inboxLabelsEnabled) {
-          // مثال بسيط: إضافة تصنيف "عميل جديد" لكل محادثة جديدة
           console.log(`🏷️ Adding label to conversation for user ${senderPsid}`);
-          // ملاحظة: فيسبوك لا يدعم إضافة Labels مباشرة عبر الـ API حاليًا، لكن يمكن استخدام هذا لتخزين التصنيفات داخليًا
         }
 
-        // باقي المنطق الحالي (التعامل مع الرسائل، التعليقات، التقييمات... إلخ)
+        // التعامل مع الـ response_feedback
         if (webhookEvent.response_feedback) {
           const feedbackData = webhookEvent.response_feedback;
           const mid = feedbackData.mid;
@@ -142,59 +155,42 @@ const handleMessage = async (req, res) => {
 
           console.log(`📊 Feedback received from ${senderPsid}: ${feedback} for message ID: ${mid}`);
 
-          conversation = await Conversation.findOne({
-            botId: bot._id,
-            userId: senderPsid,
-          });
-
-          if (!conversation) {
-            console.log(`❌ Conversation not found for bot ${bot._id} and user ${senderPsid}`);
-            conversation = new Conversation({
-              botId: bot._id,
-              userId: senderPsid,
-              messages: [],
-            });
-            await conversation.save();
-          }
-
-          const lastBotMessage = [...conversation.messages]
-            .reverse()
-            .find(msg => msg.role === 'assistant');
-
-          let messageContent = 'رسالة غير معروفة';
-          let messageIdToUse = mid;
-
-          if (lastBotMessage) {
-            messageContent = lastBotMessage.content;
-            messageIdToUse = lastBotMessage.messageId || mid;
-            console.log(`✅ Linked feedback to last bot message: ${messageContent} (ID: ${messageIdToUse})`);
-          } else {
-            console.log(`⚠️ No previous bot message found for user ${senderPsid}. Saving feedback with provided mid.`);
-          }
-
           const feedbackEntry = new Feedback({
             botId: bot._id,
             userId: senderPsid,
-            messageId: messageIdToUse,
+            messageId: mid,
             feedback: feedback === 'Good response' ? 'positive' : 'negative',
-            messageContent: lastBotMessage ? lastBotMessage.content : undefined,
+            messageContent: conversation.messages.find(msg => msg.messageId === mid)?.content || 'غير معروف',
             timestamp: new Date(webhookEvent.timestamp * 1000),
           });
 
           await feedbackEntry.save();
-          console.log(`✅ Feedback saved: ${feedback} for message ID: ${messageIdToUse}`);
+          console.log(`✅ Feedback saved: ${feedback} for message ID: ${mid}`);
         }
 
+        // التعامل مع الرسائل العادية
         if (webhookEvent.message && !webhookEvent.message_edit) {
           const message = webhookEvent.message;
           const mid = message.mid || `temp_${Date.now()}`;
+          const messageContent = message.text || (message.attachments ? JSON.stringify(message.attachments) : 'رسالة غير نصية');
+
+          // فحص تكرار الرسالة
+          const messageKey = `${mid}-${messageContent}-${webhookEvent.timestamp}`;
+          if (conversation.messages.some(msg => {
+            const msgKey = `${msg.messageId}-${msg.content}-${msg.timestamp}`;
+            return msgKey === messageKey;
+          })) {
+            console.log(`⚠️ Duplicate message detected with key ${messageKey}, skipping...`);
+            continue;
+          }
 
           console.log(`📝 Storing message with mid: ${mid}`);
 
           conversation.messages.push({
             role: 'user',
-            content: message.text || 'رسالة غير نصية',
+            content: messageContent,
             messageId: mid,
+            timestamp: new Date(webhookEvent.timestamp * 1000),
           });
 
           let responseText = '';
@@ -222,7 +218,8 @@ const handleMessage = async (req, res) => {
           conversation.messages.push({
             role: 'assistant',
             content: responseText,
-            messageId: mid,
+            messageId: `response_${mid}`,
+            timestamp: new Date(),
           });
 
           await conversation.save();
@@ -263,20 +260,27 @@ const handleMessage = async (req, res) => {
                 messages: [],
               });
 
-              // إرسال رسالة ترحيب إذا كان messaging_optins مفعل
               if (bot.messagingOptinsEnabled) {
                 const welcomeMessage = 'مرحبًا! أنا هنا لمساعدتك. كيف يمكنني مساعدتك اليوم؟';
                 await sendMessage(commenterId, welcomeMessage, bot.facebookApiKey);
                 conversation.messages.push({
                   role: 'assistant',
                   content: welcomeMessage,
+                  messageId: `welcome_${Date.now()}`,
                 });
               }
+            }
+
+            const commentKey = `comment-${commentId}-${message}`;
+            if (conversation.messages.some(msg => msg.messageId === commentKey)) {
+              console.log(`⚠️ Duplicate comment detected with key ${commentKey}, skipping...`);
+              continue;
             }
 
             conversation.messages.push({
               role: 'user',
               content: message,
+              messageId: commentKey,
             });
 
             const responseText = await processMessage(bot._id, commenterId, message);
@@ -284,6 +288,7 @@ const handleMessage = async (req, res) => {
             conversation.messages.push({
               role: 'assistant',
               content: responseText,
+              messageId: `response_${commentKey}`,
             });
 
             await conversation.save();
