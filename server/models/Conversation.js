@@ -13,5 +13,8 @@ const conversationSchema = new mongoose.Schema({
   ],
 });
 
+// إضافة unique index على messageId داخل messages
+conversationSchema.index({ 'messages.messageId': 1 }, { unique: true, sparse: true });
+
 // التأكد إن المودل ما يتعرفش أكتر من مرة
 module.exports = mongoose.models.Conversation || mongoose.model('Conversation', conversationSchema);
