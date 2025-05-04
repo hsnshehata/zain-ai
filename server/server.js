@@ -14,8 +14,12 @@ const messagesRoutes = require('./routes/messages');
 const indexRoutes = require('./routes/index');
 const uploadRoutes = require('./routes/upload');
 const connectDB = require('./db');
-const Conversation = require('./models/Conversation'); // استيراد موديل Conversation
-const { processMessage } = require('./botEngine'); // استيراد processMessage من botEngine
+const Conversation = require('./models/Conversation');
+const { processMessage } = require('./botEngine');
+const NodeCache = require('node-cache');
+
+// إعداد cache لتخزين طلبات الـ API مؤقتاً (5 دقايق)
+const apiCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 
 const app = express();
 
@@ -55,7 +59,40 @@ app.get('/api/conversations/:botId/:userId', async (req, res) => {
 app.post('/api/bot/ai', async (req, res) => {
   try {
     const { botId, message, userId } = req.body;
-    const reply = await processMessage(botId, userId, message); // استدعاء دالة processMessage من botEngine.js
+    if (!botId || !message || !userId) {
+      return res.status(400).json({ message: 'Bot ID, message, and user ID are required' });
+    }
+
+    // فحص تكرار الطلب
+    const messageKey = `${botId}-${userId}-${message}-${Date.now()}`;
+    if (apiCache.get(messageKey)) {
+      console.log(`⚠️ Duplicate AI message detected with key ${messageKey}, skipping...`);
+      return res.status(200).json({ reply: 'تم معالجة هذه الرسالة من قبل' });
+    }
+    apiCache.set(messageKey, true);
+
+    // جلب المحادثة
+    let conversation = await Conversation.findOne({ botId, userId });
+    if (!conversation) {
+      conversation = new Conversation({
+        botId,
+        userId,
+        messages: [],
+      });
+      await conversation.save();
+    }
+
+    // فحص إذا كانت الرسالة موجودة
+    const messageExists = conversation.messages.some(msg => 
+      msg.content === message && 
+      Math.abs(new Date(msg.timestamp) - Date.now()) < 1000
+    );
+    if (messageExists) {
+      console.log(`⚠️ Duplicate message detected in conversation for ${userId}, skipping...`);
+      return res.status(200).json({ reply: 'تم معالجة هذه الرسالة من قبل' });
+    }
+
+    const reply = await processMessage(botId, userId, message);
     res.status(200).json({ reply });
   } catch (err) {
     console.error('❌ Error in AI route:', err.message, err.stack);
