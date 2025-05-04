@@ -155,6 +155,10 @@ function showCreateUserForm(container) {
           <input type="password" id="newPassword" required>
         </div>
         <div class="form-group">
+          <label for="confirmPassword">تأكيد كلمة المرور</label>
+          <input type="password" id="confirmPassword" required>
+        </div>
+        <div class="form-group">
           <label for="newUserRole">الدور</label>
           <select id="newUserRole">
             <option value="user">مستخدم</option>
@@ -175,9 +179,17 @@ function showCreateUserForm(container) {
     e.preventDefault();
     const username = document.getElementById("newUsername").value;
     const password = document.getElementById("newPassword").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
     const role = document.getElementById("newUserRole").value;
     const errorEl = document.getElementById("userFormError");
     errorEl.style.display = "none";
+
+    // تحقق محلي لتطابق كلمة السر
+    if (password !== confirmPassword) {
+      errorEl.textContent = "كلمات المرور غير متطابقة";
+      errorEl.style.display = "block";
+      return;
+    }
 
     try {
       await handleApiRequest("/api/users", {
@@ -186,7 +198,7 @@ function showCreateUserForm(container) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ username, password, role }),
+        body: JSON.stringify({ username, password, confirmPassword, role }),
       }, errorEl, "فشل في إنشاء المستخدم");
       alert("تم إنشاء المستخدم بنجاح!");
       hideForm(container);
