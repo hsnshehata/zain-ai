@@ -587,7 +587,7 @@ async function loadChatPage() {
                         <button type="button" id="addQuestionBtn" class="submit-btn">إضافة سؤال</button>
                       </div>
                       <ul id="questionsList" class="questions-list"></ul>
-                      <p class="suggested-questions-note">أسف الأسئلة: 20 سؤال عدد جيد، 50 مثالي، وكلما زادت قل التكرار أثناء المحادثة. ملاحظة: الأسئلة تظهر بترتيب عشوائي في كل مرة.</p>
+                      <p class="suggested-questions-note">20 سؤال عدد جيد، 50 مثالي، وكلما زادت قل التكرار أثناء المحادثة. ملاحظة: الأسئلة تظهر بترتيب عشوائي في كل مرة.</p>
                     </div>
                     <div class="form-group checkbox-group">
                       <label class="checkbox-label">
