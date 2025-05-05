@@ -47,10 +47,11 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
   try {
     console.log('🤖 Processing message for bot:', botId, 'user:', userId, 'message:', message);
 
+    // جلب المحادثة للتحقق من التكرار ولاستخدامها في بناء السياق
     let conversation = await Conversation.findOne({ botId, userId });
     if (!conversation) {
-      console.log('📋 Creating new conversation for bot:', botId, 'user:', userId);
-      conversation = await Conversation.create({ botId, userId, messages: [] });
+      console.log('📋 No conversation found for bot:', botId, 'user:', userId);
+      conversation = { messages: [] }; // لو مفيش محادثة، هنستخدم كائن فاضي للسياق
     } else {
       console.log('📋 Found existing conversation:', conversation._id);
     }
@@ -61,7 +62,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       msg.content === message && 
       Math.abs(new Date(msg.timestamp) - Date.now()) < 1000
     )) {
-      console.log(`⚠️ Duplicate message detected in conversation for ${userId}, skipping...`);
+      console.log(`⚠️ Duplicate message detected for ${userId}, skipping...`);
       return 'تم معالجة هذه الرسالة من قبل';
     }
 
@@ -96,10 +97,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       }
       console.log('💬 Transcribed audio message:', userMessageContent);
     }
-
-    conversation.messages.push({ role: 'user', content: userMessageContent, timestamp: new Date() });
-    await conversation.save();
-    console.log('💬 User message added to conversation:', userMessageContent);
 
     let reply = '';
 
@@ -162,11 +159,8 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       }
     }
 
-    conversation.messages.push({ role: 'assistant', content: reply, timestamp: new Date() });
-    await conversation.save();
-    console.log('💬 Assistant reply added to conversation:', reply);
-
-    return reply;
+    console.log('💬 Assistant reply generated:', reply);
+    return reply; // رجوع الرد فقط بدون تخزين
   } catch (err) {
     console.error('❌ Error processing message:', err.message, err.stack);
     return 'عذرًا، حدث خطأ أثناء معالجة طلبك.';
