@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let botId = '';
   let settings = {};
   let messageCounter = 0;
-  let lastFeedbackButtons = null;
+  let lastFeedbackButtons = null肚子
   let lastMessage = null; // لتتبع آخر رسالة مرسلة
 
   // دالة Debounce لمنع الطلبات المكررة
