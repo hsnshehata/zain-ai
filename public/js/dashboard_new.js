@@ -1,5 +1,3 @@
-// public/js/dashboard_new.js
-
 document.addEventListener("DOMContentLoaded", () => {
   const role = localStorage.getItem("role");
   const token = localStorage.getItem("token");
@@ -25,6 +23,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const mobileNav = document.querySelector(".mobile-nav-bottom");
   const mobileNavToggle = document.getElementById("mobile-nav-toggle");
   const mainContent = document.querySelector(".main-content");
+  const notificationsBtn = document.getElementById("notifications-btn");
+  const notificationsModal = document.getElementById("notifications-modal");
+  const notificationsList = document.getElementById("notifications-list");
+  const notificationsCount = document.getElementById("notifications-count");
+  const closeNotificationsBtn = document.getElementById("close-notifications-btn");
+  const settingsBtn = document.getElementById("settings-btn");
 
   // Map of pages to their respective CSS files
   const pageCssMap = {
@@ -55,6 +59,16 @@ document.addEventListener("DOMContentLoaded", () => {
       const link = document.createElement("link");
       link.rel = "stylesheet";
       link.href = "/css/assistantBot.css";
+      document.head.appendChild(link);
+    }
+  }
+
+  // Load notifications.css
+  function loadNotificationsCss() {
+    if (!document.querySelector('link[href="/css/notifications.css"]')) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "/css/notifications.css";
       document.head.appendChild(link);
     }
   }
@@ -147,25 +161,25 @@ document.addEventListener("DOMContentLoaded", () => {
     navItems.forEach(item => {
       if (item.dataset.page === "bots" && role === "superadmin") return;
       item.disabled = true;
-      item.style.display = "none"; // Hide disabled items
+      item.style.display = "none";
     });
     mobileNavItems.forEach(item => {
       if (item.dataset.page === "bots" && role === "superadmin") return;
       item.disabled = true;
-      item.style.display = "none"; // Hide disabled items on mobile
+      item.style.display = "none";
     });
   };
 
   const enableNavItems = () => {
     navItems.forEach(item => {
       item.disabled = false;
-      item.style.display = "flex"; // Show enabled items
+      item.style.display = "flex";
     });
     mobileNavItems.forEach(item => {
       item.disabled = false;
-      item.style.display = "flex"; // Show enabled items on mobile
+      item.style.display = "flex";
       if (item.dataset.page === "bots" && role !== "superadmin") {
-        item.style.display = "none"; // Hide bots page for non-superadmin
+        item.style.display = "none";
       }
     });
   };
@@ -192,7 +206,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     enableNavItems();
 
-    // Load page-specific CSS
     loadPageCss(page);
 
     if (!selectedBotId && !(role === "superadmin" && page === "bots")) {
@@ -280,14 +293,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let pageToLoad = null;
 
-    // Set initial page based on user role
     if (role === "superadmin") {
       pageToLoad = "bots";
     } else {
       pageToLoad = "rules";
     }
 
-    // Clear any existing hash to prevent loading wrong page
     window.location.hash = pageToLoad;
 
     if (validPages.includes(pageToLoad)) {
@@ -300,7 +311,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // --- Load page based on hash only after initial load ---
   window.addEventListener('hashchange', () => {
     const hash = window.location.hash.substring(1);
     const validPages = Array.from(navItems)
@@ -341,6 +351,71 @@ document.addEventListener("DOMContentLoaded", () => {
     mobileLogoutBtn.addEventListener("click", logoutUser);
   }
 
+  // --- Notifications Handling ---
+  async function fetchNotifications() {
+    try {
+      const response = await fetch('/api/notifications', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const notifications = await response.json();
+      const unreadCount = notifications.filter(n => !n.isRead).length;
+      notificationsCount.textContent = unreadCount;
+      if (unreadCount > 0) {
+        notificationsBtn.classList.add('has-unread');
+      } else {
+        notificationsBtn.classList.remove('has-unread');
+      }
+
+      notificationsList.innerHTML = '';
+      if (notifications.length === 0) {
+        notificationsList.innerHTML = '<p class="no-notifications">لا توجد إشعارات</p>';
+      } else {
+        notifications.forEach(notification => {
+          const notificationItem = document.createElement('div');
+          notificationItem.classList.add('notification-item');
+          if (!notification.isRead) {
+            notificationItem.classList.add('unread');
+          }
+          notificationItem.innerHTML = `
+            <p>${notification.message}</p>
+            <small>${new Date(notification.createdAt).toLocaleString('ar-EG')}</small>
+          `;
+          notificationItem.addEventListener('click', async () => {
+            if (!notification.isRead) {
+              try {
+                await fetch(`/api/notifications/${notification._id}/read`, {
+                  method: 'PUT',
+                  headers: { 'Authorization': `Bearer ${token}` }
+                });
+                fetchNotifications();
+              } catch (error) {
+                console.error('Error marking notification as read:', error);
+              }
+            }
+          });
+          notificationsList.appendChild(notificationItem);
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  }
+
+  notificationsBtn.addEventListener('click', () => {
+    loadNotificationsCss();
+    notificationsModal.style.display = 'block';
+    fetchNotifications();
+  });
+
+  closeNotificationsBtn.addEventListener('click', () => {
+    notificationsModal.style.display = 'none';
+  });
+
+  // --- Settings Handling ---
+  settingsBtn.addEventListener('click', () => {
+    window.location.href = '/settings.html';
+  });
+
   // --- Assistant Bot ---
   const assistantButton = document.getElementById("assistantButton");
   if (assistantButton) {
@@ -352,4 +427,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Initialize ---
   populateBotSelect();
+  fetchNotifications();
 });
