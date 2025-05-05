@@ -206,6 +206,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const loadPageContent = async (page) => {
+    console.log(`Attempting to load page: ${page}`);
     content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`;
     const selectedBotId = localStorage.getItem("selectedBotId");
 
@@ -259,8 +260,14 @@ document.addEventListener("DOMContentLoaded", () => {
           else throw new Error("loadFacebookPage function not found");
           break;
         case "settings":
-          if (typeof loadSettingsPage === "function") await loadSettingsPage();
-          else throw new Error("loadSettingsPage function not found");
+          console.log("Attempting to call loadSettingsPage");
+          if (typeof loadSettingsPage === "function") {
+            await loadSettingsPage();
+            console.log("loadSettingsPage executed successfully");
+          } else {
+            console.error("loadSettingsPage function not found");
+            throw new Error("loadSettingsPage function not found");
+          }
           break;
         default:
           throw new Error("الصفحة المطلوبة غير متوفرة.");
