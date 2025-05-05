@@ -5,6 +5,8 @@ const { processMessage, processFeedback } = require('../botEngine');
 
 // إعداد cache لتخزين الـ webhook events مؤقتاً (5 دقايق)
 const webhookCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
+// Cache لتخزين الـ messageId بتاع الرسايل الأصلية
+const messageIdCache = new NodeCache({ stdTTL: 600, checkperiod: 60 });
 
 const handleMessage = async (req, res) => {
   try {
@@ -94,9 +96,15 @@ const handleMessage = async (req, res) => {
 
           console.log(`📊 Feedback received from ${senderPsid}: ${feedback} for message ID: ${mid}`);
 
-          // مرر الـ feedback لـ botEngine.js
-          await processFeedback(bot._id, senderPsid, mid, feedback);
-          console.log(`✅ Feedback processed for message ID: ${mid}`);
+          // جلب الـ messageId الأصلي من الـ cache
+          const originalMessageId = messageIdCache.get(`${senderPsid}_${bot._id}`);
+          if (originalMessageId) {
+            await processFeedback(bot._id, senderPsid, originalMessageId, feedback);
+            console.log(`✅ Feedback processed for original message ID: ${originalMessageId}`);
+          } else {
+            console.log(`⚠️ No original message ID found for feedback with ID: ${mid}`);
+            await processFeedback(bot._id, senderPsid, mid, feedback);
+          }
         }
 
         // التعامل مع الرسائل العادية
@@ -104,6 +112,9 @@ const handleMessage = async (req, res) => {
           const message = webhookEvent.message;
           const mid = message.mid || `temp_${Date.now()}`;
           const messageContent = message.text || (message.attachments ? JSON.stringify(message.attachments) : 'رسالة غير نصية');
+
+          // تخزين الـ messageId في الـ cache
+          messageIdCache.set(`${senderPsid}_${bot._id}`, mid);
 
           let responseText = '';
 
