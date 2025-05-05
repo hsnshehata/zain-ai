@@ -199,7 +199,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const lastMessage = conv.messages[conv.messages.length - 1];
       const lastMessageTimestamp = lastMessage ? new Date(lastMessage.timestamp).toLocaleString("ar-EG") : "لا يوجد";
-      const messageCount = conv.messages.length;
+      // احسب عدد ردود البوت بس
+      const messageCount = conv.messages.filter(msg => msg.role === 'assistant').length;
 
       card.innerHTML = `
         <div class="card-body">
@@ -444,120 +445,4 @@ document.addEventListener("DOMContentLoaded", () => {
       const editArea = document.getElementById(`edit-area-${messageIndex}`);
       const textarea = editArea.querySelector(".edit-textarea");
 
-      button.closest(".message-actions").style.display = "none";
-      editArea.style.display = "block";
-      textarea.value = answer;
-      textarea.focus();
-    }
-
-    function handleCancelEditClick(event) {
-      const button = event.currentTarget;
-      const editArea = button.closest(".edit-area");
-      const messageActions = editArea.previousElementSibling;
-
-      editArea.style.display = "none";
-      if (messageActions && messageActions.classList.contains("message-actions")) {
-        messageActions.style.display = "block";
-      }
-    }
-
-    async function handleSaveEditedRuleClick(event) {
-      const saveButton = event.currentTarget;
-      const editArea = saveButton.closest(".edit-area");
-      const textarea = editArea.querySelector(".edit-textarea");
-      const messageActions = editArea.previousElementSibling;
-      const editButton = messageActions ? messageActions.querySelector(".edit-rule-btn") : null;
-
-      if (!editButton) {
-        alert("خطأ: لم يتم العثور على زر التعديل الأصلي.");
-        return;
-      }
-
-      const question = editButton.dataset.question;
-      const editedAnswer = textarea.value.trim();
-
-      if (!question || !editedAnswer) {
-        alert("خطأ: السؤال أو الجواب المعدل فارغ.");
-        return;
-      }
-
-      saveButton.disabled = true;
-      saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جار الحفظ...';
-      const cancelButton = editArea.querySelector(".cancel-edit-btn");
-      if (cancelButton) cancelButton.disabled = true;
-
-      try {
-        await handleApiRequest("/api/rules", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            botId: selectedBotId,
-            type: "qa",
-            content: { question: question, answer: editedAnswer },
-            channel: currentChannel
-          }),
-        }, errorMessage, "فشل حفظ القاعدة");
-        alert("تم حفظ القاعدة الجديدة بنجاح!");
-        editArea.style.display = "none";
-        if (messageActions) messageActions.style.display = "block";
-      } catch (err) {
-        // الخطأ تم التعامل معه في handleApiRequest
-      } finally {
-        saveButton.disabled = false;
-        saveButton.innerHTML = '<i class="fas fa-save"></i> حفظ كقاعدة جديدة';
-        if (cancelButton) cancelButton.disabled = false;
-      }
-    }
-
-    // --- Event Listeners Setup ---
-    tabs.forEach(tab => {
-      tab.addEventListener("click", () => {
-        tabs.forEach(t => t.classList.remove("active"));
-        tab.classList.add("active");
-        currentChannel = tab.dataset.channel;
-        fetchConversations(selectedBotId, currentChannel, startDateFilter.value, endDateFilter.value);
-      });
-    });
-
-    applyFilterBtn.addEventListener("click", () => {
-      fetchConversations(selectedBotId, currentChannel, startDateFilter.value, endDateFilter.value);
-    });
-
-    resetFilterBtn.addEventListener("click", () => {
-      startDateFilter.value = "";
-      endDateFilter.value = "";
-      fetchConversations(selectedBotId, currentChannel, null, null);
-    });
-
-    closeChatModalBtn.addEventListener("click", closeChatModal);
-    deleteSingleConversationBtn.addEventListener("click", deleteSingleConversation);
-    deleteAllConversationsBtn.addEventListener("click", deleteAllConversationsForChannel);
-    downloadMessagesBtn.addEventListener("click", downloadMessagesForChannel);
-
-    chatModal.addEventListener("click", (event) => {
-      if (event.target === chatModal) {
-        closeChatModal();
-      }
-    });
-
-    // --- Initial Load ---
-    fetchConversations(selectedBotId, currentChannel, null, null);
-  }
-
-  // Helper function to escape HTML
-  function escapeHtml(unsafe) {
-    if (typeof unsafe !== "string") return unsafe;
-    return unsafe
-         .replace(/&/g, "&amp;")
-         .replace(/</g, "&lt;")
-         .replace(/>/g, "&gt;")
-         .replace(/"/g, "&quot;")
-         .replace(/\n/g, "<br>");
-  }
-
-  // Make loadMessagesPage globally accessible
-  window.loadMessagesPage = loadMessagesPage;
-});
+      button.closest(".message-actions").styl
