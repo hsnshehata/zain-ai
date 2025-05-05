@@ -13,6 +13,7 @@ const chatPageRoutes = require('./routes/chat-page');
 const messagesRoutes = require('./routes/messages');
 const indexRoutes = require('./routes/index');
 const uploadRoutes = require('./routes/upload');
+const notificationRoutes = require('./routes/notifications'); // أضفنا الروت هنا
 const connectDB = require('./db');
 const Conversation = require('./models/Conversation');
 const { processMessage } = require('./botEngine');
@@ -40,6 +41,7 @@ app.use('/api/bot', botRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/chat-page', chatPageRoutes);
 app.use('/api/messages', messagesRoutes);
+app.use('/api/notifications', notificationRoutes); // أضفنا الروت هنا
 app.use('/api/upload', uploadRoutes);
 app.use('/', indexRoutes);
 
@@ -113,6 +115,91 @@ app.get('/dashboard', (req, res) => {
     });
   } catch (err) {
     console.error('Error in dashboard route:', err);
+    res.status(500).json({ message: 'Something went wrong!' });
+  }
+});
+
+// Route for dashboard_new
+app.get('/dashboard_new', (req, res) => {
+  try {
+    const filePath = path.join(__dirname, '../public/dashboard_new.html');
+    console.log('Serving dashboard_new.html from:', filePath);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error serving dashboard_new.html:', err);
+        res.status(500).json({ message: 'Failed to load dashboard page' });
+      }
+    });
+  } catch (err) {
+    console.error('Error in dashboard_new route:', err);
+    res.status(500).json({ message: 'Something went wrong!' });
+  }
+});
+
+// Route for login
+app.get('/login', (req, res) => {
+  try {
+    const filePath = path.join(__dirname, '../public/login.html');
+    console.log('Serving login.html from:', filePath);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error serving login.html:', err);
+        res.status(500).json({ message: 'Failed to load login page' });
+      }
+    });
+  } catch (err) {
+    console.error('Error in login route:', err);
+    res.status(500).json({ message: 'Something went wrong!' });
+  }
+});
+
+// Route for register
+app.get('/register', (req, res) => {
+  try {
+    const filePath = path.join(__dirname, '../public/register.html');
+    console.log('Serving register.html from:', filePath);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error serving register.html:', err);
+        res.status(500).json({ message: 'Failed to load register page' });
+      }
+    });
+  } catch (err) {
+    console.error('Error in register route:', err);
+    res.status(500).json({ message: 'Something went wrong!' });
+  }
+});
+
+// Route for set-whatsapp
+app.get('/set-whatsapp', (req, res) => {
+  try {
+    const filePath = path.join(__dirname, '../public/set-whatsapp.html');
+    console.log('Serving set-whatsapp.html from:', filePath);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error serving set-whatsapp.html:', err);
+        res.status(500).json({ message: 'Failed to load set-whatsapp page' });
+      }
+    });
+  } catch (err) {
+    console.error('Error in set-whatsapp route:', err);
+    res.status(500).json({ message: 'Something went wrong!' });
+  }
+});
+
+// Route for settings
+app.get('/settings', (req, res) => {
+  try {
+    const filePath = path.join(__dirname, '../public/settings.html');
+    console.log('Serving settings.html from:', filePath);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error('Error serving settings.html:', err);
+        res.status(500).json({ message: 'Failed to load settings page' });
+      }
+    });
+  } catch (err) {
+    console.error('Error in settings route:', err);
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
