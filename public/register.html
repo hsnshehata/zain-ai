@@ -1,0 +1,94 @@
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register</title>
+  <link rel="stylesheet" href="/css/login.css">
+  <script src="[invalid url, do not cite]" async defer></script>
+</head>
+<body>
+  <div class="login-container">
+    <h1>تسجيل جديد</h1>
+    <form id="registerForm">
+      <div class="form-group">
+        <label for="email">البريد الإلكتروني</label>
+        <input type="email" id="email" required>
+      </div>
+      <div class="form-group">
+        <label for="username">اسم المستخدم</label>
+        <input type="text" id="username" required>
+      </div>
+      <div class="form-group">
+        <label for="password">كلمة المرور</label>
+        <input type="password" id="password" required>
+      </div>
+      <div class="form-group">
+        <label for="confirmPassword">تأكيد كلمة المرور</label>
+        <input type="password" id="confirmPassword" required>
+      </div>
+      <div class="form-group">
+        <label for="whatsapp">رقم الواتساب</label>
+        <input type="text" id="whatsapp" required>
+      </div>
+      <button type="submit">تسجيل</button>
+    </form>
+    <div id="googleSignInButton" class="g-signin2" data-onsuccess="onGoogleSignIn"></div>
+  </div>
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const whatsapp = document.getElementById('whatsapp').value;
+      if (password !== confirmPassword) {
+        alert('كلمات المرور غير متطابقة');
+        return;
+      }
+      try {
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, username, password, confirmPassword, whatsapp })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('role', data.role);
+          localStorage.setItem('userId', data.id);
+          localStorage.setItem('username', data.username);
+          window.location.href = '/dashboard_new.html';
+        } else {
+          alert(data.message);
+        }
+      } catch (error) {
+        alert('خطأ في السيرفر');
+      }
+    });
+
+    function onGoogleSignIn(googleUser) {
+      const id_token = googleUser.getAuthResponse().id_token;
+      fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: id_token })
+      }).then(response => response.json()).then(data => {
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('role', data.role);
+          localStorage.setItem('userId', data.id);
+          localStorage.setItem('username', data.username);
+          if (data.newUser) {
+            window.location.href = '/set-whatsapp.html';
+          } else {
+            window.location.href = '/dashboard_new.html';
+          }
+        } else {
+          alert(data.message);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
