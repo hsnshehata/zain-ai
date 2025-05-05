@@ -2,37 +2,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register</title>
+  <title>تسجيل جديد - زين بوت</title>
   <link rel="stylesheet" href="/css/register.css">
-  <script src="https://apis.google.com/js/platform.js" async defer></script>
+  <meta name="google-signin-client_id" content="${process.env.GOOGLE_CLIENT_ID}">
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <div class="login-container">
     <h1>تسجيل جديد</h1>
     <form id="registerForm">
       <div class="form-group">
-        <label for="email">البريد الإلكتر]));
-        <input type="email" id="email" required>
+        <label for="email">البريد الإلكتروني</label>
+        <input type="email" id="email" required placeholder="أدخل بريدك الإلكتروني">
       </div>
       <div class="form-group">
         <label for="username">اسم المستخدم</label>
-        <input type="text" id="username" required>
+        <input type="text" id="username" required placeholder="أدخل اسم المستخدم">
       </div>
       <div class="form-group">
         <label for="password">كلمة المرور</label>
-        <input type="password" id="password" required>
+        <input type="password" id="password" required placeholder="أدخل كلمة المرور">
       </div>
       <div class="form-group">
         <label for="confirmPassword">تأكيد كلمة المرور</label>
-        <input type="password" id="confirmPassword" required>
+        <input type="password" id="confirmPassword" required placeholder="أعد إدخال كلمة المرور">
       </div>
       <div class="form-group">
         <label for="whatsapp">رقم الواتساب</label>
-        <input type="text" id="whatsapp" required>
+        <input type="text" id="whatsapp" required placeholder="أدخل رقم الواتساب">
       </div>
       <button type="submit">تسجيل</button>
     </form>
-    <div id="googleSignInButton" class="g-signin2" data-onsuccess="onGoogleSignIn"></div>
+    <div class="google-signin-container">
+      <div id="googleSignInButton"></div>
+    </div>
     <p id="error" role="alert"></p>
     <p class="login-link">لديك حساب بالفعل؟ <a href="/login.html">تسجيل الدخول</a></p>
   </div>
@@ -73,8 +76,8 @@
       }
     });
 
-    function onGoogleSignIn(googleUser) {
-      const id_token = googleUser.getAuthResponse().id_token;
+    function onGoogleSignIn(response) {
+      const id_token = response.credential;
       fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -96,6 +99,17 @@
         }
       });
     }
+
+    window.onload = function() {
+      google.accounts.id.initialize({
+        client_id: "${process.env.GOOGLE_CLIENT_ID}",
+        callback: onGoogleSignIn
+      });
+      google.accounts.id.renderButton(
+        document.getElementById("googleSignInButton"),
+        { theme: "outline", size: "large", text: "signup_with", width: "100%" }
+      );
+    };
   </script>
 </body>
 </html>
