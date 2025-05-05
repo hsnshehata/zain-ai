@@ -1,14 +1,30 @@
+// /server/botEngine.js
+
 const OpenAI = require('openai');
 const mongoose = require('mongoose');
 const axios = require('axios');
 const FormData = require('form-data');
 const Bot = require('./models/Bot');
-const Rule = require('./models/Rule');
-const Conversation = require('./models/Conversation');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+const conversationSchema = new mongoose.Schema({
+  botId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bot', required: true },
+  userId: { type: String, required: true },
+  messages: [
+    {
+      role: { type: String, enum: ['user', 'assistant'], required: true },
+      content: { type: String, required: true },
+      timestamp: { type: Date, default: Date.now },
+    },
+  ],
+});
+
+const Conversation = mongoose.model('Conversation', conversationSchema);
+
+const Rule = require('./models/Rule');
 
 // دالة لجلب الوقت الحالي
 function getCurrentTime() {
@@ -47,25 +63,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
   try {
     console.log('🤖 Processing message for bot:', botId, 'user:', userId, 'message:', message);
 
-    // جلب المحادثة للتحقق من التكرار ولاستخدامها في بناء السياق
-    let conversation = await Conversation.findOne({ botId, userId });
-    if (!conversation) {
-      console.log('📋 No conversation found for bot:', botId, 'user:', userId);
-      conversation = { messages: [] }; // لو مفيش محادثة، هنستخدم كائن فاضي للسياق
-    } else {
-      console.log('📋 Found existing conversation:', conversation._id);
-    }
-
-    // فحص تكرار الرسالة
-    const messageKey = `${message}-${Date.now()}`;
-    if (conversation.messages.some(msg => 
-      msg.content === message && 
-      Math.abs(new Date(msg.timestamp) - Date.now()) < 1000
-    )) {
-      console.log(`⚠️ Duplicate message detected for ${userId}, skipping...`);
-      return 'تم معالجة هذه الرسالة من قبل';
-    }
-
     const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
     console.log('📜 Rules found:', rules);
 
@@ -88,6 +85,14 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     }
     console.log('📝 System prompt:', systemPrompt);
 
+    let conversation = await Conversation.findOne({ botId, userId });
+    if (!conversation) {
+      console.log('📋 Creating new conversation for bot:', botId, 'user:', userId);
+      conversation = await Conversation.create({ botId, userId, messages: [] });
+    } else {
+      console.log('📋 Found existing conversation:', conversation._id);
+    }
+
     let userMessageContent = message;
 
     if (isVoice) {
@@ -97,6 +102,10 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       }
       console.log('💬 Transcribed audio message:', userMessageContent);
     }
+
+    conversation.messages.push({ role: 'user', content: userMessageContent, timestamp: new Date() });
+    await conversation.save();
+    console.log('💬 User message added to conversation:', userMessageContent);
 
     let reply = '';
 
@@ -159,8 +168,11 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       }
     }
 
-    console.log('💬 Assistant reply generated:', reply);
-    return reply; // رجوع الرد فقط بدون تخزين
+    conversation.messages.push({ role: 'assistant', content: reply, timestamp: new Date() });
+    await conversation.save();
+    console.log('💬 Assistant reply added to conversation:', reply);
+
+    return reply;
   } catch (err) {
     console.error('❌ Error processing message:', err.message, err.stack);
     return 'عذرًا، حدث خطأ أثناء معالجة طلبك.';
