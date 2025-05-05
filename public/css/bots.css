@@ -139,6 +139,83 @@ body.light-mode .bot-entry {
   margin-top: 20px;
 }
 
+/* Modal for sending notifications */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1300;
+}
+
+.modal-content {
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 500px;
+}
+
+body.dark-mode .modal-content {
+  background-color: var(--dark-card);
+}
+
+body.light-mode .modal-content {
+  background-color: var(--light-card);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.3em;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2em;
+}
+
+body.dark-mode .modal-close-btn {
+  color: var(--dark-text);
+}
+
+body.light-mode .modal-close-btn {
+  color: var(--light-text);
+}
+
+#notificationMessage {
+  width: 100%;
+  height: 100px;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid;
+  resize: none;
+}
+
+body.dark-mode #notificationMessage {
+  background-color: var(--dark-card);
+  color: var(--dark-text);
+  border-color: var(--dark-border);
+}
+
+body.light-mode #notificationMessage {
+  background-color: var(--light-card);
+  color: var(--light-text);
+  border-color: var(--light-border);
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .user-bot-card .card-header {
@@ -156,5 +233,9 @@ body.light-mode .bot-entry {
   .bot-actions {
     width: 100%;
     justify-content: flex-end;
+  }
+
+  .modal-content {
+    width: 95%;
   }
 }
