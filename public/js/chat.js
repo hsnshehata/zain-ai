@@ -14,6 +14,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   let settings = {};
   let messageCounter = 0;
   let lastFeedbackButtons = null;
+  let lastMessage = null; // لتتبع آخر رسالة مرسلة
+
+  // دالة Debounce لمنع الطلبات المكررة
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
 
   try {
     const response = await fetch(`/api/chat-page/${linkId}`);
@@ -48,7 +62,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         background-color: ${settings?.colors?.header || '#2D3436'};
       }
       #chatTitle {
-        color: ${settings?.titleColor || '#ffffff'};
+        color: ${settings?.colors?.titleColor || '#ffffff'};
       }
       #chatMessages {
         background-color: ${settings?.colors?.chatAreaBackground || '#3B4A4E'};
@@ -205,7 +219,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       (trimmedText.startsWith('<') && trimmedText.includes('>') && trimmedText.match(/<[a-zA-Z][^>]*>/)) ||
       trimmedText.match(/\b(function|const|let|var|=>|class)\b/i) ||
       (trimmedText.match(/{[^{}]*}/) && trimmedText.match(/:/)) ||
-      (trimmedText.match(/[{}$$          $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
+      (trimmedText.match(/[{}$$              $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
     );
   }
 
@@ -219,6 +233,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function sendMessage(message, isImage = false, imageData = null) {
     if (!message && !isImage) return;
+
+    // فحص إذا كانت الرسالة مكررة
+    if (!isImage && lastMessage === message) {
+      console.log(`⚠️ Duplicate message detected: ${message}, skipping...`);
+      return;
+    }
+    lastMessage = isImage ? null : message;
+
+    console.log(`📩 Sending message: ${isImage ? 'Image' : message}`);
 
     hidePreviousFeedbackButtons();
 
@@ -339,21 +362,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  sendMessageBtn.addEventListener('click', () => {
-    const message = messageInput.value.trim();
+  // تطبيق Debounce على إرسال الرسائل
+  const debouncedSendMessage = debounce((message) => {
     if (message) {
       sendMessage(message);
       messageInput.value = '';
     }
+  }, 500);
+
+  sendMessageBtn.addEventListener('click', () => {
+    const message = messageInput.value.trim();
+    debouncedSendMessage(message);
   });
 
   messageInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
-      sendMessageBtn.click();
+      const message = messageInput.value.trim();
+      debouncedSendMessage(message);
     }
   });
 
-  imageInput.addEventListener('change', async () => {
+  // تطبيق Debounce على إرسال الصور
+  const debouncedSendImage = debounce(async () => {
     const file = imageInput.files[0];
     if (file) {
       try {
@@ -369,5 +399,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         chatMessages.scrollTop = chatMessages.scrollHeight;
       }
     }
-  });
+  }, 500);
+
+  imageInput.addEventListener('change', debouncedSendImage);
 });
