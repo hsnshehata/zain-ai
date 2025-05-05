@@ -14,10 +14,10 @@ exports.getUsers = async (req, res) => {
 
 // إنشاء مستخدم جديد
 exports.createUser = async (req, res) => {
-  const { username, password, confirmPassword, role } = req.body;
+  const { username, email, password, confirmPassword, role, whatsapp } = req.body;
 
-  if (!username || !password || !confirmPassword || !role) {
-    return res.status(400).json({ message: 'جميع الحقول مطلوبة' });
+  if (!username || !email || !password || !confirmPassword || !role) {
+    return res.status(400).json({ message: 'جميع الحقول الأساسية مطلوبة' });
   }
 
   if (password !== confirmPassword) {
@@ -25,13 +25,13 @@ exports.createUser = async (req, res) => {
   }
 
   try {
-    const existingUser = await User.findOne({ username });
+    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
-      return res.status(400).json({ message: 'اسم المستخدم موجود بالفعل' });
+      return res.status(400).json({ message: 'اسم المستخدم أو البريد الإلكتروني موجود بالفعل' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hashedPassword, role });
+    const user = new User({ username, email, password: hashedPassword, role, whatsapp });
     await user.save();
 
     res.status(201).json(user);
@@ -43,16 +43,37 @@ exports.createUser = async (req, res) => {
 
 // تعديل مستخدم
 exports.updateUser = async (req, res) => {
-  const { username, role } = req.body;
-
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ message: 'المستخدم غير موجود' });
     }
 
-    user.username = username || user.username;
-    user.role = role || user.role;
+    // تحقق إن المستخدم اللي بيعمل التحديث هو نفسه أو أدمن
+    if (req.user.id !== req.params.id && req.user.role !== 'superadmin') {
+      return res.status(403).json({ message: 'غير مصرح لك' });
+    }
+
+    if (req.body.username) {
+      const existingUser = await User.findOne({ username: req.body.username });
+      if (existingUser && existingUser._id.toString() !== req.params.id) {
+        return res.status(400).json({ message: 'اسم المستخدم موجود بالفعل' });
+      }
+      user.username = req.body.username;
+    }
+    if (req.body.email) {
+      const existingEmail = await User.findOne({ email: req.body.email });
+      if (existingEmail && existingEmail._id.toString() !== req.params.id) {
+        return res.status(400).json({ message: 'البريد الإلكتروني موجود بالفعل' });
+      }
+      user.email = req.body.email;
+    }
+    if (req.body.role && req.user.role === 'superadmin') {
+      user.role = req.body.role;
+    }
+    if (req.body.whatsapp) {
+      user.whatsapp = req.body.whatsapp;
+    }
 
     await user.save();
     res.status(200).json(user);
