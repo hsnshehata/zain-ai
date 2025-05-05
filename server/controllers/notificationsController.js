@@ -32,8 +32,13 @@ exports.sendGlobalNotification = async (req, res) => {
 
 exports.getNotifications = async (req, res) => {
   try {
-    const notifications = await Notification.find({ user: req.user.id }).sort({ createdAt: -1 });
-    console.log(`✅ Fetched ${notifications.length} notifications for user ${req.user.username} (${req.user.id})`);
+    const userId = req.user.userId; // غيرنا من req.user.id لـ req.user.userId
+    if (!userId) {
+      console.log('❌ Fetch notifications failed: User ID not found in token');
+      return res.status(400).json({ message: 'معرف المستخدم غير موجود' });
+    }
+    const notifications = await Notification.find({ user: userId }).sort({ createdAt: -1 });
+    console.log(`✅ Fetched ${notifications.length} notifications for user ${req.user.username} (${userId})`);
     res.status(200).json(notifications);
   } catch (error) {
     console.error('❌ خطأ في جلب الإشعارات:', error.message, error.stack);
@@ -43,15 +48,16 @@ exports.getNotifications = async (req, res) => {
 
 exports.markAsRead = async (req, res) => {
   const { id } = req.params;
+  const userId = req.user.userId; // غيرنا هنا كمان
   try {
-    const notification = await Notification.findOne({ _id: id, user: req.user.id });
+    const notification = await Notification.findOne({ _id: id, user: userId });
     if (!notification) {
-      console.log(`❌ Mark as read failed: Notification ${id} not found for user ${req.user.id}`);
+      console.log(`❌ Mark as read failed: Notification ${id} not found for user ${userId}`);
       return res.status(404).json({ message: 'الإشعار غير موجود' });
     }
     notification.isRead = true;
     await notification.save();
-    console.log(`✅ Notification ${id} marked as read for user ${req.user.id}`);
+    console.log(`✅ Notification ${id} marked as read for user ${userId}`);
     res.status(200).json({ message: 'تم تعليم الإشعار كمقروء' });
   } catch (error) {
     console.error('❌ خطأ في تعليم الإشعار كمقروء:', error.message, error.stack);
