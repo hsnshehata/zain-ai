@@ -1,4 +1,3 @@
-// public/js/messages.js (Updated for new dashboard design and unified error handling)
 
 // Define loadMessagesPage globally first to ensure it's available
 window.loadMessagesPage = async function() {
@@ -548,13 +547,13 @@ window.loadMessagesPage = async function() {
   fetchConversations(selectedBotId, currentChannel, null, null);
 };
 
-// Helper function to escape HTML
-function escapeHtml(unsafe) {
-  if (typeof unsafe !== "string") return unsafe;
-  return unsafe
-       .replace(/&/g, "&")
-       .replace(/</g, "<")
-       .replace(/>/g, ">")
-       .replace(/"/g, """)
-       .replace(/\n/g, "<br>");
-}
+  // Helper function to escape HTML
+  function escapeHtml(unsafe) {
+    if (typeof unsafe !== "string") return unsafe;
+    return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/\n/g, "<br>");
+  }
