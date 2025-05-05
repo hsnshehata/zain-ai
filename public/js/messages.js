@@ -199,7 +199,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const lastMessage = conv.messages[conv.messages.length - 1];
       const lastMessageTimestamp = lastMessage ? new Date(lastMessage.timestamp).toLocaleString("ar-EG") : "لا يوجد";
-      const messageCount = conv.messages.length;
+      // احسب عدد ردود البوت بس
+      const messageCount = conv.messages.filter(msg => msg.role === 'assistant').length;
 
       card.innerHTML = `
         <div class="card-body">
