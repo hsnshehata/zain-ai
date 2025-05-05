@@ -1,51 +1,77 @@
 const express = require('express');
 const router = express.Router();
+const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const { OAuth2Client } = require('google-auth-library');
+const crypto = require('crypto');
 
-// تسجيل الدخول
-router.post('/login', async (req, res) => {
-  const { username, password } = req.body;
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-  try {
-    // التحقق من وجود المستخدم
-    const user = await User.findOne({ username });
-    if (!user) {
-      return res.status(400).json({ message: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
-    }
-
-    // التحقق من كلمة المرور
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: 'اسم المستخدم أو كلمة المرور غير صحيحة' });
-    }
-
-    // إنشاء توكن
-    const token = jwt.sign(
-      { userId: user._id, role: user.role, username: user.username },
-      process.env.JWT_SECRET || 'your_jwt_secret',
-      { expiresIn: '24h' } // التوكن صالح لمدة 24 ساعة
-    );
-
-    res.status(200).json({ token, role: user.role, userId: user._id, username: user.username, success: true });
-  } catch (err) {
-    console.error('❌ خطأ في تسجيل الدخول:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر' });
+router.post('/register', async (req, res) => {
+  const { email, username, password, confirmPassword, whatsapp } = req.body;
+  if (!email || !username || !password || !confirmPassword || !whatsapp) {
+    return res.status(400).json({ message: 'All fields are required' });
   }
+  if (password !== confirmPassword) {
+    return res.status(400).json({ message: 'Passwords do not match' });
+  }
+  const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+  if (existingUser) {
+    return res.status(400).json({ message: 'Username or email already exists' });
+  }
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const user = new User({
+    email,
+    username,
+    password: hashedPassword,
+    whatsapp,
+    role: 'user',
+  });
+  await user.save();
+  const token = jwt.sign({ id: user._id, role: user.role, username: user.username }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
+  res.status(201).json({ token, role: user.role, id: user._id, username: user.username });
 });
 
-// تسجيل الخروج
-router.post('/logout', (req, res) => {
-  const { username } = req.body;
-
-  if (!username) {
-    return res.status(400).json({ message: 'اسم المستخدم مطلوب', success: false });
+router.post('/google', async (req, res) => {
+  const { idToken } = req.body;
+  try {
+    const ticket = await client.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
+    const payload = ticket.getPayload();
+    const googleId = payload['sub'];
+    const email = payload['email'];
+    let user = await User.findOne({ googleId });
+    if (user) {
+      const token = jwt.sign({ id: user._id, role: user.role, username: user.username }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
+      res.json({ token, role: user.role, id: user._id, username: user.username, newUser: false });
+    } else {
+      const existingEmailUser = await User.findOne({ email });
+      if (existingEmailUser) {
+        return res.status(400).json({ message: 'Email already registered' });
+      }
+      let username = payload['given_name'] + '_' + payload['family_name'];
+      username = username.toLowerCase().replace(/\s/g, '_');
+      let count = 1;
+      while (await User.findOne({ username })) {
+        username = `${payload['given_name']}_${payload['family_name']}${count}`;
+        count++;
+      }
+      const password = crypto.randomBytes(6).toString('hex');
+      const hashedPassword = await bcrypt.hash(password, 10);
+      user = new User({
+        email,
+        username,
+        password: hashedPassword,
+        googleId,
+        role: 'user',
+      });
+      await user.save();
+      const token = jwt.sign({ id: user._id, role: user.role, username: user.username }, process.env.JWT_SECRET || 'your_jwt_secret', { expiresIn: '24h' });
+      res.json({ token, role: user.role, id: user._id, username: user.username, newUser: true });
+    }
+  } catch (error) {
+    res.status(401).json({ message: 'Invalid Google token' });
   }
-
-  // هنا ممكن تضيف أي منطق إضافي لتسجيل الخروج (مثل إبطال التوكن إذا كنت بتستخدم blacklist)
-  console.log(`✅ User ${username} logged out successfully`);
-  res.status(200).json({ message: 'تم تسجيل الخروج بنجاح', success: true });
 });
 
 module.exports = router;
