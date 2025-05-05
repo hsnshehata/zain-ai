@@ -28,7 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const notificationsList = document.getElementById("notifications-list");
   const notificationsCount = document.getElementById("notifications-count");
   const closeNotificationsBtn = document.getElementById("close-notifications-btn");
-  const settingsBtn = document.getElementById("settings-btn");
 
   // Map of pages to their respective CSS files
   const pageCssMap = {
@@ -39,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
     messages: "/css/messages.css",
     feedback: "/css/feedback.css",
     facebook: "/css/facebook.css",
+    settings: "/css/settings.css",
   };
 
   // Function to load CSS dynamically
@@ -160,11 +160,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const disableNavItems = () => {
     navItems.forEach(item => {
       if (item.dataset.page === "bots" && role === "superadmin") return;
+      if (item.dataset.page === "settings") return; // إعدادات المستخدم متاحة دايمًا
       item.disabled = true;
       item.style.display = "none";
     });
     mobileNavItems.forEach(item => {
       if (item.dataset.page === "bots" && role === "superadmin") return;
+      if (item.dataset.page === "settings") return; // إعدادات المستخدم متاحة دايمًا
       item.disabled = true;
       item.style.display = "none";
     });
@@ -174,6 +176,9 @@ document.addEventListener("DOMContentLoaded", () => {
     navItems.forEach(item => {
       item.disabled = false;
       item.style.display = "flex";
+      if (item.dataset.page === "bots" && role !== "superadmin") {
+        item.style.display = "none";
+      }
     });
     mobileNavItems.forEach(item => {
       item.disabled = false;
@@ -208,7 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loadPageCss(page);
 
-    if (!selectedBotId && !(role === "superadmin" && page === "bots")) {
+    if (!selectedBotId && !(role === "superadmin" && page === "bots") && page !== "settings") {
       content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض هذا القسم.</p></div>`;
       disableNavItems();
       setActiveButton(page);
@@ -253,6 +258,9 @@ document.addEventListener("DOMContentLoaded", () => {
           if (typeof loadFacebookPage === "function") await loadFacebookPage();
           else throw new Error("loadFacebookPage function not found");
           break;
+        case "settings":
+          await loadSettingsPage();
+          break;
         default:
           throw new Error("الصفحة المطلوبة غير متوفرة.");
       }
@@ -261,6 +269,87 @@ document.addEventListener("DOMContentLoaded", () => {
       content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>${error.message || "حدث خطأ أثناء تحميل محتوى الصفحة."}</p></div>`;
     }
   };
+
+  // --- Settings Page ---
+  async function loadSettingsPage() {
+    try {
+      const user = await handleApiRequest('/api/users/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      }, content, 'فشل في جلب بيانات المستخدم');
+
+      content.innerHTML = `
+        <div class="page-header">
+          <h2><i class="fas fa-cog"></i> إعدادات المستخدم</h2>
+        </div>
+        <div class="form-card">
+          <form id="settingsForm">
+            <div class="form-group">
+              <label for="email">البريد الإلكتروني</label>
+              <input type="email" id="email" value="${user.email || ''}" required>
+            </div>
+            <div class="form-group">
+              <label for="username">اسم المستخدم</label>
+              <input type="text" id="username" value="${user.username || ''}" required>
+            </div>
+            <div class="form-group">
+              <label for="password">كلمة المرور الجديدة (اتركها فارغة إذا لم ترغب في التغيير)</label>
+              <input type="password" id="password">
+            </div>
+            <div class="form-group">
+              <label for="confirmPassword">تأكيد كلمة المرور</label>
+              <input type="password" id="confirmPassword">
+            </div>
+            <div class="form-group">
+              <label for="whatsapp">رقم الواتساب</label>
+              <input type="text" id="whatsapp" value="${user.whatsapp || ''}">
+            </div>
+            <button type="submit">حفظ التغييرات</button>
+          </form>
+          <p id="error" role="alert"></p>
+        </div>
+      `;
+
+      document.getElementById('settingsForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const whatsapp = document.getElementById('whatsapp').value;
+        const errorDiv = document.getElementById('error');
+
+        if (password && password !== confirmPassword) {
+          errorDiv.style.display = 'block';
+          errorDiv.textContent = 'كلمات المرور غير متطابقة';
+          return;
+        }
+
+        try {
+          const response = await fetch(`/api/users/${userId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ email, username, whatsapp, ...(password && { password }) })
+          });
+          const data = await response.json();
+          if (response.ok) {
+            localStorage.setItem('username', username);
+            loadSettingsPage(); // إعادة تحميل الصفحة بعد التحديث
+          } else {
+            errorDiv.style.display = 'block';
+            errorDiv.textContent = data.message || 'فشل في تحديث بيانات المستخدم';
+          }
+        } catch (error) {
+          errorDiv.style.display = 'block';
+          errorDiv.textContent = 'خطأ في السيرفر، حاول مرة أخرى';
+        }
+      });
+    } catch (err) {
+      content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>فشل في تحميل إعدادات المستخدم. حاول مرة أخرى.</p></div>`;
+    }
+  }
 
   // --- Navigation Events ---
   navItems.forEach(item => {
@@ -311,17 +400,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  window.addEventListener('hashchange', () => {
-    const hash = window.location.hash.substring(1);
-    const validPages = Array.from(navItems)
-      .filter(item => item.style.display !== "none")
-      .map(item => item.dataset.page);
-
-    if (hash && validPages.includes(hash)) {
-      loadPageContent(hash);
-    }
-  });
-
   // --- Logout ---
   async function logoutUser() {
     const username = localStorage.getItem("username");
@@ -357,6 +435,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const response = await fetch('/api/notifications', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (!response.ok) {
+        throw new Error('فشل في جلب الإشعارات: ' + response.statusText);
+      }
       const notifications = await response.json();
       const unreadCount = notifications.filter(n => !n.isRead).length;
       notificationsCount.textContent = unreadCount;
@@ -398,22 +479,18 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      notificationsList.innerHTML = '<p class="no-notifications">فشل في جلب الإشعارات</p>';
     }
   }
 
-  notificationsBtn.addEventListener('click', () => {
+  notificationsBtn.addEventListener("click", () => {
     loadNotificationsCss();
     notificationsModal.style.display = 'block';
     fetchNotifications();
   });
 
-  closeNotificationsBtn.addEventListener('click', () => {
+  closeNotificationsBtn.addEventListener("click", () => {
     notificationsModal.style.display = 'none';
-  });
-
-  // --- Settings Handling ---
-  settingsBtn.addEventListener('click', () => {
-    window.location.href = '/settings.html';
   });
 
   // --- Assistant Bot ---
