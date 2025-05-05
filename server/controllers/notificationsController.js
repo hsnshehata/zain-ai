@@ -3,21 +3,26 @@ const User = require('../models/User');
 
 exports.sendGlobalNotification = async (req, res) => {
   if (req.user.role !== 'superadmin') {
+    console.log(`❌ Send global notification failed: User ${req.user.username} is not superadmin`);
     return res.status(403).json({ message: 'غير مصرح لك' });
   }
   const { message } = req.body;
   if (!message) {
+    console.log('❌ Send global notification failed: Message is required');
     return res.status(400).json({ message: 'الرسالة مطلوبة' });
   }
   try {
     const users = await User.find();
+    console.log(`✅ Found ${users.length} users to send notification to`);
     for (let user of users) {
       const notification = new Notification({
         message,
         user: user._id
       });
       await notification.save();
+      console.log(`✅ Notification saved for user ${user.username} (${user._id})`);
     }
+    console.log('✅ Global notification sent successfully');
     res.status(201).json({ message: 'تم إرسال الإشعار للجميع بنجاح' });
   } catch (error) {
     console.error('❌ خطأ في إرسال الإشعار:', error.message, error.stack);
@@ -28,6 +33,7 @@ exports.sendGlobalNotification = async (req, res) => {
 exports.getNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({ user: req.user.id }).sort({ createdAt: -1 });
+    console.log(`✅ Fetched ${notifications.length} notifications for user ${req.user.username} (${req.user.id})`);
     res.status(200).json(notifications);
   } catch (error) {
     console.error('❌ خطأ في جلب الإشعارات:', error.message, error.stack);
@@ -40,10 +46,12 @@ exports.markAsRead = async (req, res) => {
   try {
     const notification = await Notification.findOne({ _id: id, user: req.user.id });
     if (!notification) {
+      console.log(`❌ Mark as read failed: Notification ${id} not found for user ${req.user.id}`);
       return res.status(404).json({ message: 'الإشعار غير موجود' });
     }
     notification.isRead = true;
     await notification.save();
+    console.log(`✅ Notification ${id} marked as read for user ${req.user.id}`);
     res.status(200).json({ message: 'تم تعليم الإشعار كمقروء' });
   } catch (error) {
     console.error('❌ خطأ في تعليم الإشعار كمقروء:', error.message, error.stack);
