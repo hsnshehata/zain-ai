@@ -28,6 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const notificationsList = document.getElementById("notifications-list");
   const notificationsCount = document.getElementById("notifications-count");
   const closeNotificationsBtn = document.getElementById("close-notifications-btn");
+  const settingsBtn = document.getElementById("settings-btn");
 
   // Map of pages to their respective CSS files
   const pageCssMap = {
@@ -160,13 +161,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const disableNavItems = () => {
     navItems.forEach(item => {
       if (item.dataset.page === "bots" && role === "superadmin") return;
-      if (item.dataset.page === "settings") return; // إعدادات المستخدم متاحة دايمًا
       item.disabled = true;
       item.style.display = "none";
     });
     mobileNavItems.forEach(item => {
       if (item.dataset.page === "bots" && role === "superadmin") return;
-      if (item.dataset.page === "settings") return; // إعدادات المستخدم متاحة دايمًا
       item.disabled = true;
       item.style.display = "none";
     });
@@ -214,7 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loadPageCss(page);
 
-    if (!selectedBotId && !(role === "superadmin" && page === "bots") && page !== "settings") {
+    if (!selectedBotId && !(role === "superadmin" && page === "bots")) {
       content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض هذا القسم.</p></div>`;
       disableNavItems();
       setActiveButton(page);
@@ -259,16 +258,6 @@ document.addEventListener("DOMContentLoaded", () => {
           if (typeof loadFacebookPage === "function") await loadFacebookPage();
           else throw new Error("loadFacebookPage function not found");
           break;
-        case "settings":
-          console.log("Attempting to call loadSettingsPage");
-          if (typeof loadSettingsPage === "function") {
-            await loadSettingsPage();
-            console.log("loadSettingsPage executed successfully");
-          } else {
-            console.error("loadSettingsPage function not found");
-            throw new Error("loadSettingsPage function not found");
-          }
-          break;
         default:
           throw new Error("الصفحة المطلوبة غير متوفرة.");
       }
@@ -299,6 +288,25 @@ document.addEventListener("DOMContentLoaded", () => {
       const page = item.dataset.page;
       loadPageContent(page);
     });
+  });
+
+  // --- Settings Button Event ---
+  settingsBtn.addEventListener("click", async () => {
+    console.log("Settings button clicked, attempting to load settings page");
+    content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`;
+    loadPageCss("settings");
+    try {
+      if (typeof loadSettingsPage === "function") {
+        await loadSettingsPage();
+        console.log("loadSettingsPage executed successfully");
+      } else {
+        console.error("loadSettingsPage function not found");
+        throw new Error("loadSettingsPage function not found");
+      }
+    } catch (error) {
+      console.error("Error loading settings page:", error);
+      content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>${error.message || "حدث خطأ أثناء تحميل إعدادات المستخدم."}</p></div>`;
+    }
   });
 
   // --- Initial Page Load ---
