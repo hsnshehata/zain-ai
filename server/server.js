@@ -13,7 +13,7 @@ const chatPageRoutes = require('./routes/chat-page');
 const messagesRoutes = require('./routes/messages');
 const indexRoutes = require('./routes/index');
 const uploadRoutes = require('./routes/upload');
-const notificationRoutes = require('./routes/notifications'); // أضفنا الروت هنا
+const notificationRoutes = require('./routes/notifications');
 const connectDB = require('./db');
 const Conversation = require('./models/Conversation');
 const { processMessage } = require('./botEngine');
@@ -41,7 +41,7 @@ app.use('/api/bot', botRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/chat-page', chatPageRoutes);
 app.use('/api/messages', messagesRoutes);
-app.use('/api/notifications', notificationRoutes); // أضفنا الروت هنا
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/', indexRoutes);
 
@@ -183,23 +183,6 @@ app.get('/set-whatsapp', (req, res) => {
     });
   } catch (err) {
     console.error('Error in set-whatsapp route:', err);
-    res.status(500).json({ message: 'Something went wrong!' });
-  }
-});
-
-// Route for settings
-app.get('/settings', (req, res) => {
-  try {
-    const filePath = path.join(__dirname, '../public/settings.html');
-    console.log('Serving settings.html from:', filePath);
-    res.sendFile(filePath, (err) => {
-      if (err) {
-        console.error('Error serving settings.html:', err);
-        res.status(500).json({ message: 'Failed to load settings page' });
-      }
-    });
-  } catch (err) {
-    console.error('Error in settings route:', err);
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
