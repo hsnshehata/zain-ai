@@ -199,17 +199,21 @@ async function processFeedback(botId, userId, messageId, feedback) {
     console.log(`📊 Processing feedback for bot: ${botId}, user: ${userId}, messageId: ${messageId}, feedback: ${feedback}`);
 
     // جلب المحادثة
-    const conversation = await Conversation.findOne({
-      botId,
-      userId,
-      'messages.messageId': messageId
-    }, {
-      'messages.$': 1
-    });
-
+    const conversation = await Conversation.findOne({ botId, userId });
     let messageContent = 'غير معروف';
-    if (conversation && conversation.messages[0]) {
-      messageContent = conversation.messages[0].content;
+
+    if (conversation) {
+      // ابحث عن رد البوت بناءً على messageId
+      const botMessage = conversation.messages.find(msg => msg.messageId === messageId && msg.role === 'assistant');
+      if (botMessage) {
+        messageContent = botMessage.content;
+      } else {
+        // لو مش لاقي رد البوت، جرب رسالة المستخدم
+        const userMessage = conversation.messages.find(msg => msg.messageId === messageId && msg.role === 'user');
+        if (userMessage) {
+          messageContent = userMessage.content;
+        }
+      }
     }
 
     // حفظ الـ feedback
