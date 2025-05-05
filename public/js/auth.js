@@ -1,5 +1,3 @@
-// public/js/auth.js
-
 document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.querySelector('#loginForm');
   const logoutButtons = document.querySelectorAll('.logout-btn');
@@ -45,10 +43,12 @@ document.addEventListener('DOMContentLoaded', () => {
           // Redirect to the new dashboard file
           window.location.href = '/dashboard_new.html';
         } else {
-          throw new Error(data.message || 'فشل تسجيل الدخول');
+          errorDiv.style.display = 'block';
+          errorDiv.textContent = data.message || 'فشل تسجيل الدخول، تأكد من اسم المستخدم وكلمة المرور';
         }
       } catch (err) {
-        // الخطأ تم التعامل معه في handleApiRequest
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = err.message || 'حدث خطأ أثناء تسجيل الدخول، حاول مرة أخرى أو سجل مستخدم جديد';
       }
     });
   }
@@ -76,9 +76,11 @@ document.addEventListener('DOMContentLoaded', () => {
         console.log('✅ Logout successful, localStorage cleared');
         window.location.href = '/';
       } catch (err) {
-        // الخطأ تم التعامل معه في handleApiRequest
         if (!errorDiv) {
           alert('حدث خطأ أثناء تسجيل الخروج، حاول مرة أخرى');
+        } else {
+          errorDiv.style.display = 'block';
+          errorDiv.textContent = err.message || 'حدث خطأ أثناء تسجيل الخروج، حاول مرة أخرى';
         }
       }
     });
