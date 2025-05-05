@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['user', 'superadmin'], default: 'user' },
   bots: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Bot' }],
   createdAt: { type: Date, default: Date.now },
-  email: { type: String, required: true, unique: true },
+  email: { type: String, unique: true, required: false }, // غيرنا required لـ false
   whatsapp: { type: String },
   googleId: { type: String }
 });
