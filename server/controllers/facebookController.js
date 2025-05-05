@@ -96,16 +96,30 @@ const handleMessage = async (req, res) => {
 
           console.log(`📊 Feedback received from ${senderPsid}: ${feedback} for message ID: ${mid}`);
 
-          // جلب الرسالة من Conversation بناءً على messageId
-          const conversation = await Conversation.findOne({
-            botId: bot._id,
-            userId: senderPsid,
-            'messages.messageId': mid
-          }, {
-            'messages.$': 1 // جلب الرسالة اللي مطابِقة بس
-          });
+          // محاولة جلب الرسالة من Conversation مع عدة محاولات
+          let messageContent = 'غير معروف';
+          let conversation = null;
+          for (let attempt = 0; attempt < 3; attempt++) {
+            conversation = await Conversation.findOne({
+              botId: bot._id,
+              userId: senderPsid,
+              'messages.messageId': mid
+            }, {
+              'messages.$': 1
+            });
 
-          const messageContent = conversation?.messages[0]?.content || 'غير معروف';
+            if (conversation && conversation.messages[0]) {
+              messageContent = conversation.messages[0].content;
+              break;
+            }
+            // انتظر 500ms قبل المحاولة التالية
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+
+          // لو لسه مش لاقي الرسالة، جرب نص الرسالة من الـ webhook
+          if (messageContent === 'غير معروف' && webhookEvent.message?.text) {
+            messageContent = webhookEvent.message.text;
+          }
 
           const feedbackEntry = new Feedback({
             botId: bot._id,
@@ -118,7 +132,7 @@ const handleMessage = async (req, res) => {
           });
 
           await feedbackEntry.save();
-          console.log(`✅ Feedback saved: ${feedback} for message ID: ${mid}`);
+          console.log(`✅ Feedback saved: ${feedback} for message ID: ${mid} with content: ${messageContent}`);
         }
 
         // التعامل مع الرسائل العادية
