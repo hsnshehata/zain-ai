@@ -3,11 +3,11 @@ const User = require('../models/User');
 
 exports.sendGlobalNotification = async (req, res) => {
   if (req.user.role !== 'superadmin') {
-    return res.status(403).json({ message: 'Not authorized' });
+    return res.status(403).json({ message: 'غير مصرح لك' });
   }
   const { message } = req.body;
   if (!message) {
-    return res.status(400).json({ message: 'Message is required' });
+    return res.status(400).json({ message: 'الرسالة مطلوبة' });
   }
   try {
     const users = await User.find();
@@ -18,9 +18,10 @@ exports.sendGlobalNotification = async (req, res) => {
       });
       await notification.save();
     }
-    res.status(201).json({ message: 'Global notification sent' });
+    res.status(201).json({ message: 'تم إرسال الإشعار للجميع بنجاح' });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('❌ خطأ في إرسال الإشعار:', error.message, error.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
 
@@ -29,7 +30,8 @@ exports.getNotifications = async (req, res) => {
     const notifications = await Notification.find({ user: req.user.id }).sort({ createdAt: -1 });
     res.status(200).json(notifications);
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('❌ خطأ في جلب الإشعارات:', error.message, error.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
 
@@ -38,12 +40,13 @@ exports.markAsRead = async (req, res) => {
   try {
     const notification = await Notification.findOne({ _id: id, user: req.user.id });
     if (!notification) {
-      return res.status(404).json({ message: 'Notification not found' });
+      return res.status(404).json({ message: 'الإشعار غير موجود' });
     }
     notification.isRead = true;
     await notification.save();
-    res.status(200).json({ message: 'Notification marked as read' });
+    res.status(200).json({ message: 'تم تعليم الإشعار كمقروء' });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('❌ خطأ في تعليم الإشعار كمقروء:', error.message, error.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
