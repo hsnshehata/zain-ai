@@ -5,6 +5,7 @@ const FormData = require('form-data');
 const Bot = require('./models/Bot');
 const Rule = require('./models/Rule');
 const Conversation = require('./models/Conversation');
+const Feedback = require('./models/Feedback');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -176,11 +177,12 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     }
 
     // حفظ رد البوت
+    const responseMessageId = `response_${messageId || Date.now()}`;
     conversation.messages.push({ 
       role: 'assistant', 
       content: reply, 
       timestamp: new Date(),
-      messageId: `response_${messageId || Date.now()}` 
+      messageId: responseMessageId 
     });
     await conversation.save();
     console.log('💬 Assistant reply added to conversation:', reply);
@@ -192,4 +194,40 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
   }
 }
 
-module.exports = { processMessage };
+async function processFeedback(botId, userId, messageId, feedback) {
+  try {
+    console.log(`📊 Processing feedback for bot: ${botId}, user: ${userId}, messageId: ${messageId}, feedback: ${feedback}`);
+
+    // جلب المحادثة
+    const conversation = await Conversation.findOne({
+      botId,
+      userId,
+      'messages.messageId': messageId
+    }, {
+      'messages.$': 1
+    });
+
+    let messageContent = 'غير معروف';
+    if (conversation && conversation.messages[0]) {
+      messageContent = conversation.messages[0].content;
+    }
+
+    // حفظ الـ feedback
+    const feedbackEntry = new Feedback({
+      botId,
+      userId,
+      messageId,
+      feedback: feedback === 'Good response' ? 'positive' : 'negative',
+      messageContent,
+      timestamp: new Date(),
+      isVisible: true
+    });
+
+    await feedbackEntry.save();
+    console.log(`✅ Feedback saved: ${feedback} for message ID: ${messageId} with content: ${messageContent}`);
+  } catch (err) {
+    console.error('❌ Error processing feedback:', err.message, err.stack);
+  }
+}
+
+module.exports = { processMessage, processFeedback };
