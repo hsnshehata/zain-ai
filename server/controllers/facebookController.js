@@ -1,9 +1,7 @@
 const request = require('request');
 const NodeCache = require('node-cache');
 const Bot = require('../models/Bot');
-const { processMessage } = require('../botEngine');
-const Feedback = require('../models/Feedback');
-const Conversation = require('../models/Conversation');
+const { processMessage, processFeedback } = require('../botEngine');
 
 // إعداد cache لتخزين الـ webhook events مؤقتاً (5 دقايق)
 const webhookCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
@@ -96,43 +94,9 @@ const handleMessage = async (req, res) => {
 
           console.log(`📊 Feedback received from ${senderPsid}: ${feedback} for message ID: ${mid}`);
 
-          // محاولة جلب الرسالة من Conversation مع عدة محاولات
-          let messageContent = 'غير معروف';
-          let conversation = null;
-          for (let attempt = 0; attempt < 3; attempt++) {
-            conversation = await Conversation.findOne({
-              botId: bot._id,
-              userId: senderPsid,
-              'messages.messageId': mid
-            }, {
-              'messages.$': 1
-            });
-
-            if (conversation && conversation.messages[0]) {
-              messageContent = conversation.messages[0].content;
-              break;
-            }
-            // انتظر 500ms قبل المحاولة التالية
-            await new Promise(resolve => setTimeout(resolve, 500));
-          }
-
-          // لو لسه مش لاقي الرسالة، جرب نص الرسالة من الـ webhook
-          if (messageContent === 'غير معروف' && webhookEvent.message?.text) {
-            messageContent = webhookEvent.message.text;
-          }
-
-          const feedbackEntry = new Feedback({
-            botId: bot._id,
-            userId: senderPsid,
-            messageId: mid,
-            feedback: feedback === 'Good response' ? 'positive' : 'negative',
-            messageContent,
-            timestamp: new Date(webhookEvent.timestamp * 1000),
-            isVisible: true
-          });
-
-          await feedbackEntry.save();
-          console.log(`✅ Feedback saved: ${feedback} for message ID: ${mid} with content: ${messageContent}`);
+          // مرر الـ feedback لـ botEngine.js
+          await processFeedback(bot._id, senderPsid, mid, feedback);
+          console.log(`✅ Feedback processed for message ID: ${mid}`);
         }
 
         // التعامل مع الرسائل العادية
