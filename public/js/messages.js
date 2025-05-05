@@ -1,7 +1,7 @@
 // public/js/messages.js (Updated for new dashboard design and unified error handling)
 
-// Define loadMessagesPage directly without waiting for DOMContentLoaded
-async function loadMessagesPage() {
+// Define loadMessagesPage globally first to ensure it's available
+window.loadMessagesPage = async function() {
   const content = document.getElementById("content");
   const token = localStorage.getItem("token");
   const selectedBotId = localStorage.getItem("selectedBotId");
@@ -546,18 +546,15 @@ async function loadMessagesPage() {
 
   // --- Initial Load ---
   fetchConversations(selectedBotId, currentChannel, null, null);
-}
+};
 
 // Helper function to escape HTML
 function escapeHtml(unsafe) {
   if (typeof unsafe !== "string") return unsafe;
   return unsafe
-       .replace(/&/g, "&amp;")
-       .replace(/</g, "&lt;")
-       .replace(/>/g, "&gt;")
-       .replace(/"/g, "&quot;")
+       .replace(/&/g, "&")
+       .replace(/</g, "<")
+       .replace(/>/g, ">")
+       .replace(/"/g, """)
        .replace(/\n/g, "<br>");
 }
-
-// Make loadMessagesPage globally accessible
-window.loadMessagesPage = loadMessagesPage;
