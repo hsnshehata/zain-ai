@@ -215,7 +215,13 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
 
-      card.querySelector(".view-chat-btn").addEventListener("click", () => openChatModal(conv._id));
+      card.querySelector(".view-chat-btn").removeEventListener("click", handleViewChatClick);
+      card.querySelector(".view-chat-btn").addEventListener("click", handleViewChatClick);
+
+      function handleViewChatClick() {
+        openChatModal(conv._id);
+      }
+
       return card;
     }
 
@@ -237,10 +243,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return button;
       };
 
-      // Previous Button
       paginationContainer.appendChild(createPageButton(currentPage - 1, 'السابق', false, currentPage === 1));
 
-      // Dynamic page numbers with ellipsis
       const maxButtons = 5;
       let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
       let endPage = Math.min(totalPages, startPage + maxButtons - 1);
@@ -271,7 +275,6 @@ document.addEventListener("DOMContentLoaded", () => {
         paginationContainer.appendChild(createPageButton(totalPages));
       }
 
-      // Next Button
       paginationContainer.appendChild(createPageButton(currentPage + 1, 'التالي', false, currentPage === totalPages));
     }
 
@@ -329,7 +332,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
       chatModalBody.querySelectorAll(".edit-rule-btn").forEach(button => {
-        button.removeEventListener("click", handleEditRuleClick); // إزالة المستمع القديم
+        button.removeEventListener("click", handleEditRuleClick);
         button.addEventListener("click", handleEditRuleClick);
       });
       chatModalBody.querySelectorAll(".save-edited-rule-btn").forEach(button => {
@@ -524,7 +527,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- Event Listeners Setup ---
     tabs.forEach(tab => {
-      tab.removeEventListener("click", handleTabClick); // إزالة المستمع القديم
+      tab.removeEventListener("click", handleTabClick);
       tab.addEventListener("click", handleTabClick);
     });
 
@@ -580,10 +583,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function escapeHtml(unsafe) {
     if (typeof unsafe !== "string") return unsafe;
     return unsafe
-         .replace(/&/g, "&amp;")
-         .replace(/</g, "&lt;")
-         .replace(/>/g, "&gt;")
-         .replace(/"/g, "&quot;")
+         .replace(/&/g, "&")
+         .replace(/</g, "<")
+         .replace(/>/g, ">")
+         .replace(/"/g, """)
          .replace(/\n/g, "<br>");
   }
 
