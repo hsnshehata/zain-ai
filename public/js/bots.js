@@ -27,6 +27,7 @@ async function loadBotsPage() {
       <div class="header-actions">
         <button id="showCreateUserBtn" class="btn btn-secondary"><i class="fas fa-user-plus"></i> إنشاء مستخدم</button>
         <button id="showCreateBotBtn" class="btn btn-primary"><i class="fas fa-plus-circle"></i> إنشاء بوت</button>
+        <button id="sendNotificationBtn" class="btn btn-primary"><i class="fas fa-bell"></i> إرسال إشعار للجميع</button>
       </div>
     </div>
     <div id="formContainer" class="form-section" style="display: none;"></div>
@@ -50,12 +51,14 @@ async function loadBotsPage() {
   const errorMessage = document.getElementById("errorMessage");
   const showCreateUserBtn = document.getElementById("showCreateUserBtn");
   const showCreateBotBtn = document.getElementById("showCreateBotBtn");
+  const sendNotificationBtn = document.getElementById("sendNotificationBtn");
   const botSearchInput = document.getElementById("botSearchInput");
 
   let allUsers = []; // Store all fetched users for local filtering
 
   showCreateUserBtn.addEventListener("click", () => showCreateUserForm(formContainer));
   showCreateBotBtn.addEventListener("click", () => showCreateBotForm(formContainer));
+  sendNotificationBtn.addEventListener("click", () => showSendNotificationForm());
 
   // Search functionality
   botSearchInput.addEventListener("input", () => {
@@ -137,6 +140,61 @@ async function fetchUsersAndBots(gridElement, spinner, errorElement) {
     spinner.style.display = "none";
     // الخطأ تم التعامل معه في handleApiRequest
   }
+}
+
+// Function to show the send notification form
+function showSendNotificationForm() {
+  const modal = document.createElement("div");
+  modal.classList.add("modal");
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>إرسال إشعار للجميع</h3>
+        <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+      </div>
+      <form id="sendNotificationForm">
+        <div class="form-group">
+          <label for="notificationMessage">الرسالة</label>
+          <textarea id="notificationMessage" required></textarea>
+        </div>
+        <button type="submit">إرسال</button>
+      </form>
+      <p id="notificationFormError" class="error-message" style="display: none;"></p>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  modal.querySelector(".modal-close-btn").addEventListener("click", () => {
+    modal.remove();
+  });
+
+  modal.querySelector("#sendNotificationForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const message = modal.querySelector("#notificationMessage").value;
+    const errorEl = modal.querySelector("#notificationFormError");
+    errorEl.style.display = "none";
+    try {
+      const response = await fetch("/api/notifications/global", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ message }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        alert("تم إرسال الإشعار بنجاح");
+        modal.remove();
+      } else {
+        errorEl.textContent = data.message;
+        errorEl.style.display = "block";
+      }
+    } catch (error) {
+      errorEl.textContent = "خطأ في السيرفر";
+      errorEl.style.display = "block";
+    }
+  });
 }
 
 // --- Form Functions (Create/Edit User/Bot) ---
@@ -535,3 +593,4 @@ window.showEditBotForm = showEditBotForm;
 window.deleteBot = deleteBot;
 window.hideForm = hideForm;
 window.loadBotsPage = loadBotsPage;
+window.showSendNotificationForm = showSendNotificationForm;
