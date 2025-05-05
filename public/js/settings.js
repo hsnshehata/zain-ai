@@ -8,6 +8,18 @@ async function loadSettingsPage() {
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
 
+  if (!token || !userId) {
+    console.error("Token or userId not found in localStorage");
+    content.innerHTML = `
+      <div class="placeholder error">
+        <h2><i class="fas fa-exclamation-circle"></i> خطأ</h2>
+        <p>يرجى تسجيل الدخول مرة أخرى للوصول إلى إعدادات المستخدم.</p>
+        <a href="/login.html">تسجيل الدخول</a>
+      </div>
+    `;
+    return;
+  }
+
   try {
     console.log("Fetching user data for userId:", userId);
     const user = await handleApiRequest('/api/users/me', {
@@ -89,7 +101,13 @@ async function loadSettingsPage() {
     });
   } catch (err) {
     console.error("Error loading settings page:", err);
-    content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>فشل في تحميل إعدادات المستخدم. حاول مرة أخرى.</p></div>`;
+    content.innerHTML = `
+      <div class="placeholder error">
+        <h2><i class="fas fa-exclamation-circle"></i> خطأ</h2>
+        <p>فشل في تحميل إعدادات المستخدم. ${err.message || 'يرجى المحاولة مرة أخرى لاحقًا.'}</p>
+        <a href="/login.html">تسجيل الدخول مرة أخرى</a>
+      </div>
+    `;
   }
 }
 
