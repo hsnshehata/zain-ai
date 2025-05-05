@@ -194,24 +194,26 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
   }
 }
 
-async function processFeedback(botId, userId, messageId, feedback) {
+async function processFeedback(botId, userId, messageId, feedback, responseText = null) {
   try {
     console.log(`📊 Processing feedback for bot: ${botId}, user: ${userId}, messageId: ${messageId}, feedback: ${feedback}`);
 
-    // جلب المحادثة
-    const conversation = await Conversation.findOne({ botId, userId });
-    let messageContent = 'غير معروف';
+    // استخدم responseText إذا كان متاحًا، وإلا جرب جلب الرسالة من Conversation
+    let messageContent = responseText || 'غير معروف';
 
-    if (conversation) {
-      // ابحث عن رد البوت بناءً على messageId
-      const botMessage = conversation.messages.find(msg => msg.messageId === messageId && msg.role === 'assistant');
-      if (botMessage) {
-        messageContent = botMessage.content;
-      } else {
-        // لو مش لاقي رد البوت، جرب رسالة المستخدم
-        const userMessage = conversation.messages.find(msg => msg.messageId === messageId && msg.role === 'user');
-        if (userMessage) {
-          messageContent = userMessage.content;
+    if (!responseText) {
+      const conversation = await Conversation.findOne({ botId, userId });
+      if (conversation) {
+        // ابحث عن رد البوت بناءً على messageId
+        const botMessage = conversation.messages.find(msg => msg.messageId === `response_${messageId}` && msg.role === 'assistant');
+        if (botMessage) {
+          messageContent = botMessage.content;
+        } else {
+          // لو مش لاقي رد البوت، جرب رسالة المستخدم
+          const userMessage = conversation.messages.find(msg => msg.messageId === messageId && msg.role === 'user');
+          if (userMessage) {
+            messageContent = userMessage.content;
+          }
         }
       }
     }
