@@ -133,7 +133,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
           let messageCount = 0;
           conversations.forEach(conv => {
-            messageCount += conv.messages.length;
+            // احسب بس ردود البوت (role: 'assistant')
+            messageCount += conv.messages.filter(msg => msg.role === 'assistant').length;
           });
           messagesByChannelData[channel] = messageCount;
         }
@@ -178,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ...(startDate && { startDate }),
           ...(endDate && { endDate }),
         });
-        const dailyData = await handleApiRequest(`/api/messages/daily/${botId}?${dailyQuery}`, {
+        const dailyData = await handleApiRequest(`/api/messages/daily/${botId}?${dailyQuery}&role=assistant`, {
           headers: { Authorization: `Bearer ${token}` },
         }, analyticsContent, 'فشل في جلب معدل الرسائل يوميًا');
 
