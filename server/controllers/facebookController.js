@@ -3,6 +3,7 @@ const NodeCache = require('node-cache');
 const Bot = require('../models/Bot');
 const { processMessage } = require('../botEngine');
 const Feedback = require('../models/Feedback');
+const Conversation = require('../models/Conversation');
 
 // إعداد cache لتخزين الـ webhook events مؤقتاً (5 دقايق)
 const webhookCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
@@ -92,9 +93,19 @@ const handleMessage = async (req, res) => {
           const feedbackData = webhookEvent.response_feedback;
           const mid = feedbackData.mid;
           const feedback = feedbackData.feedback;
-          const messageContent = webhookEvent.message?.text || 'غير معروف';
 
           console.log(`📊 Feedback received from ${senderPsid}: ${feedback} for message ID: ${mid}`);
+
+          // جلب الرسالة من Conversation بناءً على messageId
+          const conversation = await Conversation.findOne({
+            botId: bot._id,
+            userId: senderPsid,
+            'messages.messageId': mid
+          }, {
+            'messages.$': 1 // جلب الرسالة اللي مطابِقة بس
+          });
+
+          const messageContent = conversation?.messages[0]?.content || 'غير معروف';
 
           const feedbackEntry = new Feedback({
             botId: bot._id,
@@ -103,6 +114,7 @@ const handleMessage = async (req, res) => {
             feedback: feedback === 'Good response' ? 'positive' : 'negative',
             messageContent,
             timestamp: new Date(webhookEvent.timestamp * 1000),
+            isVisible: true
           });
 
           await feedbackEntry.save();
