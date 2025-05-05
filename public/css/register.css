@@ -132,12 +132,16 @@ button[type="submit"]:focus {
   outline-offset: 2px;
 }
 
-/* Google Sign-In Button */
-.g-signin2 {
-  margin: 20px auto;
+/* Google Sign-In Button Container */
+.google-signin-container {
+  margin: 20px 0;
   width: 100%;
   display: flex;
   justify-content: center;
+}
+
+#googleSignInButton {
+  width: 100%;
 }
 
 /* Login Link */
