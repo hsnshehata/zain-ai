@@ -1,30 +1,14 @@
-// /server/botEngine.js
-
 const OpenAI = require('openai');
 const mongoose = require('mongoose');
 const axios = require('axios');
 const FormData = require('form-data');
 const Bot = require('./models/Bot');
+const Rule = require('./models/Rule');
+const Conversation = require('./models/Conversation');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
-const conversationSchema = new mongoose.Schema({
-  botId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bot', required: true },
-  userId: { type: String, required: true },
-  messages: [
-    {
-      role: { type: String, enum: ['user', 'assistant'], required: true },
-      content: { type: String, required: true },
-      timestamp: { type: Date, default: Date.now },
-    },
-  ],
-});
-
-const Conversation = mongoose.model('Conversation', conversationSchema);
-
-const Rule = require('./models/Rule');
 
 // دالة لجلب الوقت الحالي
 function getCurrentTime() {
@@ -59,9 +43,34 @@ async function transcribeAudio(audioUrl) {
   }
 }
 
-async function processMessage(botId, userId, message, isImage = false, isVoice = false) {
+async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null) {
   try {
     console.log('🤖 Processing message for bot:', botId, 'user:', userId, 'message:', message);
+
+    let conversation = await Conversation.findOne({ botId, userId });
+    if (!conversation) {
+      console.log('📋 Creating new conversation for bot:', botId, 'user:', userId);
+      conversation = await Conversation.create({ botId, userId, messages: [] });
+    } else {
+      console.log('📋 Found existing conversation:', conversation._id);
+    }
+
+    // فحص تكرار الرسالة
+    if (messageId) {
+      if (conversation.messages.some(msg => msg.messageId === messageId)) {
+        console.log(`⚠️ Duplicate message detected with messageId ${messageId} for ${userId}, skipping...`);
+        return 'تم معالجة هذه الرسالة من قبل';
+      }
+    } else {
+      const messageKey = `${message}-${Date.now()}`;
+      if (conversation.messages.some(msg => 
+        msg.content === message && 
+        Math.abs(new Date(msg.timestamp) - Date.now()) < 1000
+      )) {
+        console.log(`⚠️ Duplicate message detected in conversation for ${userId}, skipping...`);
+        return 'تم معالجة هذه الرسالة من قبل';
+      }
+    }
 
     const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
     console.log('📜 Rules found:', rules);
@@ -85,14 +94,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     }
     console.log('📝 System prompt:', systemPrompt);
 
-    let conversation = await Conversation.findOne({ botId, userId });
-    if (!conversation) {
-      console.log('📋 Creating new conversation for bot:', botId, 'user:', userId);
-      conversation = await Conversation.create({ botId, userId, messages: [] });
-    } else {
-      console.log('📋 Found existing conversation:', conversation._id);
-    }
-
     let userMessageContent = message;
 
     if (isVoice) {
@@ -103,7 +104,13 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       console.log('💬 Transcribed audio message:', userMessageContent);
     }
 
-    conversation.messages.push({ role: 'user', content: userMessageContent, timestamp: new Date() });
+    // حفظ رسالة المستخدم
+    conversation.messages.push({ 
+      role: 'user', 
+      content: userMessageContent, 
+      timestamp: new Date(),
+      messageId: messageId || `msg_${Date.now()}` 
+    });
     await conversation.save();
     console.log('💬 User message added to conversation:', userMessageContent);
 
@@ -144,7 +151,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
             {
               role: 'user',
               content: [
-                { type: 'input_text', text: 'رد على حسب المحتوى الموجود في الصورة' },
+                { type: 'input_text', text: 'اطلب معلومات عن المنتج الموجود في الصورة' },
                 { type: 'input_image', image_url: message },
               ],
             },
@@ -168,7 +175,13 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       }
     }
 
-    conversation.messages.push({ role: 'assistant', content: reply, timestamp: new Date() });
+    // حفظ رد البوت
+    conversation.messages.push({ 
+      role: 'assistant', 
+      content: reply, 
+      timestamp: new Date(),
+      messageId: `response_${messageId || Date.now()}` 
+    });
     await conversation.save();
     console.log('💬 Assistant reply added to conversation:', reply);
 
