@@ -1,3 +1,5 @@
+// public/js/messages.js (Updated for new dashboard design and unified error handling)
+
 document.addEventListener("DOMContentLoaded", () => {
   async function loadMessagesPage() {
     const content = document.getElementById("content");
@@ -61,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="modal-content chat-modal-content">
           <div class="modal-header chat-header">
             <h3 id="chatModalTitle">محادثة</h3>
-            <button id="closeChatModalBtn" class="close-button">×</button>
+            <button id="closeChatModalBtn" class="close-button">&times;</button>
           </div>
           <div id="chatModalBody" class="modal-body chat-messages"></div>
           <div class="modal-footer chat-footer">
@@ -138,12 +140,13 @@ document.addEventListener("DOMContentLoaded", () => {
         renderConversations();
         showContent();
       } catch (err) {
+        // الخطأ تم التعامل معه في handleApiRequest
         showError(err.message || "حدث خطأ أثناء جلب المحادثات.");
       }
     }
 
     function renderConversations() {
-      conversationsContainer.innerHTML = ""; // تفريغ الحاوية قبل العرض
+      conversationsContainer.innerHTML = "";
       webUserCounter = 1;
 
       if (allConversations.length === 0) {
@@ -152,7 +155,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const seenConversations = new Set(); // لتتبع المحادثات المعروضة
       const sortedConversations = [...allConversations].sort((a, b) => {
         const lastMsgA = a.messages[a.messages.length - 1]?.timestamp;
         const lastMsgB = b.messages[b.messages.length - 1]?.timestamp;
@@ -166,12 +168,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const paginatedConversations = sortedConversations.slice(startIndex, endIndex);
 
       paginatedConversations.forEach(conv => {
-        const convKey = conv._id.toString();
-        if (!seenConversations.has(convKey)) {
-          seenConversations.add(convKey);
-          const card = createConversationCard(conv);
-          conversationsContainer.appendChild(card);
-        }
+        const card = createConversationCard(conv);
+        conversationsContainer.appendChild(card);
       });
 
       renderPagination(totalPages);
@@ -215,13 +213,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
 
-      card.querySelector(".view-chat-btn").removeEventListener("click", handleViewChatClick);
-      card.querySelector(".view-chat-btn").addEventListener("click", handleViewChatClick);
-
-      function handleViewChatClick() {
-        openChatModal(conv._id);
-      }
-
+      card.querySelector(".view-chat-btn").addEventListener("click", () => openChatModal(conv._id));
       return card;
     }
 
@@ -243,8 +235,10 @@ document.addEventListener("DOMContentLoaded", () => {
         return button;
       };
 
+      // Previous Button
       paginationContainer.appendChild(createPageButton(currentPage - 1, 'السابق', false, currentPage === 1));
 
+      // Dynamic page numbers with ellipsis
       const maxButtons = 5;
       let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
       let endPage = Math.min(totalPages, startPage + maxButtons - 1);
@@ -275,6 +269,7 @@ document.addEventListener("DOMContentLoaded", () => {
         paginationContainer.appendChild(createPageButton(totalPages));
       }
 
+      // Next Button
       paginationContainer.appendChild(createPageButton(currentPage + 1, 'التالي', false, currentPage === totalPages));
     }
 
@@ -285,62 +280,54 @@ document.addEventListener("DOMContentLoaded", () => {
       currentOpenConversationId = conversationId;
       const userName = userNamesCache[conversationId] || "مستخدم";
       chatModalTitle.textContent = `محادثة مع ${escapeHtml(userName)}`;
-      chatModalBody.innerHTML = ""; // تفريغ المودال قبل العرض
+      chatModalBody.innerHTML = "";
 
-      const seenMessages = new Set(); // لتتبع الرسائل المعروضة
       conversation.messages.forEach((msg, index) => {
-        const messageKey = `${msg.messageId || msg.content}-${msg.timestamp}-${msg.role}`;
-        if (!seenMessages.has(messageKey)) {
-          seenMessages.add(messageKey);
-          const messageDiv = document.createElement("div");
-          messageDiv.className = `message ${msg.role === "user" ? "user-message" : "bot-message"}`;
-          let messageContentHtml = `<p>${escapeHtml(msg.content)}</p><small>${new Date(msg.timestamp).toLocaleString("ar-EG")}</small>`;
+        const messageDiv = document.createElement("div");
+        messageDiv.className = `message ${msg.role === "user" ? "user-message" : "bot-message"}`;
+        let messageContentHtml = `<p>${escapeHtml(msg.content)}</p><small>${new Date(msg.timestamp).toLocaleString("ar-EG")}</small>`;
 
-          if (msg.role === "assistant" && index > 0) {
-            let precedingUserMessage = null;
-            for (let i = index - 1; i >= 0; i--) {
-              if (conversation.messages[i].role === "user") {
-                precedingUserMessage = conversation.messages[i];
-                break;
-              }
-            }
-            if (precedingUserMessage) {
-              messageContentHtml += `
-                <div class="message-actions">
-                  <button class="btn btn-sm btn-outline-secondary edit-rule-btn" 
-                          data-message-index="${index}"
-                          data-question="${escapeHtml(precedingUserMessage.content)}" 
-                          data-answer="${escapeHtml(msg.content)}">
-                    <i class="fas fa-edit"></i> تعديل
-                  </button>
-                </div>
-                <div class="edit-area" id="edit-area-${index}" style="display: none;">
-                  <textarea class="form-control edit-textarea" rows="3"></textarea>
-                  <button class="btn btn-sm btn-primary save-edited-rule-btn">
-                    <i class="fas fa-save"></i> حفظ كقاعدة جديدة
-                  </button>
-                  <button class="btn btn-sm btn-secondary cancel-edit-btn">
-                    <i class="fas fa-times"></i> إلغاء
-                  </button>
-                </div>`;
+        if (msg.role === "assistant" && index > 0) {
+          let precedingUserMessage = null;
+          for (let i = index - 1; i >= 0; i--) {
+            if (conversation.messages[i].role === "user") {
+              precedingUserMessage = conversation.messages[i];
+              break;
             }
           }
-
-          messageDiv.innerHTML = messageContentHtml;
-          chatModalBody.appendChild(messageDiv);
+          if (precedingUserMessage) {
+            messageContentHtml += `
+              <div class="message-actions">
+                <button class="btn btn-sm btn-outline-secondary edit-rule-btn" 
+                        data-message-index="${index}"
+                        data-question="${escapeHtml(precedingUserMessage.content)}" 
+                        data-answer="${escapeHtml(msg.content)}">
+                  <i class="fas fa-edit"></i> تعديل
+                </button>
+              </div>
+              <div class="edit-area" id="edit-area-${index}" style="display: none;">
+                <textarea class="form-control edit-textarea" rows="3"></textarea>
+                <button class="btn btn-sm btn-primary save-edited-rule-btn">
+                  <i class="fas fa-save"></i> حفظ كقاعدة جديدة
+                </button>
+                <button class="btn btn-sm btn-secondary cancel-edit-btn">
+                  <i class="fas fa-times"></i> إلغاء
+                </button>
+              </div>`;
+          }
         }
+
+        messageDiv.innerHTML = messageContentHtml;
+        chatModalBody.appendChild(messageDiv);
       });
 
       chatModalBody.querySelectorAll(".edit-rule-btn").forEach(button => {
-        button.removeEventListener("click", handleEditRuleClick);
         button.addEventListener("click", handleEditRuleClick);
       });
       chatModalBody.querySelectorAll(".save-edited-rule-btn").forEach(button => {
-        button.removeEventListener("click", handleSaveEditedRuleClick);
         button.addEventListener("click", handleSaveEditedRuleClick);
       });
       chatModalBody.querySelectorAll(".cancel-edit-btn").forEach(button => {
-        button.removeEventListener("click", handleCancelEditClick);
         button.addEventListener("click", handleCancelEditClick);
       });
 
@@ -527,53 +514,34 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- Event Listeners Setup ---
     tabs.forEach(tab => {
-      tab.removeEventListener("click", handleTabClick);
-      tab.addEventListener("click", handleTabClick);
+      tab.addEventListener("click", () => {
+        tabs.forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        currentChannel = tab.dataset.channel;
+        fetchConversations(selectedBotId, currentChannel, startDateFilter.value, endDateFilter.value);
+      });
     });
 
-    function handleTabClick(event) {
-      tabs.forEach(t => t.classList.remove("active"));
-      event.currentTarget.classList.add("active");
-      currentChannel = event.currentTarget.dataset.channel;
+    applyFilterBtn.addEventListener("click", () => {
       fetchConversations(selectedBotId, currentChannel, startDateFilter.value, endDateFilter.value);
-    }
+    });
 
-    applyFilterBtn.removeEventListener("click", handleApplyFilter);
-    applyFilterBtn.addEventListener("click", handleApplyFilter);
-
-    function handleApplyFilter() {
-      fetchConversations(selectedBotId, currentChannel, startDateFilter.value, endDateFilter.value);
-    }
-
-    resetFilterBtn.removeEventListener("click", handleResetFilter);
-    resetFilterBtn.addEventListener("click", handleResetFilter);
-
-    function handleResetFilter() {
+    resetFilterBtn.addEventListener("click", () => {
       startDateFilter.value = "";
       endDateFilter.value = "";
       fetchConversations(selectedBotId, currentChannel, null, null);
-    }
+    });
 
-    closeChatModalBtn.removeEventListener("click", closeChatModal);
     closeChatModalBtn.addEventListener("click", closeChatModal);
-
-    deleteSingleConversationBtn.removeEventListener("click", deleteSingleConversation);
     deleteSingleConversationBtn.addEventListener("click", deleteSingleConversation);
-
-    deleteAllConversationsBtn.removeEventListener("click", deleteAllConversationsForChannel);
     deleteAllConversationsBtn.addEventListener("click", deleteAllConversationsForChannel);
-
-    downloadMessagesBtn.removeEventListener("click", downloadMessagesForChannel);
     downloadMessagesBtn.addEventListener("click", downloadMessagesForChannel);
 
-    chatModal.removeEventListener("click", handleModalClick);
-    chatModal.addEventListener("click", handleModalClick);
-
-    function handleModalClick(event) {
+    chatModal.addEventListener("click", (event) => {
       if (event.target === chatModal) {
         closeChatModal();
       }
-    }
+    });
 
     // --- Initial Load ---
     fetchConversations(selectedBotId, currentChannel, null, null);
@@ -583,10 +551,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function escapeHtml(unsafe) {
     if (typeof unsafe !== "string") return unsafe;
     return unsafe
-         .replace(/&/g, "&")
-         .replace(/</g, "<")
-         .replace(/>/g, ">")
-         .replace(/"/g, """)
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
          .replace(/\n/g, "<br>");
   }
 
