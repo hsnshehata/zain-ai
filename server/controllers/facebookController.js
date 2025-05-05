@@ -181,7 +181,7 @@ const handleMessage = async (req, res) => {
             return msgKey === messageKey;
           })) {
             console.log(`⚠️ Duplicate message detected with key ${messageKey}, skipping...`);
-            continue;
+            return res.status(200).send('EVENT_RECEIVED');
           }
 
           console.log(`📝 Storing message with mid: ${mid}`);
@@ -274,7 +274,7 @@ const handleMessage = async (req, res) => {
             const commentKey = `comment-${commentId}-${message}`;
             if (conversation.messages.some(msg => msg.messageId === commentKey)) {
               console.log(`⚠️ Duplicate comment detected with key ${commentKey}, skipping...`);
-              continue;
+              return res.status(200).send('EVENT_RECEIVED');
             }
 
             conversation.messages.push({
