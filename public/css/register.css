@@ -1,0 +1,211 @@
+/* public/css/register.css */
+
+/* Styles for Register Page (register.html) */
+
+/* Apply base styles from common.css for consistency */
+body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+}
+
+/* Dark/Light mode body styles are in common.css */
+
+.login-container {
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  transition: background-color 0.3s;
+}
+
+body.dark-mode .login-container {
+  background-color: var(--dark-card-bg, var(--dark-card));
+}
+
+body.light-mode .login-container {
+  background-color: var(--light-card-bg, var(--light-card));
+}
+
+.login-container h1 {
+  margin-bottom: 30px;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--turquoise);
+}
+
+/* form-group styles are mostly in common.css */
+.form-group {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+/* input styles are mostly in common.css */
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  box-sizing: border-box;
+}
+
+body.dark-mode .form-group input,
+body.dark-mode .form-group textarea {
+  border-color: var(--dark-border);
+  background-color: var(--dark-card);
+  color: var(--dark-text);
+}
+
+body.light-mode .form-group input,
+body.light-mode .form-group textarea {
+  border-color: var(--light-border);
+  background-color: var(--light-card);
+  color: var(--light-text);
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  border-color: var(--turquoise);
+  box-shadow: 0 0 5px rgba(26, 188, 156, 0.5);
+  outline: none;
+}
+
+.form-group label {
+  position: absolute;
+  top: 12px;
+  right: 15px;
+  padding: 0 5px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  pointer-events: none;
+}
+
+body.dark-mode .form-group label {
+  color: rgba(224, 224, 224, 0.7);
+  background-color: var(--dark-card);
+}
+
+body.light-mode .form-group label {
+  color: #6c757d;
+  background-color: var(--light-card);
+}
+
+/* Float label effect */
+.form-group input:focus + label,
+.form-group input:not(:placeholder-shown) + label,
+.form-group textarea:focus + label,
+.form-group textarea:not(:placeholder-shown) + label {
+  top: -10px;
+  right: 10px;
+  font-size: 0.85rem;
+  color: var(--turquoise);
+}
+
+/* Submit Button */
+button[type="submit"] {
+  background-color: var(--turquoise);
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 600;
+  width: 100%;
+  transition: background-color 0.3s;
+}
+
+button[type="submit"]:hover {
+  background-color: var(--button-hover-bg);
+}
+
+button[type="submit"]:focus {
+  outline: 2px solid var(--turquoise);
+  outline-offset: 2px;
+}
+
+/* Google Sign-In Button */
+.g-signin2 {
+  margin: 20px auto;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* Login Link */
+.login-link {
+  margin-top: 15px;
+  font-size: 0.9rem;
+}
+
+.login-link a {
+  color: #ff6f61;
+  text-decoration: none;
+}
+
+.login-link a:hover {
+  text-decoration: underline;
+}
+
+/* Error Message */
+#error {
+  margin-top: 15px;
+  color: var(--error-color);
+  font-size: 0.9rem;
+  min-height: 1.2em;
+  visibility: hidden;
+}
+
+#error[style*="display: block"] {
+  visibility: visible;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.login-container {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Accessibility Improvements */
+@media (prefers-reduced-motion: reduce) {
+  .login-container {
+    animation: none;
+  }
+}
+
+/* Responsive Adjustments */
+@media (max-width: 576px) {
+  .login-container {
+    margin: 20px;
+    padding: 20px;
+  }
+
+  .login-container h1 {
+    font-size: 1.5rem;
+  }
+
+  .form-group input,
+  button[type="submit"] {
+    font-size: 0.95rem;
+  }
+
+  #error {
+    font-size: 0.85rem;
+  }
+
+  .login-link {
+    font-size: 0.85rem;
+  }
+}
