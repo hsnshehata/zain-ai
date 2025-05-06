@@ -81,9 +81,9 @@
           errorDiv.style.display = 'block';
           errorDiv.textContent = data.message || 'فشل في تسجيل الدخول، تأكد من اسم المستخدم وكلمة المرور';
         }
-      } catch (error) {
+      } catch (err) {
         errorDiv.style.display = 'block';
-        errorDiv.textContent = 'خطأ في السيرفر، حاول مرة أخرى';
+        errorDiv.textContent = err.message || 'حدث خطأ أثناء تسجيل الدخول، حاول مرة أخرى أو سجل مستخدم جديد';
       }
     });
 
@@ -108,15 +108,30 @@
       });
     }
 
-    window.onload = function() {
-      google.accounts.id.initialize({
-        client_id: "${process.env.GOOGLE_CLIENT_ID}",
-        callback: onGoogleSignIn
-      });
-      google.accounts.id.renderButton(
-        document.getElementById("googleSignInButton"),
-        { theme: "outline", size: "large", text: "signin_with", width: "100%" }
-      );
+    window.onload = async function() {
+      try {
+        const response = await fetch('/api/config');
+        const config = await response.json();
+        const clientId = config.googleClientId;
+
+        if (!clientId) {
+          document.getElementById('error').style.display = 'block';
+          document.getElementById('error').textContent = 'خطأ: لم يتم العثور على Client ID';
+          return;
+        }
+
+        google.accounts.id.initialize({
+          client_id: clientId,
+          callback: onGoogleSignIn
+        });
+        google.accounts.id.renderButton(
+          document.getElementById("googleSignInButton"),
+          { theme: "outline", size: "large", text: "signin_with", width: "100%" }
+        );
+      } catch (error) {
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = 'خطأ في جلب إعدادات التطبيق';
+      }
     };
   </script>
   <script defer src="/js/utils.js"></script>
