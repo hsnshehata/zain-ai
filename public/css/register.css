@@ -7,29 +7,123 @@ body {
   margin: 0;
   padding: 0;
   display: flex;
-  justify-content: center;
-  align-items: center;
+  flex-direction: column;
   min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #2a2a4e 100%);
+  color: white;
 }
 
 /* Dark/Light mode body styles are in common.css */
 
+/* Landing Header */
+.landing-header {
+  background-color: rgba(26, 26, 46, 0.95);
+  padding: 20px 0;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.landing-header .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 90%;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.landing-header .logo {
+  font-size: 2em;
+  font-weight: bold;
+  color: var(--turquoise);
+  display: flex;
+  align-items: center;
+}
+
+.landing-header .logo i {
+  margin-right: 10px;
+  color: #ffd700;
+}
+
+.landing-header .menu-toggle {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5em;
+  cursor: pointer;
+  display: none;
+}
+
+.landing-header nav.nav-menu {
+  transition: transform 0.3s ease-in-out;
+}
+
+.landing-header nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.landing-header nav a {
+  color: white;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 5px;
+  transition: background 0.3s ease, color 0.3s ease;
+}
+
+.landing-header nav a:hover {
+  background-color: var(--turquoise);
+  color: #1a1a2e;
+}
+
+.landing-header .always-visible {
+  background-color: var(--turquoise);
+  color: #1a1a2e;
+  font-weight: bold;
+  padding: 8px 18px;
+  border-radius: 5px;
+  text-decoration: none;
+}
+
+.landing-header .always-visible:hover {
+  background-color: #00e0c4;
+  color: white;
+}
+
+/* Login Container */
 .login-container {
   padding: 40px;
   border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   width: 100%;
   max-width: 400px;
   text-align: center;
-  transition: background-color 0.3s;
+  margin: 40px auto;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 body.dark-mode .login-container {
-  background-color: var(--dark-card-bg, var(--dark-card));
+  background: rgba(255, 255, 255, 0.05);
 }
 
 body.light-mode .login-container {
-  background-color: var(--light-card-bg, var(--light-card));
+  background: rgba(255, 255, 255, 0.9);
 }
 
 .login-container h1 {
@@ -39,30 +133,28 @@ body.light-mode .login-container {
   color: var(--turquoise);
 }
 
+/* Success Message */
+#successMessage {
+  text-align: center;
+}
+
+#successMessage h2 {
+  font-size: 1.8em;
+  color: white;
+  margin-bottom: 15px;
+  text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);
+}
+
+#successMessage p {
+  font-size: 1.1em;
+  color: #d3d3d3;
+  opacity: 0.9;
+}
+
 /* form-group styles are mostly in common.css */
 .form-group {
   position: relative;
   margin-bottom: 20px;
-}
-
-/* Email group specific styles */
-.email-group {
-  position: relative;
-}
-
-.email-input-group {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.email-input-group input {
-  flex-grow: 1;
-}
-
-.google-signin-btn {
-  flex-shrink: 0;
-  width: 150px;
 }
 
 /* input styles are mostly in common.css */
@@ -131,25 +223,26 @@ body.light-mode .form-group label {
 
 /* Submit Button */
 button[type="submit"] {
-  background-color: var(--turquoise);
-  color: white;
+  background: linear-gradient(45deg, var(--turquoise), #00e0c4);
+  color: #1a1a2e;
   padding: 12px 20px;
   border: none;
-  border-radius: 8px;
+  border-radius: 50px;
   cursor: pointer;
   font-size: 1.1rem;
   font-weight: 600;
   width: 100%;
-  transition: background-color 0.3s;
+  transition: transform 0.2s ease, box-shadow 0.3s ease;
 }
 
 button[type="submit"]:hover {
-  background-color: var(--button-hover-bg);
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 196, 180, 0.4);
+  color: white;
 }
 
 button[type="submit"]:focus {
-  outline: 2px solid var(--turquoise);
-  outline-offset: 2px;
+  outline: 3px solid #ffd700;
 }
 
 /* Login Link */
@@ -176,7 +269,7 @@ button[type="submit"]:focus {
   visibility: hidden;
 }
 
-#error[style*="display: block"] {
+#error[主體[style*="display: block"] {
   visibility: visible;
 }
 
@@ -198,10 +291,76 @@ button[type="submit"]:focus {
 }
 
 /* Responsive Adjustments */
+@media (max-width: 992px) {
+  .landing-header .menu-toggle {
+    display: block;
+  }
+
+  .landing-header nav.nav-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 100%;
+    background: linear-gradient(45deg, #1a1a2e, #2a2a4e);
+    transform: translateY(-100%);
+    opacity: 0;
+    visibility: hidden;
+  }
+
+  .landing-header nav.nav-menu.active {
+    transform: translateY(0);
+    opacity: 1;
+    visibility: visible;
+  }
+
+  .landing-header nav ul {
+    flex-direction: column;
+    padding: 15px;
+    gap: 15px;
+  }
+
+  .landing-header nav ul li {
+    width: 100%;
+    text-align: center;
+  }
+
+  .landing-header nav a {
+    display: block;
+    padding: 12px;
+    font-size: 1.1em;
+  }
+
+  .landing-header .always-visible {
+    padding: 6px 12px;
+    font-size: 0.9em;
+  }
+}
+
+@media (min-width: 993px) {
+  .landing-header nav.nav-menu {
+    transform: none !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .landing-header nav ul {
+    flex-direction: row;
+  }
+}
+
 @media (max-width: 576px) {
   .login-container {
     margin: 20px;
     padding: 20px;
+  }
+
+  .landing-header .container {
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .landing-header .logo {
+    font-size: 1.5em;
   }
 
   .login-container h1 {
@@ -213,14 +372,12 @@ button[type="submit"]:focus {
     font-size: 0.95rem;
   }
 
-  .email-input-group {
-    flex-direction: column;
-    align-items: stretch;
+  #successMessage h2 {
+    font-size: 1.5em;
   }
 
-  .google-signin-btn {
-    width: 100%;
-    margin-top: 10px;
+  #successMessage p {
+    font-size: 0.95em;
   }
 
   #error {
