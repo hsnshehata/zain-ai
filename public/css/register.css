@@ -171,15 +171,15 @@ body.light-mode .login-container {
 
 body.dark-mode .form-group input,
 body.dark-mode .form-group textarea {
-  border-color: var(--dark-border);
-  background-color: var(--dark-card);
+  border-color: var(--input-border-dark);
+  background-color: var(--input-bg-dark);
   color: var(--dark-text);
 }
 
 body.light-mode .form-group input,
 body.light-mode .form-group textarea {
-  border-color: var(--light-border);
-  background-color: var(--light-card);
+  border-color: var(--input-border-light);
+  background-color: var(--input-bg-light);
   color: var(--light-text);
 }
 
@@ -188,6 +188,10 @@ body.light-mode .form-group textarea {
   border-color: var(--turquoise);
   box-shadow: 0 0 5px rgba(26, 188, 156, 0.5);
   outline: none;
+}
+
+.form-group input::placeholder {
+  color: transparent;
 }
 
 .form-group label {
@@ -202,12 +206,12 @@ body.light-mode .form-group textarea {
 
 body.dark-mode .form-group label {
   color: rgba(224, 224, 224, 0.7);
-  background-color: var(--dark-card);
+  background-color: var(--input-bg-dark);
 }
 
 body.light-mode .form-group label {
   color: #6c757d;
-  background-color: var(--light-card);
+  background-color: var(--input-bg-light);
 }
 
 /* Float label effect */
@@ -269,7 +273,7 @@ button[type="submit"]:focus {
   visibility: hidden;
 }
 
-#error[主體[style*="display: block"] {
+#error[style*="display: block"] {
   visibility: visible;
 }
 
