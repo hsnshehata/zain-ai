@@ -24,6 +24,12 @@ const apiCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 
 const app = express();
 
+// إضافة Cross-Origin-Opener-Policy Header
+app.use((req, res, next) => {
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  next();
+});
+
 // Middleware
 app.use(cors());
 app.use(express.json());
