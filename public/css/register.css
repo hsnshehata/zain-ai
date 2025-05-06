@@ -171,16 +171,16 @@ body.light-mode .login-container {
 
 body.dark-mode .form-group input,
 body.dark-mode .form-group textarea {
-  border-color: var(--input-border-dark);
-  background-color: var(--input-bg-dark);
-  color: var(--dark-text);
+  border-color: var(--input-border-dark) !important;
+  background-color: var(--input-bg-dark) !important;
+  color: var(--dark-text) !important;
 }
 
 body.light-mode .form-group input,
 body.light-mode .form-group textarea {
-  border-color: var(--input-border-light);
-  background-color: var(--input-bg-light);
-  color: var(--light-text);
+  border-color: var(--input-border-light) !important;
+  background-color: var(--input-bg-light) !important;
+  color: var(--light-text) !important;
 }
 
 .form-group input:focus,
