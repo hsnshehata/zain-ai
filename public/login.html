@@ -30,7 +30,7 @@
       <button type="submit" aria-label="تسجيل الدخول">تسجيل الدخول</button>
     </form>
     <div class="google-signin-container">
-      <div id="googleSignInButton"></div>
+      <div id="googleSignInButton" class="custom-google-btn"></div>
     </div>
     <p id="error" role="alert"></p>
     <button class="register-btn" onclick="window.location.href='/register.html'">مستخدم جديد</button>
@@ -126,7 +126,14 @@
         });
         google.accounts.id.renderButton(
           document.getElementById("googleSignInButton"),
-          { theme: "outline", size: "large", text: "signin_with", width: "100%" }
+          { 
+            type: "standard", // Use standard button type
+            theme: "filled_blue", // Base color for consistency
+            size: "large",
+            text: "signin_with",
+            shape: "rectangular",
+            width: "100%"
+          }
         );
       } catch (error) {
         document.getElementById('error').style.display = 'block';
@@ -136,5 +143,5 @@
   </script>
   <script defer src="/js/utils.js"></script>
   <script defer src="/js/auth.js"></script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93b61bb9cf61b01c',t:'MTc0NjUwOTY2NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
