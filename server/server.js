@@ -36,6 +36,13 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
+// Route لجلب GOOGLE_CLIENT_ID
+app.get('/api/config', (req, res) => {
+  res.json({
+    googleClientId: process.env.GOOGLE_CLIENT_ID
+  });
+});
+
 // Routes
 app.use('/api/webhook', webhookRoutes);
 app.use('/api/bots', facebookRoutes);
