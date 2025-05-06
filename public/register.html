@@ -6,7 +6,6 @@
   <title>تسجيل جديد - زين بوت</title>
   <link rel="stylesheet" href="/css/common.css">
   <link rel="stylesheet" href="/css/register.css">
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
   <div class="login-container">
@@ -32,12 +31,9 @@
         <label for="whatsapp">رقم الواتساب</label>
         <input type="text" id="whatsapp" required placeholder="أدخل رقم الواتساب">
       </div>
-      <div class="form-group email-group">
+      <div class="form-group">
         <label for="email">البريد الإلكتروني</label>
-        <div class="email-input-group">
-          <input type="email" id="email" required placeholder="أدخل بريدك الإلكتروني">
-          <div id="googleSignInButton" class="google-signin-btn"></div>
-        </div>
+        <input type="email" id="email" required placeholder="أدخل بريدك الإلكتروني">
       </div>
       <button type="submit">إنشاء عضو</button>
     </form>
@@ -78,56 +74,7 @@
         errorDiv.textContent = 'خطأ في السيرفر، حاول مرة أخرى';
       }
     });
-
-    function onGoogleSignIn(response) {
-      const id_token = response.credential;
-      fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken: id_token })
-      }).then(response => response.json()).then(data => {
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('role', data.role);
-          localStorage.setItem('userId', data.userId);
-          localStorage.setItem('username', data.username);
-          window.location.href = '/dashboard_new.html';
-        } else {
-          document.getElementById('error').style.display = 'block';
-          document.getElementById('error').textContent = data.message || 'فشل في تسجيل الدخول بجوجل';
-        }
-      }).catch(err => {
-        document.getElementById('error').style.display = 'block';
-        document.getElementById('error').textContent = 'فشل في الاتصال بالخادم، حاول مرة أخرى';
-      });
-    }
-
-    // جلب الـ Client ID من الـ API
-    window.onload = async function() {
-      try {
-        const response = await fetch('/api/config');
-        const config = await response.json();
-        const clientId = config.googleClientId;
-
-        if (!clientId) {
-          document.getElementById('error').style.display = 'block';
-          document.getElementById('error').textContent = 'خطأ: لم يتم العثور على Client ID';
-          return;
-        }
-
-        google.accounts.id.initialize({
-          client_id: clientId,
-          callback: onGoogleSignIn
-        });
-        google.accounts.id.renderButton(
-          document.getElementById("googleSignInButton"),
-          { theme: "outline", size: "medium", text: "signup_with", width: "150" }
-        );
-      } catch (error) {
-        document.getElementById('error').style.display = 'block';
-        document.getElementById('error').textContent = 'خطأ في جلب إعدادات التطبيق';
-      }
-    };
   </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93b61bb9fc74dd1a',t:'MTc0NjUwOTY2NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
 </body>
 </html>
