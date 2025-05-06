@@ -81,18 +81,24 @@
 
     function onGoogleSignIn(response) {
       const id_token = response.credential;
-      fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-        headers: { Authorization: `Bearer ${id_token}` }
-      }).then(res => res.json()).then(data => {
-        const emailField = document.getElementById('email');
-        emailField.value = data.email;
-        emailField.readOnly = true;
-        emailField.style.backgroundColor = 'rgba(128, 128, 128, 0.1)';
-        emailField.style.borderColor = 'rgba(128, 128, 128, 0.3)';
-        document.getElementById('registerForm').dispatchEvent(new Event('submit'));
+      fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken: id_token })
+      }).then(response => response.json()).then(data => {
+        if (data.token) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('role', data.role);
+          localStorage.setItem('userId', data.userId);
+          localStorage.setItem('username', data.username);
+          window.location.href = '/dashboard_new.html';
+        } else {
+          document.getElementById('error').style.display = 'block';
+          document.getElementById('error').textContent = data.message || 'فشل في تسجيل الدخول بجوجل';
+        }
       }).catch(err => {
         document.getElementById('error').style.display = 'block';
-        document.getElementById('error').textContent = 'فشل في جلب بيانات جوجل، حاول مرة أخرى';
+        document.getElementById('error').textContent = 'فشل في الاتصال بالخادم، حاول مرة أخرى';
       });
     }
 
