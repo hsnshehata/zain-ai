@@ -6,7 +6,6 @@
   <title>تسجيل جديد - زين بوت</title>
   <link rel="stylesheet" href="/css/common.css">
   <link rel="stylesheet" href="/css/register.css">
-  <meta name="google-signin-client_id" content="381997113756-gaopdmmga99lkdkafeegens13ef0lj91.apps.googleusercontent.com">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
@@ -97,15 +96,31 @@
       });
     }
 
-    window.onload = function() {
-      google.accounts.id.initialize({
-        client_id: "1234567890-abc123def456.apps.googleusercontent.com",
-        callback: onGoogleSignIn
-      });
-      google.accounts.id.renderButton(
-        document.getElementById("googleSignInButton"),
-        { theme: "outline", size: "medium", text: "signup_with", width: "150" }
-      );
+    // جلب الـ Client ID من الـ API
+    window.onload = async function() {
+      try {
+        const response = await fetch('/api/config');
+        const config = await response.json();
+        const clientId = config.googleClientId;
+
+        if (!clientId) {
+          document.getElementById('error').style.display = 'block';
+          document.getElementById('error').textContent = 'خطأ: لم يتم العثور على Client ID';
+          return;
+        }
+
+        google.accounts.id.initialize({
+          client_id: clientId,
+          callback: onGoogleSignIn
+        });
+        google.accounts.id.renderButton(
+          document.getElementById("googleSignInButton"),
+          { theme: "outline", size: "medium", text: "signup_with", width: "150" }
+        );
+      } catch (error) {
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = 'خطأ في جلب إعدادات التطبيق';
+      }
     };
   </script>
 </body>
