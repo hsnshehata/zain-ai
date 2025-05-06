@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تسجيل جديد - زين بوت</title>
+  <link rel="stylesheet" href="/css/common.css">
   <link rel="stylesheet" href="/css/register.css">
   <meta name="google-signin-client_id" content="${process.env.GOOGLE_CLIENT_ID}">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -12,10 +13,6 @@
   <div class="login-container">
     <h1>تسجيل جديد</h1>
     <form id="registerForm">
-      <div class="form-group">
-        <label for="email">البريد الإلكتروني</label>
-        <input type="email" id="email" required placeholder="أدخل بريدك الإلكتروني">
-      </div>
       <div class="form-group">
         <label for="username">اسم المستخدم</label>
         <input type="text" id="username" required placeholder="أدخل اسم المستخدم">
@@ -36,11 +33,15 @@
         <label for="whatsapp">رقم الواتساب</label>
         <input type="text" id="whatsapp" required placeholder="أدخل رقم الواتساب">
       </div>
+      <div class="form-group email-group">
+        <label for="email">البريد الإلكتروني</label>
+        <div class="email-input-group">
+          <input type="email" id="email" required placeholder="أدخل بريدك الإلكتروني">
+          <div id="googleSignInButton" class="google-signin-btn"></div>
+        </div>
+      </div>
       <button type="submit">إنشاء عضو</button>
     </form>
-    <div class="google-signin-container">
-      <div id="googleSignInButton"></div>
-    </div>
     <p id="error" role="alert"></p>
     <p class="login-link">لديك حساب بالفعل؟ <a href="/login.html">تسجيل الدخول</a></p>
   </div>
@@ -81,25 +82,18 @@
 
     function onGoogleSignIn(response) {
       const id_token = response.credential;
-      fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken: id_token })
-      }).then(response => response.json()).then(data => {
-        if (data.token) {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('role', data.role);
-          localStorage.setItem('userId', data.id);
-          localStorage.setItem('username', data.username);
-          if (data.newUser) {
-            window.location.href = '/set-whatsapp.html';
-          } else {
-            window.location.href = '/dashboard_new.html';
-          }
-        } else {
-          document.getElementById('error').style.display = 'block';
-          document.getElementById('error').textContent = data.message || 'فشل في تسجيل الدخول بجوجل';
-        }
+      fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+        headers: { Authorization: `Bearer ${id_token}` }
+      }).then(res => res.json()).then(data => {
+        const emailField = document.getElementById('email');
+        emailField.value = data.email;
+        emailField.readOnly = true;
+        emailField.style.backgroundColor = 'rgba(128, 128, 128, 0.1)';
+        emailField.style.borderColor = 'rgba(128, 128, 128, 0.3)';
+        document.getElementById('registerForm').dispatchEvent(new Event('submit'));
+      }).catch(err => {
+        document.getElementById('error').style.display = 'block';
+        document.getElementById('error').textContent = 'فشل في جلب بيانات جوجل، حاول مرة أخرى';
       });
     }
 
@@ -110,7 +104,7 @@
       });
       google.accounts.id.renderButton(
         document.getElementById("googleSignInButton"),
-        { theme: "outline", size: "large", text: "signup_with", width: "100%" }
+        { theme: "outline", size: "medium", text: "signup_with", width: "150" }
       );
     };
   </script>
