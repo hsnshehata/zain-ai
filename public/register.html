@@ -10,6 +10,10 @@
 <body>
   <div class="login-container">
     <h1>تسجيل جديد</h1>
+    <div id="successMessage" style="display: none;">
+      <h2>شكرًا على التسجيل!</h2>
+      <p id="error" role="alert"></p>
+    </div>
     <form id="registerForm">
       <div class="form-group">
         <label for="username">اسم المستخدم</label>
@@ -37,7 +41,6 @@
       </div>
       <button type="submit">إنشاء عضو</button>
     </form>
-    <p id="error" role="alert"></p>
     <p class="login-link">لديك حساب بالفعل؟ <a href="/login.html">تسجيل الدخول</a></p>
   </div>
   <script>
@@ -50,6 +53,8 @@
       const botName = document.getElementById('botName').value;
       const whatsapp = document.getElementById('whatsapp').value;
       const errorDiv = document.getElementById('error');
+      const registerForm = document.getElementById('registerForm');
+      const successMessage = document.getElementById('successMessage');
       if (password !== confirmPassword) {
         errorDiv.style.display = 'block';
         errorDiv.textContent = 'كلمات المرور غير متطابقة';
@@ -63,7 +68,8 @@
         });
         const data = await response.json();
         if (response.ok) {
-          errorDiv.style.display = 'block';
+          registerForm.style.display = 'none';
+          successMessage.style.display = 'block';
           errorDiv.textContent = 'تم إرسال رابط تفعيل إلى بريدك الإلكتروني';
         } else {
           errorDiv.style.display = 'block';
