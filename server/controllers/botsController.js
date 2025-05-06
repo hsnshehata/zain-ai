@@ -1,5 +1,3 @@
-// /server/controllers/botsController.js
-
 const express = require('express');
 const Bot = require('../models/Bot');
 const User = require('../models/User');
@@ -153,10 +151,6 @@ exports.clearFeedbackByType = async (req, res) => {
 
 // إنشاء بوت جديد
 exports.createBot = async (req, res) => {
-  if (req.user.role !== 'superadmin') {
-    return res.status(403).json({ message: 'غير مصرح لك بإنشاء بوت' });
-  }
-
   const { name, userId, facebookApiKey, facebookPageId } = req.body;
 
   if (!name || !userId) {
