@@ -45,6 +45,26 @@ body.light-mode .login-container {
   margin-bottom: 20px;
 }
 
+/* Email group specific styles */
+.email-group {
+  position: relative;
+}
+
+.email-input-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.email-input-group input {
+  flex-grow: 1;
+}
+
+.google-signin-btn {
+  flex-shrink: 0;
+  width: 150px;
+}
+
 /* input styles are mostly in common.css */
 .form-group input,
 .form-group textarea {
@@ -132,18 +152,6 @@ button[type="submit"]:focus {
   outline-offset: 2px;
 }
 
-/* Google Sign-In Button Container */
-.google-signin-container {
-  margin: 20px 0;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-#googleSignInButton {
-  width: 100%;
-}
-
 /* Login Link */
 .login-link {
   margin-top: 15px;
@@ -203,6 +211,16 @@ button[type="submit"]:focus {
   .form-group input,
   button[type="submit"] {
     font-size: 0.95rem;
+  }
+
+  .email-input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .google-signin-btn {
+    width: 100%;
+    margin-top: 10px;
   }
 
   #error {
