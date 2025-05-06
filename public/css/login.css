@@ -73,6 +73,10 @@ body.light-mode .form-group input {
   outline: none;
 }
 
+.form-group input::placeholder {
+  color: transparent;
+}
+
 .form-group label {
   position: absolute;
   top: 12px;
@@ -127,7 +131,7 @@ button[type="submit"]:focus {
 
 /* Register Button */
 .register-btn {
-  background-color: #ff6f61; /* لون أحمر مرجاني عشان يبقى واضح */
+  background-color: #ff6f61;
   color: white;
   padding: 10px 20px;
   border: none;
@@ -141,12 +145,53 @@ button[type="submit"]:focus {
 }
 
 .register-btn:hover {
-  background-color: #ff4f41; /* لون أغمق لما نعمل hover */
+  background-color: #ff4f41;
 }
 
 .register-btn:focus {
   outline: 2px solid #ff6f61;
   outline-offset: 2px;
+}
+
+/* Google Sign-In Button */
+.google-signin-container {
+  margin-top: 15px;
+  width: 100%;
+}
+
+.custom-google-btn {
+  width: 100%;
+}
+
+.custom-google-btn > div {
+  width: 100% !important;
+  height: 48px !important;
+  border-radius: 8px !important;
+  background: linear-gradient(45deg, #4285f4, #5e95f7) !important;
+  color: white !important;
+  font-family: 'Cairo', sans-serif !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  padding: 10px 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: transform 0.2s ease, box-shadow 0.3s ease !important;
+  cursor: pointer !important;
+}
+
+.custom-google-btn > div:hover {
+  transform: translateY(-3px) !important;
+  box-shadow: 0 5px 15px rgba(66, 133, 244, 0.4) !important;
+}
+
+.custom-google-btn > div:focus {
+  outline: 2px solid #4285f4 !important;
+  outline-offset: 2px !important;
+}
+
+.custom-google-btn [data-text="signin_with"]::before {
+  content: "تسجيل الدخول بجوجل";
 }
 
 /* Error Message */
@@ -192,8 +237,11 @@ button[type="submit"]:focus {
 
   .form-group input,
   button[type="submit"],
-  .register-btn {
-    font-size: 0.95rem;
+  .register-btn,
+  .custom-google-btn > div {
+    font-size: 0.95rem !important;
+    padding: 8px 15px !important;
+    height: 40px !important;
   }
 
   #error {
