@@ -3,36 +3,67 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="تسجيل الدخول إلى لوحة تحكم Zain AI لإدارة بوتاتك الذكية وتحسين خدمة العملاء.">
+  <meta name="keywords" content="Zain AI, تسجيل الدخول, لوحة تحكم, بوتات ذكية">
+  <meta name="author" content="Zain AI">
   <title>تسجيل الدخول - زين بوت</title>
+  <link rel="stylesheet" href="/css/common.css">
   <link rel="stylesheet" href="/css/login.css">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
-<body>
+<body class="dark-mode">
   <div class="login-container">
     <h1>تسجيل الدخول</h1>
     <form id="loginForm">
       <div class="form-group">
+        <input type="text" id="username" required placeholder=" " aria-label="اسم المستخدم">
         <label for="username">اسم المستخدم</label>
-        <input type="text" id="username" required placeholder="أدخل اسم المستخدم">
       </div>
       <div class="form-group">
+        <input type="password" id="password" required placeholder=" " aria-label="كلمة المرور">
         <label for="password">كلمة المرور</label>
-        <input type="password" id="password" required placeholder="أدخل كلمة المرور">
       </div>
-      <button type="submit">تسجيل الدخول</button>
+      <button type="submit" aria-label="تسجيل الدخول">تسجيل الدخول</button>
     </form>
     <div class="google-signin-container">
       <div id="googleSignInButton"></div>
     </div>
     <p id="error" role="alert"></p>
-    <button onclick="window.location.href='/register.html'">مستخدم جديد</button>
+    <button class="register-btn" onclick="window.location.href='/register.html'">مستخدم جديد</button>
   </div>
+
   <script>
+    // Apply theme from localStorage
+    const currentTheme = localStorage.getItem("theme") || "dark";
+    document.body.classList.add(currentTheme === "light" ? "light-mode" : "dark-mode");
+    if (currentTheme === "light") {
+      document.body.classList.remove("dark-mode");
+    }
+
+    // Service Worker registration
+    if ("serviceWorker" in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register("/service-worker.js")
+          .then(() => console.log("Service Worker Registered"))
+          .catch((err) => console.error("Service Worker Error:", err));
+      });
+    }
+
+    // Handle login form submission
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const username = document.getElementById('username').value;
-      const password = document.getElementById('password').value;
+      const username = document.getElementById('username').value.trim();
+      const password = document.getElementById('password').value.trim();
       const errorDiv = document.getElementById('error');
+      if (!username || !password) {
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = 'من فضلك أدخل اسم المستخدم وكلمة المرور';
+        return;
+      }
       try {
         const response = await fetch('/api/auth/login', {
           method: 'POST',
@@ -48,7 +79,7 @@
           window.location.href = '/dashboard_new.html';
         } else {
           errorDiv.style.display = 'block';
-          errorDiv.textContent = data.message || 'فشل في تسجيل الدخول';
+          errorDiv.textContent = data.message || 'فشل في تسجيل الدخول، تأكد من اسم المستخدم وكلمة المرور';
         }
       } catch (error) {
         errorDiv.style.display = 'block';
@@ -56,6 +87,7 @@
       }
     });
 
+    // Google Sign-In handling
     function onGoogleSignIn(response) {
       const id_token = response.credential;
       fetch('/api/auth/google', {
@@ -87,5 +119,7 @@
       );
     };
   </script>
+  <script defer src="/js/utils.js"></script>
+  <script defer src="/js/auth.js"></script>
 </body>
 </html>
