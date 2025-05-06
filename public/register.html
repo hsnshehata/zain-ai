@@ -1,14 +1,14 @@
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>تسجيل جديد - زين بوت</title>
   <link rel="stylesheet" href="/css/register.css">
-  <meta name="google-signin-client_id" content="${process.env.GOOGLE_CLIENT_ID}">
   <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
-  <div class="login-container">
+  <div class="register-container">
     <h1>تسجيل جديد</h1>
     <form id="registerForm">
       <div class="form-group">
@@ -28,10 +28,14 @@
         <input type="password" id="confirmPassword" required placeholder="أعد إدخال كلمة المرور">
       </div>
       <div class="form-group">
+        <label for="botName">اسم البوت</label>
+        <input type="text" id="botName" required placeholder="أدخل اسم البوت">
+      </div>
+      <div class="form-group">
         <label for="whatsapp">رقم الواتساب</label>
         <input type="text" id="whatsapp" required placeholder="أدخل رقم الواتساب">
       </div>
-      <button type="submit">تسجيل</button>
+      <button type="submit">إنشاء عضو</button>
     </form>
     <div class="google-signin-container">
       <div id="googleSignInButton"></div>
@@ -46,6 +50,7 @@
       const username = document.getElementById('username').value;
       const password = document.getElementById('password').value;
       const confirmPassword = document.getElementById('confirmPassword').value;
+      const botName = document.getElementById('botName').value;
       const whatsapp = document.getElementById('whatsapp').value;
       const errorDiv = document.getElementById('error');
       if (password !== confirmPassword) {
@@ -57,18 +62,15 @@
         const response = await fetch('/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, username, password, confirmPassword, whatsapp })
+          body: JSON.stringify({ email, username, password, botName, whatsapp })
         });
         const data = await response.json();
         if (response.ok) {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('role', data.role);
-          localStorage.setItem('userId', data.id);
-          localStorage.setItem('username', data.username);
-          window.location.href = '/dashboard_new.html';
+          errorDiv.style.display = 'block';
+          errorDiv.textContent = 'تم إرسال رابط تفعيل إلى بريدك الإلكتروني';
         } else {
           errorDiv.style.display = 'block';
-          errorDiv.textContent = data.message || 'فشل في التسجيل، حاول مرة أخرى';
+          errorDiv.textContent = data.message || 'فشل في التسجيل';
         }
       } catch (error) {
         errorDiv.style.display = 'block';
@@ -86,16 +88,12 @@
         if (data.token) {
           localStorage.setItem('token', data.token);
           localStorage.setItem('role', data.role);
-          localStorage.setItem('userId', data.id);
+          localStorage.setItem('userId', data.userId);
           localStorage.setItem('username', data.username);
-          if (data.newUser) {
-            window.location.href = '/set-whatsapp.html';
-          } else {
-            window.location.href = '/dashboard_new.html';
-          }
+          window.location.href = '/dashboard_new.html';
         } else {
           document.getElementById('error').style.display = 'block';
-          document.getElementById('error').textContent = data.message || 'فشل في تسجيل الدخول بجوجل';
+          document.getElementById('error').textContent = data.message || 'فشل في التسجيل بجوجل';
         }
       });
     }
