@@ -62,8 +62,13 @@ exports.createRule = async (req, res) => {
   const { botId, type, content } = req.body;
 
   // التحقق من الحقول الأساسية
-  if (!botId || !type || !content) {
-    return res.status(400).json({ message: 'جميع الحقول مطلوبة (botId, type, content)' });
+  if (!type || !content) {
+    return res.status(400).json({ message: 'الحقلين type و content مطلوبين' });
+  }
+
+  // التحقق من botId فقط إذا كان النوع مش global
+  if (type !== 'global' && !botId) {
+    return res.status(400).json({ message: 'معرف البوت (botId) مطلوب للقواعد غير الموحدة' });
   }
 
   // التحقق من صلاحيات السوبر أدمن للقواعد الموحدة
