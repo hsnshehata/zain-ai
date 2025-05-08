@@ -10,6 +10,8 @@ const userSchema = new mongoose.Schema({
   whatsapp: { type: String, required: true },
   googleId: { type: String },
   isVerified: { type: Boolean, default: false },
+  subscriptionType: { type: String, enum: ['free', 'monthly', 'yearly'], default: 'free' },
+  subscriptionEndDate: { type: Date }
 });
 
 module.exports = mongoose.model('User', userSchema);
