@@ -73,74 +73,6 @@ async function loadRulesPage() {
     </div>
   `;
 
-  // إضافة الـ CSS للمودال
-  const style = document.createElement("style");
-  style.innerHTML = `
-    .modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-    .modal-content {
-      background: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      width: 90%;
-      max-width: 600px;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    .form-group label {
-      display: block;
-      margin-bottom: 5px;
-    }
-    .form-group input,
-    .form-group textarea,
-    .form-group select {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-    }
-    .form-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 20px;
-    }
-    .btn {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    .btn-primary {
-      background: #00c4b4;
-      color: #fff;
-    }
-    .btn-secondary {
-      background: #ccc;
-      color: #000;
-    }
-    .error-message {
-      color: red;
-      margin-top: 10px;
-    }
-  `;
-  document.head.appendChild(style);
-
   const ruleModal = document.getElementById("ruleModal");
   const ruleModalContent = document.getElementById("ruleModalContent");
   const rulesList = document.getElementById("rulesList");
@@ -263,6 +195,8 @@ async function loadRules(botId, listElement, token, type, search, page, limit, p
     const data = await handleApiRequest(url, {
       headers: { Authorization: `Bearer ${token}` },
     }, errorElement, "فشل في جلب القواعد");
+
+    console.log("تم جلب القواعد بنجاح:", data);
 
     const rules = data.rules;
     const totalRules = data.totalRules;
@@ -431,6 +365,7 @@ function showAddRuleForm(modal, modalContent, botId, role) {
       const errorMessage = document.getElementById("errorMessage");
       const paginationContainer = document.getElementById("pagination");
       currentPage = 1; // Reset to first page
+      console.log("بيحاول يعمل ريلود بعد الإضافة...");
       loadRules(botIdToSend, rulesList, token, currentTypeFilter, currentSearch, currentPage, 20, paginationContainer, loadingSpinner, errorMessage);
     } catch (err) {
       // الخطأ تم التعامل معه في handleApiRequest
@@ -501,6 +436,7 @@ async function showEditRuleForm(modal, modalContent, ruleId) {
         const errorMessage = document.getElementById("errorMessage");
         const paginationContainer = document.getElementById("pagination");
         currentPage = 1; // Reset to first page
+        console.log("بيحاول يعمل ريلود بعد التعديل...");
         const botIdToSend = currentTypeFilter === 'global' ? null : botId;
         loadRules(botIdToSend, rulesList, token, currentTypeFilter, currentSearch, currentPage, 20, paginationContainer, loadingSpinner, errorMessage);
       } catch (err) {
@@ -643,6 +579,7 @@ async function deleteRule(ruleId) {
       const loadingSpinner = document.getElementById("loadingSpinner");
       const paginationContainer = document.getElementById("pagination");
       currentPage = 1; // Reset to first page
+      console.log("بيحاول يعمل ريلود بعد الحذف...");
       const botIdToSend = currentTypeFilter === 'global' ? null : botId;
       loadRules(botIdToSend, rulesList, token, currentTypeFilter, currentSearch, currentPage, 20, paginationContainer, loadingSpinner, errorElement);
     } catch (err) {
