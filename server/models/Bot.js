@@ -15,6 +15,9 @@ const botSchema = new mongoose.Schema({
     start: { type: String, default: '09:00' }, // ساعة البداية (بتوقيت 24 ساعة)
     end: { type: String, default: '17:00' },   // ساعة النهاية (بتوقيت 24 ساعة)
   },
+  isActive: { type: Boolean, default: true }, // حالة تشغيل البوت
+  autoStopDate: { type: Date }, // تاريخ الإيقاف التلقائي
+  subscriptionType: { type: String, enum: ['free', 'monthly', 'yearly'], default: 'free' }, // نوع الاشتراك
 });
 
 module.exports = mongoose.model('Bot', botSchema);
