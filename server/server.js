@@ -3,7 +3,9 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const rateLimit = require('express-rate-limit'); // استيراد مكتبة Rate Limiting
+const rateLimit = require('express-rate-limit');
+const bcrypt = require('bcryptjs');
+const request = require('request');
 const facebookRoutes = require('./routes/facebook');
 const webhookRoutes = require('./routes/webhook');
 const authRoutes = require('./routes/auth');
@@ -19,8 +21,11 @@ const uploadRoutes = require('./routes/upload');
 const notificationRoutes = require('./routes/notifications');
 const connectDB = require('./db');
 const Conversation = require('./models/Conversation');
+const Bot = require('./models/Bot');
+const User = require('./models/User');
 const { processMessage } = require('./botEngine');
 const NodeCache = require('node-cache');
+const { checkAutoStopBots } = require('./cronJobs');
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
@@ -135,6 +140,71 @@ app.post('/api/bot/ai', async (req, res) => {
   }
 });
 
+// Route لاختبار النظام
+app.get('/api/test', async (req, res) => {
+  try {
+    const testResults = {};
+
+    // اختبار 1: إنشاء مستخدم وبوت متوقف
+    const testUser = new User({
+      username: 'test_user_' + Date.now(),
+      email: 'test' + Date.now() + '@example.com',
+      whatsapp: '1234567890',
+      password: await bcrypt.hash('test123', 10),
+      role: 'user',
+      subscriptionType: 'monthly',
+      subscriptionEndDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 يوم من الآن
+      isVerified: true
+    });
+    await testUser.save();
+
+    const testBot = new Bot({
+      name: 'Test Bot',
+      userId: testUser._id,
+      isActive: false,
+      subscriptionType: 'free',
+      autoStopDate: new Date(Date.now() + 24 * 60 * 60 * 1000) // غدًا
+    });
+    await testBot.save();
+
+    testResults.createUserAndBot = 'تم إنشاء مستخدم وبوت متوقف بنجاح';
+
+    // اختبار 2: محاولة إرسال رسالة للبوت المتوقف
+    const messageResponse = await new Promise(resolve => {
+      request({
+        uri: 'http://localhost:5000/api/bot',
+        method: 'POST',
+        json: { botId: testBot._id, message: 'Test message' }
+      }, (err, res, body) => {
+        resolve({ status: res.statusCode, body });
+      });
+    });
+
+    if (messageResponse.status === 400 && messageResponse.body.message.includes('متوقف')) {
+      testResults.inactiveBotMessage = 'تم منع معالجة الرسالة للبوت المتوقف بنجاح';
+    } else {
+      testResults.inactiveBotMessage = 'فشل في منع معالجة الرسالة للبوت المتوقف';
+    }
+
+    // اختبار 3: التحقق من بيانات المستخدم
+    const userData = await User.findById(testUser._id);
+    if (userData.subscriptionType === 'monthly' && userData.subscriptionEndDate) {
+      testResults.userData = 'تم استرجاع بيانات المستخدم (نوع الاشتراك وتاريخ الانتهاء) بنجاح';
+    } else {
+      testResults.userData = 'فشل في استرجاع بيانات المستخدم بشكل صحيح';
+    }
+
+    // تنظيف البيانات
+    await Bot.deleteOne({ _id: testBot._id });
+    await User.deleteOne({ _id: testUser._id });
+
+    res.status(200).json({ message: 'اختبارات النظام اكتملت', results: testResults });
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ خطأ في اختبار النظام:`, err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في اختبار النظام', error: err.message });
+  }
+});
+
 // Route for dashboard
 app.get('/dashboard', (req, res) => {
   try {
@@ -239,6 +309,9 @@ app.get('/chat/:linkId', (req, res) => {
 
 // Connect to MongoDB
 connectDB();
+
+// تشغيل وظيفة التحقق من الإيقاف التلقائي
+checkAutoStopBots();
 
 // Global Error Handler
 app.use((err, req, res, next) => {
