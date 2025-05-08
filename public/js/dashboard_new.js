@@ -147,11 +147,19 @@ document.addEventListener("DOMContentLoaded", () => {
       }, content, "فشل في جلب البوتات");
 
       botSelect.innerHTML = "<option value=\"\">اختر بوت</option>";
-      const userBots = role === "superadmin" ? bots : bots.filter((bot) => bot.userId?._id === userId || bot.userId === userId);
+      // تبسيط تصفية البوتات
+      let userBots = bots;
+      if (role !== "superadmin") {
+        userBots = bots.filter(bot => {
+          // التعامل مع حالة userId كـ string أو object
+          const botUserId = typeof bot.userId === 'object' && bot.userId._id ? bot.userId._id : bot.userId;
+          return botUserId === userId;
+        });
+      }
 
-      if (userBots.length === 0 && role !== "superadmin") {
-        content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-robot"></i> لا يوجد بوتات متاحة</h2><p>يرجى التواصل مع المسؤول لإضافة بوت لحسابك.</p></div>`;
-        disableNavItems();
+      if (userBots.length === 0) {
+        content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-robot"></i> لا يوجد بوتات متاحة</h2><p>يرجى التواصل مع المسؤول لإضافة بوت لحسابك أو إنشاء بوت جديد.</p></div>`;
+        botSelect.disabled = true;
         return;
       }
 
@@ -165,14 +173,12 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (userBots.length > 0) {
         botSelect.value = userBots[0]._id;
         localStorage.setItem("selectedBotId", userBots[0]._id);
-      } else {
-        disableNavItems();
       }
 
       loadInitialPage();
     } catch (err) {
-      content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>خطأ في جلب البوتات. حاول تحديث الصفحة.</p></div>`;
-      disableNavItems();
+      content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>خطأ في جلب البوتات: ${err.message}. حاول تحديث الصفحة.</p></div>`;
+      botSelect.disabled = true;
     }
   }
 
@@ -180,48 +186,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const selectedBotId = botSelect.value;
     if (selectedBotId) {
       localStorage.setItem("selectedBotId", selectedBotId);
-      enableNavItems();
       loadInitialPage();
     } else {
       localStorage.removeItem("selectedBotId");
       content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض المحتوى.</p></div>`;
-      disableNavItems();
     }
   });
 
   // --- Navigation Helpers ---
-  const disableNavItems = () => {
-    navItems.forEach(item => {
-      if (item.dataset.page === "bots" && role === "superadmin") return;
-      item.disabled = true;
-      item.style.display = "none";
-    });
-    mobileNavItems.forEach(item => {
-      if (item.dataset.page === "bots" && role === "superadmin") return;
-      item.disabled = true;
-      item.style.display = "none";
-    });
-  };
-
-  const enableNavItems = () => {
-    navItems.forEach(item => {
-      item.disabled = false;
-      item.style.display = "flex";
-      if (item.dataset.page === "bots" && role !== "superadmin") {
-        item.style.display = "none";
-      }
-    });
-    mobileNavItems.forEach(item => {
-      item.disabled = false;
-      item.style Mostly
-      display: "flex";
-      if (item.dataset.page === "bots" && role !== "superadmin") {
-        item.style.display = "none";
-      }
-    });
-  };
-
-  // --- Page Loading Logic ---
   const setActiveButton = (page) => {
     navItems.forEach(item => {
       item.classList.remove("active");
@@ -242,13 +214,11 @@ document.addEventListener("DOMContentLoaded", () => {
     content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`;
     const selectedBotId = localStorage.getItem("selectedBotId");
 
-    enableNavItems();
-
     loadPageCss(page);
 
+    // تبسيط الشرط: لو مفيش بوت محدد ومش سوبر أدمن، منع تحميل الصفحة
     if (!selectedBotId && !(role === "superadmin" && page === "bots")) {
       content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض هذا القسم.</p></div>`;
-      disableNavItems();
       setActiveButton(page);
       window.location.hash = page;
       return;
@@ -306,7 +276,6 @@ document.addEventListener("DOMContentLoaded", () => {
       item.style.display = "none";
     }
     item.addEventListener("click", (e) => {
-      if (e.currentTarget.disabled) return;
       const page = item.dataset.page;
       loadPageContent(page);
     });
@@ -317,7 +286,6 @@ document.addEventListener("DOMContentLoaded", () => {
       item.style.display = "none";
     }
     item.addEventListener("click", (e) => {
-      if (e.currentTarget.disabled) return;
       const page = item.dataset.page;
       loadPageContent(page);
     });
@@ -344,37 +312,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --- Initial Page Load ---
   const loadInitialPage = () => {
-    const validPages = Array.from(navItems)
-      .filter(item => item.style.display !== "none")
-      .map(item => item.dataset.page);
-
-    let pageToLoad = null;
-
-    if (role === "superadmin") {
-      pageToLoad = "bots";
-    } else {
-      pageToLoad = "rules";
-    }
-
+    let pageToLoad = role === "superadmin" ? "bots" : "rules";
     window.location.hash = pageToLoad;
-
-    if (validPages.includes(pageToLoad)) {
-      loadPageContent(pageToLoad);
-    } else if (validPages.length > 0) {
-      loadPageContent(validPages[0]);
-    } else {
-      content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-ban"></i> لا توجد صفحات متاحة</h2><p>لا يمكنك الوصول إلى أي أقسام حاليًا.</p></div>`;
-      disableNavItems();
-    }
+    loadPageContent(pageToLoad);
   };
 
   window.addEventListener('hashchange', () => {
     const hash = window.location.hash.substring(1);
-    const validPages = Array.from(navItems)
-      .filter(item => item.style.display !== "none")
-      .map(item => item.dataset.page);
-
-    if (hash && validPages.includes(hash)) {
+    if (hash) {
       loadPageContent(hash);
     }
   });
