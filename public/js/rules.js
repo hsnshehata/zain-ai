@@ -25,17 +25,20 @@ async function loadRulesPage() {
     return;
   }
 
-  // Main structure for the rules page
+  // Main structure for the rules page with modal
   content.innerHTML = `
+    <!-- Modal Structure -->
+    <div id="ruleModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div id="ruleModalContent"></div>
+      </div>
+    </div>
+
     <div class="page-header">
       <h2><i class="fas fa-book"></i> إدارة القواعد ${selectedBotId ? 'للبوت المحدد' : 'الموحدة'}</h2>
       <div class="header-actions">
         <button id="showAddRuleBtn" class="btn btn-primary"><i class="fas fa-plus-circle"></i> إضافة قاعدة جديدة</button>
       </div>
-    </div>
-
-    <div id="ruleFormContainer" class="form-section" style="display: none;">
-      <!-- Form will be loaded here by showAddRuleForm -->
     </div>
 
     <div class="rules-management-container">
@@ -70,7 +73,76 @@ async function loadRulesPage() {
     </div>
   `;
 
-  const ruleFormContainer = document.getElementById("ruleFormContainer");
+  // إضافة الـ CSS للمودال
+  const style = document.createElement("style");
+  style.innerHTML = `
+    .modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      width: 90%;
+      max-width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+    }
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .btn {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: #00c4b4;
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #ccc;
+      color: #000;
+    }
+    .error-message {
+      color: red;
+      margin-top: 10px;
+    }
+  `;
+  document.head.appendChild(style);
+
+  const ruleModal = document.getElementById("ruleModal");
+  const ruleModalContent = document.getElementById("ruleModalContent");
   const rulesList = document.getElementById("rulesList");
   const loadingSpinner = document.getElementById("loadingSpinner");
   const errorMessage = document.getElementById("errorMessage");
@@ -85,10 +157,9 @@ async function loadRulesPage() {
   let currentPage = 1;
   const rulesPerPage = 20;
 
-  showAddRuleBtn.addEventListener("click", () => showAddRuleForm(ruleFormContainer, selectedBotId, role));
+  showAddRuleBtn.addEventListener("click", () => showAddRuleForm(ruleModal, ruleModalContent, selectedBotId, role));
 
   const triggerLoadRules = () => {
-    // لو السوبر أدمن بيشوف القواعد الموحدة، ما نبعتش botId
     const botIdToSend = typeFilter.value === 'global' ? null : selectedBotId;
     loadRules(botIdToSend, rulesList, token, typeFilter.value, searchInput.value, currentPage, rulesPerPage, paginationContainer, loadingSpinner, errorMessage);
   };
@@ -259,7 +330,7 @@ function createRuleCard(rule) {
     <div class="card-footer">
       <span class="rule-type-badge">نوع: ${getRuleTypeName(rule.type)}</span>
       <div class="rule-actions">
-        <button class="btn-icon btn-edit" onclick="showEditRuleForm(document.getElementById('ruleFormContainer'), '${rule._id}')" title="تعديل القاعدة"><i class="fas fa-edit"></i></button>
+        <button class="btn-icon btn-edit" onclick="showEditRuleForm(document.getElementById('ruleModal'), document.getElementById('ruleModalContent'), '${rule._id}')" title="تعديل القاعدة"><i class="fas fa-edit"></i></button>
         <button class="btn-icon btn-delete" onclick="deleteRule('${rule._id}')" title="حذف القاعدة"><i class="fas fa-trash-alt"></i></button>
       </div>
     </div>
@@ -278,8 +349,18 @@ function getRuleTypeName(type) {
   }
 }
 
-function showAddRuleForm(container, botId, role) {
-  container.innerHTML = `
+function openModal(modal) {
+  modal.style.display = "flex";
+}
+
+function closeModal(modal) {
+  modal.style.display = "none";
+  const modalContent = modal.querySelector("#ruleModalContent");
+  if (modalContent) modalContent.innerHTML = "";
+}
+
+function showAddRuleForm(modal, modalContent, botId, role) {
+  modalContent.innerHTML = `
     <div class="form-card">
       <h3><i class="fas fa-plus-circle"></i> إضافة قاعدة جديدة</h3>
       <form id="addRuleForm">
@@ -296,14 +377,14 @@ function showAddRuleForm(container, botId, role) {
         </div>
         <div id="addRuleContentFields"></div>
         <div class="form-actions">
-          <button type="submit" class="btn btn-primary">إضافة القاعدة</button>
-          <button type="button" class="btn btn-secondary" onclick="hideForm(document.getElementById('ruleFormContainer'))">إلغاء</button>
+          <button type="submit" class="btn btn-primary">حفظ</button>
+          <button type="button" class="btn btn-secondary" onclick="closeModal(document.getElementById('ruleModal'))">إلغاء</button>
         </div>
         <p id="addRuleFormError" class="error-message" style="display: none;"></p>
       </form>
     </div>
   `;
-  container.style.display = "block";
+  openModal(modal);
 
   const typeSelect = document.getElementById("addRuleType");
   const contentFieldsContainer = document.getElementById("addRuleContentFields");
@@ -328,7 +409,6 @@ function showAddRuleForm(container, botId, role) {
       return;
     }
 
-    // لو النوع global، ما نبعتش botId
     const ruleData = type === 'global' ? { type, content: contentData } : { botId, type, content: contentData };
 
     try {
@@ -341,37 +421,43 @@ function showAddRuleForm(container, botId, role) {
         body: JSON.stringify(ruleData),
       }, errorEl, "فشل في إضافة القاعدة");
       alert("تم إضافة القاعدة بنجاح!");
-      hideForm(container);
+      closeModal(modal);
       const currentTypeFilter = document.getElementById("typeFilter").value;
       const currentSearch = document.getElementById("searchInput").value;
       const botIdToSend = currentTypeFilter === 'global' ? null : botId;
-      loadRules(botIdToSend, document.getElementById("rulesList"), localStorage.getItem("token"), currentTypeFilter, currentSearch, 1, rulesPerPage, document.getElementById("pagination"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
+      const token = localStorage.getItem("token");
+      const rulesList = document.getElementById("rulesList");
+      const loadingSpinner = document.getElementById("loadingSpinner");
+      const errorMessage = document.getElementById("errorMessage");
+      const paginationContainer = document.getElementById("pagination");
+      currentPage = 1; // Reset to first page
+      loadRules(botIdToSend, rulesList, token, currentTypeFilter, currentSearch, currentPage, 20, paginationContainer, loadingSpinner, errorMessage);
     } catch (err) {
       // الخطأ تم التعامل معه في handleApiRequest
     }
   });
 }
 
-async function showEditRuleForm(container, ruleId) {
+async function showEditRuleForm(modal, modalContent, ruleId) {
   const token = localStorage.getItem("token");
   const errorEl = document.getElementById("errorMessage");
   errorEl.style.display = "none";
-  container.innerHTML = '<div class="form-card"><div class="spinner"><div class="loader"></div></div></div>';
-  container.style.display = "block";
+  modalContent.innerHTML = '<div class="form-card"><div class="spinner"><div class="loader"></div></div></div>';
+  openModal(modal);
 
   try {
     const rule = await handleApiRequest(`/api/rules/${ruleId}`, {
       headers: { Authorization: `Bearer ${token}` },
     }, errorEl, "فشل في جلب تفاصيل القاعدة");
 
-    container.innerHTML = `
+    modalContent.innerHTML = `
       <div class="form-card">
         <h3><i class="fas fa-edit"></i> تعديل القاعدة (النوع: ${getRuleTypeName(rule.type)})</h3>
         <form id="editRuleForm">
           <div id="editRuleContentFields"></div>
           <div class="form-actions">
-            <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
-            <button type="button" class="btn btn-secondary" onclick="hideForm(document.getElementById('ruleFormContainer'))">إلغاء</button>
+            <button type="submit" class="btn btn-primary">حفظ</button>
+            <button type="button" class="btn btn-secondary" onclick="closeModal(document.getElementById('ruleModal'))">إلغاء</button>
           </div>
           <p id="editRuleFormError" class="error-message" style="display: none;"></p>
         </form>
@@ -406,21 +492,24 @@ async function showEditRuleForm(container, ruleId) {
           body: JSON.stringify({ content: contentData }),
         }, editErrorEl, "فشل في تعديل القاعدة");
         alert("تم تعديل القاعدة بنجاح!");
-        hideForm(container);
+        closeModal(modal);
         const botId = localStorage.getItem("selectedBotId");
         const currentTypeFilter = document.getElementById("typeFilter").value;
         const currentSearch = document.getElementById("searchInput").value;
-        const currentPage = parseInt(document.querySelector('.pagination .active')?.textContent || '1');
+        const rulesList = document.getElementById("rulesList");
+        const loadingSpinner = document.getElementById("loadingSpinner");
+        const errorMessage = document.getElementById("errorMessage");
+        const paginationContainer = document.getElementById("pagination");
+        currentPage = 1; // Reset to first page
         const botIdToSend = currentTypeFilter === 'global' ? null : botId;
-        loadRules(botIdToSend, document.getElementById("rulesList"), token, currentTypeFilter, currentSearch, currentPage, rulesPerPage, document.getElementById("pagination"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
+        loadRules(botIdToSend, rulesList, token, currentTypeFilter, currentSearch, currentPage, 20, paginationContainer, loadingSpinner, errorMessage);
       } catch (err) {
         // الخطأ تم التعامل معه في handleApiRequest
       }
     });
 
   } catch (err) {
-    container.innerHTML = "";
-    container.style.display = "none";
+    closeModal(modal);
     // الخطأ تم التعامل معه في handleApiRequest
   }
 }
@@ -550,9 +639,12 @@ async function deleteRule(ruleId) {
       const botId = localStorage.getItem("selectedBotId");
       const currentTypeFilter = document.getElementById("typeFilter").value;
       const currentSearch = document.getElementById("searchInput").value;
-      const currentPage = parseInt(document.querySelector('.pagination .active')?.textContent || '1');
+      const rulesList = document.getElementById("rulesList");
+      const loadingSpinner = document.getElementById("loadingSpinner");
+      const paginationContainer = document.getElementById("pagination");
+      currentPage = 1; // Reset to first page
       const botIdToSend = currentTypeFilter === 'global' ? null : botId;
-      loadRules(botIdToSend, document.getElementById("rulesList"), token, currentTypeFilter, currentSearch, currentPage, rulesPerPage, document.getElementById("pagination"), document.getElementById("loadingSpinner"), errorElement);
+      loadRules(botIdToSend, rulesList, token, currentTypeFilter, currentSearch, currentPage, 20, paginationContainer, loadingSpinner, errorElement);
     } catch (err) {
       // الخطأ تم التعامل معه في handleApiRequest
     }
@@ -617,11 +709,6 @@ function setupPagination(container, currentPage, totalPages, onPageClick) {
 }
 
 // --- Helper Functions ---
-function hideForm(container) {
-  container.innerHTML = "";
-  container.style.display = "none";
-}
-
 function escapeHtml(unsafe) {
   if (typeof unsafe !== 'string') {
     if (unsafe === null || unsafe === undefined) return '';
@@ -640,4 +727,5 @@ window.loadRulesPage = loadRulesPage;
 window.showAddRuleForm = showAddRuleForm;
 window.showEditRuleForm = showEditRuleForm;
 window.deleteRule = deleteRule;
-window.hideForm = hideForm;
+window.openModal = openModal;
+window.closeModal = closeModal;
