@@ -6,10 +6,16 @@ const Rule = require('../models/Rule');
 const authenticate = require('../middleware/authenticate');
 const rulesController = require('../controllers/rulesController');
 
+// تصدير القواعد (هنحطه أول route عشان يشتغل قبل /:id)
+router.get('/export', authenticate, rulesController.exportRules);
+
+// استيراد القواعد (هنحطه قبل /:id برضو)
+router.post('/import', authenticate, rulesController.importRules);
+
 // جلب كل القواعد مع دعم الفلترة والبحث والـ pagination
 router.get('/', authenticate, rulesController.getRules);
 
-// جلب قاعدة محددة
+// جلب قاعدة محددة (هنحطه بعد الـ routes الثابتة)
 router.get('/:id', authenticate, async (req, res) => {
   try {
     const rule = await Rule.findById(req.params.id);
@@ -35,11 +41,5 @@ router.put('/:id', authenticate, rulesController.updateRule);
 
 // حذف قاعدة
 router.delete('/:id', authenticate, rulesController.deleteRule);
-
-// تصدير القواعد
-router.get('/export', authenticate, rulesController.exportRules);
-
-// استيراد القواعد
-router.post('/import', authenticate, rulesController.importRules);
 
 module.exports = router;
