@@ -213,7 +213,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     mobileNavItems.forEach(item => {
       item.disabled = false;
-      item.style.display = "flex";
+      item.style Mostly
+      display: "flex";
       if (item.dataset.page === "bots" && role !== "superadmin") {
         item.style.display = "none";
       }
@@ -408,6 +409,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Notifications Handling ---
+  let showAllNotifications = false;
+
   async function fetchNotifications() {
     try {
       const response = await fetch('/api/notifications', {
@@ -426,34 +429,40 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       notificationsList.innerHTML = '';
-      if (notifications.length === 0) {
+      const displayNotifications = showAllNotifications ? notifications : notifications.slice(0, 5);
+
+      if (displayNotifications.length === 0) {
         notificationsList.innerHTML = '<p class="no-notifications">لا توجد إشعارات</p>';
       } else {
-        notifications.forEach(notification => {
+        displayNotifications.forEach(notification => {
           const notificationItem = document.createElement('div');
           notificationItem.classList.add('notification-item');
           if (!notification.isRead) {
             notificationItem.classList.add('unread');
           }
           notificationItem.innerHTML = `
-            <p>${notification.message}</p>
+            <p class="notification-title">${notification.title}</p>
             <small>${new Date(notification.createdAt).toLocaleString('ar-EG')}</small>
           `;
-          notificationItem.addEventListener('click', async () => {
+          notificationItem.addEventListener('click', () => {
+            showNotificationModal(notification);
             if (!notification.isRead) {
-              try {
-                await fetch(`/api/notifications/${notification._id}/read`, {
-                  method: 'PUT',
-                  headers: { 'Authorization': `Bearer ${token}` }
-                });
-                fetchNotifications();
-              } catch (error) {
-                console.error('Error marking notification as read:', error);
-              }
+              markNotificationAsRead(notification._id);
             }
           });
           notificationsList.appendChild(notificationItem);
         });
+
+        if (!showAllNotifications && notifications.length > 5) {
+          const moreButton = document.createElement('button');
+          moreButton.classList.add('btn', 'btn-secondary', 'more-notifications');
+          moreButton.textContent = 'عرض المزيد';
+          moreButton.addEventListener('click', () => {
+            showAllNotifications = true;
+            fetchNotifications();
+          });
+          notificationsList.appendChild(moreButton);
+        }
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -461,9 +470,47 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  async function markNotificationAsRead(notificationId) {
+    try {
+      await fetch(`/api/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      fetchNotifications();
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  }
+
+  function showNotificationModal(notification) {
+    const modal = document.createElement("div");
+    modal.classList.add("modal");
+    modal.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>${notification.title}</h3>
+          <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="notification-content">
+          <p>${notification.message}</p>
+          <small>${new Date(notification.createdAt).toLocaleString('ar-EG')}</small>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-secondary modal-close-btn">إغلاق</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.querySelectorAll(".modal-close-btn").forEach(btn => {
+      btn.addEventListener("click", () => modal.remove());
+    });
+  }
+
   notificationsBtn.addEventListener("click", () => {
     loadNotificationsCss();
     notificationsModal.style.display = 'block';
+    showAllNotifications = false;
     fetchNotifications();
   });
 
