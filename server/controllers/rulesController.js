@@ -1,6 +1,6 @@
 // /server/controllers/rulesController.js
 
-const mongoose = require('mongoose'); // هنحتاجه عشان نتحقق من ObjectId
+const mongoose = require('mongoose');
 const Rule = require('../models/Rule');
 const Conversation = require('../models/Conversation');
 
@@ -13,19 +13,30 @@ exports.getRules = async (req, res) => {
     const page = parseInt(req.query.page) || 1; // رقم الصفحة
     const limit = parseInt(req.query.limit) || 30; // عدد القواعد لكل صفحة
 
-    // التحقق من وجود botId
-    if (!botId) {
-      return res.status(400).json({ message: 'معرف البوت (botId) مطلوب' });
+    // التحقق من وجود botId للقواعد غير الموحدة
+    if (!botId && type !== 'global') {
+      return res.status(400).json({ message: 'معرف البوت (botId) مطلوب للقواعد غير الموحدة' });
     }
 
-    // التحقق من إن botId هو ObjectId صالح
-    if (!mongoose.Types.ObjectId.isValid(botId)) {
+    // التحقق من إن botId هو ObjectId صالح لو موجود
+    if (botId && !mongoose.Types.ObjectId.isValid(botId)) {
       return res.status(400).json({ message: 'معرف البوت (botId) غير صالح' });
     }
 
-    let query = { $or: [{ botId }, { type: 'global' }] };
-    if (req.user.role !== 'superadmin') {
-      query = { botId }; // المستخدم العادي يشوف قواعده فقط
+    let query = {};
+    if (req.user.role === 'superadmin') {
+      // السوبر أدمن يشوف كل القواعد (الموحدة وغير الموحدة)
+      if (botId) {
+        query = { $or: [{ botId }, { type: 'global' }] };
+      } else {
+        query = { type: 'global' }; // لو مفيش botId، يجيب القواعد الموحدة بس
+      }
+    } else {
+      // المستخدم العادي يشوف قواعده بس (مش الموحدة)
+      if (!botId) {
+        return res.status(400).json({ message: 'معرف البوت (botId) مطلوب' });
+      }
+      query = { botId, type: { $ne: 'global' } };
     }
 
     // فلترة حسب نوع القاعدة
@@ -127,7 +138,7 @@ exports.createRule = async (req, res) => {
 
   try {
     console.log('📥 البيانات المرسلة إلى MongoDB:', { botId, type, content });
-    const rule = new Rule({ botId, type, content });
+    const rule = new Rule({ botId: type !== 'global' ? botId : undefined, type, content });
     await rule.save();
     console.log('✅ تم حفظ القاعدة بنجاح:', rule);
     res.status(201).json(rule);
@@ -229,17 +240,31 @@ exports.deleteRule = async (req, res) => {
 exports.exportRules = async (req, res) => {
   try {
     const botId = req.query.botId;
-    if (!botId) {
-      return res.status(400).json({ message: 'معرف البوت (botId) مطلوب' });
+
+    let query = {};
+    if (req.user.role === 'superadmin') {
+      // السوبر أدمن يقدر يصدر القواعد الموحدة أو قواعد بوت معين
+      if (botId) {
+        if (!mongoose.Types.ObjectId.isValid(botId)) {
+          return res.status(400).json({ message: 'معرف البوت (botId) غير صالح' });
+        }
+        query = { $or: [{ botId }, { type: 'global' }] };
+      } else {
+        query = { type: 'global' }; // لو مفيش botId، يصدر القواعد الموحدة بس
+      }
+    } else {
+      // المستخدم العادي يصدر قواعده بس
+      if (!botId) {
+        return res.status(400).json({ message: 'معرف البوت (botId) مطلوب' });
+      }
+      if (!mongoose.Types.ObjectId.isValid(botId)) {
+        return res.status(400).json({ message: 'معرف البوت (botId) غير صالح' });
+      }
+      query = { botId, type: { $ne: 'global' } };
     }
 
-    // التحقق من إن botId هو ObjectId صالح
-    if (!mongoose.Types.ObjectId.isValid(botId)) {
-      return res.status(400).json({ message: 'معرف البوت (botId) غير صالح' });
-    }
-
-    const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
-    res.setHeader('Content-Disposition', `attachment; filename=rules_${botId}.json`);
+    const rules = await Rule.find(query);
+    res.setHeader('Content-Disposition', `attachment; filename=rules_${botId || 'global'}.json`);
     res.setHeader('Content-Type', 'application/json');
     res.status(200).json(rules);
   } catch (err) {
@@ -254,12 +279,12 @@ exports.importRules = async (req, res) => {
     const botId = req.body.botId;
     const rules = req.body.rules;
 
-    if (!botId || !rules || !Array.isArray(rules)) {
-      return res.status(400).json({ message: 'معرف البوت وقائمة القواعد مطلوبة' });
+    if (!rules || !Array.isArray(rules)) {
+      return res.status(400).json({ message: 'قائمة القواعد مطلوبة ويجب أن تكون مصفوفة' });
     }
 
-    // التحقق من إن botId هو ObjectId صالح
-    if (!mongoose.Types.ObjectId.isValid(botId)) {
+    // التحقق من botId لو موجود (للقواعد غير الموحدة)
+    if (botId && !mongoose.Types.ObjectId.isValid(botId)) {
       return res.status(400).json({ message: 'معرف البوت (botId) غير صالح' });
     }
 
@@ -271,7 +296,10 @@ exports.importRules = async (req, res) => {
       if (rule.type === 'global' && req.user.role !== 'superadmin') {
         return res.status(403).json({ message: 'غير مصرح لك باستيراد قواعد موحدة' });
       }
-      rule.botId = botId; // التأكد من ربط القاعدة بالـ botId
+      if (rule.type !== 'global' && !botId) {
+        return res.status(400).json({ message: 'معرف البوت (botId) مطلوب للقواعد غير الموحدة' });
+      }
+      rule.botId = rule.type !== 'global' ? botId : undefined; // ما نضيفش botId للقواعد الموحدة
       rule.createdAt = new Date(); // تحديث تاريخ الإنشاء
     }
 
