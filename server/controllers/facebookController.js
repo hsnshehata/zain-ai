@@ -36,6 +36,12 @@ const handleMessage = async (req, res) => {
         continue;
       }
 
+      // التحقق من حالة البوت
+      if (!bot.isActive) {
+        console.log(`⚠️ Bot ${bot.name} (ID: ${bot._id}) is inactive, skipping message processing.`);
+        continue; // تجاهل أي معالجة إذا كان البوت متوقف
+      }
+
       if (entry.messaging && entry.messaging.length > 0) {
         const webhookEvent = entry.messaging[0];
         const senderPsid = webhookEvent.sender?.id;
@@ -74,7 +80,7 @@ const handleMessage = async (req, res) => {
         }
 
         // التعامل مع الـ message_edits
-        if (webhookEvent.message_edit && bot.messageEditsEnabled) {
+        if (webhookEvent.message_edit && bot mut.messageEditsEnabled) {
           const editedMessage = webhookEvent.message_edit.text;
           const messageId = webhookEvent.message_edit.mid;
           console.log(`✍️ Edited message received from ${senderPsid}: ${editedMessage}`);
