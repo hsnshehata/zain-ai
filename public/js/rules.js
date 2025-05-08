@@ -112,9 +112,19 @@ async function loadRulesPage() {
       loadingSpinner.style.display = 'flex';
       errorMessage.style.display = 'none';
       const botIdToSend = typeFilter.value === 'global' ? null : selectedBotId;
+      console.log("بيحاول يعمل تصدير مع botId:", botIdToSend);
+
       const rules = await handleApiRequest(`/api/rules/export${botIdToSend ? `?botId=${botIdToSend}` : ''}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, errorMessage, 'فشل في تصدير القواعد');
+
+      console.log("البيانات اللي رجعت من الـ API:", rules);
+
+      // التأكد إن rules هو array
+      if (!Array.isArray(rules)) {
+        throw new Error("البيانات المرجعة من الـ API مش في شكل مصفوفة");
+      }
+
       const blob = new Blob([JSON.stringify(rules, null, 2)], { type: 'application/json' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -126,8 +136,10 @@ async function loadRulesPage() {
       window.URL.revokeObjectURL(url);
       loadingSpinner.style.display = 'none';
     } catch (err) {
+      console.error("حصل خطأ أثناء التصدير:", err);
       loadingSpinner.style.display = 'none';
-      // الخطأ تم التعامل معه في handleApiRequest
+      errorMessage.textContent = err.message || 'فشل في تصدير القواعد';
+      errorMessage.style.display = 'block';
     }
   });
 
@@ -652,11 +664,11 @@ function escapeHtml(unsafe) {
     return String(unsafe);
   }
   return unsafe
-       .replace(/&/g, "&amp;")
-       .replace(/</g, "&lt;")
-       .replace(/>/g, "&gt;")
-       .replace(/"/g, "&quot;")
-       .replace(/'/g, "&#039;");
+       .replace(/&/g, "&")
+       .replace(/</g, "<")
+       .replace(/>/g, ">")
+       .replace(/"/g, """)
+       .replace(/'/g, "'");
 }
 
 // Make functions globally accessible
