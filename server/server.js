@@ -1,6 +1,9 @@
+// /server/server.js
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const rateLimit = require('express-rate-limit'); // استيراد مكتبة Rate Limiting
 const facebookRoutes = require('./routes/facebook');
 const webhookRoutes = require('./routes/webhook');
 const authRoutes = require('./routes/auth');
@@ -19,8 +22,22 @@ const Conversation = require('./models/Conversation');
 const { processMessage } = require('./botEngine');
 const NodeCache = require('node-cache');
 
+// دالة مساعدة لإضافة timestamp للـ logs
+const getTimestamp = () => new Date().toISOString();
+
 // إعداد cache لتخزين طلبات الـ API مؤقتاً (5 دقايق)
 const apiCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
+
+// إعداد Rate Limiting (100 طلب كل 15 دقيقة لكل IP)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 دقيقة
+  max: 100, // عدد الطلبات المسموح بيها لكل IP
+  message: {
+    message: 'تم تجاوز الحد الأقصى لعدد الطلبات، برجاء المحاولة مرة أخرى بعد 15 دقيقة',
+    error: 'RateLimitExceeded',
+    retryAfter: 15 * 60 // عدد الثواني المتبقية
+  }
+});
 
 const app = express();
 
@@ -35,6 +52,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
+
+// تطبيق Rate Limiting على كل الـ routes
+app.use(limiter);
 
 // Route لجلب GOOGLE_CLIENT_ID
 app.get('/api/config', (req, res) => {
@@ -65,7 +85,7 @@ app.get('/api/conversations/:botId/:userId', async (req, res) => {
     const conversations = await Conversation.find({ botId, userId }).sort({ 'messages.timestamp': -1 });
     res.status(200).json(conversations);
   } catch (err) {
-    console.error('❌ Error fetching conversations:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ Error fetching conversations | Bot: ${req.params.botId} | User: ${req.params.userId}`, err.message, err.stack);
     res.status(500).json({ message: 'Failed to fetch conversations' });
   }
 });
@@ -81,7 +101,7 @@ app.post('/api/bot/ai', async (req, res) => {
     // فحص تكرار الطلب
     const messageKey = `${botId}-${userId}-${message}-${Date.now()}`;
     if (apiCache.get(messageKey)) {
-      console.log(`⚠️ Duplicate AI message detected with key ${messageKey}, skipping...`);
+      console.log(`[${getTimestamp()}] ⚠️ Duplicate AI message detected with key ${messageKey}, skipping...`);
       return res.status(200).json({ reply: 'تم معالجة هذه الرسالة من قبل' });
     }
     apiCache.set(messageKey, true);
@@ -103,14 +123,14 @@ app.post('/api/bot/ai', async (req, res) => {
       Math.abs(new Date(msg.timestamp) - Date.now()) < 1000
     );
     if (messageExists) {
-      console.log(`⚠️ Duplicate message detected in conversation for ${userId}, skipping...`);
+      console.log(`[${getTimestamp()}] ⚠️ Duplicate message detected in conversation for ${userId}, skipping...`);
       return res.status(200).json({ reply: 'تم معالجة هذه الرسالة من قبل' });
     }
 
     const reply = await processMessage(botId, userId, message);
     res.status(200).json({ reply });
   } catch (err) {
-    console.error('❌ Error in AI route:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ Error in AI route | User: ${req.body.userId || 'N/A'} | Bot: ${req.body.botId || 'N/A'}`, err.message, err.stack);
     res.status(500).json({ message: 'Failed to process AI request' });
   }
 });
@@ -119,15 +139,15 @@ app.post('/api/bot/ai', async (req, res) => {
 app.get('/dashboard', (req, res) => {
   try {
     const filePath = path.join(__dirname, '../public/dashboard.html');
-    console.log('Serving dashboard.html from:', filePath);
+    console.log(`[${getTimestamp()}] Serving dashboard.html from: ${filePath}`);
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error('Error serving dashboard.html:', err);
+        console.error(`[${getTimestamp()}] Error serving dashboard.html:`, err);
         res.status(500).json({ message: 'Failed to load dashboard page' });
       }
     });
   } catch (err) {
-    console.error('Error in dashboard route:', err);
+    console.error(`[${getTimestamp()}] Error in dashboard route:`, err);
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
@@ -136,15 +156,15 @@ app.get('/dashboard', (req, res) => {
 app.get('/dashboard_new', (req, res) => {
   try {
     const filePath = path.join(__dirname, '../public/dashboard_new.html');
-    console.log('Serving dashboard_new.html from:', filePath);
+    console.log(`[${getTimestamp()}] Serving dashboard_new.html from: ${filePath}`);
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error('Error serving dashboard_new.html:', err);
+        console.error(`[${getTimestamp()}] Error serving dashboard_new.html:`, err);
         res.status(500).json({ message: 'Failed to load dashboard page' });
       }
     });
   } catch (err) {
-    console.error('Error in dashboard_new route:', err);
+    console.error(`[${getTimestamp()}] Error in dashboard_new route:`, err);
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
@@ -153,15 +173,15 @@ app.get('/dashboard_new', (req, res) => {
 app.get('/login', (req, res) => {
   try {
     const filePath = path.join(__dirname, '../public/login.html');
-    console.log('Serving login.html from:', filePath);
+    console.log(`[${getTimestamp()}] Serving login.html from: ${filePath}`);
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error('Error serving login.html:', err);
+        console.error(`[${getTimestamp()}] Error serving login.html:`, err);
         res.status(500).json({ message: 'Failed to load login page' });
       }
     });
   } catch (err) {
-    console.error('Error in login route:', err);
+    console.error(`[${getTimestamp()}] Error in login route:`, err);
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
@@ -170,15 +190,15 @@ app.get('/login', (req, res) => {
 app.get('/register', (req, res) => {
   try {
     const filePath = path.join(__dirname, '../public/register.html');
-    console.log('Serving register.html from:', filePath);
+    console.log(`[${getTimestamp()}] Serving register.html from: ${filePath}`);
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error('Error serving register.html:', err);
+        console.error(`[${getTimestamp()}] Error serving register.html:`, err);
         res.status(500).json({ message: 'Failed to load register page' });
       }
     });
   } catch (err) {
-    console.error('Error in register route:', err);
+    console.error(`[${getTimestamp()}] Error in register route:`, err);
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
@@ -187,15 +207,15 @@ app.get('/register', (req, res) => {
 app.get('/set-whatsapp', (req, res) => {
   try {
     const filePath = path.join(__dirname, '../public/set-whatsapp.html');
-    console.log('Serving set-whatsapp.html from:', filePath);
+    console.log(`[${getTimestamp()}] Serving set-whatsapp.html from: ${filePath}`);
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error('Error serving set-whatsapp.html:', err);
+        console.error(`[${getTimestamp()}] Error serving set-whatsapp.html:`, err);
         res.status(500).json({ message: 'Failed to load set-whatsapp page' });
       }
     });
   } catch (err) {
-    console.error('Error in set-whatsapp route:', err);
+    console.error(`[${getTimestamp()}] Error in set-whatsapp route:`, err);
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
@@ -204,15 +224,15 @@ app.get('/set-whatsapp', (req, res) => {
 app.get('/chat/:linkId', (req, res) => {
   try {
     const filePath = path.join(__dirname, '../public/chat.html');
-    console.log('Serving chat.html from:', filePath);
+    console.log(`[${getTimestamp()}] Serving chat.html from: ${filePath}`);
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error('Error serving chat.html:', err);
+        console.error(`[${getTimestamp()}] Error serving chat.html:`, err);
         res.status(500).json({ message: 'Failed to load chat page' });
       }
     });
   } catch (err) {
-    console.error('Error in chat route:', err);
+    console.error(`[${getTimestamp()}] Error in chat route:`, err);
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
@@ -222,11 +242,16 @@ connectDB();
 
 // Global Error Handler
 app.use((err, req, res, next) => {
-  console.error('❌ Server error:', err.message, err.stack);
-  res.status(500).json({ message: err.message || 'Something went wrong!' });
+  const userId = req.user ? req.user.userId : 'N/A';
+  console.error(`[${getTimestamp()}] ❌ Server error | Method: ${req.method} | URL: ${req.url} | User: ${userId}`, err.message, err.stack);
+  res.status(500).json({ 
+    message: err.message || 'Something went wrong!',
+    error: err.name || 'ServerError',
+    details: err.message
+  });
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`[${getTimestamp()}] ✅ Server running on port ${PORT}`);
 });
