@@ -3,7 +3,10 @@
 const mongoose = require('mongoose');
 const Rule = require('../models/Rule');
 const Conversation = require('../models/Conversation');
-const Bot = require('../models/Bot'); // هنحتاجه عشان نتحقق من وجود botId
+const Bot = require('../models/Bot');
+
+// دالة مساعدة لإضافة timestamp للـ logs
+const getTimestamp = () => new Date().toISOString();
 
 // جلب كل القواعد مع دعم الفلترة والبحث والـ pagination
 exports.getRules = async (req, res) => {
@@ -26,9 +29,14 @@ exports.getRules = async (req, res) => {
 
     let query = {};
     if (req.user.role === 'superadmin') {
-      // السوبر أدمن يشوف كل القواعد (الموحدة وغير الموحدة)
+      // السوبر أدمن يشوف القواعد بناءً على الطلب
       if (botId) {
-        query = { $or: [{ botId }, { type: 'global' }] };
+        // التحقق من إن botId موجود في جدول Bot
+        const botExists = await Bot.findById(botId);
+        if (!botExists) {
+          return res.status(404).json({ message: 'البوت غير موجود' });
+        }
+        query = { botId }; // جلب قواعد البوت فقط (مش القواعد الموحدة)
       } else {
         query = { type: 'global' }; // لو مفيش botId، يجيب القواعد الموحدة بس
       }
@@ -36,6 +44,11 @@ exports.getRules = async (req, res) => {
       // المستخدم العادي يشوف قواعده بس (مش الموحدة)
       if (!botId) {
         return res.status(400).json({ message: 'معرف البوت (botId) مطلوب' });
+      }
+      // التحقق من إن botId موجود في جدول Bot
+      const botExists = await Bot.findById(botId);
+      if (!botExists) {
+        return res.status(404).json({ message: 'البوت غير موجود' });
       }
       query = { botId, type: { $ne: 'global' } };
     }
@@ -64,14 +77,14 @@ exports.getRules = async (req, res) => {
       .skip((page - 1) * limit)
       .limit(limit);
 
-    console.log('✅ تم جلب القواعد بنجاح:', rules);
+    console.log(`[${getTimestamp()}] ✅ تم جلب القواعد بنجاح | User: ${req.user.userId} | Bot: ${botId || 'N/A'} | Rules Count: ${rules.length}`, rules);
     res.status(200).json({
       rules,
       totalPages: Math.ceil(totalRules / limit),
       currentPage: page,
     });
   } catch (err) {
-    console.error('❌ خطأ في جلب القواعد:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في جلب القواعد | User: ${req.user?.userId || 'N/A'} | Bot: ${req.query.botId || 'N/A'}`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر أثناء جلب القواعد', error: err.message });
   }
 };
@@ -83,6 +96,14 @@ exports.createRule = async (req, res) => {
   // التحقق من الحقول الأساسية
   if (!type || !content) {
     return res.status(400).json({ message: 'الحقلين type و content مطلوبين' });
+  }
+
+  // تحقق إضافي: التأكد إن content مش فاضي أو null
+  if (content === null || (typeof content === 'string' && content.trim() === '')) {
+    return res.status(400).json({ message: 'المحتوى لا يمكن أن يكون فارغًا' });
+  }
+  if (typeof content === 'object' && Object.keys(content).length === 0) {
+    return res.status(400).json({ message: 'المحتوى لا يمكن أن يكون كائنًا فارغًا' });
   }
 
   // التحقق من botId فقط إذا كان النوع مش global
@@ -138,13 +159,13 @@ exports.createRule = async (req, res) => {
   }
 
   try {
-    console.log('📥 البيانات المرسلة إلى MongoDB:', { botId, type, content });
+    console.log(`[${getTimestamp()}] 📥 البيانات المرسلة إلى MongoDB | User: ${req.user.userId} | Bot: ${botId || 'N/A'}`, { botId, type, content });
     const rule = new Rule({ botId: type !== 'global' ? botId : undefined, type, content });
     await rule.save();
-    console.log('✅ تم حفظ القاعدة بنجاح:', rule);
+    console.log(`[${getTimestamp()}] ✅ تم حفظ القاعدة بنجاح | User: ${req.user.userId} | Bot: ${botId || 'N/A'} | Rule ID: ${rule._id}`, rule);
     res.status(201).json(rule);
   } catch (err) {
-    console.error('❌ خطأ في إنشاء القاعدة:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في إنشاء القاعدة | User: ${req.user.userId} | Bot: ${botId || 'N/A'}`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر أثناء إنشاء القاعدة', error: err.message });
   }
 };
@@ -161,6 +182,16 @@ exports.updateRule = async (req, res) => {
 
     if (rule.type === 'global' && req.user.role !== 'superadmin') {
       return res.status(403).json({ message: 'غير مصرح لك بتعديل القواعد الموحدة' });
+    }
+
+    // تحقق إضافي: التأكد إن content مش فاضي أو null لو تم إرساله
+    if (content) {
+      if (content === null || (typeof content === 'string' && content.trim() === '')) {
+        return res.status(400).json({ message: 'المحتوى لا يمكن أن يكون فارغًا' });
+      }
+      if (typeof content === 'object' && Object.keys(content).length === 0) {
+        return res.status(400).json({ message: 'المحتوى لا يمكن أن يكون كائنًا فارغًا' });
+      }
     }
 
     // التحقق من نوع القاعدة إذا تم إرساله
@@ -208,10 +239,10 @@ exports.updateRule = async (req, res) => {
     rule.content = content || rule.content;
 
     await rule.save();
-    console.log('✅ تم تعديل القاعدة بنجاح:', rule);
+    console.log(`[${getTimestamp()}] ✅ تم تعديل القاعدة بنجاح | User: ${req.user.userId} | Rule ID: ${rule._id} | Bot: ${rule.botId || 'N/A'}`, rule);
     res.status(200).json(rule);
   } catch (err) {
-    console.error('❌ خطأ في تعديل القاعدة:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في تعديل القاعدة | User: ${req.user?.userId || 'N/A'} | Rule ID: ${req.params.id}`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر أثناء تعديل القاعدة', error: err.message });
   }
 };
@@ -229,10 +260,10 @@ exports.deleteRule = async (req, res) => {
     }
 
     await Rule.deleteOne({ _id: req.params.id });
-    console.log('✅ تم حذف القاعدة بنجاح');
+    console.log(`[${getTimestamp()}] ✅ تم حذف القاعدة بنجاح | User: ${req.user.userId} | Rule ID: ${req.params.id} | Bot: ${rule.botId || 'N/A'}`);
     res.status(200).json({ message: 'تم حذف القاعدة بنجاح' });
   } catch (err) {
-    console.error('❌ خطأ في حذف القاعدة:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في حذف القاعدة | User: ${req.user?.userId || 'N/A'} | Rule ID: ${req.params.id}`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر أثناء حذف القاعدة', error: err.message });
   }
 };
@@ -282,11 +313,12 @@ exports.exportRules = async (req, res) => {
     }
 
     const rules = await Rule.find(query);
+    console.log(`[${getTimestamp()}] ✅ تم تصدير القواعد بنجاح | User: ${req.user.userId} | Bot: ${botId || 'N/A'} | Rules Exported: ${rules.length}`);
     res.setHeader('Content-Disposition', `attachment; filename=rules_${botId || 'global'}.json`);
     res.setHeader('Content-Type', 'application/json');
     res.status(200).json(rules);
   } catch (err) {
-    console.error('❌ خطأ في تصدير القواعد:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في تصدير القواعد | User: ${req.user?.userId || 'N/A'} | Bot: ${req.query.botId || 'N/A'}`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر أثناء تصدير القواعد', error: err.message });
   }
 };
@@ -322,10 +354,10 @@ exports.importRules = async (req, res) => {
     }
 
     await Rule.insertMany(rules);
-    console.log('✅ تم استيراد القواعد بنجاح:', rules.length);
+    console.log(`[${getTimestamp()}] ✅ تم استيراد القواعد بنجاح | User: ${req.user.userId} | Bot: ${botId || 'N/A'} | Rules Imported: ${rules.length}`);
     res.status(201).json({ message: `تم استيراد ${rules.length} قاعدة بنجاح` });
   } catch (err) {
-    console.error('❌ خطأ في استيراد القواعد:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في استيراد القواعد | User: ${req.user?.userId || 'N/A'} | Bot: ${req.body.botId || 'N/A'}`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر أثناء استيراد القواعد', error: err.message });
   }
 };
