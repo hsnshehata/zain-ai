@@ -18,6 +18,7 @@ const botSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true }, // حالة تشغيل البوت
   autoStopDate: { type: Date }, // تاريخ الإيقاف التلقائي
   subscriptionType: { type: String, enum: ['free', 'monthly', 'yearly'], default: 'free' }, // نوع الاشتراك
+  welcomeMessage: { type: String } // رسالة الترحيب (اختياري)
 });
 
 module.exports = mongoose.model('Bot', botSchema);
