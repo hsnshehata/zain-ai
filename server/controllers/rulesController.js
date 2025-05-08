@@ -3,6 +3,7 @@
 const mongoose = require('mongoose');
 const Rule = require('../models/Rule');
 const Conversation = require('../models/Conversation');
+const Bot = require('../models/Bot'); // هنحتاجه عشان نتحقق من وجود botId
 
 // جلب كل القواعد مع دعم الفلترة والبحث والـ pagination
 exports.getRules = async (req, res) => {
@@ -13,7 +14,7 @@ exports.getRules = async (req, res) => {
     const page = parseInt(req.query.page) || 1; // رقم الصفحة
     const limit = parseInt(req.query.limit) || 30; // عدد القواعد لكل صفحة
 
-    // التحقق من وجود botId للقواعد غير الموحدة
+    // التحقق من وجود botId
     if (!botId && type !== 'global') {
       return res.status(400).json({ message: 'معرف البوت (botId) مطلوب للقواعد غير الموحدة' });
     }
@@ -245,21 +246,38 @@ exports.exportRules = async (req, res) => {
     if (req.user.role === 'superadmin') {
       // السوبر أدمن يقدر يصدر القواعد الموحدة أو قواعد بوت معين
       if (botId) {
+        // التحقق من إن botId صالح
         if (!mongoose.Types.ObjectId.isValid(botId)) {
           return res.status(400).json({ message: 'معرف البوت (botId) غير صالح' });
         }
-        query = { $or: [{ botId }, { type: 'global' }] };
+
+        // التحقق من إن botId موجود في جدول Bot
+        const botExists = await Bot.findById(botId);
+        if (!botExists) {
+          return res.status(404).json({ message: 'البوت غير موجود' });
+        }
+
+        // السوبر أدمن يقدر يصدر قواعد البوت فقط (مش القواعد الموحدة)
+        query = { botId };
       } else {
-        query = { type: 'global' }; // لو مفيش botId، يصدر القواعد الموحدة بس
+        // لو مفيش botId، يصدر القواعد الموحدة بس
+        query = { type: 'global' };
       }
     } else {
-      // المستخدم العادي يصدر قواعده بس
+      // المستخدم العادي يصدر قواعده بس (مش القواعد الموحدة)
       if (!botId) {
         return res.status(400).json({ message: 'معرف البوت (botId) مطلوب' });
       }
       if (!mongoose.Types.ObjectId.isValid(botId)) {
         return res.status(400).json({ message: 'معرف البوت (botId) غير صالح' });
       }
+
+      // التحقق من إن botId موجود في جدول Bot
+      const botExists = await Bot.findById(botId);
+      if (!botExists) {
+        return res.status(404).json({ message: 'البوت غير موجود' });
+      }
+
       query = { botId, type: { $ne: 'global' } };
     }
 
