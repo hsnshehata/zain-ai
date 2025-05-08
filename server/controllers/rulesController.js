@@ -1,5 +1,6 @@
 // /server/controllers/rulesController.js
 
+const mongoose = require('mongoose'); // هنحتاجه عشان نتحقق من ObjectId
 const Rule = require('../models/Rule');
 const Conversation = require('../models/Conversation');
 
@@ -12,8 +13,14 @@ exports.getRules = async (req, res) => {
     const page = parseInt(req.query.page) || 1; // رقم الصفحة
     const limit = parseInt(req.query.limit) || 30; // عدد القواعد لكل صفحة
 
+    // التحقق من وجود botId
     if (!botId) {
       return res.status(400).json({ message: 'معرف البوت (botId) مطلوب' });
+    }
+
+    // التحقق من إن botId هو ObjectId صالح
+    if (!mongoose.Types.ObjectId.isValid(botId)) {
+      return res.status(400).json({ message: 'معرف البوت (botId) غير صالح' });
     }
 
     let query = { $or: [{ botId }, { type: 'global' }] };
@@ -69,6 +76,11 @@ exports.createRule = async (req, res) => {
   // التحقق من botId فقط إذا كان النوع مش global
   if (type !== 'global' && !botId) {
     return res.status(400).json({ message: 'معرف البوت (botId) مطلوب للقواعد غير الموحدة' });
+  }
+
+  // التحقق من إن botId هو ObjectId صالح لو موجود
+  if (botId && !mongoose.Types.ObjectId.isValid(botId)) {
+    return res.status(400).json({ message: 'معرف البوت (botId) غير صالح' });
   }
 
   // التحقق من صلاحيات السوبر أدمن للقواعد الموحدة
@@ -221,6 +233,11 @@ exports.exportRules = async (req, res) => {
       return res.status(400).json({ message: 'معرف البوت (botId) مطلوب' });
     }
 
+    // التحقق من إن botId هو ObjectId صالح
+    if (!mongoose.Types.ObjectId.isValid(botId)) {
+      return res.status(400).json({ message: 'معرف البوت (botId) غير صالح' });
+    }
+
     const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
     res.setHeader('Content-Disposition', `attachment; filename=rules_${botId}.json`);
     res.setHeader('Content-Type', 'application/json');
@@ -239,6 +256,11 @@ exports.importRules = async (req, res) => {
 
     if (!botId || !rules || !Array.isArray(rules)) {
       return res.status(400).json({ message: 'معرف البوت وقائمة القواعد مطلوبة' });
+    }
+
+    // التحقق من إن botId هو ObjectId صالح
+    if (!mongoose.Types.ObjectId.isValid(botId)) {
+      return res.status(400).json({ message: 'معرف البوت (botId) غير صالح' });
     }
 
     const validTypes = ['general', 'products', 'qa', 'global', 'channels'];
