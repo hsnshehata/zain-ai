@@ -1,10 +1,34 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // Check for token in URL (from /verify/:token redirect)
+  const urlParams = new URLSearchParams(window.location.search);
+  const tokenFromUrl = urlParams.get('token');
+  if (tokenFromUrl) {
+    try {
+      // Decode the token to extract userId, role, and username
+      const decoded = jwtDecode(tokenFromUrl);
+      localStorage.setItem('token', tokenFromUrl);
+      localStorage.setItem('userId', decoded.userId);
+      localStorage.setItem('role', decoded.role);
+      localStorage.setItem('username', decoded.username);
+      console.log('✅ Token from URL stored in localStorage:', decoded);
+      // Clear the URL params to avoid reusing the token
+      window.history.replaceState({}, document.title, '/dashboard_new.html');
+    } catch (err) {
+      console.error('❌ Error decoding token from URL:', err.message);
+      localStorage.clear();
+      window.location.href = "/login.html";
+      return;
+    }
+  }
+
   const role = localStorage.getItem("role");
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
 
-  // Redirect to login if no token
-  if (!token) {
+  // Redirect to login if no token or userId
+  if (!token || !userId) {
+    console.warn('⚠️ No token or userId found in localStorage, redirecting to login');
+    localStorage.clear();
     if (window.location.pathname !== "/login.html") {
       window.location.href = "/login.html";
     }
@@ -135,6 +159,12 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (err) {
       console.error('❌ Error fetching user data:', err.message, err); // لوج مفصل للخطأ
+      if (err.message.includes('404')) {
+        console.warn('⚠️ User not found, logging out and redirecting to login');
+        localStorage.clear();
+        window.location.href = "/login.html";
+        return;
+      }
       welcomeUser.textContent = "مرحبًا: خطأ في جلب البيانات";
       subscriptionTypeEl.textContent = "النظام: خطأ في جلب البيانات";
       subscriptionEndEl.textContent = "تاريخ النهاية: خطأ في جلب البيانات";
@@ -480,3 +510,17 @@ document.addEventListener("DOMContentLoaded", () => {
   populateBotSelect();
   fetchNotifications();
 });
+
+// Simple JWT decode function (since we don't have jwt-decode library)
+function jwtDecode(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    throw new Error('Invalid token');
+  }
+}
