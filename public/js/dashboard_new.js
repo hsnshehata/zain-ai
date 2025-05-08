@@ -118,7 +118,9 @@ document.addEventListener("DOMContentLoaded", () => {
         headers: { Authorization: `Bearer ${token}` },
       }, content, "فشل في جلب بيانات المستخدم");
 
-      welcomeUser.textContent = `مرحبًا: ${userData.username}`;
+      console.log(`✅ User data fetched successfully:`, userData); // لوج للتأكد من البيانات
+
+      welcomeUser.textContent = `مرحبًا: ${userData.username || 'غير معروف'}`;
       subscriptionTypeEl.textContent = `النظام: ${userData.subscriptionType || "مجاني"}`;
       
       if (userData.subscriptionEndDate) {
@@ -132,10 +134,11 @@ document.addEventListener("DOMContentLoaded", () => {
         daysRemainingEl.textContent = "الأيام المتبقية: غير محدد";
       }
     } catch (err) {
-      welcomeUser.textContent = "مرحبًا: خطأ";
-      subscriptionTypeEl.textContent = "النظام: خطأ";
-      subscriptionEndEl.textContent = "تاريخ النهاية: خطأ";
-      daysRemainingEl.textContent = "الأيام المتبقية: خطأ";
+      console.error('❌ Error fetching user data:', err.message, err); // لوج مفصل للخطأ
+      welcomeUser.textContent = "مرحبًا: خطأ في جلب البيانات";
+      subscriptionTypeEl.textContent = "النظام: خطأ في جلب البيانات";
+      subscriptionEndEl.textContent = "تاريخ النهاية: خطأ في جلب البيانات";
+      daysRemainingEl.textContent = "الأيام المتبقية: خطأ في جلب البيانات";
     }
   }
 
