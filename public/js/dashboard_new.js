@@ -29,6 +29,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const notificationsCount = document.getElementById("notifications-count");
   const closeNotificationsBtn = document.getElementById("close-notifications-btn");
   const settingsBtn = document.getElementById("settings-btn");
+  const welcomeUser = document.getElementById("welcome-user");
+  const subscriptionTypeEl = document.getElementById("subscription-type");
+  const subscriptionEndEl = document.getElementById("subscription-end");
+  const daysRemainingEl = document.getElementById("days-remaining");
 
   // Map of pages to their respective CSS files
   const pageCssMap = {
@@ -105,6 +109,34 @@ document.addEventListener("DOMContentLoaded", () => {
     mobileNavToggle.addEventListener("click", () => {
       mobileNav.classList.toggle("collapsed");
     });
+  }
+
+  // --- User Info Bar ---
+  async function populateUserInfo() {
+    try {
+      const userData = await handleApiRequest(`/api/users/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, content, "فشل في جلب بيانات المستخدم");
+
+      welcomeUser.textContent = `مرحبًا: ${userData.username}`;
+      subscriptionTypeEl.textContent = `النظام: ${userData.subscriptionType || "مجاني"}`;
+      
+      if (userData.subscriptionEndDate) {
+        const endDate = new Date(userData.subscriptionEndDate);
+        subscriptionEndEl.textContent = `تاريخ النهاية: ${endDate.toLocaleDateString('ar-EG')}`;
+        const today = new Date();
+        const daysRemaining = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+        daysRemainingEl.textContent = `الأيام المتبقية: ${daysRemaining >= 0 ? daysRemaining : "منتهي"}`;
+      } else {
+        subscriptionEndEl.textContent = "تاريخ النهاية: غير محدد";
+        daysRemainingEl.textContent = "الأيام المتبقية: غير محدد";
+      }
+    } catch (err) {
+      welcomeUser.textContent = "مرحبًا: خطأ";
+      subscriptionTypeEl.textContent = "النظام: خطأ";
+      subscriptionEndEl.textContent = "تاريخ النهاية: خطأ";
+      daysRemainingEl.textContent = "الأيام المتبقية: خطأ";
+    }
   }
 
   // --- Bot Selector ---
@@ -449,6 +481,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // --- Initialize ---
+  populateUserInfo();
   populateBotSelect();
   fetchNotifications();
 });
