@@ -350,6 +350,32 @@
     display: flex;
   }
 
+  /* User Info Bar */
+  .user-info-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 25px;
+    background-color: var(--dark-card);
+    border-bottom: 1px solid var(--dark-border);
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  &.light-mode .user-info-bar {
+    background-color: var(--light-card);
+    border-bottom: 1px solid var(--light-border);
+  }
+
+  .user-info-bar span {
+    font-size: 0.95em;
+    color: var(--dark-text);
+  }
+
+  &.light-mode .user-info-bar span {
+    color: var(--light-text);
+  }
+
   /* Page Content Area */
   .page-content {
     padding: 25px;
@@ -569,6 +595,11 @@
     }
     #botSelectDashboard {
       width: 100%;
+    }
+    .user-info-bar {
+      flex-direction: column;
+      align-items: flex-start;
+      padding: 10px 15px;
     }
   }
 
