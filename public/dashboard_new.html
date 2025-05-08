@@ -3,20 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="لوحة تحكم Zain AI لإدارة بوتات ذكية، تخصيص الردود، تحليلات العملاء، وإعدادات فيسبوك.">
-  <meta name="keywords" content="Zain AI, لوحة تحكم, بوتات ذكية, إدارة">
+  <meta name="description" content="لوحة تحكم زين بوت لإدارة البوتات الذكية والمحادثات.">
+  <meta name="keywords" content="Zain AI, لوحة تحكم, بوتات ذكية">
   <meta name="theme-color" content="#00C4B4">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Zain AI">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png">
+  <meta name="msapplication-TileImage" content="/icons/icon-150x150.png">
   <title>لوحة التحكم - زين بوت</title>
   <link rel="stylesheet" href="/css/common.css">
   <link rel="stylesheet" href="/css/dashboard.css">
-  <link rel="manifest" href="/manifest.json">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chartist@0.11.4/dist/chartist.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/chartist@0.11.4/dist/chartist.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="icon" type="image/png" href="/icons/icon-192x192.png">
+  <link rel="manifest" href="/manifest.json">
 </head>
 <body class="dark-mode dashboard-page">
   <div class="dashboard-layout">
@@ -26,13 +24,12 @@
       </div>
       <nav class="sidebar-nav">
         <button class="nav-item" data-page="bots" aria-label="إدارة البوتات"><i class="fas fa-robot"></i> <span>إدارة البوتات</span></button>
-        <button class="nav-item" data-page="rules" aria-label="إدارة القواعد"><i class="fas fa-book"></i> <span>إدارة القواعد</span></button>
-        <button class="nav-item" data-page="chat-page" aria-label="تخصيص الدردشة"><i class="fas fa-comment-dots"></i> <span>تخصيص الدردشة</span></button>
-        <button class="nav-item" data-page="analytics" aria-label="التحليلات"><i class="fas fa-chart-pie"></i> <span>التحليلات</span></button>
-        <button class="nav-item" data-page="messages" aria-label="الرسائل"><i class="fas fa-envelope-open-text"></i> <span>الرس  
-الرسائل</span></button>
-        <button class="nav-item" data-page="feedback" aria-label="التقييمات"><i class="fas fa-star-half-alt"></i> <span>التقييمات</span></button>
-        <button class="nav-item" data-page="facebook" aria-label="إعدادات فيسبوك"><i class="fab fa-facebook-f"></i> <span>إعدادات فيسبوك</span></button>
+        <button class="nav-item" data-page="rules" aria-label="إدارة القواعد"><i class="fas fa-book"></i> <span>القواعد</span></button>
+        <button class="nav-item" data-page="chat-page" aria-label="إدارة صفحات الدردشة"><i class="fas fa-comment-alt"></i> <span>صفحات الدردشة</span></button>
+        <button class="nav-item" data-page="analytics" aria-label="الإحصائيات"><i class="fas fa-chart-line"></i> <span>الإحصائيات</span></button>
+        <button class="nav-item" data-page="messages" aria-label="إدارة الرسائل"><i class="fas fa-envelope"></i> <span>الرسائل</span></button>
+        <button class="nav-item" data-page="feedback" aria-label="إدارة التقييمات"><i class="fas fa-star"></i> <span>التقييمات</span></button>
+        <button class="nav-item" data-page="facebook" aria-label="إعدادات فيسبوك"><i class="fab fa-facebook-square"></i> <span>فيسبوك</span></button>
       </nav>
       <div class="sidebar-footer">
         <button class="nav-item logout-btn" aria-label="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i> <span>تسجيل الخروج</span></button>
@@ -45,10 +42,8 @@
           <button id="sidebar-toggle" class="sidebar-toggle-btn" aria-label="تبديل الشريط الجانبي"><i class="fas fa-bars"></i></button>
           <div class="bot-selector-container">
             <div class="form-group bot-selector">
-              <select id="botSelectDashboard" name="botSelectDashboard" aria-label="اختيار البوت">
-                <option value="">اختر بوت</option>
-              </select>
-              <label for="botSelectDashboard">البوت الحالي</label>
+              <label for="botSelectDashboard"><i class="fas fa-robot"></i> اختر بوت:</label>
+              <select id="botSelectDashboard"></select>
             </div>
           </div>
         </div>
@@ -57,9 +52,8 @@
             <i class="fas fa-bell"></i>
             <span id="notifications-count" class="notifications-count">0</span>
           </button>
-          <button id="settings-btn" class="header-icon-btn" aria-label="إعدادات المستخدم">
-            <i class="fas fa-cog"></i>
-          </button>
+          <button id="assistantButton" class="header-icon-btn" aria-label="مساعد الذكاء الاصطناعي"><i class="fas fa-headset"></i></button>
+          <button id="settings-btn" class="header-icon-btn" aria-label="الإعدادات"><i class="fas fa-cog"></i></button>
           <button id="theme-toggle" class="theme-toggle-btn" aria-label="تبديل الوضع الداكن/الفاتح">
             <i class="fas fa-sun"></i>
             <i class="fas fa-moon"></i>
@@ -67,25 +61,16 @@
         </div>
       </header>
 
-      <div class="user-info-bar">
-        <span id="welcome-user">مرحبًا: جار التحميل...</span>
-        <span id="subscription-type">النظام: جار التحميل...</span>
-        <span id="subscription-end">تاريخ النهاية: جار التحميل...</span>
-        <span id="days-remaining">الأيام المتبقية: جار التحميل...</span>
-      </div>
+      <div id="content" class="page-content" aria-live="polite"></div>
 
       <div id="notifications-modal" class="notifications-modal" style="display: none;">
         <div class="notifications-modal-content">
           <div class="notifications-header">
-            <h3>الإشعارات</h3>
-            <button id="close-notifications-btn" class="modal-close-btn" aria-label="إغلاق الإشعارات"><i class="fas fa-times"></i></button>
+            <h3><i class="fas fa-bell"></i> الإشعارات</h3>
+            <button id="close-notifications-btn" aria-label="إغلاق الإشعارات"><i class="fas fa-times"></i></button>
           </div>
           <div id="notifications-list" class="notifications-list"></div>
         </div>
-      </div>
-
-      <div id="content" class="page-content" aria-live="polite">
-        <div class="placeholder"><h2>أهلاً بك في لوحة تحكم زين بوت!</h2><p>اختر قسمًا من القائمة للبدء.</p></div>
       </div>
 
       <footer class="dashboard-footer">
@@ -93,76 +78,48 @@
       </footer>
     </main>
 
-    <!-- Mobile Bottom Navigation Bar -->
-    <nav class="mobile-nav-bottom">
-      <button class="nav-item-mobile" data-page="bots" aria-label="إدارة البوتات"><i class="fas fa-robot"></i></button>
+    <nav class="mobile-nav-bottom collapsed">
       <button class="nav-item-mobile" data-page="rules" aria-label="إدارة القواعد"><i class="fas fa-book"></i></button>
-      <button class="nav-item-mobile" data-page="chat-page" aria-label="تخصيص الدردشة"><i class="fas fa-comment-dots"></i></button>
-      <button class="nav-item-mobile" data-page="analytics" aria-label="التحليلات"><i class="fas fa-chart-pie"></i></button>
-      <button class="nav-item-mobile" data-page="messages" aria-label="الرسائل"><i class="fas fa-envelope-open-text"></i></button>
-      <button class="nav-item-mobile" data-page="feedback" aria-label="التقييمات"><i class="fas fa-star-half-alt"></i></button>
-      <button class="nav-item-mobile" data-page="facebook" aria-label="إعدادات فيسبوك"><i class="fab fa-facebook-f"></i></button>
+      <button class="nav-item-mobile" data-page="chat-page" aria-label="إدارة صفحات الدردشة"><i class="fas fa-comment-alt"></i></button>
+      <button class="nav-item-mobile" data-page="analytics" aria-label="الإحصائيات"><i class="fas fa-chart-line"></i></button>
+      <button class="nav-item-mobile" data-page="messages" aria-label="إدارة الرسائل"><i class="fas fa-envelope"></i></button>
+      <button class="nav-item-mobile" data-page="feedback" aria-label="إدارة التقييمات"><i class="fas fa-star"></i></button>
+      <button class="nav-item-mobile" data-page="facebook" aria-label="إعدادات فيسبوك"><i class="fab fa-facebook-square"></i></button>
+      <button class="nav-item-mobile" data-page="bots" aria-label="إدارة البوتات"><i class="fas fa-robot"></i></button>
       <button class="nav-item-mobile logout-btn" aria-label="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i></button>
-      <button class="nav-toggle-btn" id="mobile-nav-toggle"><i class="fas fa-chevron-up"></i></button>
+      <button id="mobile-nav-toggle" class="nav-toggle-btn" aria-label="تبديل القائمة"><i class="fas fa-chevron-up"></i></button>
     </nav>
   </div>
 
-  <div id="assistantButtonContainer" style="position: fixed; bottom: 35px; left: 20px; z-index: 1000;">
-    <img id="assistantButton" src="https://i.ibb.co/7JJScM0Q/zain-ai.png" alt="المساعد الذكي" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
-  </div>
-  <div id="assistantChatModal" class="chat-modal" style="display: none;">
-    <div class="chat-modal-content">
-      <div class="chat-header">
-        <h3>المساعد الذكي</h3>
-        <button id="closeAssistantChatBtn" class="chat-close-btn" aria-label="إغلاق المساعد"><i class="fas fa-times"></i></button>
-      </div>
-      <div id="assistantChatMessages" class="chat-messages">
-        <div class="message bot-message">
-          <p>مرحبًا! أنا المساعد الذكي. كيف يمكنني مساعدتك اليوم؟</p>
-          <small id="welcomeTimestamp"></small>
-        </div>
-      </div>
-      <div class="chat-footer">
-        <div class="chat-input">
-          <input type="text" id="assistantMessageInput" placeholder="اكتب رسالتك..." aria-label="إدخال رسالة للمساعد">
-          <button id="assistantSendMessageBtn" aria-label="إرسال الرسالة"><i class="fas fa-arrow-up"></i></button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <script>
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    const token = localStorage.getItem("token");
-    if (isMobile && !token) {
-      window.location.href = "/login.html";
-    } else if (token && window.location.pathname === "/login.html") {
-      window.location.href = "/dashboard_new.html";
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(registration => {
+            console.log('Service Worker Registered');
+          })
+          .catch(err => {
+            console.error('Service Worker Registration Failed:', err);
+          });
+      });
     }
+
     const currentTheme = localStorage.getItem("theme") || "dark";
     document.body.classList.add(currentTheme === "light" ? "light-mode" : "dark-mode");
     if (currentTheme === "light") {
       document.body.classList.remove("dark-mode");
     }
-    if ("serviceWorker" in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register("/service-worker.js")
-          .then(() => console.log("Service Worker Registered"))
-          .catch((err) => console.error("Service Worker Error:", err));
-      });
-    }
   </script>
   <script defer src="/js/utils.js"></script>
-  <script defer src="/js/auth.js"></script>
   <script defer src="/js/bots.js"></script>
   <script defer src="/js/rules.js"></script>
   <script defer src="/js/chatPage.js"></script>
   <script defer src="/js/analytics.js"></script>
+  <script defer src="/js/messages.js"></script>
   <script defer src="/js/feedback.js"></script>
   <script defer src="/js/facebook.js"></script>
-  <script defer src="/js/messages.js"></script>
+  <script defer src="/js/settings.js"></script>
   <script defer src="/js/assistantBot.js"></script>
-  <script defer src="/js/settings.js" onerror="console.error('Failed to load settings.js')"></script>
-  <script defer src="/js/dashboard_new.js" onerror="console.error('Failed to load dashboard_new.js')"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'939c8378dcdfad5c',t:'MTc0NjI0MTI4NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93ae197acb47bd3f',t:'MTc0NjQyNTY4Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93c59d9acee34594',t:'MTc0NjY3MjI3MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <script defer src="/js/dashboard_new.js"></script>
+</body>
 </html>
