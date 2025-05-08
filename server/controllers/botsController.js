@@ -151,7 +151,7 @@ exports.clearFeedbackByType = async (req, res) => {
 
 // إنشاء بوت جديد
 exports.createBot = async (req, res) => {
-  const { name, userId, facebookApiKey, facebookPageId, subscriptionType } = req.body;
+  const { name, userId, facebookApiKey, facebookPageId, subscriptionType, welcomeMessage } = req.body;
 
   if (!name || !userId) {
     return res.status(400).json({ message: 'اسم البوت ومعرف المستخدم مطلوبان' });
@@ -171,7 +171,8 @@ exports.createBot = async (req, res) => {
       userId, 
       facebookApiKey, 
       facebookPageId, 
-      subscriptionType: subscriptionType || 'free' 
+      subscriptionType: subscriptionType || 'free',
+      welcomeMessage 
     });
     await bot.save();
 
@@ -190,7 +191,7 @@ exports.updateBot = async (req, res) => {
     return res.status(403).json({ message: 'غير مصرح لك بتعديل البوت' });
   }
 
-  const { name, userId, facebookApiKey, facebookPageId, isActive, autoStopDate, subscriptionType } = req.body;
+  const { name, userId, facebookApiKey, facebookPageId, isActive, autoStopDate, subscriptionType, welcomeMessage } = req.body;
 
   try {
     const bot = await Bot.findById(req.params.id);
@@ -206,6 +207,7 @@ exports.updateBot = async (req, res) => {
     bot.isActive = isActive !== undefined ? isActive : bot.isActive;
     bot.autoStopDate = autoStopDate !== undefined ? autoStopDate : bot.autoStopDate;
     bot.subscriptionType = subscriptionType || bot.subscriptionType;
+    bot.welcomeMessage = welcomeMessage !== undefined ? welcomeMessage : bot.welcomeMessage;
 
     if (facebookApiKey && !facebookPageId) {
       return res.status(400).json({ message: 'معرف صفحة الفيسبوك مطلوب عند إدخال رقم API' });
