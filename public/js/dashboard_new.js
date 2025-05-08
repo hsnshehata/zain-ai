@@ -158,9 +158,10 @@ document.addEventListener("DOMContentLoaded", () => {
         daysRemainingEl.textContent = "الأيام المتبقية: غير محدد";
       }
     } catch (err) {
-      console.error('❌ Error fetching user data:', err.message, err); // لوج مفصل للخطأ
-      if (err.message.includes('404')) {
+      console.error('❌ Error fetching user data:', err.message, err.status, err);
+      if (err.status === 404) {
         console.warn('⚠️ User not found, logging out and redirecting to login');
+        alert('المستخدم غير موجود، سيتم تسجيل الخروج وتوجيهك لتسجيل الدخول مرة أخرى.');
         localStorage.clear();
         window.location.href = "/login.html";
         return;
