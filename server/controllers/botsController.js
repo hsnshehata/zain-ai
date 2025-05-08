@@ -151,7 +151,7 @@ exports.clearFeedbackByType = async (req, res) => {
 
 // إنشاء بوت جديد
 exports.createBot = async (req, res) => {
-  const { name, userId, facebookApiKey, facebookPageId } = req.body;
+  const { name, userId, facebookApiKey, facebookPageId, subscriptionType } = req.body;
 
   if (!name || !userId) {
     return res.status(400).json({ message: 'اسم البوت ومعرف المستخدم مطلوبان' });
@@ -161,8 +161,18 @@ exports.createBot = async (req, res) => {
     return res.status(400).json({ message: 'معرف صفحة الفيسبوك مطلوب عند إدخال رقم API' });
   }
 
+  if (subscriptionType && !['free', 'monthly', 'yearly'].includes(subscriptionType)) {
+    return res.status(400).json({ message: 'نوع الاشتراك غير صالح' });
+  }
+
   try {
-    const bot = new Bot({ name, userId, facebookApiKey, facebookPageId });
+    const bot = new Bot({ 
+      name, 
+      userId, 
+      facebookApiKey, 
+      facebookPageId, 
+      subscriptionType: subscriptionType || 'free' 
+    });
     await bot.save();
 
     await User.findByIdAndUpdate(userId, { $push: { bots: bot._id } });
@@ -180,7 +190,7 @@ exports.updateBot = async (req, res) => {
     return res.status(403).json({ message: 'غير مصرح لك بتعديل البوت' });
   }
 
-  const { name, facebookApiKey, facebookPageId } = req.body;
+  const { name, userId, facebookApiKey, facebookPageId, isActive, autoStopDate, subscriptionType } = req.body;
 
   try {
     const bot = await Bot.findById(req.params.id);
@@ -188,9 +198,30 @@ exports.updateBot = async (req, res) => {
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
+    // تحديث الحقول
     bot.name = name || bot.name;
+    bot.userId = userId || bot.userId;
     bot.facebookApiKey = facebookApiKey !== undefined ? facebookApiKey : bot.facebookApiKey;
     bot.facebookPageId = facebookPageId !== undefined ? facebookPageId : bot.facebookPageId;
+    bot.isActive = isActive !== undefined ? isActive : bot.isActive;
+    bot.autoStopDate = autoStopDate !== undefined ? autoStopDate : bot.autoStopDate;
+    bot.subscriptionType = subscriptionType || bot.subscriptionType;
+
+    if (facebookApiKey && !facebookPageId) {
+      return res.status(400).json({ message: 'معرف صفحة الفيسبوك مطلوب عند إدخال رقم API' });
+    }
+
+    if (subscriptionType && !['free', 'monthly', 'yearly'].includes(subscriptionType)) {
+      return res.status(400).json({ message: 'نوع الاشتراك غير صالح' });
+    }
+
+    // إذا كان هناك مستخدم جديد، تحديث قائمة البوتات في المستخدمين
+    if (userId && userId !== bot.userId.toString()) {
+      // إزالة البوت من المستخدم القديم
+      await User.findByIdAndUpdate(bot.userId, { $pull: { bots: bot._id } });
+      // إضافة البوت للمستخدم الجديد
+      await User.findByIdAndUpdate(userId, { $push: { bots: bot._id } });
+    }
 
     await bot.save();
     res.status(200).json(bot);
