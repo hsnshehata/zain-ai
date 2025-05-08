@@ -185,6 +185,8 @@ body.light-mode .form-card h3 {
   padding: 25px;
   max-width: 600px;
   width: 90%;
+  max-height: 80vh; /* تحديد أقصى ارتفاع للنافذة */
+  overflow-y: auto; /* إضافة سكرول عمودي */
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
   position: relative;
   animation: slideIn 0.3s ease-in-out;
