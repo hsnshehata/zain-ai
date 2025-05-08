@@ -119,7 +119,7 @@ function renderUsersGrid(usersToRender, gridElement) {
         <div class="bots-list">${botsHtml}</div>
       </div>
       <div class="card-footer">
-        <button class="btn btn-sm btn-outline-secondary" onclick="showEditUserForm(document.getElementById('formContainer'), '${user._id}', '${user.username}', '${user.role}')"><i class="fas fa-user-edit"></i> تعديل المستخدم</button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="showEditUserForm(document.getElementById('formContainer'), '${user._id}', '${user.username}', '${user.role}', '${user.email}', '${user.whatsapp || ''}', '${user.subscriptionType}', '${user.subscriptionEndDate || ''}')"><i class="fas fa-user-edit"></i> تعديل المستخدم</button>
         ${user.role !== 'superadmin' ? 
         `<button class="btn btn-sm btn-outline-danger" onclick="deleteUser('${user._id}')"><i class="fas fa-user-times"></i> حذف المستخدم</button>` : ''}
       </div>
@@ -231,6 +231,14 @@ function showCreateUserForm(container) {
           <input type="text" id="newUsername" required>
         </div>
         <div class="form-group">
+          <label for="newEmail">البريد الإلكتروني</label>
+          <input type="email" id="newEmail" required>
+        </div>
+        <div class="form-group">
+          <label for="newWhatsapp">رقم الواتساب</label>
+          <input type="text" id="newWhatsapp" required>
+        </div>
+        <div class="form-group">
           <label for="newPassword">كلمة المرور</label>
           <input type="password" id="newPassword" required>
         </div>
@@ -245,6 +253,18 @@ function showCreateUserForm(container) {
             <option value="superadmin">مدير عام</option>
           </select>
         </div>
+        <div class="form-group">
+          <label for="newSubscriptionType">نوع الاشتراك</label>
+          <select id="newSubscriptionType">
+            <option value="free">مجاني</option>
+            <option value="monthly">شهري</option>
+            <option value="yearly">سنوي</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="newSubscriptionEndDate">تاريخ انتهاء الاشتراك (اختياري)</label>
+          <input type="date" id="newSubscriptionEndDate">
+        </div>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">إنشاء</button>
           <button type="button" class="btn btn-secondary" onclick="hideForm(document.getElementById('formContainer'))">إلغاء</button>
@@ -258,9 +278,13 @@ function showCreateUserForm(container) {
   document.getElementById("createUserForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const username = document.getElementById("newUsername").value;
+    const email = document.getElementById("newEmail").value;
+    const whatsapp = document.getElementById("newWhatsapp").value;
     const password = document.getElementById("newPassword").value;
     const confirmPassword = document.getElementById("confirmPassword").value;
     const role = document.getElementById("newUserRole").value;
+    const subscriptionType = document.getElementById("newSubscriptionType").value;
+    const subscriptionEndDate = document.getElementById("newSubscriptionEndDate").value || null;
     const errorEl = document.getElementById("userFormError");
     errorEl.style.display = "none";
 
@@ -278,7 +302,7 @@ function showCreateUserForm(container) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ username, password, confirmPassword, role }),
+        body: JSON.stringify({ username, email, whatsapp, password, confirmPassword, role, subscriptionType, subscriptionEndDate }),
       }, errorEl, "فشل في إنشاء المستخدم");
       alert("تم إنشاء المستخدم بنجاح!");
       hideForm(container);
@@ -289,7 +313,7 @@ function showCreateUserForm(container) {
   });
 }
 
-function showEditUserForm(container, userId, currentUsername, currentRole) {
+function showEditUserForm(container, userId, currentUsername, currentRole, currentEmail, currentWhatsapp, currentSubscriptionType, currentSubscriptionEndDate) {
   container.innerHTML = `
     <div class="form-card">
       <h3><i class="fas fa-user-edit"></i> تعديل المستخدم: ${currentUsername}</h3>
@@ -297,6 +321,14 @@ function showEditUserForm(container, userId, currentUsername, currentRole) {
         <div class="form-group">
           <label for="editUsername">اسم المستخدم</label>
           <input type="text" id="editUsername" value="${currentUsername}" required>
+        </div>
+        <div class="form-group">
+          <label for="editEmail">البريد الإلكتروني</label>
+          <input type="email" id="editEmail" value="${currentEmail}" required>
+        </div>
+        <div class="form-group">
+          <label for="editWhatsapp">رقم الواتساب</label>
+          <input type="text" id="editWhatsapp" value="${currentWhatsapp}">
         </div>
         <div class="form-group">
           <label for="editPassword">كلمة المرور الجديدة (اتركه فارغًا لعدم التغيير)</label>
@@ -308,6 +340,18 @@ function showEditUserForm(container, userId, currentUsername, currentRole) {
             <option value="user" ${currentRole === 'user' ? 'selected' : ''}>مستخدم</option>
             <option value="superadmin" ${currentRole === 'superadmin' ? 'selected' : ''}>مدير عام</option>
           </select>
+        </div>
+        <div class="form-group">
+          <label for="editSubscriptionType">نوع الاشتراك</label>
+          <select id="editSubscriptionType">
+            <option value="free" ${currentSubscriptionType === 'free' ? 'selected' : ''}>مجاني</option>
+            <option value="monthly" ${currentSubscriptionType === 'monthly' ? 'selected' : ''}>شهري</option>
+            <option value="yearly" ${currentSubscriptionType === 'yearly' ? 'selected' : ''}>سنوي</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="editSubscriptionEndDate">تاريخ انتهاء الاشتراك (اختياري)</label>
+          <input type="date" id="editSubscriptionEndDate" value="${currentSubscriptionEndDate ? new Date(currentSubscriptionEndDate).toISOString().split('T')[0] : ''}">
         </div>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
@@ -322,12 +366,16 @@ function showEditUserForm(container, userId, currentUsername, currentRole) {
   document.getElementById("editUserForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     const username = document.getElementById("editUsername").value;
+    const email = document.getElementById("editEmail").value;
+    const whatsapp = document.getElementById("editWhatsapp").value;
     const password = document.getElementById("editPassword").value;
     const role = document.getElementById("editUserRole").value;
+    const subscriptionType = document.getElementById("editSubscriptionType").value;
+    const subscriptionEndDate = document.getElementById("editSubscriptionEndDate").value || null;
     const errorEl = document.getElementById("editUserFormError");
     errorEl.style.display = "none";
 
-    const updateData = { username, role };
+    const updateData = { username, email, whatsapp, role, subscriptionType, subscriptionEndDate };
     if (password) {
       updateData.password = password;
     }
