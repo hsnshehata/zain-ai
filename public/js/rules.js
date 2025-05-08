@@ -25,12 +25,26 @@ async function loadRulesPage() {
     return;
   }
 
-  // Main structure for the rules page with modal
+  // Main structure for the rules page with modals
   content.innerHTML = `
-    <!-- Modal Structure -->
+    <!-- Modal Structure for Add/Edit -->
     <div id="ruleModal" class="modal" style="display: none;">
       <div class="modal-content">
         <div id="ruleModalContent"></div>
+      </div>
+    </div>
+
+    <!-- Modal Structure for Delete Confirmation -->
+    <div id="deleteModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div class="form-card">
+          <h3><i class="fas fa-exclamation-triangle"></i> تأكيد الحذف</h3>
+          <p>هل أنت متأكد من حذف هذه القاعدة؟</p>
+          <div class="form-actions">
+            <button id="confirmDeleteBtn" class="btn btn-danger">حذف</button>
+            <button id="cancelDeleteBtn" class="btn btn-secondary">إلغاء</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -75,6 +89,7 @@ async function loadRulesPage() {
 
   const ruleModal = document.getElementById("ruleModal");
   const ruleModalContent = document.getElementById("ruleModalContent");
+  const deleteModal = document.getElementById("deleteModal");
   const rulesList = document.getElementById("rulesList");
   const loadingSpinner = document.getElementById("loadingSpinner");
   const errorMessage = document.getElementById("errorMessage");
@@ -89,6 +104,29 @@ async function loadRulesPage() {
   let currentPage = 1;
   const rulesPerPage = 20;
 
+  // إضافة Event Listener لإغلاق المودال لما نضغط برا
+  ruleModal.addEventListener('click', (e) => {
+    if (e.target === ruleModal) {
+      closeModal(ruleModal);
+    }
+  });
+
+  // إضافة Event Listener لإغلاق مودال التأكيد لما نضغط برا
+  deleteModal.addEventListener('click', (e) => {
+    if (e.target === deleteModal) {
+      closeModal(deleteModal);
+    }
+  });
+
+  // دالة Debounce لتقليل عدد الطلبات
+  function debounce(func, wait) {
+    let timeout;
+    return function (...args) {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+  }
+
   showAddRuleBtn.addEventListener("click", () => showAddRuleForm(ruleModal, ruleModalContent, selectedBotId, role));
 
   const triggerLoadRules = () => {
@@ -96,14 +134,17 @@ async function loadRulesPage() {
     loadRules(botIdToSend, rulesList, token, typeFilter.value, searchInput.value, currentPage, rulesPerPage, paginationContainer, loadingSpinner, errorMessage);
   };
 
+  // استخدام Debounce مع البحث والفلترة
+  const debouncedLoadRules = debounce(triggerLoadRules, 300);
+
   searchInput.addEventListener("input", () => {
     currentPage = 1;
-    triggerLoadRules();
+    debouncedLoadRules();
   });
 
   typeFilter.addEventListener("change", () => {
     currentPage = 1;
-    triggerLoadRules();
+    debouncedLoadRules();
   });
 
   // Export/Import functionality
@@ -277,7 +318,7 @@ function createRuleCard(rule) {
       <span class="rule-type-badge">نوع: ${getRuleTypeName(rule.type)}</span>
       <div class="rule-actions">
         <button class="btn-icon btn-edit" onclick="showEditRuleForm(document.getElementById('ruleModal'), document.getElementById('ruleModalContent'), '${rule._id}')" title="تعديل القاعدة"><i class="fas fa-edit"></i></button>
-        <button class="btn-icon btn-delete" onclick="deleteRule('${rule._id}')" title="حذف القاعدة"><i class="fas fa-trash-alt"></i></button>
+        <button class="btn-icon btn-delete" onclick="showDeleteConfirmation('${rule._id}')" title="حذف القاعدة"><i class="fas fa-trash-alt"></i></button>
       </div>
     </div>
   `;
@@ -462,6 +503,48 @@ async function showEditRuleForm(modal, modalContent, ruleId) {
   }
 }
 
+function showDeleteConfirmation(ruleId) {
+  const deleteModal = document.getElementById("deleteModal");
+  const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+  const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+
+  openModal(deleteModal);
+
+  confirmDeleteBtn.onclick = () => {
+    deleteRule(ruleId);
+    closeModal(deleteModal);
+  };
+
+  cancelDeleteBtn.onclick = () => {
+    closeModal(deleteModal);
+  };
+}
+
+async function deleteRule(ruleId) {
+  const token = localStorage.getItem("token");
+  const errorElement = document.getElementById("errorMessage");
+  errorElement.style.display = "none";
+  try {
+    await handleApiRequest(`/api/rules/${ruleId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }, errorElement, "فشل في حذف القاعدة");
+    alert("تم حذف القاعدة بنجاح");
+    const botId = localStorage.getItem("selectedBotId");
+    const currentTypeFilter = document.getElementById("typeFilter").value;
+    const currentSearch = document.getElementById("searchInput").value;
+    const rulesList = document.getElementById("rulesList");
+    const loadingSpinner = document.getElementById("loadingSpinner");
+    const paginationContainer = document.getElementById("pagination");
+    currentPage = 1; // Reset to first page
+    console.log("بيحاول يعمل ريلود بعد الحذف...");
+    const botIdToSend = currentTypeFilter === 'global' ? null : botId;
+    loadRules(botIdToSend, rulesList, token, currentTypeFilter, currentSearch, currentPage, 20, paginationContainer, loadingSpinner, errorElement);
+  } catch (err) {
+    // الخطأ تم التعامل معه في handleApiRequest
+  }
+}
+
 function loadRuleContentFields(container, type, currentContent = null) {
   container.innerHTML = "";
   switch (type) {
@@ -573,33 +656,6 @@ function getRuleContentFromForm(container, type) {
   }
 }
 
-async function deleteRule(ruleId) {
-  if (confirm("هل أنت متأكد من حذف هذه القاعدة؟")) {
-    const token = localStorage.getItem("token");
-    const errorElement = document.getElementById("errorMessage");
-    errorElement.style.display = "none";
-    try {
-      await handleApiRequest(`/api/rules/${ruleId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      }, errorElement, "فشل في حذف القاعدة");
-      alert("تم حذف القاعدة بنجاح");
-      const botId = localStorage.getItem("selectedBotId");
-      const currentTypeFilter = document.getElementById("typeFilter").value;
-      const currentSearch = document.getElementById("searchInput").value;
-      const rulesList = document.getElementById("rulesList");
-      const loadingSpinner = document.getElementById("loadingSpinner");
-      const paginationContainer = document.getElementById("pagination");
-      currentPage = 1; // Reset to first page
-      console.log("بيحاول يعمل ريلود بعد الحذف...");
-      const botIdToSend = currentTypeFilter === 'global' ? null : botId;
-      loadRules(botIdToSend, rulesList, token, currentTypeFilter, currentSearch, currentPage, 20, paginationContainer, loadingSpinner, errorElement);
-    } catch (err) {
-      // الخطأ تم التعامل معه في handleApiRequest
-    }
-  }
-}
-
 function setupPagination(container, currentPage, totalPages, onPageClick) {
   container.innerHTML = '';
   if (totalPages <= 1) {
@@ -676,5 +732,6 @@ window.loadRulesPage = loadRulesPage;
 window.showAddRuleForm = showAddRuleForm;
 window.showEditRuleForm = showEditRuleForm;
 window.deleteRule = deleteRule;
+window.showDeleteConfirmation = showDeleteConfirmation;
 window.openModal = openModal;
 window.closeModal = closeModal;
