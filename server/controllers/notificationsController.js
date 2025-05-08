@@ -6,16 +6,17 @@ exports.sendGlobalNotification = async (req, res) => {
     console.log(`❌ Send global notification failed: User ${req.user.username} is not superadmin`);
     return res.status(403).json({ message: 'غير مصرح لك' });
   }
-  const { message } = req.body;
-  if (!message) {
-    console.log('❌ Send global notification failed: Message is required');
-    return res.status(400).json({ message: 'الرسالة مطلوبة' });
+  const { title, message } = req.body;
+  if (!title || !message) {
+    console.log('❌ Send global notification failed: Title and message are required');
+    return res.status(400).json({ message: 'العنوان والرسالة مطلوبان' });
   }
   try {
     const users = await User.find();
     console.log(`✅ Found ${users.length} users to send notification to`);
     for (let user of users) {
       const notification = new Notification({
+        title,
         message,
         user: user._id
       });
@@ -32,7 +33,7 @@ exports.sendGlobalNotification = async (req, res) => {
 
 exports.getNotifications = async (req, res) => {
   try {
-    const userId = req.user.userId; // غيرنا من req.user.id لـ req.user.userId
+    const userId = req.user.userId;
     if (!userId) {
       console.log('❌ Fetch notifications failed: User ID not found in token');
       return res.status(400).json({ message: 'معرف المستخدم غير موجود' });
@@ -48,7 +49,7 @@ exports.getNotifications = async (req, res) => {
 
 exports.markAsRead = async (req, res) => {
   const { id } = req.params;
-  const userId = req.user.userId; // غيرنا هنا كمان
+  const userId = req.user.userId;
   try {
     const notification = await Notification.findOne({ _id: id, user: userId });
     if (!notification) {
