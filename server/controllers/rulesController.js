@@ -116,11 +116,6 @@ exports.createRule = async (req, res) => {
     return res.status(400).json({ message: 'معرف البوت (botId) غير صالح' });
   }
 
-  // التحقق من صلاحيات السوبر أدمن للقواعد الموحدة
-  if (type === 'global' && req.user.role !== 'superadmin') {
-    return res.status(403).json({ message: 'غير مصرح لك بإنشاء قواعد موحدة' });
-  }
-
   // التحقق من نوع القاعدة
   const validTypes = ['general', 'products', 'qa', 'global', 'channels'];
   if (!validTypes.includes(type)) {
@@ -178,10 +173,6 @@ exports.updateRule = async (req, res) => {
     const rule = await Rule.findById(req.params.id);
     if (!rule) {
       return res.status(404).json({ message: 'القاعدة غير موجودة' });
-    }
-
-    if (rule.type === 'global' && req.user.role !== 'superadmin') {
-      return res.status(403).json({ message: 'غير مصرح لك بتعديل القواعد الموحدة' });
     }
 
     // تحقق إضافي: التأكد إن content مش فاضي أو null لو تم إرساله
@@ -253,10 +244,6 @@ exports.deleteRule = async (req, res) => {
     const rule = await Rule.findById(req.params.id);
     if (!rule) {
       return res.status(404).json({ message: 'القاعدة غير موجودة' });
-    }
-
-    if (rule.type === 'global' && req.user.role !== 'superadmin') {
-      return res.status(403).json({ message: 'غير مصرح لك بحذف القواعد الموحدة' });
     }
 
     await Rule.deleteOne({ _id: req.params.id });
@@ -342,9 +329,6 @@ exports.importRules = async (req, res) => {
     for (const rule of rules) {
       if (!validTypes.includes(rule.type) || !rule.content) {
         return res.status(400).json({ message: 'بيانات القاعدة غير صالحة' });
-      }
-      if (rule.type === 'global' && req.user.role !== 'superadmin') {
-        return res.status(403).json({ message: 'غير مصرح لك باستيراد قواعد موحدة' });
       }
       if (rule.type !== 'global' && !botId) {
         return res.status(400).json({ message: 'معرف البوت (botId) مطلوب للقواعد غير الموحدة' });
