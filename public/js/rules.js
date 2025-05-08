@@ -15,7 +15,7 @@ async function loadRulesPage() {
   const token = localStorage.getItem("token");
   const selectedBotId = localStorage.getItem("selectedBotId");
 
-  if (!selectedBotId) {
+  if (!selectedBotId && role !== 'superadmin') {
     content.innerHTML = `
       <div class="placeholder error">
         <h2><i class="fas fa-exclamation-triangle"></i> لم يتم اختيار بوت</h2>
@@ -28,7 +28,7 @@ async function loadRulesPage() {
   // Main structure for the rules page
   content.innerHTML = `
     <div class="page-header">
-      <h2><i class="fas fa-book"></i> إدارة القواعد للبوت المحدد</h2>
+      <h2><i class="fas fa-book"></i> إدارة القواعد ${selectedBotId ? 'للبوت المحدد' : 'الموحدة'}</h2>
       <div class="header-actions">
         <button id="showAddRuleBtn" class="btn btn-primary"><i class="fas fa-plus-circle"></i> إضافة قاعدة جديدة</button>
       </div>
@@ -88,7 +88,9 @@ async function loadRulesPage() {
   showAddRuleBtn.addEventListener("click", () => showAddRuleForm(ruleFormContainer, selectedBotId, role));
 
   const triggerLoadRules = () => {
-    loadRules(selectedBotId, rulesList, token, typeFilter.value, searchInput.value, currentPage, rulesPerPage, paginationContainer, loadingSpinner, errorMessage);
+    // لو السوبر أدمن بيشوف القواعد الموحدة، ما نبعتش botId
+    const botIdToSend = typeFilter.value === 'global' ? null : selectedBotId;
+    loadRules(botIdToSend, rulesList, token, typeFilter.value, searchInput.value, currentPage, rulesPerPage, paginationContainer, loadingSpinner, errorMessage);
   };
 
   searchInput.addEventListener("input", () => {
@@ -106,14 +108,15 @@ async function loadRulesPage() {
     try {
       loadingSpinner.style.display = 'flex';
       errorMessage.style.display = 'none';
-      const rules = await handleApiRequest(`/api/rules/export?botId=${selectedBotId}`, {
+      const botIdToSend = typeFilter.value === 'global' ? null : selectedBotId;
+      const rules = await handleApiRequest(`/api/rules/export${botIdToSend ? `?botId=${botIdToSend}` : ''}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, errorMessage, 'فشل في تصدير القواعد');
       const blob = new Blob([JSON.stringify(rules, null, 2)], { type: 'application/json' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `rules_${selectedBotId}_${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `rules_${botIdToSend || 'global'}_${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -136,13 +139,14 @@ async function loadRulesPage() {
     reader.onload = async (e) => {
       try {
         const rulesToImport = JSON.parse(e.target.result);
+        const botIdToSend = typeFilter.value === 'global' ? null : selectedBotId;
         const result = await handleApiRequest('/api/rules/import', {
           method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ botId: selectedBotId, rules: rulesToImport }),
+          body: JSON.stringify({ botId: botIdToSend, rules: rulesToImport }),
         }, errorMessage, 'فشل في استيراد القواعد');
         alert(result.message || 'تم استيراد القواعد بنجاح');
         currentPage = 1;
@@ -174,7 +178,10 @@ async function loadRules(botId, listElement, token, type, search, page, limit, p
   listElement.innerHTML = "";
 
   try {
-    let url = `/api/rules?botId=${botId}&page=${page}&limit=${limit}`;
+    let url = `/api/rules?page=${page}&limit=${limit}`;
+    if (botId) {
+      url += `&botId=${botId}`;
+    }
     if (type !== "all") {
       url += `&type=${type}`;
     }
@@ -321,10 +328,8 @@ function showAddRuleForm(container, botId, role) {
       return;
     }
 
-    const ruleData = { botId, type, content: contentData };
-    if (type === 'global') {
-      delete ruleData.botId;
-    }
+    // لو النوع global، ما نبعتش botId
+    const ruleData = type === 'global' ? { type, content: contentData } : { botId, type, content: contentData };
 
     try {
       await handleApiRequest("/api/rules", {
@@ -339,7 +344,8 @@ function showAddRuleForm(container, botId, role) {
       hideForm(container);
       const currentTypeFilter = document.getElementById("typeFilter").value;
       const currentSearch = document.getElementById("searchInput").value;
-      loadRules(botId, document.getElementById("rulesList"), localStorage.getItem("token"), currentTypeFilter, currentSearch, 1, rulesPerPage, document.getElementById("pagination"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
+      const botIdToSend = currentTypeFilter === 'global' ? null : botId;
+      loadRules(botIdToSend, document.getElementById("rulesList"), localStorage.getItem("token"), currentTypeFilter, currentSearch, 1, rulesPerPage, document.getElementById("pagination"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
     } catch (err) {
       // الخطأ تم التعامل معه في handleApiRequest
     }
@@ -405,7 +411,8 @@ async function showEditRuleForm(container, ruleId) {
         const currentTypeFilter = document.getElementById("typeFilter").value;
         const currentSearch = document.getElementById("searchInput").value;
         const currentPage = parseInt(document.querySelector('.pagination .active')?.textContent || '1');
-        loadRules(botId, document.getElementById("rulesList"), token, currentTypeFilter, currentSearch, currentPage, rulesPerPage, document.getElementById("pagination"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
+        const botIdToSend = currentTypeFilter === 'global' ? null : botId;
+        loadRules(botIdToSend, document.getElementById("rulesList"), token, currentTypeFilter, currentSearch, currentPage, rulesPerPage, document.getElementById("pagination"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
       } catch (err) {
         // الخطأ تم التعامل معه في handleApiRequest
       }
@@ -544,7 +551,8 @@ async function deleteRule(ruleId) {
       const currentTypeFilter = document.getElementById("typeFilter").value;
       const currentSearch = document.getElementById("searchInput").value;
       const currentPage = parseInt(document.querySelector('.pagination .active')?.textContent || '1');
-      loadRules(botId, document.getElementById("rulesList"), token, currentTypeFilter, currentSearch, currentPage, rulesPerPage, document.getElementById("pagination"), document.getElementById("loadingSpinner"), errorElement);
+      const botIdToSend = currentTypeFilter === 'global' ? null : botId;
+      loadRules(botIdToSend, document.getElementById("rulesList"), token, currentTypeFilter, currentSearch, currentPage, rulesPerPage, document.getElementById("pagination"), document.getElementById("loadingSpinner"), errorElement);
     } catch (err) {
       // الخطأ تم التعامل معه في handleApiRequest
     }
