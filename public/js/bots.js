@@ -27,7 +27,8 @@ async function loadBotsPage() {
       <div class="header-actions">
         <button id="showCreateUserBtn" class="btn btn-secondary"><i class="fas fa-user-plus"></i> إنشاء مستخدم</button>
         <button id="showCreateBotBtn" class="btn btn-primary"><i class="fas fa-plus-circle"></i> إنشاء بوت</button>
-        <button id="sendNotificationBtn" class="btn btn-primary"><i class="fas fa-bell"></i> إرسال إشعار للجميع</button>
+        <button id="showQuickControlBtn" class="btn btn-primary"><i class="fas fa-tachometer-alt"></i> لوحة التحكم السريع</button>
+        <button id="sendNotificationBtn" class="btn btn-primary"><i class="fas fa-bell"></i> إرسال إشعار / رسائل ترحيب</button>
       </div>
     </div>
     <div id="formContainer" class="form-section" style="display: none;"></div>
@@ -51,6 +52,7 @@ async function loadBotsPage() {
   const errorMessage = document.getElementById("errorMessage");
   const showCreateUserBtn = document.getElementById("showCreateUserBtn");
   const showCreateBotBtn = document.getElementById("showCreateBotBtn");
+  const showQuickControlBtn = document.getElementById("showQuickControlBtn");
   const sendNotificationBtn = document.getElementById("sendNotificationBtn");
   const botSearchInput = document.getElementById("botSearchInput");
 
@@ -58,6 +60,7 @@ async function loadBotsPage() {
 
   showCreateUserBtn.addEventListener("click", () => showCreateUserForm(formContainer));
   showCreateBotBtn.addEventListener("click", () => showCreateBotForm(formContainer));
+  showQuickControlBtn.addEventListener("click", () => showQuickControlPanel(formContainer));
   sendNotificationBtn.addEventListener("click", () => showSendNotificationForm());
 
   // Search functionality
@@ -99,7 +102,7 @@ function renderUsersGrid(usersToRender, gridElement) {
               `<a href="https://facebook.com/${bot.facebookPageId}" target="_blank" title="صفحة فيسبوك"><i class="fab fa-facebook-square"></i></a>` : ''}</span>
             <span class="bot-status">${bot.isActive ? 'يعمل' : 'متوقف'}</span>
             <div class="bot-actions">
-              <button class="btn-icon btn-edit" onclick="showEditBotModal('${bot._id}', '${bot.name}', '${bot.facebookApiKey || ''}', '${bot.facebookPageId || ''}', '${user._id}', ${bot.isActive}, '${bot.autoStopDate || ''}', '${bot.subscriptionType}')" title="تعديل البوت"><i class="fas fa-edit"></i></button>
+              <button class="btn-icon btn-edit" onclick="showEditBotModal('${bot._id}', '${bot.name}', '${bot.facebookApiKey || ''}', '${bot.facebookPageId || ''}', '${user._id}', ${bot.isActive}, '${bot.autoStopDate || ''}', '${bot.subscriptionType}', '${bot.welcomeMessage || ''}')" title="تعديل البوت"><i class="fas fa-edit"></i></button>
               <button class="btn-icon btn-toggle" onclick="toggleBotStatus('${bot._id}', ${bot.isActive})" title="${bot.isActive ? 'إيقاف البوت' : 'تشغيل البوت'}"><i class="fas ${bot.isActive ? 'fa-pause' : 'fa-play'}"></i></button>
               <button class="btn-icon btn-delete" onclick="deleteBot('${bot._id}')" title="حذف البوت"><i class="fas fa-trash-alt"></i></button>
             </div>
@@ -144,9 +147,70 @@ async function fetchUsersAndBots(gridElement, spinner, errorElement) {
   }
 }
 
+// Function to show quick control panel
+async function showQuickControlPanel(container) {
+  const token = localStorage.getItem("token");
+  container.innerHTML = `
+    <div class="form-card">
+      <h3><i class="fas fa-tachometer-alt"></i> لوحة التحكم السريع</h3>
+      <div id="botsTable" class="table-container"></div>
+      <div id="quickControlError" class="error-message" style="display: none;"></div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" onclick="hideForm(document.getElementById('formContainer'))">إغلاق</button>
+      </div>
+    </div>
+  `;
+  container.style.display = "block";
+
+  const botsTable = document.getElementById("botsTable");
+  const errorEl = document.getElementById("quickControlError");
+
+  try {
+    const bots = await handleApiRequest("/api/bots", {
+      headers: { Authorization: `Bearer ${token}` },
+    }, errorEl, "فشل في جلب البوتات");
+
+    if (bots.length === 0) {
+      botsTable.innerHTML = '<p>لا توجد بوتات متاحة.</p>';
+      return;
+    }
+
+    botsTable.innerHTML = `
+      <table class="bots-table">
+        <thead>
+          <tr>
+            <th>اسم البوت</th>
+            <th>المستخدم المالك</th>
+            <th>الحالة</th>
+            <th>نوع الاشتراك</th>
+            <th>تاريخ الإيقاف</th>
+            <th>إجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${bots.map(bot => `
+            <tr>
+              <td>${bot.name}</td>
+              <td>${bot.userId?.username || 'غير معروف'}</td>
+              <td><span class="bot-status ${bot.isActive ? 'active' : 'inactive'}">${bot.isActive ? 'يعمل' : 'متوقف'}</span></td>
+              <td>${bot.subscriptionType === 'free' ? 'مجاني' : bot.subscriptionType === 'monthly' ? 'شهري' : 'سنوي'}</td>
+              <td>${bot.autoStopDate ? new Date(bot.autoStopDate).toLocaleDateString('ar-EG') : 'غير محدد'}</td>
+              <td>
+                <button class="btn-icon btn-toggle" onclick="toggleBotStatus('${bot._id}', ${bot.isActive})" title="${bot.isActive ? 'إيقاف البوت' : 'تشغيل البوت'}"><i class="fas ${bot.isActive ? 'fa-pause' : 'fa-play'}"></i></button>
+              </td>
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    `;
+  } catch (err) {
+    // الخطأ تم التعامل معه في handleApiRequest
+  }
+}
+
 // Function to toggle bot status
 async function toggleBotStatus(botId, isActive) {
-  const errorEl = document.getElementById("errorMessage");
+  const errorEl = document.getElementById("errorMessage") || document.getElementById("quickControlError");
   errorEl.style.display = "none";
   try {
     await handleApiRequest(`/api/bots/${botId}`, {
@@ -158,7 +222,12 @@ async function toggleBotStatus(botId, isActive) {
       body: JSON.stringify({ isActive: !isActive }),
     }, errorEl, "فشل في تغيير حالة البوت");
     alert(`تم ${isActive ? 'إيقاف' : 'تشغيل'} البوت بنجاح!`);
-    await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
+    const formContainer = document.getElementById("formContainer");
+    if (formContainer.style.display === "block" && formContainer.innerHTML.includes("لوحة التحكم السريع")) {
+      showQuickControlPanel(formContainer);
+    } else {
+      await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
+    }
   } catch (err) {
     // الخطأ تم التعامل معه في handleApiRequest
   }
@@ -171,20 +240,54 @@ function showSendNotificationForm() {
   modal.innerHTML = `
     <div class="modal-content">
       <div class="modal-header">
-        <h3>إرسال إشعار للجميع</h3>
+        <h3>إرسال إشعار أو تعديل رسائل الترحيب</h3>
         <button class="modal-close-btn"><i class="fas fa-times"></i></button>
       </div>
       <form id="sendNotificationForm">
         <div class="form-group">
-          <label for="notificationMessage">الرسالة</label>
-          <textarea id="notificationMessage" required></textarea>
+          <label for="notificationTitle">عنوان الإشعار</label>
+          <input type="text" id="notificationTitle" placeholder="أدخل عنوان الإشعار" required>
         </div>
-        <button type="submit">إرسال</button>
+        <div class="form-group">
+          <label for="notificationMessage">الرسالة</label>
+          <textarea id="notificationMessage" placeholder="أدخل نص الإشعار" required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="botSelectNotification">البوت (لرسائل الترحيب)</label>
+          <select id="botSelectNotification">
+            <option value="">اختر بوت (اختياري)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="welcomeMessage">رسالة الترحيب (إذا تم اختيار بوت)</label>
+          <textarea id="welcomeMessage" placeholder="أدخل رسالة الترحيب"></textarea>
+        </div>
+        <button type="submit">إرسال / حفظ</button>
       </form>
       <p id="notificationFormError" class="error-message" style="display: none;"></p>
     </div>
   `;
   document.body.appendChild(modal);
+
+  const botSelect = modal.querySelector("#botSelectNotification");
+  const welcomeMessageInput = modal.querySelector("#welcomeMessage");
+  const errorEl = modal.querySelector("#notificationFormError");
+
+  // Populate bot select
+  try {
+    handleApiRequest("/api/bots", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    }, errorEl, "فشل في جلب البوتات").then(bots => {
+      botSelect.innerHTML = "<option value=\"\">اختر بوت (اختياري)</option>";
+      bots.forEach(bot => {
+        botSelect.innerHTML += `<option value="${bot._id}">${bot.name}</option>`;
+      });
+    }).catch(() => {
+      botSelect.innerHTML = "<option value=\"\">خطأ في تحميل البوتات</option>";
+    });
+  } catch (err) {
+    // الخطأ تم التعامل معه في handleApiRequest
+  }
 
   modal.querySelector(".modal-close-btn").addEventListener("click", () => {
     modal.remove();
@@ -192,26 +295,45 @@ function showSendNotificationForm() {
 
   modal.querySelector("#sendNotificationForm").addEventListener("submit", async (e) => {
     e.preventDefault();
+    const title = modal.querySelector("#notificationTitle").value;
     const message = modal.querySelector("#notificationMessage").value;
-    const errorEl = modal.querySelector("#notificationFormError");
+    const botId = modal.querySelector("#botSelectNotification").value;
+    const welcomeMessage = modal.querySelector("#welcomeMessage").value;
     errorEl.style.display = "none";
+
     try {
-      const response = await fetch("/api/notifications/global", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({ message }),
-      });
-      const data = await response.json();
-      if (response.ok) {
-        alert("تم إرسال الإشعار بنجاح");
-        modal.remove();
-      } else {
-        errorEl.textContent = data.message;
-        errorEl.style.display = "block";
+      if (botId && welcomeMessage) {
+        // تحديث رسالة الترحيب للبوت
+        await handleApiRequest(`/api/bots/${botId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ welcomeMessage }),
+        }, errorEl, "فشل في تحديث رسالة الترحيب");
       }
+
+      if (title && message) {
+        // إرسال إشعار عام
+        const response = await fetch("/api/notifications/global", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({ title, message }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          errorEl.textContent = data.message;
+          errorEl.style.display = "block";
+          return;
+        }
+      }
+
+      alert("تم إرسال الإشعار أو حفظ رسالة الترحيب بنجاح");
+      modal.remove();
     } catch (error) {
       errorEl.textContent = "خطأ في السيرفر";
       errorEl.style.display = "block";
@@ -446,6 +568,10 @@ function showCreateBotForm(container) {
             <option value="yearly">سنوي</option>
           </select>
         </div>
+        <div class="form-group">
+          <label for="welcomeMessage">رسالة الترحيب (اختياري)</label>
+          <textarea id="welcomeMessage" placeholder="أدخل رسالة الترحيب"></textarea>
+        </div>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">إنشاء البوت</button>
           <button type="button" class="btn btn-secondary" onclick="hideForm(document.getElementById('formContainer'))">إلغاء</button>
@@ -490,6 +616,7 @@ function showCreateBotForm(container) {
     const facebookApiKey = document.getElementById("facebookApiKey").value.trim();
     const facebookPageId = document.getElementById("facebookPageId").value.trim();
     const subscriptionType = document.getElementById("subscriptionType").value;
+    const welcomeMessage = document.getElementById("welcomeMessage").value.trim();
     const errorEl = document.getElementById("botFormError");
     errorEl.style.display = "none";
 
@@ -511,7 +638,7 @@ function showCreateBotForm(container) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId, subscriptionType }),
+        body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId, subscriptionType, welcomeMessage }),
       }, errorEl, "فشل في إنشاء البوت");
       alert("تم إنشاء البوت بنجاح!");
       hideForm(container);
@@ -522,8 +649,7 @@ function showCreateBotForm(container) {
   });
 }
 
-// Function to show edit bot modal
-function showEditBotModal(botId, currentName, currentApiKey, currentPageId, ownerUserId, isActive, autoStopDate, subscriptionType) {
+function showEditBotModal(botId, currentName, currentApiKey, currentPageId, ownerUserId, isActive, autoStopDate, subscriptionType, welcomeMessage) {
   const modal = document.createElement("div");
   modal.classList.add("modal");
   modal.innerHTML = `
@@ -569,6 +695,10 @@ function showEditBotModal(botId, currentName, currentApiKey, currentPageId, owne
             <option value="monthly" ${subscriptionType === 'monthly' ? 'selected' : ''}>شهري</option>
             <option value="yearly" ${subscriptionType === 'yearly' ? 'selected' : ''}>سنوي</option>
           </select>
+        </div>
+        <div class="form-group">
+          <label for="editWelcomeMessage">رسالة الترحيب (اختياري)</label>
+          <textarea id="editWelcomeMessage">${welcomeMessage || ''}</textarea>
         </div>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
@@ -620,6 +750,7 @@ function showEditBotModal(botId, currentName, currentApiKey, currentPageId, owne
     const isActive = modal.querySelector("#editBotStatus").value === "true";
     const autoStopDate = modal.querySelector("#editAutoStopDate").value || null;
     const subscriptionType = modal.querySelector("#editSubscriptionType").value;
+    const welcomeMessage = modal.querySelector("#editWelcomeMessage").value.trim();
     const errorEl = modal.querySelector("#editBotFormError");
     errorEl.style.display = "none";
 
@@ -641,7 +772,7 @@ function showEditBotModal(botId, currentName, currentApiKey, currentPageId, owne
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId, isActive, autoStopDate, subscriptionType }),
+        body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId, isActive, autoStopDate, subscriptionType, welcomeMessage }),
       }, errorEl, "فشل في تعديل البوت");
       alert("تم تعديل البوت بنجاح!");
       modal.remove();
@@ -706,3 +837,4 @@ window.deleteBot = deleteBot;
 window.hideForm = hideForm;
 window.loadBotsPage = loadBotsPage;
 window.showSendNotificationForm = showSendNotificationForm;
+window.showQuickControlPanel = showQuickControlPanel;
