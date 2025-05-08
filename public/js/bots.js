@@ -97,8 +97,10 @@ function renderUsersGrid(usersToRender, gridElement) {
           <div class="bot-entry">
             <span><i class="fas fa-robot"></i> ${bot.name} ${bot.facebookPageId ? 
               `<a href="https://facebook.com/${bot.facebookPageId}" target="_blank" title="صفحة فيسبوك"><i class="fab fa-facebook-square"></i></a>` : ''}</span>
+            <span class="bot-status">${bot.isActive ? 'يعمل' : 'متوقف'}</span>
             <div class="bot-actions">
-              <button class="btn-icon btn-edit" onclick="showEditBotForm(document.getElementById('formContainer'), '${bot._id}', '${bot.name}', '${bot.facebookApiKey || ''}', '${bot.facebookPageId || ''}', '${user._id}')" title="تعديل البوت"><i class="fas fa-edit"></i></button>
+              <button class="btn-icon btn-edit" onclick="showEditBotModal('${bot._id}', '${bot.name}', '${bot.facebookApiKey || ''}', '${bot.facebookPageId || ''}', '${user._id}', ${bot.isActive}, '${bot.autoStopDate || ''}', '${bot.subscriptionType}')" title="تعديل البوت"><i class="fas fa-edit"></i></button>
+              <button class="btn-icon btn-toggle" onclick="toggleBotStatus('${bot._id}', ${bot.isActive})" title="${bot.isActive ? 'إيقاف البوت' : 'تشغيل البوت'}"><i class="fas ${bot.isActive ? 'fa-pause' : 'fa-play'}"></i></button>
               <button class="btn-icon btn-delete" onclick="deleteBot('${bot._id}')" title="حذف البوت"><i class="fas fa-trash-alt"></i></button>
             </div>
           </div>
@@ -138,6 +140,26 @@ async function fetchUsersAndBots(gridElement, spinner, errorElement) {
     spinner.style.display = "none";
   } catch (err) {
     spinner.style.display = "none";
+    // الخطأ تم التعامل معه في handleApiRequest
+  }
+}
+
+// Function to toggle bot status
+async function toggleBotStatus(botId, isActive) {
+  const errorEl = document.getElementById("errorMessage");
+  errorEl.style.display = "none";
+  try {
+    await handleApiRequest(`/api/bots/${botId}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({ isActive: !isActive }),
+    }, errorEl, "فشل في تغيير حالة البوت");
+    alert(`تم ${isActive ? 'إيقاف' : 'تشغيل'} البوت بنجاح!`);
+    await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
+  } catch (err) {
     // الخطأ تم التعامل معه في handleApiRequest
   }
 }
@@ -368,6 +390,14 @@ function showCreateBotForm(container) {
           <label for="facebookPageId">معرف صفحة فيسبوك (مطلوب إذا تم إدخال API)</label>
           <input type="text" id="facebookPageId">
         </div>
+        <div class="form-group">
+          <label for="subscriptionType">نوع الاشتراك</label>
+          <select id="subscriptionType">
+            <option value="free">مجاني</option>
+            <option value="monthly">شهري</option>
+            <option value="yearly">سنوي</option>
+          </select>
+        </div>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">إنشاء البوت</button>
           <button type="button" class="btn btn-secondary" onclick="hideForm(document.getElementById('formContainer'))">إلغاء</button>
@@ -411,6 +441,7 @@ function showCreateBotForm(container) {
     const userId = document.getElementById("botUserId").value;
     const facebookApiKey = document.getElementById("facebookApiKey").value.trim();
     const facebookPageId = document.getElementById("facebookPageId").value.trim();
+    const subscriptionType = document.getElementById("subscriptionType").value;
     const errorEl = document.getElementById("botFormError");
     errorEl.style.display = "none";
 
@@ -432,7 +463,7 @@ function showCreateBotForm(container) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId }),
+        body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId, subscriptionType }),
       }, errorEl, "فشل في إنشاء البوت");
       alert("تم إنشاء البوت بنجاح!");
       hideForm(container);
@@ -443,10 +474,16 @@ function showCreateBotForm(container) {
   });
 }
 
-function showEditBotForm(container, botId, currentName, currentApiKey, currentPageId, ownerUserId) {
-  container.innerHTML = `
-    <div class="form-card">
-      <h3><i class="fas fa-edit"></i> تعديل البوت: ${currentName}</h3>
+// Function to show edit bot modal
+function showEditBotModal(botId, currentName, currentApiKey, currentPageId, ownerUserId, isActive, autoStopDate, subscriptionType) {
+  const modal = document.createElement("div");
+  modal.classList.add("modal");
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fas fa-edit"></i> تعديل البوت: ${currentName}</h3>
+        <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+      </div>
       <form id="editBotForm">
         <div class="form-group">
           <label for="editBotName">اسم البوت</label>
@@ -466,19 +503,38 @@ function showEditBotForm(container, botId, currentName, currentApiKey, currentPa
           <label for="editFacebookPageId">معرف صفحة فيسبوك (مطلوب إذا تم إدخال API)</label>
           <input type="text" id="editFacebookPageId" value="${currentPageId || ''}">
         </div>
+        <div class="form-group">
+          <label for="editBotStatus">حالة البوت</label>
+          <select id="editBotStatus">
+            <option value="true" ${isActive ? 'selected' : ''}>يعمل</option>
+            <option value="false" ${!isActive ? 'selected' : ''}>متوقف</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="editAutoStopDate">تاريخ الإيقاف التلقائي (اختياري)</label>
+          <input type="date" id="editAutoStopDate" value="${autoStopDate ? new Date(autoStopDate).toISOString().split('T')[0] : ''}">
+        </div>
+        <div class="form-group">
+          <label for="editSubscriptionType">نوع الاشتراك</label>
+          <select id="editSubscriptionType">
+            <option value="free" ${subscriptionType === 'free' ? 'selected' : ''}>مجاني</option>
+            <option value="monthly" ${subscriptionType === 'monthly' ? 'selected' : ''}>شهري</option>
+            <option value="yearly" ${subscriptionType === 'yearly' ? 'selected' : ''}>سنوي</option>
+          </select>
+        </div>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">حفظ التعديلات</button>
-          <button type="button" class="btn btn-secondary" onclick="hideForm(document.getElementById('formContainer'))">إلغاء</button>
+          <button type="button" class="btn btn-secondary modal-close-btn">إلغاء</button>
         </div>
         <p id="editBotFormError" class="error-message" style="display: none;"></p>
       </form>
     </div>
   `;
-  container.style.display = "block";
+  document.body.appendChild(modal);
 
-  const facebookApiKeyInput = document.getElementById("editFacebookApiKey");
-  const facebookPageIdContainer = document.getElementById("editFacebookPageIdContainer");
-  const facebookPageIdInput = document.getElementById("editFacebookPageId");
+  const facebookApiKeyInput = modal.querySelector("#editFacebookApiKey");
+  const facebookPageIdContainer = modal.querySelector("#editFacebookPageIdContainer");
+  const facebookPageIdInput = modal.querySelector("#editFacebookPageId");
 
   facebookApiKeyInput.addEventListener("input", () => {
     const hasApiKey = facebookApiKeyInput.value.trim() !== "";
@@ -487,11 +543,11 @@ function showEditBotForm(container, botId, currentName, currentApiKey, currentPa
   });
 
   // Populate user select
-  const userSelect = document.getElementById("editBotUserId");
+  const userSelect = modal.querySelector("#editBotUserId");
   try {
     handleApiRequest("/api/users", {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    }, document.getElementById("editBotFormError"), "فشل في جلب المستخدمين").then(users => {
+    }, modal.querySelector("#editBotFormError"), "فشل في جلب المستخدمين").then(users => {
       userSelect.innerHTML = "<option value=\"\">اختر مستخدم</option>";
       users.forEach((user) => {
         userSelect.innerHTML += `<option value="${user._id}" ${user._id === ownerUserId ? 'selected' : ''}>${user.username}</option>`;
@@ -503,13 +559,20 @@ function showEditBotForm(container, botId, currentName, currentApiKey, currentPa
     // الخطأ تم التعامل معه في handleApiRequest
   }
 
-  document.getElementById("editBotForm").addEventListener("submit", async (e) => {
+  modal.querySelectorAll(".modal-close-btn").forEach(btn => {
+    btn.addEventListener("click", () => modal.remove());
+  });
+
+  modal.querySelector("#editBotForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const name = document.getElementById("editBotName").value;
-    const userId = document.getElementById("editBotUserId").value;
-    const facebookApiKey = document.getElementById("editFacebookApiKey").value.trim();
-    const facebookPageId = document.getElementById("editFacebookPageId").value.trim();
-    const errorEl = document.getElementById("editBotFormError");
+    const name = modal.querySelector("#editBotName").value;
+    const userId = modal.querySelector("#editBotUserId").value;
+    const facebookApiKey = modal.querySelector("#editFacebookApiKey").value.trim();
+    const facebookPageId = modal.querySelector("#editFacebookPageId").value.trim();
+    const isActive = modal.querySelector("#editBotStatus").value === "true";
+    const autoStopDate = modal.querySelector("#editAutoStopDate").value || null;
+    const subscriptionType = modal.querySelector("#editSubscriptionType").value;
+    const errorEl = modal.querySelector("#editBotFormError");
     errorEl.style.display = "none";
 
     if (!userId) {
@@ -530,10 +593,10 @@ function showEditBotForm(container, botId, currentName, currentApiKey, currentPa
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId }),
+        body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId, isActive, autoStopDate, subscriptionType }),
       }, errorEl, "فشل في تعديل البوت");
       alert("تم تعديل البوت بنجاح!");
-      hideForm(container);
+      modal.remove();
       await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
       // Update bot selector in header if the edited bot was selected
       const botSelectDashboard = document.getElementById('botSelectDashboard');
@@ -589,7 +652,8 @@ window.showCreateUserForm = showCreateUserForm;
 window.showEditUserForm = showEditUserForm;
 window.deleteUser = deleteUser;
 window.showCreateBotForm = showCreateBotForm;
-window.showEditBotForm = showEditBotForm;
+window.showEditBotModal = showEditBotModal;
+window.toggleBotStatus = toggleBotStatus;
 window.deleteBot = deleteBot;
 window.hideForm = hideForm;
 window.loadBotsPage = loadBotsPage;
