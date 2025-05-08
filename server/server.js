@@ -194,7 +194,24 @@ app.get('/api/test', async (req, res) => {
       testResults.userData = 'فشل في استرجاع بيانات المستخدم بشكل صحيح';
     }
 
+    // اختبار 4: إنشاء إشعار مع عنوان
+    const testNotification = new Notification({
+      user: testUser._id,
+      title: 'اختبار إشعار',
+      message: 'هذه رسالة اختبار للإشعار',
+      isRead: false
+    });
+    await testNotification.save();
+
+    const notifications = await Notification.find({ user: testUser._id });
+    if (notifications.length === 1 && notifications[0].title === 'اختبار إشعار') {
+      testResults.notification = 'تم إنشاء إشعار مع عنوان بنجاح';
+    } else {
+      testResults.notification = 'فشل في إنشاء إشعار مع عنوان';
+    }
+
     // تنظيف البيانات
+    await Notification.deleteOne({ _id: testNotification._id });
     await Bot.deleteOne({ _id: testBot._id });
     await User.deleteOne({ _id: testUser._id });
 
