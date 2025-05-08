@@ -12,9 +12,23 @@ exports.getUsers = async (req, res) => {
   }
 };
 
+// جلب مستخدم معين بناءً على الـ ID
+exports.getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).populate('bots');
+    if (!user) {
+      return res.status(404).json({ message: 'المستخدم غير موجود' });
+    }
+    res.status(200).json(user);
+  } catch (err) {
+    console.error('❌ خطأ في جلب المستخدم:', err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر' });
+  }
+};
+
 // إنشاء مستخدم جديد
 exports.createUser = async (req, res) => {
-  const { username, email, password, confirmPassword, role, whatsapp } = req.body;
+  const { username, email, password, confirmPassword, role, whatsapp, subscriptionType, subscriptionEndDate } = req.body;
 
   if (!username || !email || !password || !confirmPassword || !role) {
     return res.status(400).json({ message: 'جميع الحقول الأساسية مطلوبة' });
@@ -24,6 +38,10 @@ exports.createUser = async (req, res) => {
     return res.status(400).json({ message: 'كلمات المرور غير متطابقة' });
   }
 
+  if (subscriptionType && !['free', 'monthly', 'yearly'].includes(subscriptionType)) {
+    return res.status(400).json({ message: 'نوع الاشتراك غير صالح' });
+  }
+
   try {
     const existingUser = await User.findOne({ $or: [{ username }, { email }] });
     if (existingUser) {
@@ -31,7 +49,16 @@ exports.createUser = async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, email, password: hashedPassword, role, whatsapp, isVerified: true });
+    const user = new User({ 
+      username, 
+      email, 
+      password: hashedPassword, 
+      role, 
+      whatsapp, 
+      isVerified: true,
+      subscriptionType: subscriptionType || 'free',
+      subscriptionEndDate: subscriptionEndDate || null
+    });
     await user.save();
 
     res.status(201).json(user);
@@ -73,6 +100,15 @@ exports.updateUser = async (req, res) => {
     }
     if (req.body.whatsapp) {
       user.whatsapp = req.body.whatsapp;
+    }
+    if (req.body.subscriptionType && req.user.role === 'superadmin') {
+      if (!['free', 'monthly', 'yearly'].includes(req.body.subscriptionType)) {
+        return res.status(400).json({ message: 'نوع الاشتراك غير صالح' });
+      }
+      user.subscriptionType = req.body.subscriptionType;
+    }
+    if (req.body.subscriptionEndDate && req.user.role === 'superadmin') {
+      user.subscriptionEndDate = req.body.subscriptionEndDate || null;
     }
 
     await user.save();
