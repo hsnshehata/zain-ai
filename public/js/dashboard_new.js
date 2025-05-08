@@ -159,11 +159,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (err) {
       console.error('❌ Error fetching user data:', err.message, err.status, err);
-      if (err.status === 404) {
-        console.warn('⚠️ User not found, logging out and redirecting to login');
-        alert('المستخدم غير موجود، سيتم تسجيل الخروج وتوجيهك لتسجيل الدخول مرة أخرى.');
+      // تحقق من خطأ 404 (المستخدم غير موجود) أو 403 (غير مصرح)
+      if (err.status === 404 || err.status === 403 || err.message.includes('المستخدم غير موجود')) {
+        console.warn('⚠️ User not found or unauthorized, logging out and redirecting to login');
+        alert('المستخدم غير موجود أو غير مصرح لك، سيتم تسجيل الخروج وتوجيهك لتسجيل الدخول مرة أخرى.');
         localStorage.clear();
-        window.location.href = "/login.html";
+        // تأخير بسيط عشان المستخدم يشوف التحذير قبل التوجيه
+        setTimeout(() => {
+          window.location.href = "/login.html";
+        }, 2000);
         return;
       }
       welcomeUser.textContent = "مرحبًا: خطأ في جلب البيانات";
