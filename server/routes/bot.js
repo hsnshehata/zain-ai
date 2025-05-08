@@ -31,6 +31,16 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Bot ID and message are required' });
     }
 
+    // التحقق من حالة البوت
+    const bot = await Bot.findById(botId);
+    if (!bot) {
+      return res.status(404).json({ message: 'البوت غير موجود' });
+    }
+    if (!bot.isActive) {
+      console.log(`⚠️ Bot ${bot.name} (ID: ${botId}) is inactive, skipping message processing.`);
+      return res.status(400).json({ message: 'البوت متوقف حاليًا ولا يمكنه استقبال الرسائل' });
+    }
+
     // فحص تكرار الطلب
     const messageKey = `${botId}-anonymous-${message}-${Date.now()}`;
     if (apiCache.get(messageKey)) {
@@ -42,6 +52,7 @@ router.post('/', async (req, res) => {
     // جلب المحادثة
     let conversation = await Conversation.findOne({ botId, userId: 'anonymous' });
     if (!conversation) {
+      console.log('📋 Creating new conversation for bot:', botId, 'user: anonymous');
       conversation = new Conversation({
         botId,
         userId: 'anonymous',
