@@ -98,14 +98,6 @@ exports.createRule = async (req, res) => {
     return res.status(400).json({ message: 'الحقلين type و content مطلوبين' });
   }
 
-  // تحقق إضافي: التأكد إن content مش فاضي أو null
-  if (content === null || (typeof content === 'string' && content.trim() === '')) {
-    return res.status(400).json({ message: 'المحتوى لا يمكن أن يكون فارغًا' });
-  }
-  if (typeof content === 'object' && Object.keys(content).length === 0) {
-    return res.status(400).json({ message: 'المحتوى لا يمكن أن يكون كائنًا فارغًا' });
-  }
-
   // التحقق من botId فقط إذا كان النوع مش global
   if (type !== 'global' && !botId) {
     return res.status(400).json({ message: 'معرف البوت (botId) مطلوب للقواعد غير الموحدة' });
@@ -124,8 +116,8 @@ exports.createRule = async (req, res) => {
 
   // التحقق من هيكلية content بناءً على نوع القاعدة
   if (type === 'general' || type === 'global') {
-    if (typeof content !== 'string' || content.trim() === '') {
-      return res.status(400).json({ message: 'المحتوى يجب أن يكون سلسلة نصية غير فارغة' });
+    if (typeof content !== 'string') {
+      return res.status(400).json({ message: 'المحتوى يجب أن يكون سلسلة نصية' });
     }
   } else if (type === 'products') {
     if (!content.product || !content.price || !content.currency) {
@@ -175,16 +167,6 @@ exports.updateRule = async (req, res) => {
       return res.status(404).json({ message: 'القاعدة غير موجودة' });
     }
 
-    // تحقق إضافي: التأكد إن content مش فاضي أو null لو تم إرساله
-    if (content) {
-      if (content === null || (typeof content === 'string' && content.trim() === '')) {
-        return res.status(400).json({ message: 'المحتوى لا يمكن أن يكون فارغًا' });
-      }
-      if (typeof content === 'object' && Object.keys(content).length === 0) {
-        return res.status(400).json({ message: 'المحتوى لا يمكن أن يكون كائنًا فارغًا' });
-      }
-    }
-
     // التحقق من نوع القاعدة إذا تم إرساله
     if (type) {
       const validTypes = ['general', 'products', 'qa', 'global', 'channels'];
@@ -196,8 +178,8 @@ exports.updateRule = async (req, res) => {
     // التحقق من هيكلية content إذا تم إرساله
     if (content) {
       if (type === 'general' || type === 'global') {
-        if (typeof content !== 'string' || content.trim() === '') {
-          return res.status(400).json({ message: 'المحتوى يجب أن يكون سلسلة نصية غير فارغة' });
+        if (typeof content !== 'string') {
+          return res.status(400).json({ message: 'المحتوى يجب أن يكون سلسلة نصية' });
         }
       } else if (type === 'products') {
         if (!content.product || !content.price || !content.currency) {
