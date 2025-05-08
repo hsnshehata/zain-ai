@@ -54,7 +54,7 @@ const handleMessage = async (req, res) => {
         // التعامل مع الـ messaging_optins
         if (webhookEvent.optin && bot.messagingOptinsEnabled) {
           console.log(`📩 Opt-in event received from ${senderPsid}`);
-          const welcomeMessage = 'مرحبًا بك! شكرًا لاشتراكك. كيف يمكنني مساعدتك؟';
+          const welcomeMessage = bot.welcomeMessage || 'مرحبًا بك! شكرًا لاشتراكك. كيف يمكنني مساعدتك؟';
           await sendMessage(senderPsid, welcomeMessage, bot.facebookApiKey);
         }
 
@@ -80,7 +80,7 @@ const handleMessage = async (req, res) => {
         }
 
         // التعامل مع الـ message_edits
-        if (webhookEvent.message_edit && bot mut.messageEditsEnabled) {
+        if (webhookEvent.message_edit && bot.messageEditsEnabled) {
           const editedMessage = webhookEvent.message_edit.text;
           const messageId = webhookEvent.message_edit.mid;
           console.log(`✍️ Edited message received from ${senderPsid}: ${editedMessage}`);
