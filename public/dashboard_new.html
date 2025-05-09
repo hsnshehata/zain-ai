@@ -57,6 +57,127 @@
         gap: 10px;
       }
     }
+
+    /* Assistant Chat Modal Styles */
+    #assistantChatModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      justify-content: center;
+      align-items: center;
+    }
+    .assistant-chat-container {
+      background: var(--dark-card);
+      width: 90%;
+      max-width: 500px;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      max-height: 80vh;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    .light-mode .assistant-chat-container {
+      background: var(--light-card);
+    }
+    .assistant-chat-header {
+      background: var(--turquoise);
+      color: white;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .assistant-chat-header h3 {
+      margin: 0;
+      font-size: 1.2em;
+    }
+    #closeAssistantChatBtn {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.2em;
+      cursor: pointer;
+    }
+    #assistantChatMessages {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+      background: var(--dark-background);
+      color: var(--dark-text);
+    }
+    .light-mode #assistantChatMessages {
+      background: var(--light-background);
+      color: var(--light-text);
+    }
+    .message {
+      margin-bottom: 15px;
+      padding: 10px;
+      border-radius: 8px;
+      max-width: 80%;
+      word-wrap: break-word;
+    }
+    .user-message {
+      background: var(--turquoise);
+      color: white;
+      margin-left: auto;
+      text-align: right;
+    }
+    .bot-message {
+      background: var(--dark-border);
+      color: var(--dark-text);
+      margin-right: auto;
+    }
+    .light-mode .bot-message {
+      background: var(--light-border);
+      color: var(--light-text);
+    }
+    .message small {
+      display: block;
+      font-size: 0.8em;
+      margin-top: 5px;
+      opacity: 0.7;
+    }
+    .assistant-chat-input {
+      display: flex;
+      border-top: 1px solid var(--dark-border);
+      padding: 10px;
+      background: var(--dark-card);
+    }
+    .light-mode .assistant-chat-input {
+      border-top: 1px solid var(--light-border);
+      background: var(--light-card);
+    }
+    #assistantMessageInput {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid var(--dark-border);
+      border-radius: 5px;
+      background: var(--dark-background);
+      color: var(--dark-text);
+      margin-right: 10px;
+    }
+    .light-mode #assistantMessageInput {
+      border: 1px solid var(--light-border);
+      background: var(--light-background);
+      color: var(--light-text);
+    }
+    #assistantSendMessageBtn {
+      background: var(--turquoise);
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #assistantSendMessageBtn:hover {
+      background: #00a89c;
+    }
   </style>
 </head>
 <body class="dark-mode dashboard-page">
@@ -132,6 +253,26 @@
             <button id="close-notifications-btn" aria-label="إغلاق الإشعارات"><i class="fas fa-times"></i></button>
           </div>
           <div id="notifications-list" class="notifications-list"></div>
+        </div>
+      </div>
+
+      <!-- Assistant Chat Modal -->
+      <div id="assistantChatModal">
+        <div class="assistant-chat-container">
+          <div class="assistant-chat-header">
+            <h3>المساعد الذكي</h3>
+            <button id="closeAssistantChatBtn"><i class="fas fa-times"></i></button>
+          </div>
+          <div id="assistantChatMessages">
+            <div class="message bot-message">
+              <p>مرحبًا! أنا المساعد الذكي، كيف يمكنني مساعدتك اليوم؟</p>
+              <small id="welcomeTimestamp"></small>
+            </div>
+          </div>
+          <div class="assistant-chat-input">
+            <input type="text" id="assistantMessageInput" placeholder="اكتب رسالتك هنا..." />
+            <button id="assistantSendMessageBtn"><i class="fas fa-paper-plane"></i></button>
+          </div>
         </div>
       </div>
 
