@@ -208,8 +208,14 @@ document.addEventListener('DOMContentLoaded', () => {
           headers: { Authorization: `Bearer ${token}` },
         }, dailyMessagesError, 'فشل في جلب معدل الرسائل يوميًا');
 
-        const labels = dailyData.map(item => item.date);
-        const series = dailyData.map(item => item.count);
+        // قصر البيانات على آخر 20 يوم لو مفيش فلتر
+        let filteredData = dailyData;
+        if (!startDate && !endDate) {
+          filteredData = dailyData.slice(-20);
+        }
+
+        const labels = filteredData.map(item => new Date(item.date).getDate());
+        const series = filteredData.map(item => item.count);
         console.log('Daily messages data:', { labels, series });
 
         // رسم Bar Chart لمعدل الرسائل يوميًا
@@ -228,8 +234,8 @@ document.addEventListener('DOMContentLoaded', () => {
               x: 0,
               y: 5
             },
-            labelInterpolationFnc: function(value, index) {
-              return labels[index]; // التأكد من إن كل تاريخ بيظهر مظبوط
+            labelInterpolationFnc: function(value) {
+              return value; // عرض اليوم فقط
             }
           },
           axisY: {
