@@ -2,20 +2,6 @@
 
 /* Styles specific to the Bots page (loaded by loadBotsPage) */
 
-:root {
-  --turquoise: #00C4B4;
-  --dark-sidebar: #1A1A2E;
-  --dark-card: #2A2A3E;
-  --dark-text: #E0E0E0;
-  --dark-border: #3A3A4E;
-  --light-sidebar: #F0F2F5;
-  --light-card: #FFFFFF;
-  --light-text: #333333;
-  --light-border: #D1D5DB;
-  --shadow-light: rgba(0, 0, 0, 0.1);
-  --transition-speed: 0.3s;
-}
-
 .bots-users-container {
   margin-top: 20px;
 }
@@ -26,6 +12,7 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  color: var(--turquoise);
 }
 
 /* User and Bot Card */
@@ -39,15 +26,7 @@
   justify-content: space-between;
   align-items: center;
   padding-bottom: 15px;
-  border-bottom: 1px solid;
-}
-
-body.dark-mode .user-bot-card .card-header {
-  border-bottom-color: var(--dark-border);
-}
-
-body.light-mode .user-bot-card .card-header {
-  border-bottom-color: var(--light-border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .user-bot-card .card-header h4 {
@@ -56,6 +35,7 @@ body.light-mode .user-bot-card .card-header {
   display: flex;
   align-items: center;
   gap: 8px;
+  color: #E0E0E0;
 }
 
 .user-bot-card .user-role {
@@ -65,18 +45,19 @@ body.light-mode .user-bot-card .card-header {
 }
 
 .user-role.superadmin {
-  background-color: var(--turquoise);
-  color: var(--dark-sidebar);
+  background: linear-gradient(45deg, var(--turquoise), #00e0c4);
+  color: #1a1a2e;
 }
 
 .user-role.user {
-  background-color: #6c757d;
+  background: linear-gradient(45deg, #6c757d, #8a9298);
   color: white;
 }
 
 .user-bot-card .card-body h5 {
   font-size: 1.1em;
   margin: 15px 0 10px;
+  color: #E0E0E0;
 }
 
 .bots-list {
@@ -91,20 +72,14 @@ body.light-mode .user-bot-card .card-header {
   align-items: center;
   padding: 10px;
   border-radius: 6px;
-  transition: background-color var(--transition-speed);
-}
-
-body.dark-mode .bot-entry {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-body.light-mode .bot-entry {
-  background-color: rgba(0, 0, 0, 0.03);
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .bot-entry:hover {
-  background-color: var(--turquoise);
-  color: white;
+  background: var(--turquoise);
+  color: #1a1a2e;
+  transform: translateX(-3px);
 }
 
 .bot-entry span {
@@ -137,12 +112,9 @@ body.light-mode .bot-entry {
 .form-card {
   margin-bottom: 20px;
   padding: 20px;
-  background-color: var(--dark-card);
-  border-radius: 8px;
-}
-
-body.light-mode .form-card {
-  background-color: var(--light-card);
+  background: linear-gradient(145deg, rgba(42, 42, 78, 0.9), rgba(26, 26, 46, 0.7));
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .form-card h3 {
@@ -151,11 +123,7 @@ body.light-mode .form-card {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: var(--dark-text);
-}
-
-body.light-mode .form-card h3 {
-  color: var(--light-text);
+  color: var(--turquoise);
 }
 
 .form-actions {
@@ -172,29 +140,25 @@ body.light-mode .form-card h3 {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.4));
   justify-content: center;
   align-items: center;
   z-index: 2000;
   animation: fadeIn 0.3s ease-in-out;
+  backdrop-filter: blur(5px);
 }
 
 .modal-content {
-  background-color: var(--dark-card);
+  background: linear-gradient(145deg, rgba(42, 42, 78, 0.9), rgba(26, 26, 46, 0.7));
   border-radius: 12px;
   padding: 25px;
   max-width: 600px;
   width: 90%;
-  max-height: 80vh; /* تحديد أقصى ارتفاع للنافذة */
-  overflow-y: auto; /* إضافة سكرول عمودي */
+  max-height: 80vh;
+  overflow-y: auto;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
   position: relative;
   animation: slideIn 0.3s ease-in-out;
-}
-
-body.light-mode .modal-content {
-  background-color: var(--light-card);
-  box-shadow: 0 8px 20px var(--shadow-light);
 }
 
 .modal-header {
@@ -207,11 +171,7 @@ body.light-mode .modal-content {
 .modal-header h3 {
   margin: 0;
   font-size: 1.6em;
-  color: var(--dark-text);
-}
-
-body.light-mode .modal-header h3 {
-  color: var(--light-text);
+  color: var(--turquoise);
 }
 
 .modal-close-btn {
@@ -219,16 +179,13 @@ body.light-mode .modal-header h3 {
   border: none;
   font-size: 1.3em;
   cursor: pointer;
-  color: var(--dark-text);
-  transition: color var(--transition-speed);
-}
-
-body.light-mode .modal-close-btn {
-  color: var(--light-text);
+  color: #E0E0E0;
+  transition: color 0.3s ease, transform 0.2s ease;
 }
 
 .modal-close-btn:hover {
   color: var(--turquoise);
+  transform: scale(1.1);
 }
 
 .form-group {
@@ -240,11 +197,7 @@ body.light-mode .modal-close-btn {
   margin-bottom: 8px;
   font-size: 1em;
   font-weight: 500;
-  color: var(--dark-text);
-}
-
-body.light-mode .form-group label {
-  color: var(--light-text);
+  color: #E0E0E0;
 }
 
 .form-group input,
@@ -252,20 +205,12 @@ body.light-mode .form-group label {
 .form-group textarea {
   width: 100%;
   padding: 12px;
-  border: 1px solid var(--dark-border);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 6px;
   font-size: 1em;
-  background-color: var(--dark-sidebar);
-  color: var(--dark-text);
-  transition: border-color var(--transition-speed);
-}
-
-body.light-mode .form-group input,
-body.light-mode .form-group select,
-body.light-mode .form-group textarea {
-  border-color: var(--light-border);
-  background-color: var(--light-sidebar);
-  color: var(--light-text);
+  background: rgba(255, 255, 255, 0.1);
+  color: #E0E0E0;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .form-group input:focus,
@@ -273,63 +218,12 @@ body.light-mode .form-group textarea {
 .form-group textarea:focus {
   outline: none;
   border-color: var(--turquoise);
+  box-shadow: 0 0 5px rgba(26, 188, 156, 0.5);
 }
 
 .form-group textarea {
   height: 100px;
   resize: vertical;
-}
-
-.form-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 15px;
-  margin-top: 25px;
-}
-
-.btn {
-  padding: 12px 24px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 1em;
-  font-weight: 500;
-  transition: background-color var(--transition-speed), transform 0.2s;
-}
-
-.btn-primary {
-  background-color: var(--turquoise);
-  color: var(--dark-sidebar);
-}
-
-.btn-primary:hover {
-  background-color: #00a89a;
-  transform: translateY(-2px);
-}
-
-.btn-secondary {
-  background-color: var(--dark-border);
-  color: var(--dark-text);
-}
-
-body.light-mode .btn-secondary {
-  background-color: var(--light-border);
-  color: var(--light-text);
-}
-
-.btn-secondary:hover {
-  background-color: #4a4a5e;
-  transform: translateY(-2px);
-}
-
-body.light-mode .btn-secondary:hover {
-  background-color: #b0b0c0;
-}
-
-.error-message {
-  color: #dc3545;
-  font-size: 0.9em;
-  margin-top: 10px;
 }
 
 /* Quick Control Panel Table */
@@ -343,31 +237,17 @@ body.light-mode .btn-secondary:hover {
 .bots-table td {
   padding: 12px;
   text-align: right;
-  border-bottom: 1px solid var(--dark-border);
-}
-
-body.light-mode .bots-table th,
-body.light-mode .bots-table td {
-  border-bottom-color: var(--light-border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .bots-table th {
-  background-color: var(--dark-sidebar);
-  color: var(--dark-text);
+  background: linear-gradient(90deg, #1a1a2e, #2a2a4e);
+  color: #E0E0E0;
   font-weight: 600;
 }
 
-body.light-mode .bots-table th {
-  background-color: var(--light-sidebar);
-  color: var(--light-text);
-}
-
 .bots-table td {
-  background-color: var(--dark-card);
-}
-
-body.light-mode .bots-table td {
-  background-color: var(--light-card);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .bot-status {
@@ -377,22 +257,19 @@ body.light-mode .bots-table td {
 }
 
 .bot-status.active {
-  background-color: #28a745;
+  background: linear-gradient(45deg, #28a745, #34d058);
   color: white;
 }
 
 .bot-status.inactive {
-  background-color: #dc3545;
+  background: linear-gradient(45deg, #dc3545, #ff4f41);
   color: white;
 }
 
 .bots-table .btn-icon {
   font-size: 1.2em;
-  color: var(--dark-text);
-}
-
-body.light-mode .bots-table .btn-icon {
-  color: var(--light-text);
+  color: #E0E0E0;
+  transition: color 0.3s ease;
 }
 
 .bots-table .btn-icon:hover {
@@ -446,11 +323,6 @@ body.light-mode .bots-table .btn-icon {
 
 @media (max-width: 576px) {
   .form-group label {
-    font-size: 0.95em;
-  }
-
-  .btn {
-    padding: 10px 18px;
     font-size: 0.95em;
   }
 
