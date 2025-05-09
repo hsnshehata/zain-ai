@@ -35,29 +35,35 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // Load welcome bar (username and bot info)
-  async function loadWelcomeBar() {
+  // Load username
+  async function loadUsername() {
     const welcomeUsername = document.getElementById("welcome-username");
-    const subscriptionTypeEl = document.getElementById("subscription-type");
-    const subscriptionEndEl = document.getElementById("subscription-end");
-    const remainingDaysEl = document.getElementById("remaining-days");
-
     try {
-      // Fetch user data
       const user = await handleApiRequest('/api/users/me', {
         headers: { Authorization: `Bearer ${token}` },
       }, welcomeUsername, 'فشل في جلب بيانات المستخدم');
       welcomeUsername.textContent = user.username || 'غير معروف';
+    } catch (err) {
+      welcomeUsername.textContent = 'خطأ في تحميل الاسم';
+      console.error('Error loading username:', err);
+    }
+  }
 
-      // Fetch bot data if selected
-      const selectedBotId = localStorage.getItem("selectedBotId");
-      if (!selectedBotId) {
-        subscriptionTypeEl.textContent = 'يرجى اختيار بوت';
-        subscriptionEndEl.textContent = 'يرجى اختيار بوت';
-        remainingDaysEl.textContent = 'يرجى اختيار بوت';
-        return;
-      }
+  // Load bot info
+  async function loadBotInfo() {
+    const subscriptionTypeEl = document.getElementById("subscription-type");
+    const subscriptionEndEl = document.getElementById("subscription-end");
+    const remainingDaysEl = document.getElementById("remaining-days");
 
+    const selectedBotId = localStorage.getItem("selectedBotId");
+    if (!selectedBotId) {
+      subscriptionTypeEl.textContent = 'يرجى اختيار بوت';
+      subscriptionEndEl.textContent = 'يرجى اختيار بوت';
+      remainingDaysEl.textContent = 'يرجى اختيار بوت';
+      return;
+    }
+
+    try {
       const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, subscriptionTypeEl, 'فشل في جلب بيانات البوت');
@@ -84,12 +90,17 @@ document.addEventListener("DOMContentLoaded", () => {
         remainingDaysEl.textContent = 'غير محدد';
       }
     } catch (err) {
-      welcomeUsername.textContent = 'خطأ في تحميل الاسم';
-      subscriptionTypeEl.textContent = 'خطأ';
-      subscriptionEndEl.textContent = 'خطأ';
-      remainingDaysEl.textContent = 'خطأ';
-      console.error('Error loading welcome bar:', err);
+      subscriptionTypeEl.textContent = 'يرجى اختيار بوت';
+      subscriptionEndEl.textContent = 'يرجى اختيار بوت';
+      remainingDaysEl.textContent = 'يرجى اختيار بوت';
+      console.error('Error loading bot info:', err);
     }
+  }
+
+  // Load welcome bar (username and bot info)
+  async function loadWelcomeBar() {
+    await loadUsername();
+    await loadBotInfo();
   }
 
   const content = document.getElementById("content");
@@ -207,6 +218,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (userBots.length === 0) {
         content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-robot"></i> لا يوجد بوتات متاحة</h2><p>يرجى التواصل مع المسؤول لإضافة بوت لحسابك أو إنشاء بوت جديد.</p></div>`;
         botSelect.disabled = true;
+        localStorage.removeItem("selectedBotId"); // Clear invalid bot ID
         loadWelcomeBar(); // Update welcome bar with no bot selected
         return;
       }
@@ -221,6 +233,8 @@ document.addEventListener("DOMContentLoaded", () => {
       } else if (userBots.length > 0) {
         botSelect.value = userBots[0]._id;
         localStorage.setItem("selectedBotId", userBots[0]._id);
+      } else {
+        localStorage.removeItem("selectedBotId");
       }
 
       loadInitialPage();
@@ -228,6 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (err) {
       content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>خطأ في جلب البوتات: ${err.message}. حاول تحديث الصفحة.</p></div>`;
       botSelect.disabled = true;
+      localStorage.removeItem("selectedBotId"); // Clear invalid bot ID
       loadWelcomeBar(); // Update welcome bar with error
     }
   }
@@ -320,46 +335,6 @@ document.addEventListener("DOMContentLoaded", () => {
       content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>${error.message || "حدث خطأ أثناء تحميل محتوى الصفحة."}</p></div>`;
     }
   };
-
-  // Navigation Events
-  navItems.forEach(item => {
-    if (item.dataset.page === "bots" && role !== "superadmin") {
-      item.style.display = "none";
-    }
-    item.addEventListener("click", (e) => {
-      const page = item.dataset.page;
-      loadPageContent(page);
-    });
-  });
-
-  mobileNavItems.forEach(item => {
-    if (item.dataset.page === "bots" && role !== "superadmin") {
-      item.style.display = "none";
-    }
-    item.addEventListener("click", (e) => {
-      const page = item.dataset.page;
-      loadPageContent(page);
-    });
-  });
-
-  // Settings Button Event
-  settingsBtn.addEventListener("click", async () => {
-    console.log("Settings button clicked, attempting to load settings page");
-    content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`;
-    loadPageCss("settings");
-    try {
-      if (typeof loadSettingsPage === "function") {
-        await loadSettingsPage();
-        console.log("loadSettingsPage executed successfully");
-      } else {
-        console.error("loadSettingsPage function not found");
-        throw new Error("loadSettingsPage function not found");
-      }
-    } catch (error) {
-      console.error("Error loading settings page:", error);
-      content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>${error.message || "حدث خطأ أثناء تحميل إعدادات المستخدم."}</p></div>`;
-    }
-  });
 
   // Initial Page Load
   const loadInitialPage = () => {
