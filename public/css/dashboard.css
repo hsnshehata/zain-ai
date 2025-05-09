@@ -13,7 +13,12 @@
   color: var(--text);
   padding: 20px;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  transition: width 0.3s ease;
+  transition: width 0.3s ease, transform 0.3s ease;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100%;
+  z-index: 1000;
 }
 
 .sidebar.collapsed {
@@ -27,9 +32,16 @@
 }
 
 .sidebar-header .logo {
-  font-size: 1.5em;
+  font-size: 1.8em;
   font-weight: bold;
   color: var(--icon);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-header .logo i {
+  color: var(--accent);
 }
 
 .sidebar-nav {
@@ -47,7 +59,10 @@
   cursor: pointer;
   font-size: 1em;
   border-radius: 5px;
-  transition: background 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 .nav-item:hover {
@@ -61,8 +76,15 @@
 }
 
 .nav-item i {
-  margin-left: 10px;
   font-size: 1.2em;
+}
+
+.nav-item span {
+  flex: 1;
+}
+
+.sidebar.collapsed .nav-item span {
+  display: none;
 }
 
 .sidebar-footer {
@@ -77,10 +99,18 @@
   cursor: pointer;
   width: 100%;
   text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: background 0.3s ease;
 }
 
 .sidebar-footer .logout-btn:hover {
   background: #00e0c4;
+}
+
+.sidebar.collapsed .logout-btn span {
+  display: none;
 }
 
 /* ستايل الهيدر (Header) */
@@ -91,6 +121,9 @@
   justify-content: space-between;
   align-items: center;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 900;
 }
 
 .header-left {
@@ -105,9 +138,14 @@
   font-size: 1.5em;
   cursor: pointer;
   color: var(--text);
+  transition: color 0.3s ease;
 }
 
-.bot-selector {
+.sidebar-toggle-btn:hover {
+  color: var(--accent);
+}
+
+.bot-selector-container {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -115,6 +153,7 @@
 
 .bot-selector label {
   font-weight: bold;
+  color: var(--text);
 }
 
 .bot-selector select {
@@ -123,6 +162,7 @@
   background: var(--background);
   color: var(--text);
   border: 1px solid var(--icon);
+  font-size: 1em;
 }
 
 .header-right {
@@ -138,13 +178,18 @@
   cursor: pointer;
   color: var(--text);
   position: relative;
+  transition: color 0.3s ease;
+}
+
+.header-icon-btn:hover {
+  color: var(--accent);
 }
 
 .header-icon-btn .notifications-count {
   position: absolute;
   top: -5px;
   right: -5px;
-  background: red;
+  background: var(--error);
   color: white;
   font-size: 0.6em;
   padding: 2px 5px;
@@ -157,9 +202,6 @@
   font-size: 1.5em;
   cursor: pointer;
   color: var(--text);
-}
-
-.theme-toggle-btn i {
   transition: transform 0.3s ease;
 }
 
@@ -171,7 +213,13 @@
 .main-content {
   flex: 1;
   padding: 20px;
+  margin-left: 250px;
   background: var(--background);
+  transition: margin-left 0.3s ease;
+}
+
+.main-content.collapsed {
+  margin-left: 80px;
 }
 
 .page-content {
@@ -179,6 +227,7 @@
   padding: 20px;
   border-radius: 12px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  min-height: calc(100vh - 150px);
 }
 
 /* ستايل الـ footer */
@@ -201,6 +250,11 @@
   padding: 10px 0;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
   z-index: 1000;
+  transition: transform 0.3s ease;
+}
+
+.mobile-nav-bottom.collapsed {
+  transform: translateY(100%);
 }
 
 .mobile-nav-bottom .nav-item-mobile {
@@ -210,10 +264,17 @@
   padding: 10px;
   font-size: 1.2em;
   cursor: pointer;
+  flex: 1;
+  text-align: center;
+  transition: color 0.3s ease;
 }
 
 .mobile-nav-bottom .nav-item-mobile.active {
   color: var(--accent);
+}
+
+.mobile-nav-bottom .nav-item-mobile:hover {
+  color: var(--button);
 }
 
 .mobile-nav-bottom .nav-toggle-btn {
@@ -222,4 +283,165 @@
   font-size: 1.5em;
   cursor: pointer;
   color: var(--text);
+  position: absolute;
+  top: -40px;
+  right: 10px;
+  background: var(--element);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* ستايل للـ notifications modal */
+.notifications-modal {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  justify-content: center;
+  align-items: center;
+}
+
+.notifications-modal.active {
+  display: flex;
+}
+
+.notifications-modal-content {
+  background: var(--element);
+  padding: 20px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.notifications-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.notifications-header h3 {
+  font-size: 1.5em;
+  color: var(--text);
+}
+
+.notifications-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  padding: 10px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.notification-item.unread {
+  background: rgba(0, 196, 180, 0.1);
+}
+
+.notification-item:hover {
+  background: rgba(0, 196, 180, 0.2);
+}
+
+.notification-item p {
+  margin: 0;
+  font-size: 1em;
+  color: var(--text);
+}
+
+.notification-item small {
+  color: var(--text);
+  opacity: 0.7;
+  font-size: 0.8em;
+}
+
+/* Media Queries للتوافق مع الموبايل */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 100%;
+    transform: translateX(-100%);
+  }
+
+  .sidebar.collapsed {
+    width: 100%;
+    transform: translateX(0);
+  }
+
+  .main-content {
+    margin-left: 0;
+  }
+
+  .main-content.collapsed {
+    margin-left: 0;
+  }
+
+  .mobile-nav-bottom {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .header-left .bot-selector-container {
+    display: none;
+  }
+
+  .header-right {
+    gap: 10px;
+  }
+
+  .header-icon-btn, .theme-toggle-btn {
+    font-size: 1.2em;
+  }
+
+  .page-content {
+    padding: 15px;
+  }
+
+  .notifications-modal-content {
+    width: 95%;
+    max-width: 350px;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-header {
+    padding: 10px 15px;
+  }
+
+  .sidebar-toggle-btn {
+    font-size: 1.2em;
+  }
+
+  .mobile-nav-bottom .nav-item-mobile {
+    padding: 8px;
+    font-size: 1em;
+  }
+
+  .mobile-nav-bottom .nav-toggle-btn {
+    top: -35px;
+    width: 35px;
+    height: 35px;
+  }
+}
+
+/* تحسينات للـ Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .sidebar, .mobile-nav-bottom, .nav-item, .header-icon-btn, .theme-toggle-btn {
+    transition: none;
+  }
+
+  .sidebar.collapsed, .mobile-nav-bottom.collapsed {
+    transform: none;
+  }
 }
