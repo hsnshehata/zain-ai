@@ -1,196 +1,48 @@
 /* public/css/analytics.css */
 
-/* Styles specific to the Analytics page (loaded by loadAnalyticsPage) */
-
+/* ستايل حاوية التحليلات */
 .analytics-container {
-  margin-top: 20px;
-}
-
-.analytics-container h2 {
-  font-size: 1.8em;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.analytics-container h3 {
-  font-size: 1.5em;
-  margin: 20px 0 15px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.analytics-container h4 {
-  font-size: 1.2em;
-  margin-bottom: 10px;
-}
-
-/* Filter Group */
-.filter-group {
-  margin-bottom: 25px;
-}
-
-.date-filter {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.date-filter input[type="date"] {
-  padding: 8px;
-  font-size: 0.95em;
-  border-radius: 6px;
-  border: 1px solid;
-}
-
-body.dark-mode .date-filter input[type="date"] {
-  border-color: var(--dark-border);
-  background-color: var(--dark-card);
-  color: var(--dark-text);
-}
-
-body.light-mode .date-filter input[type="date"] {
-  border-color: var(--light-border);
-  background-color: var(--light-card);
-  color: var(--light-text);
-}
-
-.date-filter button {
-  padding: 8px 15px;
-  border: none;
-  border-radius: 6px;
-  background-color: var(--turquoise);
-  color: white;
-  cursor: pointer;
-  font-size: 0.95em;
-  transition: background-color var(--transition-speed);
-}
-
-.date-filter button:hover {
-  background-color: var(--button-hover-bg);
-}
-
-/* Analytics Sections */
-.messagesAnalytics, .feedbackAnalytics, .rulesAnalytics {
-  margin-bottom: 30px;
+  background: var(--element);
+  border-radius: 12px;
   padding: 20px;
-  border-radius: 6px;
-  border: 1px solid;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
 }
 
-body.dark-mode .messagesAnalytics,
-body.dark-mode .feedbackAnalytics,
-body.dark-mode .rulesAnalytics {
-  border-color: var(--dark-border);
-  background-color: rgba(255, 255, 255, 0.05);
+/* ستايل العناوين */
+.analytics-container h2 {
+  font-size: 1.5em;
+  color: var(--text);
+  margin-bottom: 20px;
 }
 
-body.light-mode .messagesAnalytics,
-body.light-mode .feedbackAnalytics,
-body.light-mode .rulesAnalytics {
-  border-color: var(--light-border);
-  background-color: rgba(0, 0, 0, 0.03);
+/* ستايل الرسوم البيانية */
+.chart {
+  height: 300px;
+  margin-bottom: 20px;
 }
 
-/* Chart Containers */
-.chart-container {
-  width: 100%;
-  max-width: 400px; /* بنحدد أقصى عرض للدايرة */
-  margin: 0 auto 15px; /* بنركز الدايرة في النص */
-}
-
-/* Stats Text */
-.stats-text {
-  font-size: 0.95em;
-  line-height: 1.6;
-}
-
-.stats-text p {
-  margin: 5px 0;
-}
-
-/* Negative Replies List */
-#negativeRepliesList {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-#negativeRepliesList li {
-  padding: 10px;
-  border-bottom: 1px solid;
-  font-size: 0.95em;
-}
-
-body.dark-mode #negativeRepliesList li {
-  border-bottom-color: var(--dark-border);
-}
-
-body.light-mode #negativeRepliesList li {
-  border-bottom-color: var(--light-border);
-}
-
-#negativeRepliesList li:last-child {
-  border-bottom: none;
-}
-
-/* Section Spinner */
-.section-spinner {
+/* ستايل الإحصائيات */
+.stats {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100px;
+  justify-content: space-around;
+  gap: 20px;
 }
 
-/* تغيير لون التواريخ في الوضع الداكن */
-body.dark-mode .ct-label {
-  fill: var(--dark-text); /* اللون الفاتح في الوضع الداكن */
-  color: var(--dark-text);
+.stat-item {
+  background: var(--background);
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  flex: 1;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-  .analytics-container {
-    margin-top: 15px;
-  }
-
-  .date-filter {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .date-filter input[type="date"],
-  .date-filter button {
-    width: 100%;
-  }
-
-  .chart-container {
-    max-width: 300px; /* بنقلل العرض على الشاشات الصغيرة */
-  }
+.stat-item h3 {
+  font-size: 1.2em;
+  color: var(--text);
 }
 
-@media (max-width: 576px) {
-  .analytics-container h2 {
-    font-size: 1.5em;
-  }
-
-  .analytics-container h3 {
-    font-size: 1.3em;
-  }
-
-  .analytics-container h4 {
-    font-size: 1.1em;
-  }
-
-  .stats-text,
-  #negativeRepliesList li {
-    font-size: 0.9em;
-  }
-
-  .chart-container {
-    max-width: 250px; /* بنقلل العرض أكتر على الشاشات الصغيرة جدًا */
-  }
+.stat-item p {
+  font-size: 1.5em;
+  color: var(--icon);
 }
