@@ -35,17 +35,60 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  // Load welcome username
-  async function loadWelcomeUsername() {
+  // Load welcome bar (username and bot info)
+  async function loadWelcomeBar() {
     const welcomeUsername = document.getElementById("welcome-username");
+    const subscriptionTypeEl = document.getElementById("subscription-type");
+    const subscriptionEndEl = document.getElementById("subscription-end");
+    const remainingDaysEl = document.getElementById("remaining-days");
+
     try {
+      // Fetch user data
       const user = await handleApiRequest('/api/users/me', {
         headers: { Authorization: `Bearer ${token}` },
       }, welcomeUsername, 'فشل في جلب بيانات المستخدم');
       welcomeUsername.textContent = user.username || 'غير معروف';
+
+      // Fetch bot data if selected
+      const selectedBotId = localStorage.getItem("selectedBotId");
+      if (!selectedBotId) {
+        subscriptionTypeEl.textContent = 'يرجى اختيار بوت';
+        subscriptionEndEl.textContent = 'يرجى اختيار بوت';
+        remainingDaysEl.textContent = 'يرجى اختيار بوت';
+        return;
+      }
+
+      const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, subscriptionTypeEl, 'فشل في جلب بيانات البوت');
+
+      // Display subscription type
+      const subscriptionTypes = {
+        free: 'مجاني',
+        monthly: 'شهري',
+        yearly: 'سنوي'
+      };
+      subscriptionTypeEl.textContent = subscriptionTypes[bot.subscriptionType] || 'غير معروف';
+
+      // Display subscription end date or "معطل" if bot is inactive
+      if (!bot.isActive) {
+        subscriptionEndEl.textContent = 'معطل';
+        remainingDaysEl.textContent = 'غير متاح';
+      } else if (bot.autoStopDate) {
+        const endDate = new Date(bot.autoStopDate);
+        subscriptionEndEl.textContent = endDate.toLocaleDateString('ar-EG');
+        const remainingDays = Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24));
+        remainingDaysEl.textContent = remainingDays > 0 ? `${remainingDays} يوم` : 'منتهي';
+      } else {
+        subscriptionEndEl.textContent = 'غير محدد';
+        remainingDaysEl.textContent = 'غير محدد';
+      }
     } catch (err) {
       welcomeUsername.textContent = 'خطأ في تحميل الاسم';
-      console.error('Error loading username:', err);
+      subscriptionTypeEl.textContent = 'خطأ';
+      subscriptionEndEl.textContent = 'خطأ';
+      remainingDaysEl.textContent = 'خطأ';
+      console.error('Error loading welcome bar:', err);
     }
   }
 
@@ -164,6 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (userBots.length === 0) {
         content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-robot"></i> لا يوجد بوتات متاحة</h2><p>يرجى التواصل مع المسؤول لإضافة بوت لحسابك أو إنشاء بوت جديد.</p></div>`;
         botSelect.disabled = true;
+        loadWelcomeBar(); // Update welcome bar with no bot selected
         return;
       }
 
@@ -180,9 +224,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       loadInitialPage();
+      loadWelcomeBar(); // Update welcome bar with selected bot
     } catch (err) {
       content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>خطأ في جلب البوتات: ${err.message}. حاول تحديث الصفحة.</p></div>`;
       botSelect.disabled = true;
+      loadWelcomeBar(); // Update welcome bar with error
     }
   }
 
@@ -191,9 +237,11 @@ document.addEventListener("DOMContentLoaded", () => {
     if (selectedBotId) {
       localStorage.setItem("selectedBotId", selectedBotId);
       loadInitialPage();
+      loadWelcomeBar(); // Update welcome bar when bot changes
     } else {
       localStorage.removeItem("selectedBotId");
       content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض المحتوى.</p></div>`;
+      loadWelcomeBar(); // Update welcome bar with no bot selected
     }
   });
 
@@ -476,7 +524,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Initialize
-  loadWelcomeUsername();
+  loadWelcomeBar();
   populateBotSelect();
   fetchNotifications();
 });
