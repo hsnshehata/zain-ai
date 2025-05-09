@@ -1,0 +1,1033 @@
+/* new_dashboard_style.css */
+
+/* Import Google Fonts (Cairo is already used, let's add a modern one for headings if needed) */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&family=Orbitron:wght@400;700&display=swap');
+
+:root {
+  /* Fonts */
+  --font-primary: 'Cairo', sans-serif;
+  --font-headings: 'Orbitron', 'Cairo', sans-serif; /* Orbitron for futuristic, Cairo as fallback */
+
+  /* Base Sizes */
+  --base-font-size: 16px;
+  --base-spacing: 1rem; /* 16px */
+  --border-radius-sm: 0.25rem; /* 4px */
+  --border-radius-md: 0.5rem; /* 8px */
+  --border-radius-lg: 1rem; /* 16px */
+
+  /* Transitions */
+  --transition-fast: 0.2s ease-in-out;
+  --transition-medium: 0.3s ease-in-out;
+
+  /* Futuristic Turquoise Palette (Base: #00C4B4 from old CSS) */
+  --color-turquoise-base: #0AFADF; /* Brighter, more futuristic turquoise */
+  --color-turquoise-dark: #08D8C0;
+  --color-turquoise-light: #6EFFEE;
+
+  /* Luxurious Accent Colors (Example: Deep Indigo & Gold/Amber) */
+  --color-accent-primary: #4A00E0; /* Deep Indigo/Purple */
+  --color-accent-secondary: #FFC107; /* Amber/Gold */
+
+  /* Gradient Example (Can be used for highlights, buttons, backgrounds) */
+  --gradient-futuristic: linear-gradient(135deg, var(--color-turquoise-base), var(--color-accent-primary));
+  --gradient-luxurious: linear-gradient(135deg, var(--color-accent-secondary), #E0A000);
+
+  /* Common Colors */
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+  --color-success: #28a745;
+  --color-danger: #dc3545;
+  --color-warning: #ffc107;
+  --color-info: #17a2b8;
+
+  /* Light Mode Variables */
+  --lm-bg-primary: #F0F2F5; /* Light grey, almost white */
+  --lm-bg-secondary: #FFFFFF; /* Pure white for cards/surfaces */
+  --lm-text-primary: #1D2A39; /* Dark, almost black */
+  --lm-text-secondary: #5A6A7A; /* Grey for less important text */
+  --lm-border-primary: #DDE2E8;
+  --lm-shadow-color: rgba(0, 0, 0, 0.1);
+
+  /* Dark Mode Variables */
+  --dm-bg-primary: #0D1117; /* Very dark, near black (GitHub dark) */
+  --dm-bg-secondary: #161B22; /* Dark grey for cards/surfaces (GitHub dark) */
+  --dm-text-primary: #E6EDF3; /* Light grey, almost white */
+  --dm-text-secondary: #9DA8B3; /* Lighter grey for less important text */
+  --dm-border-primary: #30363D;
+  --dm-shadow-color: rgba(0, 0, 0, 0.3);
+
+  /* Apply Light Mode by default */
+  --bg-primary: var(--lm-bg-primary);
+  --bg-secondary: var(--lm-bg-secondary);
+  --text-primary: var(--lm-text-primary);
+  --text-secondary: var(--lm-text-secondary);
+  --border-primary: var(--lm-border-primary);
+  --current-shadow-color: var(--lm-shadow-color);
+}
+
+body.dark-mode {
+  --bg-primary: var(--dm-bg-primary);
+  --bg-secondary: var(--dm-bg-secondary);
+  --text-primary: var(--dm-text-primary);
+  --text-secondary: var(--dm-text-secondary);
+  --border-primary: var(--dm-border-primary);
+  --current-shadow-color: var(--dm-shadow-color);
+}
+
+/* Basic Reset & Body Styling */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: var(--base-font-size);
+  direction: rtl; /* As per existing project */
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-primary);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  transition: background-color var(--transition-medium), color var(--transition-medium);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-headings);
+  color: var(--text-primary);
+  margin-bottom: calc(var(--base-spacing) * 0.75);
+  line-height: 1.3;
+  font-weight: 700; /* Orbitron is thin, so bold it */
+}
+
+p {
+  margin-bottom: var(--base-spacing);
+}
+
+a {
+  color: var(--color-turquoise-base);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--color-turquoise-dark);
+}
+
+img, svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Utility Classes */
+.container {
+  width: 90%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--base-spacing);
+  padding-right: var(--base-spacing);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+.d-flex { display: flex !important; }
+.flex-column { flex-direction: column !important; }
+.justify-content-center { justify-content: center !important; }
+.align-items-center { align-items: center !important; }
+/* Add more utilities as needed */
+
+/*
+  Dashboard Layout Structure (Desktop First)
+  This will be the starting point for implementing the desktop version.
+  - Overall page wrapper
+  - Sidebar
+  - Main content area
+    - Header
+    - Welcome bar (if kept separate)
+    - Page content
+    - Footer
+*/
+
+.dashboard-wrapper {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+}
+
+/* Further styling will be added in subsequent steps for sidebar, main-content, etc. */
+
+
+/* new_dashboard_style.css - Continued */
+
+/* Dashboard Layout - Desktop */
+.dashboard-page-new {
+  display: flex;
+  min-height: 100vh;
+  background-color: var(--bg-primary);
+  overflow-x: hidden; /* Prevent horizontal scrollbars from collapsed sidebar transitions */
+}
+
+/* Sidebar - Desktop */
+.sidebar-new {
+  width: 260px;
+  background: var(--gradient-futuristic); /* Futuristic gradient background */
+  /* Or a solid color from the new palette: background-color: var(--dm-bg-secondary); */
+  color: var(--dm-text-primary); /* Text color that contrasts with the gradient */
+  padding: var(--base-spacing);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  right: 0; /* For RTL */
+  height: 100vh;
+  z-index: 1000;
+  transition: width var(--transition-medium), transform var(--transition-medium);
+  box-shadow: -5px 0 15px rgba(0,0,0,0.2);
+}
+
+body.light-mode .sidebar-new {
+  /* Potentially a different gradient or solid color for light mode if desired */
+  /* For now, let's keep the futuristic gradient, or use a light, luxurious feel */
+  background: linear-gradient(135deg, var(--color-turquoise-light), var(--color-accent-primary));
+  color: var(--color-white);
+  box-shadow: -3px 0 10px var(--lm-shadow-color);
+}
+
+.sidebar-new.collapsed {
+  width: 80px;
+  /* transform: translateX(100%); For LTR, for RTL it would be negative */
+}
+
+.sidebar-new .sidebar-header-new {
+  padding: calc(var(--base-spacing) * 1.5) var(--base-spacing);
+  text-align: center;
+  margin-bottom: var(--base-spacing);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.light-mode .sidebar-new .sidebar-header-new {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-new .logo-new {
+  font-family: var(--font-headings);
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--color-white); /* Ensure logo text is visible on gradient */
+  /* Or use accent: color: var(--color-accent-secondary); */
+  letter-spacing: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sidebar-new.collapsed .logo-new .logo-text {
+  display: none;
+}
+
+.sidebar-new .logo-new .logo-icon {
+  font-size: 2rem;
+  margin-left: 10px; /* RTL */
+}
+
+.sidebar-new.collapsed .logo-new .logo-icon {
+  margin-left: 0;
+}
+
+.sidebar-nav-new {
+  flex-grow: 1;
+  overflow-y: auto;
+}
+
+.sidebar-nav-new .nav-item-new {
+  display: flex;
+  align-items: center;
+  padding: calc(var(--base-spacing) * 0.9) var(--base-spacing);
+  margin-bottom: calc(var(--base-spacing) * 0.5);
+  border-radius: var(--border-radius-md);
+  color: var(--dm-text-primary); /* Text color on gradient */
+  background-color: transparent;
+  border: none;
+  width: 100%;
+  text-align: right; /* RTL */
+  font-size: 1rem;
+  font-weight: 600;
+  transition: background-color var(--transition-fast), color var(--transition-fast), padding-right var(--transition-fast);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+body.light-mode .sidebar-nav-new .nav-item-new {
+ color: var(--color-white);
+}
+
+.sidebar-nav-new .nav-item-new i {
+  font-size: 1.3rem;
+  margin-left: calc(var(--base-spacing) * 0.8); /* RTL */
+  width: 25px;
+  text-align: center;
+  transition: margin var(--transition-medium);
+}
+
+.sidebar-nav-new .nav-item-new .nav-text-new {
+  opacity: 1;
+  transition: opacity var(--transition-fast) 0.1s;
+}
+
+.sidebar-new.collapsed .nav-item-new .nav-text-new {
+  opacity: 0;
+  width: 0;
+  overflow: hidden;
+}
+
+.sidebar-new.collapsed .nav-item-new {
+  justify-content: center;
+  padding-right: var(--base-spacing); /* Keep padding consistent for icon */
+}
+
+.sidebar-new.collapsed .nav-item-new i {
+  margin-left: 0;
+}
+
+.sidebar-nav-new .nav-item-new:hover,
+.sidebar-nav-new .nav-item-new.active {
+  background-color: rgba(255, 255, 255, 0.15); /* Highlight on gradient */
+  color: var(--color-white);
+}
+
+body.light-mode .sidebar-nav-new .nav-item-new:hover,
+body.light-mode .sidebar-nav-new .nav-item-new.active {
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-footer-new {
+  padding: var(--base-spacing);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+body.light-mode .sidebar-footer-new {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Main Content Area - Desktop */
+.main-content-new {
+  flex-grow: 1;
+  margin-right: 260px; /* RTL: Same as sidebar width */
+  padding: 0; /* Remove padding, header and content will manage their own */
+  transition: margin-right var(--transition-medium);
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-new.collapsed + .main-content-new {
+  margin-right: 80px; /* RTL: Same as collapsed sidebar width */
+}
+
+/* Main Header - Desktop */
+.main-header-new {
+  height: 70px;
+  background-color: var(--bg-secondary);
+  padding: 0 calc(var(--base-spacing) * 1.5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border-primary);
+  position: sticky;
+  top: 0;
+  z-index: 900;
+  box-shadow: 0 2px 5px var(--current-shadow-color);
+}
+
+.main-header-new .header-left-new,
+.main-header-new .header-right-new {
+  display: flex;
+  align-items: center;
+  gap: var(--base-spacing);
+}
+
+.sidebar-toggle-btn-new {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: calc(var(--base-spacing) * 0.5);
+  border-radius: var(--border-radius-sm);
+}
+
+.sidebar-toggle-btn-new:hover {
+  background-color: var(--border-primary);
+}
+
+/* Welcome Bar - Desktop */
+.welcome-bar-new {
+  background-color: var(--bg-secondary);
+  /* Or use a subtle gradient: background: linear-gradient(to left, var(--bg-secondary), var(--bg-primary)); */
+  padding: var(--base-spacing) calc(var(--base-spacing) * 1.5);
+  border-bottom: 1px solid var(--border-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* Adjust as needed */
+  flex-wrap: wrap;
+  gap: var(--base-spacing);
+  color: var(--text-secondary);
+}
+
+body.dark-mode .welcome-bar-new {
+   /* Slightly different feel for dark mode if needed */
+   background-color: var(--dm-bg-secondary); 
+}
+
+.welcome-bar-new .info-item-new {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--base-spacing) * 0.5);
+  font-size: 0.9rem;
+}
+
+.welcome-bar-new .info-item-new i {
+  color: var(--color-turquoise-base);
+  font-size: 1.1rem;
+}
+
+.welcome-bar-new .info-item-new span strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+/* Page Content Area - Desktop */
+.page-content-new {
+  flex-grow: 1;
+  padding: calc(var(--base-spacing) * 1.5);
+  overflow-y: auto; /* Allow content to scroll if it exceeds viewport */
+}
+
+/* Dashboard Footer - Desktop */
+.dashboard-footer-new {
+  padding: var(--base-spacing) calc(var(--base-spacing) * 1.5);
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  background-color: var(--bg-secondary);
+  border-top: 1px solid var(--border-primary);
+}
+
+
+
+/* new_dashboard_style.css - Continued: Common Elements - Desktop */
+
+/* Buttons - New Style */
+.btn-new {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: calc(var(--base-spacing) * 0.6) calc(var(--base-spacing) * 1.2);
+  font-family: var(--font-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: var(--border-radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-new i {
+  margin-right: calc(var(--base-spacing) * 0.5); /* LTR, adjust for RTL if needed */
+  /* For RTL, it should be margin-left if icons are on the right of text */
+  margin-left: calc(var(--base-spacing) * 0.5); /* RTL */
+}
+
+.btn-new.btn-sm {
+  padding: calc(var(--base-spacing) * 0.4) calc(var(--base-spacing) * 0.8);
+  font-size: 0.85rem;
+}
+
+/* Primary Button (Futuristic Gradient) */
+.btn-primary-new {
+  background: var(--gradient-futuristic);
+  color: var(--color-white);
+  border-color: transparent; /* Gradient buttons usually don't need a border */
+}
+
+.btn-primary-new:hover {
+  background: linear-gradient(135deg, var(--color-turquoise-dark), var(--color-accent-primary)); /* Darken gradient */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transform: translateY(-1px);
+}
+
+/* Secondary Button (Luxurious Accent) */
+.btn-secondary-new {
+  background-color: transparent;
+  color: var(--color-accent-secondary);
+  border: 2px solid var(--color-accent-secondary);
+}
+
+.btn-secondary-new:hover {
+  background-color: var(--color-accent-secondary);
+  color: var(--dm-bg-primary); /* Text color that contrasts with accent */
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+}
+
+body.light-mode .btn-secondary-new:hover {
+  color: var(--lm-bg-secondary);
+}
+
+/* Tertiary/Ghost Button (Turquoise Accent) */
+.btn-tertiary-new {
+  background-color: transparent;
+  color: var(--color-turquoise-base);
+  border: 2px solid var(--color-turquoise-base);
+}
+
+.btn-tertiary-new:hover {
+  background-color: var(--color-turquoise-base);
+  color: var(--dm-bg-primary); /* Text color that contrasts with turquoise */
+}
+
+body.light-mode .btn-tertiary-new:hover {
+  color: var(--lm-bg-secondary);
+}
+
+/* Icon Button */
+.btn-icon-new {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.5rem; /* Adjust as needed */
+  padding: calc(var(--base-spacing) * 0.5);
+  border-radius: 50%;
+  line-height: 1;
+}
+
+.btn-icon-new:hover {
+  color: var(--color-turquoise-base);
+  background-color: var(--border-primary); /* Subtle background on hover */
+}
+
+/* Theme Toggle Button Specific Styling */
+#theme-toggle-new {
+  /* Uses .btn-icon-new styles, can add specifics here */
+}
+
+#theme-toggle-new .fa-sun {
+  display: none; /* Hidden in dark mode by default */
+  color: var(--color-warning); /* Sun icon color */
+}
+
+#theme-toggle-new .fa-moon {
+  display: block; /* Visible in dark mode by default */
+  color: var(--color-turquoise-light); /* Moon icon color */
+}
+
+body.light-mode #theme-toggle-new .fa-sun {
+  display: block;
+}
+
+body.light-mode #theme-toggle-new .fa-moon {
+  display: none;
+}
+
+/* Forms - New Style */
+.form-group-new {
+  margin-bottom: calc(var(--base-spacing) * 1.2);
+}
+
+.form-group-new label {
+  display: block;
+  font-family: var(--font-headings);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: calc(var(--base-spacing) * 0.4);
+  text-transform: uppercase;
+}
+
+.form-control-new {
+  display: block;
+  width: 100%;
+  padding: calc(var(--base-spacing) * 0.7) var(--base-spacing);
+  font-family: var(--font-primary);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background-color: var(--bg-secondary);
+  background-clip: padding-box;
+  border: 1px solid var(--border-primary);
+  border-radius: var(--border-radius-md);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.form-control-new::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.7;
+}
+
+.form-control-new:focus {
+  border-color: var(--color-turquoise-base);
+  outline: 0;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05), 0 0 0 0.2rem rgba(var(--color-turquoise-base-rgb, 10, 250, 223), 0.25); /* Define --color-turquoise-base-rgb if not already */
+}
+
+/* For rgba, we need RGB values. Assuming --color-turquoise-base: #0AFADF; */
+:root {
+  --color-turquoise-base-rgb: 10, 250, 223;
+}
+
+select.form-control-new {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23343a40\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: left calc(var(--base-spacing) * 0.75) center; /* RTL */
+  background-size: 16px 12px;
+  padding-left: calc(var(--base-spacing) * 2.5); /* RTL, make space for arrow */
+}
+
+body.dark-mode select.form-control-new {
+ background-image: url("data:image/svg+xml,%3csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 16\'%3e%3cpath fill=\'none\' stroke=\'%23E6EDF3\' stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M2 5l6 6 6-6\'/<ctrl63>tool_code/default_api.py_code.py_file_write_2024_05_09_05_38_36_290.py_content.py_new_dashboard_style.css - Continued: Common Elements - Desktop */_n_n/* Buttons - New Style */_n.btn-new {_n  display: inline-flex;_n  align-items: center;_n  justify-content: center;_n  padding: calc(var(--base-spacing) * 0.6) calc(var(--base-spacing) * 1.2);_n  font-family: var(--font-primary);_n  font-size: 0.95rem;_n  font-weight: 600;_n  border-radius: var(--border-radius-md);_n  border: 1px solid transparent;_n  cursor: pointer;_n  transition: all var(--transition-fast);_n  text-transform: uppercase;_n  letter-spacing: 0.5px;_n  white-space: nowrap;_n  box-shadow: 0 2px 4px rgba(0,0,0,0.1);_n}_n_n.btn-new i {_n  margin-right: calc(var(--base-spacing) * 0.5); /* LTR, adjust for RTL if needed */_n  /* For RTL, it should be margin-left if icons are on the right of text */_n  margin-left: calc(var(--base-spacing) * 0.5); /* RTL */_n}_n_n.btn-new.btn-sm {_n  padding: calc(var(--base-spacing) * 0.4) calc(var(--base-spacing) * 0.8);_n  font-size: 0.85rem;_n}_n_n/* Primary Button (Futuristic Gradient) */_n.btn-primary-new {_n  background: var(--gradient-futuristic);_n  color: var(--color-white);_n  border-color: transparent; /* Gradient buttons usually don't need a border */_n}_n_n.btn-primary-new:hover {_n  background: linear-gradient(135deg, var(--color-turquoise-dark), var(--color-accent-primary)); /* Darken gradient */_n  box-shadow: 0 4px 8px rgba(0,0,0,0.15);_n  transform: translateY(-1px);_n}_n_n/* Secondary Button (Luxurious Accent) */_n.btn-secondary-new {_n  background-color: transparent;_n  color: var(--color-accent-secondary);_n  border: 2px solid var(--color-accent-secondary);_n}_n_n.btn-secondary-new:hover {_n  background-color: var(--color-accent-secondary);_n  color: var(--dm-bg-primary); /* Text color that contrasts with accent */_n  box-shadow: 0 3px 6px rgba(0,0,0,0.1);_n}_n_nbody.light-mode .btn-secondary-new:hover {_n  color: var(--lm-bg-secondary);_n}_n_n/* Tertiary/Ghost Button (Turquoise Accent) */_n.btn-tertiary-new {_n  background-color: transparent;_n  color: var(--color-turquoise-base);_n  border: 2px solid var(--color-turquoise-base);_n}_n_n.btn-tertiary-new:hover {_n  background-color: var(--color-turquoise-base);_n  color: var(--dm-bg-primary); /* Text color that contrasts with turquoise */_n}_n_nbody.light-mode .btn-tertiary-new:hover {_n  color: var(--lm-bg-secondary);_n}_n_n/* Icon Button */_n.btn-icon-new {_n  background: transparent;_n  border: none;_n  color: var(--text-secondary);_n  font-size: 1.5rem; /* Adjust as needed */_n  padding: calc(var(--base-spacing) * 0.5);_n  border-radius: 50%;_n  line-height: 1;_n}_n_n.btn-icon-new:hover {_n  color: var(--color-turquoise-base);_n  background-color: var(--border-primary); /* Subtle background on hover */_n}_n_n/* Theme Toggle Button Specific Styling */_n#theme-toggle-new {_n  /* Uses .btn-icon-new styles, can add specifics here */_n}_n_n#theme-toggle-new .fa-sun {_n  display: none; /* Hidden in dark mode by default */_n  color: var(--color-warning); /* Sun icon color */_n}_n_n#theme-toggle-new .fa-moon {_n  display: block; /* Visible in dark mode by default */_n  color: var(--color-turquoise-light); /* Moon icon color */_n}_n_nbody.light-mode #theme-toggle-new .fa-sun {_n  display: block;_n}_n_nbody.light-mode #theme-toggle-new .fa-moon {_n  display: none;_n}_n_n/* Forms - New Style */_n.form-group-new {_n  margin-bottom: calc(var(--base-spacing) * 1.2);_n}_n_n.form-group-new label {_n  display: block;_n  font-family: var(--font-headings);_n  font-size: 0.9rem;_n  font-weight: 600;_n  color: var(--text-secondary);_n  margin-bottom: calc(var(--base-spacing) * 0.4);_n  text-transform: uppercase;_n}_n_n.form-control-new {_n  display: block;_n  width: 100%;_n  padding: calc(var(--base-spacing) * 0.7) var(--base-spacing);_n  font-family: var(--font-primary);_n  font-size: 1rem;_n  font-weight: 400;_n  line-height: 1.5;_n  color: var(--text-primary);_n  background-color: var(--bg-secondary);_n  background-clip: padding-box;_n  border: 1px solid var(--border-primary);_n  border-radius: var(--border-radius-md);_n  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);_n  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);_n}_n_n.form-control-new::placeholder {_n  color: var(--text-secondary);_n  opacity: 0.7;_n}_n_n.form-control-new:focus {_n  border-color: var(--color-turquoise-base);_n  outline: 0;_n  box-shadow: inset 0 1px 2px rgba(0,0,0,0.05), 0 0 0 0.2rem rgba(var(--color-turquoise-base-rgb, 10, 250, 223), 0.25); /* Define --color-turquoise-base-rgb if not already */_n}_n_n/* For rgba, we need RGB values. Assuming --color-turquoise-base: #0AFADF; */_n:root {_n  --color-turquoise-base-rgb: 10, 250, 223;_n}_n_nselect.form-control-new {_n  appearance: none;_n  background-image: url(
+
+/* new_dashboard_style.css - Continued: Header, Cards, Modals - Desktop */
+
+/* Main Header Elements - Desktop */
+.main-header-new .bot-selector-container-new {
+  position: relative;
+}
+
+.main-header-new .form-group-new.bot-selector-new {
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--base-spacing) * 0.5);
+}
+
+.main-header-new .form-group-new.bot-selector-new label {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 0;
+  text-transform: none; /* Overriding default uppercase for labels */
+}
+
+.main-header-new #botSelectDashboardNew {
+  padding: calc(var(--base-spacing) * 0.5) calc(var(--base-spacing) * 2) calc(var(--base-spacing) * 0.5) var(--base-spacing); /* RTL padding */
+  min-width: 200px;
+  font-size: 0.95rem;
+  border-radius: var(--border-radius-sm);
+}
+
+.main-header-new .header-icon-btn-new {
+  /* Using .btn-icon-new styles already defined */
+  position: relative;
+}
+
+.main-header-new .notifications-count-new {
+  position: absolute;
+  top: -5px;
+  right: -5px; /* RTL */
+  background-color: var(--color-danger);
+  color: var(--color-white);
+  font-size: 0.7rem;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  /* display: none; /* Control visibility with JS */
+}
+
+/* Cards - New Style */
+.card-new {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 5px 15px var(--current-shadow-color);
+  margin-bottom: calc(var(--base-spacing) * 1.5);
+  overflow: hidden; /* For cases where content might overflow radius */
+  transition: all var(--transition-medium);
+}
+
+.card-new:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px var(--current-shadow-color);
+}
+
+.card-header-new {
+  padding: var(--base-spacing) calc(var(--base-spacing) * 1.25);
+  border-bottom: 1px solid var(--border-primary);
+  background-color: transparent; /* Or a slightly different shade of --bg-secondary */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.card-header-new h3, .card-header-new h4 {
+  margin-bottom: 0;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+}
+
+.card-body-new {
+  padding: calc(var(--base-spacing) * 1.25);
+}
+
+.card-footer-new {
+  padding: var(--base-spacing) calc(var(--base-spacing) * 1.25);
+  border-top: 1px solid var(--border-primary);
+  background-color: var(--bg-primary); /* Slightly different from card body */
+}
+
+/* Modals - New Style */
+.modal-new-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0,0,0,0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1050;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-medium), visibility var(--transition-medium);
+}
+
+.modal-new-backdrop.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.modal-new {
+  background-color: var(--bg-secondary);
+  border-radius: var(--border-radius-lg);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+  width: 90%;
+  max-width: 600px;
+  overflow: hidden;
+  transform: scale(0.95) translateY(-20px);
+  transition: transform var(--transition-medium);
+}
+
+.modal-new-backdrop.active .modal-new {
+  transform: scale(1) translateY(0);
+}
+
+.modal-header-new {
+  padding: var(--base-spacing) calc(var(--base-spacing) * 1.5);
+  border-bottom: 1px solid var(--border-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--gradient-futuristic);
+  color: var(--color-white);
+}
+
+body.light-mode .modal-header-new {
+  background: linear-gradient(135deg, var(--color-turquoise-light), var(--color-accent-primary));
+}
+
+.modal-header-new .modal-title-new {
+  font-family: var(--font-headings);
+  font-size: 1.3rem;
+  margin-bottom: 0;
+  font-weight: 700;
+}
+
+.modal-header-new .btn-close-new {
+  background: transparent;
+  border: none;
+  color: var(--color-white);
+  font-size: 1.8rem;
+  opacity: 0.8;
+  padding: 0;
+  line-height: 1;
+}
+
+.modal-header-new .btn-close-new:hover {
+  opacity: 1;
+}
+
+.modal-body-new {
+  padding: calc(var(--base-spacing) * 1.5);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.modal-footer-new {
+  padding: var(--base-spacing) calc(var(--base-spacing) * 1.5);
+  border-top: 1px solid var(--border-primary);
+  display: flex;
+  justify-content: flex-end; /* Or flex-start for RTL */
+  gap: var(--base-spacing);
+  background-color: var(--bg-primary);
+}
+
+/* Page Headers within Content Area */
+.page-title-bar-new {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: calc(var(--base-spacing) * 1.5);
+  padding-bottom: var(--base-spacing);
+  border-bottom: 2px solid var(--color-turquoise-base);
+  flex-wrap: wrap;
+  gap: var(--base-spacing);
+}
+
+.page-title-bar-new .page-title-new {
+  font-family: var(--font-headings);
+  font-size: 2rem;
+  color: var(--text-primary);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: calc(var(--base-spacing) * 0.5);
+}
+
+.page-title-bar-new .page-title-new i {
+  color: var(--color-turquoise-base);
+}
+
+.page-title-bar-new .header-actions-new {
+  display: flex;
+  gap: var(--base-spacing);
+}
+
+
+
+/* new_dashboard_style.css - Continued: Mobile Responsive Design */
+
+/* Mobile Navigation Bar (Bottom) */
+.mobile-nav-bottom-new {
+  display: none; /* Hidden by default, shown via media query */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: var(--gradient-futuristic); /* Consistent with sidebar or a new mobile-specific gradient */
+  /* Or solid: background-color: var(--dm-bg-secondary); */
+  color: var(--color-white);
+  box-shadow: 0 -3px 10px rgba(0,0,0,0.2);
+  z-index: 1000;
+  padding: calc(var(--base-spacing) * 0.5) 0;
+  transition: transform var(--transition-medium);
+  height: 65px; /* Fixed height for the nav bar */
+}
+
+body.light-mode .mobile-nav-bottom-new {
+  background: linear-gradient(135deg, var(--color-turquoise-light), var(--color-accent-primary));
+  box-shadow: 0 -2px 8px var(--lm-shadow-color);
+}
+
+.mobile-nav-bottom-new .nav-items-container-new {
+  display: flex;
+  justify-content: space-around; /* Distribute items evenly */
+  align-items: center;
+  height: 100%;
+  padding: 0 var(--base-spacing);
+}
+
+.mobile-nav-bottom-new .nav-item-mobile-new {
+  background: none;
+  border: none;
+  padding: calc(var(--base-spacing) * 0.5);
+  font-size: 1rem; /* Slightly smaller for mobile icons/text */
+  cursor: pointer;
+  color: var(--color-white);
+  transition: color var(--transition-fast), transform var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1; /* Allow items to take available space */
+  max-width: 20%; /* Limit width to prevent overflow with many items */
+}
+
+.mobile-nav-bottom-new .nav-item-mobile-new i {
+  font-size: 1.5rem; /* Icon size */
+  margin-bottom: 3px;
+}
+
+.mobile-nav-bottom-new .nav-item-mobile-new .nav-text-mobile-new {
+  font-size: 0.7rem; /* Text size */
+  font-weight: 600;
+  display: block; /* Ensure it takes space */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.mobile-nav-bottom-new .nav-item-mobile-new:hover,
+.mobile-nav-bottom-new .nav-item-mobile-new.active {
+  color: var(--color-accent-secondary); /* Luxurious accent for active/hover */
+  transform: scale(1.1);
+}
+
+/* Responsive Adjustments - General */
+@media (max-width: 992px) { /* Tablet and Mobile */
+  .sidebar-new {
+    /* Option 1: Hide completely */
+    /* display: none; */
+    /* Option 2: Transform out of view, can be toggled with JS */
+    transform: translateX(100%); /* RTL: Moves it off-screen to the right */
+    /* If sidebar is on left for LTR: transform: translateX(-100%); */
+    width: 280px; /* Keep width for when it slides in */
+  }
+
+  .sidebar-new.open {
+    transform: translateX(0);
+  }
+
+  .main-content-new {
+    margin-right: 0; /* RTL */
+    /* If sidebar is on left for LTR: margin-left: 0; */
+  }
+
+  .sidebar-toggle-btn-new { /* This button will now toggle the .open class on sidebar */
+    display: block; /* Ensure it's visible to open the sidebar */
+  }
+
+  .mobile-nav-bottom-new {
+    display: block; /* Show mobile bottom nav */
+  }
+
+  .page-content-new {
+    padding-bottom: calc(var(--base-spacing) * 5); /* Space for bottom nav */
+  }
+
+  .dashboard-footer-new {
+    /* Optionally hide or simplify footer on mobile */
+    /* display: none; */
+    padding-bottom: calc(var(--base-spacing) * 5); /* If kept, ensure space for nav */
+  }
+
+  .main-header-new .bot-selector-container-new {
+    /* Make bot selector more compact or move it if needed */
+    flex-grow: 1; /* Allow it to take more space if other items are hidden */
+  }
+  .main-header-new #botSelectDashboardNew {
+    min-width: 150px;
+    font-size: 0.9rem;
+  }
+
+  .welcome-bar-new {
+    flex-direction: column;
+    align-items: flex-start; /* RTL: align to the right */
+    padding: var(--base-spacing);
+    gap: calc(var(--base-spacing) * 0.75);
+  }
+  .welcome-bar-new .info-item-new {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 768px) { /* Smaller tablets and Mobile */
+  .page-title-bar-new {
+    flex-direction: column;
+    align-items: flex-start; /* RTL */
+  }
+
+  .page-title-bar-new .page-title-new {
+    font-size: 1.6rem;
+  }
+
+  .page-title-bar-new .header-actions-new {
+    width: 100%;
+    justify-content: flex-start; /* RTL */
+    gap: calc(var(--base-spacing) * 0.5);
+  }
+
+  .btn-new {
+    padding: calc(var(--base-spacing) * 0.5) var(--base-spacing);
+    font-size: 0.9rem;
+  }
+
+  .card-new {
+    border-radius: var(--border-radius-md);
+  }
+
+  .modal-new {
+    width: 95%;
+    border-radius: var(--border-radius-md);
+  }
+
+  .modal-header-new .modal-title-new {
+    font-size: 1.1rem;
+  }
+
+  .main-header-new .header-right-new .btn-icon-new {
+    font-size: 1.3rem;
+    padding: calc(var(--base-spacing) * 0.4);
+  }
+  .main-header-new .header-right-new {
+    gap: calc(var(--base-spacing) * 0.5);
+  }
+}
+
+@media (max-width: 576px) { /* Mobile phones */
+  :root {
+    --base-font-size: 15px; /* Slightly smaller base font for mobile */
+  }
+
+  .main-header-new {
+    padding: 0 var(--base-spacing);
+    height: 60px;
+  }
+
+  .page-content-new {
+    padding: var(--base-spacing);
+    padding-bottom: 75px; /* Ensure enough space for bottom nav */
+  }
+
+  .sidebar-new.collapsed {
+    /* On mobile, collapsed might mean fully hidden or a very thin bar if preferred */
+    /* For now, the general 992px rule handles hiding/transforming it */
+  }
+
+  .mobile-nav-bottom-new .nav-item-mobile-new i {
+    font-size: 1.3rem;
+  }
+  .mobile-nav-bottom-new .nav-item-mobile-new .nav-text-mobile-new {
+    font-size: 0.65rem;
+  }
+  .mobile-nav-bottom-new {
+    height: 60px;
+  }
+
+  /* Make welcomebar elements stack cleanly */
+  .welcome-bar-new .info-item-new {
+    width: 100%;
+    justify-content: flex-start; /* RTL */
+  }
+}
+
+/* Ensure theme toggle works for mobile specific elements if any */
+/* Dark/Light mode styles are already applied via CSS variables, so they should cascade */
+
+/* Final check on welcomebar and buttons for mobile consistency */
+/* Welcomebar is handled in @media queries */
+/* Buttons .btn-new are already responsive due to relative units and padding adjustments in @media */
+
+
