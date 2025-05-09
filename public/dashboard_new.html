@@ -15,6 +15,30 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="icon" type="image/png" href="/icons/icon-192x192.png">
   <link rel="manifest" href="/manifest.json">
+  <style>
+    .welcome-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background-color: var(--dark-card);
+      padding: 10px 25px;
+      border-bottom: 1px solid var(--dark-border);
+      font-size: 1.1em;
+      color: var(--dark-text);
+      text-align: right;
+    }
+    .light-mode .welcome-bar {
+      background-color: var(--light-card);
+      border-bottom: 1px solid var(--light-border);
+      color: var(--light-text);
+    }
+    .welcome-bar i {
+      color: var(--turquoise);
+    }
+    .welcome-bar span {
+      font-weight: 600;
+    }
+  </style>
 </head>
 <body class="dark-mode dashboard-page">
   <div class="dashboard-layout">
@@ -60,6 +84,11 @@
           </button>
         </div>
       </header>
+
+      <div class="welcome-bar">
+        <i class="fas fa-user"></i>
+        <span>مرحباً: <span id="welcome-username">جاري التحميل...</span></span>
+      </div>
 
       <div id="content" class="page-content" aria-live="polite"></div>
 
