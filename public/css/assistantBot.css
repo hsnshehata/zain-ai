@@ -27,14 +27,7 @@
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
   overflow-x: hidden;
-}
-
-body.dark-mode .chat-modal-content {
-  background: linear-gradient(145deg, #1f2a50, #2a3a70);
-}
-
-body.light-mode .chat-modal-content {
-  background: linear-gradient(145deg, #f0f2f5, #ffffff);
+  background: linear-gradient(145deg, rgba(42, 42, 78, 0.9), rgba(26, 26, 46, 0.7));
 }
 
 .chat-header {
@@ -69,15 +62,8 @@ body.light-mode .chat-modal-content {
   border: none;
   font-size: 1.3em;
   cursor: pointer;
+  color: white;
   transition: transform 0.2s ease, color 0.3s ease;
-}
-
-body.dark-mode .chat-close-btn {
-  color: white;
-}
-
-body.light-mode .chat-close-btn {
-  color: white;
 }
 
 .chat-close-btn:hover {
@@ -90,10 +76,9 @@ body.light-mode .chat-close-btn {
   padding: 20px;
   overflow-y: auto;
   overflow-x: hidden;
-  background: var(--dark-background);
-  color: var(--dark-text);
+  background: rgba(255, 255, 255, 0.05);
+  color: #E0E0E0;
   position: relative;
-  /* إخفاء الـ scrollbar بشكل افتراضي */
   scrollbar-width: none; /* لـ Firefox */
   -ms-overflow-style: none; /* لـ Internet Explorer */
 }
@@ -107,29 +92,24 @@ body.light-mode .chat-close-btn {
 /* إظهار الـ scrollbar عند الـ hover أو الـ scroll */
 .chat-messages:hover::-webkit-scrollbar,
 .chat-messages:active::-webkit-scrollbar {
-  width: 8px; /* عرض الـ scrollbar */
+  width: 8px;
 }
 
 /* تخصيص شكل الـ scrollbar */
 .chat-messages::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1); /* خلفية المسار */
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 10px;
 }
 
 .chat-messages::-webkit-scrollbar-thumb {
-  background: var(--turquoise); /* لون الـ thumb */
+  background: var(--turquoise);
   border-radius: 10px;
-  border: 2px solid transparent; /* حدود شفافة */
-  background-clip: padding-box; /* لون الـ thumb بس */
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
-  background: #00a89c; /* لون الـ thumb لما نعمل hover */
-}
-
-body.light-mode .chat-messages {
-  background: var(--light-background);
-  color: var(--light-text);
+  background: #00a89c;
 }
 
 /* تحسين شكل الرسايل */
@@ -176,14 +156,7 @@ body.light-mode .chat-messages {
   border-top-left-radius: 0;
   position: relative;
   padding-left: 40px;
-}
-
-body.dark-mode .bot-message {
-  color: var(--dark-text);
-}
-
-body.light-mode .bot-message {
-  color: var(--light-text);
+  color: #E0E0E0;
 }
 
 .bot-message::before {
@@ -212,17 +185,8 @@ body.light-mode .bot-message {
 
 .chat-footer {
   padding: 15px 20px;
-  border-top: 1px solid;
-  background: var(--dark-card);
-}
-
-body.dark-mode .chat-footer {
-  border-top-color: var(--dark-border);
-}
-
-body.light-mode .chat-footer {
-  border-top-color: var(--light-border);
-  background: var(--light-card);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .chat-input {
@@ -243,17 +207,8 @@ body.light-mode .chat-footer {
   font-size: 0.95em;
   outline: none;
   background: transparent;
+  color: #E0E0E0;
   transition: box-shadow 0.3s ease;
-}
-
-body.dark-mode .chat-input input {
-  background: transparent;
-  color: var(--dark-text);
-}
-
-body.light-mode .chat-input input {
-  background: transparent;
-  color: var(--light-text);
 }
 
 .chat-input input:focus {
@@ -290,24 +245,6 @@ body.light-mode .chat-input input {
 
 .chat-input button:active i {
   transform: rotate(45deg);
-}
-
-/* Loading Spinner for Messages (غير مستخدم حاليًا) */
-.message-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 10px;
-}
-
-.message-loading::after {
-  content: '';
-  width: 20px;
-  height: 20px;
-  border: 3px solid var(--turquoise);
-  border-top: 3px solid transparent;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
 }
 
 /* Responsive Adjustments */
@@ -373,9 +310,4 @@ body.light-mode .chat-input input {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
