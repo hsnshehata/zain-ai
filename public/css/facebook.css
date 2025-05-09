@@ -16,16 +16,8 @@
 
 .settings-card .card-header {
   padding-bottom: 10px;
-  border-bottom: 1px solid;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 15px;
-}
-
-body.dark-mode .settings-card .card-header {
-  border-bottom-color: var(--dark-border);
-}
-
-body.light-mode .settings-card .card-header {
-  border-bottom-color: var(--light-border);
 }
 
 .settings-card .card-header h3 {
@@ -34,6 +26,7 @@ body.light-mode .settings-card .card-header {
   display: flex;
   align-items: center;
   gap: 8px;
+  color: var(--turquoise);
 }
 
 .settings-card .card-body {
@@ -47,6 +40,23 @@ body.light-mode .settings-card .card-header {
 .settings-card .form-group label {
   font-size: 1em;
   margin-bottom: 5px;
+  color: #E0E0E0;
+}
+
+.settings-card .form-group input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #E0E0E0;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.settings-card .form-group input:focus {
+  border-color: var(--turquoise);
+  box-shadow: 0 0 5px rgba(26, 188, 156, 0.5);
+  outline: none;
 }
 
 .info-text {
@@ -54,10 +64,11 @@ body.light-mode .settings-card .card-header {
   opacity: 0.8;
   margin: 10px 0;
   line-height: 1.5;
+  color: #d3d3d3;
 }
 
 .info-text code {
-  background-color: rgba(128, 128, 128, 0.2);
+  background: rgba(128, 128, 128, 0.2);
   padding: 2px 5px;
   border-radius: 3px;
 }
@@ -74,36 +85,45 @@ body.light-mode .settings-card .card-header {
   align-items: center;
   padding: 10px;
   border-radius: 6px;
-}
-
-body.dark-mode .setting-item {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-body.light-mode .setting-item {
-  background-color: rgba(0, 0, 0, 0.03);
+  background: rgba(255, 255, 255, 0.05);
+  transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .setting-item:hover {
-  background-color: var(--turquoise);
-  color: white;
+  background: linear-gradient(45deg, var(--turquoise), #00e0c4);
+  color: #1a1a2e;
+  transform: translateX(-3px);
 }
 
 .setting-info h4 {
   font-size: 1.1em;
   margin: 0 0 5px;
+  color: #E0E0E0;
 }
 
 .setting-info p {
   font-size: 0.9em;
   margin: 0;
   opacity: 0.8;
+  color: #d3d3d3;
 }
 
 /* Small Error Messages */
 .small-error {
   font-size: 0.9em;
   margin-top: 10px;
+  color: #dc3545;
+}
+
+/* Input Group */
+.input-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.input-group input {
+  flex: 1;
 }
 
 /* Responsive Adjustments */
