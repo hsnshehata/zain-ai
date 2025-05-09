@@ -26,7 +26,7 @@
   max-height: 85vh;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  overflow-x: hidden; /* منع الـ scrollbar العرضي */
+  overflow-x: hidden;
 }
 
 body.dark-mode .chat-modal-content {
@@ -89,10 +89,42 @@ body.light-mode .chat-close-btn {
   flex: 1;
   padding: 20px;
   overflow-y: auto;
-  overflow-x: hidden; /* منع الـ scrollbar العرضي */
+  overflow-x: hidden;
   background: var(--dark-background);
   color: var(--dark-text);
   position: relative;
+  /* إخفاء الـ scrollbar بشكل افتراضي */
+  scrollbar-width: none; /* لـ Firefox */
+  -ms-overflow-style: none; /* لـ Internet Explorer */
+}
+
+/* إخفاء الـ scrollbar بشكل افتراضي في Webkit (Chrome/Safari) */
+.chat-messages::-webkit-scrollbar {
+  width: 0;
+  background: transparent;
+}
+
+/* إظهار الـ scrollbar عند الـ hover أو الـ scroll */
+.chat-messages:hover::-webkit-scrollbar,
+.chat-messages:active::-webkit-scrollbar {
+  width: 8px; /* عرض الـ scrollbar */
+}
+
+/* تخصيص شكل الـ scrollbar */
+.chat-messages::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1); /* خلفية المسار */
+  border-radius: 10px;
+}
+
+.chat-messages::-webkit-scrollbar-thumb {
+  background: var(--turquoise); /* لون الـ thumb */
+  border-radius: 10px;
+  border: 2px solid transparent; /* حدود شفافة */
+  background-clip: padding-box; /* لون الـ thumb بس */
+}
+
+.chat-messages::-webkit-scrollbar-thumb:hover {
+  background: #00a89c; /* لون الـ thumb لما نعمل hover */
 }
 
 body.light-mode .chat-messages {
@@ -123,7 +155,7 @@ body.light-mode .chat-messages {
   text-align: right;
   border-top-right-radius: 0;
   position: relative;
-  padding-right: 40px; /* مساحة للأيقونة */
+  padding-right: 40px;
 }
 
 .user-message::before {
@@ -132,7 +164,7 @@ body.light-mode .chat-messages {
   font-weight: 900;
   font-size: 0.9em;
   position: absolute;
-  right: 10px; /* ضبط الموضع داخل الرسالة */
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
   color: #ffffff;
@@ -143,7 +175,7 @@ body.light-mode .chat-messages {
   background: rgba(128, 128, 128, 0.15);
   border-top-left-radius: 0;
   position: relative;
-  padding-left: 40px; /* مساحة للأيقونة */
+  padding-left: 40px;
 }
 
 body.dark-mode .bot-message {
@@ -160,7 +192,7 @@ body.light-mode .bot-message {
   font-weight: 900;
   font-size: 0.9em;
   position: absolute;
-  left: 10px; /* ضبط الموضع داخل الرسالة */
+  left: 10px;
   top: 50%;
   transform: translateY(-50%);
   color: #888;
@@ -307,7 +339,7 @@ body.light-mode .chat-input input {
   .user-message::before,
   .bot-message::before {
     font-size: 0.8em;
-    right: 5px; /* ضبط الموضع للشاشات الصغيرة */
+    right: 5px;
     left: 5px;
   }
 
