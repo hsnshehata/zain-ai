@@ -1,328 +1,619 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="لوحة تحكم زين بوت لإدارة البوتات الذكية والمحادثات.">
-  <meta name="keywords" content="Zain AI, لوحة تحكم, بوتات ذكية">
-  <meta name="theme-color" content="#00C4B4">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png">
-  <meta name="msapplication-TileImage" content="/icons/icon-150x150.png">
-  <title>لوحة التحكم - زين بوت</title>
-  <link rel="stylesheet" href="/css/common.css">
-  <link rel="stylesheet" href="/css/dashboard.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <!-- Add Chartist CSS and JS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chartist@0.11.4/dist/chartist.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/chartist@0.11.4/dist/chartist.min.js"></script>
-  <link rel="manifest" href="/manifest.json">
-  <style>
-    .welcome-bar {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      background-color: var(--dark-card);
-      padding: 10px 25px;
-      border-bottom: 1px solid var(--dark-border);
-      font-size: 1.1em;
-      color: var(--dark-text);
-      text-align: right;
-      flex-wrap: wrap;
+document.addEventListener("DOMContentLoaded", async () => {
+  // Global variable to store available bots
+  let availableBots = [];
+
+  // Check for token in URL (from /verify/:token redirect)
+  const urlParams = new URLSearchParams(window.location.search);
+  const tokenFromUrl = urlParams.get('token');
+  if (tokenFromUrl) {
+    try {
+      // Decode the token to extract userId, role, and username
+      const decoded = jwtDecode(tokenFromUrl);
+      localStorage.setItem('token', tokenFromUrl);
+      localStorage.setItem('userId', decoded.userId);
+      localStorage.setItem('role', decoded.role);
+      localStorage.setItem('username', decoded.username);
+      console.log('✅ Token from URL stored in localStorage:', decoded);
+      // Clear the URL params to avoid reusing the token
+      window.history.replaceState({}, document.title, '/dashboard_new.html');
+    } catch (err) {
+      console.error('❌ Error decoding token from URL:', err.message);
+      localStorage.clear();
+      window.location.href = "/login.html";
+      return;
     }
-    .light-mode .welcome-bar {
-      background-color: var(--light-card);
-      border-bottom: 1px solid var(--light-border);
-      color: var(--light-text);
+  }
+
+  const role = localStorage.getItem("role");
+  const token = localStorage.getItem("token");
+  const userId = localStorage.getItem("userId");
+
+  // Redirect to login if no token or userId
+  if (!token || !userId) {
+    console.warn('⚠️ No token or userId found in localStorage, redirecting to login');
+    localStorage.clear();
+    if (window.location.pathname !== "/login.html") {
+      window.location.href = "/login.html";
     }
-    .welcome-bar i {
-      color: var(--turquoise);
+    return;
+  }
+
+  // Load username
+  async function loadUsername() {
+    const welcomeUsername = document.getElementById("welcome-username");
+    try {
+      const user = await handleApiRequest('/api/users/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      }, welcomeUsername, 'فشل في جلب بيانات المستخدم');
+      welcomeUsername.textContent = user.username || 'غير معروف';
+    } catch (err) {
+      welcomeUsername.textContent = 'خطأ في تحميل الاسم';
+      console.error('Error loading username:', err);
     }
-    .welcome-bar span {
-      font-weight: 600;
+  }
+
+  // Load bot info
+  async function loadBotInfo() {
+    const subscriptionTypeEl = document.getElementById("subscription-type");
+    const subscriptionEndEl = document.getElementById("subscription-end");
+    const remainingDaysEl = document.getElementById("remaining-days");
+
+    const selectedBotId = localStorage.getItem("selectedBotId");
+    console.log('Selected Bot ID in loadBotInfo:', selectedBotId);
+
+    if (!selectedBotId) {
+      console.log('No bot selected, displaying default message');
+      subscriptionTypeEl.textContent = 'يرجى اختيار بوت';
+      subscriptionEndEl.textContent = 'يرجى اختيار بوت';
+      remainingDaysEl.textContent = 'يرجى اختيار بوت';
+      return;
     }
-    .welcome-bar .info-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .welcome-bar .no-bots {
-      color: var(--error-color);
-      font-weight: bold;
-    }
-    @media (max-width: 768px) {
-      .welcome-bar {
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 10px;
+
+    try {
+      // Find the bot in availableBots
+      const bot = availableBots.find(bot => String(bot._id) === String(selectedBotId));
+      console.log('Available bots in loadBotInfo:', availableBots);
+      console.log('Found bot in loadBotInfo:', bot);
+
+      if (!bot) {
+        console.log('Bot not found in availableBots, clearing selectedBotId');
+        localStorage.removeItem("selectedBotId");
+        subscriptionTypeEl.textContent = 'يرجى اختيار بوت';
+        subscriptionEndEl.textContent = 'يرجى اختيار بوت';
+        remainingDaysEl.textContent = 'يرجى اختيار بوت';
+        return;
       }
-    }
 
-    /* Assistant Chat Modal Styles */
-    #assistantChatModal {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 1000;
-      justify-content: center;
-      align-items: center;
-    }
-    .assistant-chat-container {
-      background: var(--dark-card);
-      width: 90%;
-      max-width: 500px;
-      border-radius: 10px;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      max-height: 80vh;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-    .light-mode .assistant-chat-container {
-      background: var(--light-card);
-    }
-    .assistant-chat-header {
-      background: var(--turquoise);
-      color: white;
-      padding: 15px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .assistant-chat-header h3 {
-      margin: 0;
-      font-size: 1.2em;
-    }
-    #closeAssistantChatBtn {
-      background: none;
-      border: none;
-      color: white;
-      font-size: 1.2em;
-      cursor: pointer;
-    }
-    #assistantChatMessages {
-      flex: 1;
-      padding: 15px;
-      overflow-y: auto;
-      background: var(--dark-background);
-      color: var(--dark-text);
-    }
-    .light-mode #assistantChatMessages {
-      background: var(--light-background);
-      color: var(--light-text);
-    }
-    .message {
-      margin-bottom: 15px;
-      padding: 10px;
-      border-radius: 8px;
-      max-width: 80%;
-      word-wrap: break-word;
-    }
-    .user-message {
-      background: var(--turquoise);
-      color: white;
-      margin-left: auto;
-      text-align: right;
-    }
-    .bot-message {
-      background: var(--dark-border);
-      color: var(--dark-text);
-      margin-right: auto;
-    }
-    .light-mode .bot-message {
-      background: var(--light-border);
-      color: var(--light-text);
-    }
-    .message small {
-      display: block;
-      font-size: 0.8em;
-      margin-top: 5px;
-      opacity: 0.7;
-    }
-    .assistant-chat-input {
-      display: flex;
-      border-top: 1px solid var(--dark-border);
-      padding: 10px;
-      background: var(--dark-card);
-    }
-    .light-mode .assistant-chat-input {
-      border-top: 1px solid var(--light-border);
-      background: var(--light-card);
-    }
-    #assistantMessageInput {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid var(--dark-border);
-      border-radius: 5px;
-      background: var(--dark-background);
-      color: var(--dark-text);
-      margin-right: 10px;
-    }
-    .light-mode #assistantMessageInput {
-      border: 1px solid var(--light-border);
-      background: var(--light-background);
-      color: var(--light-text);
-    }
-    #assistantSendMessageBtn {
-      background: var(--turquoise);
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-    #assistantSendMessageBtn:hover {
-      background: #00a89c;
-    }
-  </style>
-</head>
-<body class="dark-mode dashboard-page">
-  <div class="dashboard-layout">
-    <aside class="sidebar">
-      <div class="sidebar-header">
-        <div class="logo">زين بوت</div>
-      </div>
-      <nav class="sidebar-nav">
-        <button class="nav-item" data-page="bots" aria-label="إدارة البوتات"><i class="fas fa-robot"></i> <span>إدارة البوتات</span></button>
-        <button class="nav-item" data-page="rules" aria-label="إدارة القواعد"><i class="fas fa-book"></i> <span>القواعد</span></button>
-        <button class="nav-item" data-page="chat-page" aria-label="إدارة صفحات الدردشة"><i class="fas fa-comment-alt"></i> <span>صفحات الدردشة</span></button>
-        <button class="nav-item" data-page="analytics" aria-label="الإحصائيات"><i class="fas fa-chart-line"></i> <span>الإحصائيات</span></button>
-        <button class="nav-item" data-page="messages" aria-label="إدارة الرسائل"><i class="fas fa-envelope"></i> <span>الرسائل</span></button>
-        <button class="nav-item" data-page="feedback" aria-label="إدارة التقييمات"><i class="fas fa-star"></i> <span>التقييمات</span></button>
-        <button class="nav-item" data-page="facebook" aria-label="إعدادات فيسبوك"><i class="fab fa-facebook-square"></i> <span>فيسبوك</span></button>
-      </nav>
-      <div class="sidebar-footer">
-        <button class="nav-item logout-btn" aria-label="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i> <span>تسجيل الخروج</span></button>
-      </div>
-    </aside>
+      // Display subscription type
+      const subscriptionTypes = {
+        free: 'مجاني',
+        monthly: 'شهري',
+        yearly: 'سنوي'
+      };
+      subscriptionTypeEl.textContent = subscriptionTypes[bot.subscriptionType] || 'غير معروف';
 
-    <main class="main-content">
-      <header class="main-header">
-        <div class="header-left">
-          <button id="sidebar-toggle" class="sidebar-toggle-btn" aria-label="تبديل الشريط الجانبي"><i class="fas fa-bars"></i></button>
-          <div class="bot-selector-container">
-            <div class="form-group bot-selector">
-              <label for="botSelectDashboard"><i class="fas fa-robot"></i> اختر بوت:</label>
-              <select id="botSelectDashboard"></select>
-            </div>
-          </div>
-        </div>
-        <div class="header-right">
-          <button id="notifications-btn" class="header-icon-btn" aria-label="الإشعارات">
-            <i class="fas fa-bell"></i>
-            <span id="notifications-count" class="notifications-count">0</span>
-          </button>
-          <button id="assistantButton" class="header-icon-btn" aria-label="مساعد الذكاء الاصطناعي"><i class="fas fa-headset"></i></button>
-          <button id="settings-btn" class="header-icon-btn" aria-label="الإعدادات"><i class="fas fa-cog"></i></button>
-          <button id="theme-toggle" class="theme-toggle-btn" aria-label="تبديل الوضع الداكن/الفاتح">
-            <i class="fas fa-sun"></i>
-            <i class="fas fa-moon"></i>
-          </button>
-        </div>
-      </header>
-
-      <div class="welcome-bar">
-        <div class="info-item">
-          <i class="fas fa-user"></i>
-          <span>مرحباً: <span id="welcome-username">جاري التحميل...</span></span>
-        </div>
-        <div class="info-item">
-          <i class="fas fa-tags"></i>
-          <span>نوع الاشتراك: <span id="subscription-type">جاري التحميل...</span></span>
-        </div>
-        <div class="info-item">
-          <i class="fas fa-calendar-alt"></i>
-          <span>انتهاء الاشتراك: <span id="subscription-end">جاري التحميل...</span></span>
-        </div>
-        <div class="info-item">
-          <i class="fas fa-clock"></i>
-          <span>الأيام المتبقية: <span id="remaining-days">جاري التحميل...</span></span>
-        </div>
-      </div>
-
-      <div id="content" class="page-content" aria-live="polite"></div>
-
-      <div id="notifications-modal" class="notifications-modal" style="display: none;">
-        <div class="notifications-modal-content">
-          <div class="notifications-header">
-            <h3><i class="fas fa-bell"></i> الإشعارات</h3>
-            <button id="close-notifications-btn" aria-label="إغلاق الإشعارات"><i class="fas fa-times"></i></button>
-          </div>
-          <div id="notifications-list" class="notifications-list"></div>
-        </div>
-      </div>
-
-      <!-- Assistant Chat Modal -->
-      <div id="assistantChatModal">
-        <div class="assistant-chat-container">
-          <div class="assistant-chat-header">
-            <h3>المساعد الذكي</h3>
-            <button id="closeAssistantChatBtn"><i class="fas fa-times"></i></button>
-          </div>
-          <div id="assistantChatMessages">
-            <div class="message bot-message">
-              <p>مرحبًا! أنا المساعد الذكي، كيف يمكنني مساعدتك اليوم؟</p>
-              <small id="welcomeTimestamp"></small>
-            </div>
-          </div>
-          <div class="assistant-chat-input">
-            <input type="text" id="assistantMessageInput" placeholder="اكتب رسالتك هنا..." />
-            <button id="assistantSendMessageBtn"><i class="fas fa-paper-plane"></i></button>
-          </div>
-        </div>
-      </div>
-
-      <footer class="dashboard-footer">
-        <p>© 2025 Zain AI. جميع الحقوق محفوظة.</p>
-      </footer>
-    </main>
-
-    <nav class="mobile-nav-bottom collapsed">
-      <button class="nav-item-mobile" data-page="rules" aria-label="إدارة القواعد"><i class="fas fa-book"></i></button>
-      <button class="nav-item-mobile" data-page="chat-page" aria-label="إدارة صفحات الدردشة"><i class="fas fa-comment-alt"></i></button>
-      <button class="nav-item-mobile" data-page="analytics" aria-label="الإحصائيات"><i class="fas fa-chart-line"></i></button>
-      <button class="nav-item-mobile" data-page="messages" aria-label="إدارة الرسائل"><i class="fas fa-envelope"></i></button>
-      <button class="nav-item-mobile" data-page="feedback" aria-label="إدارة التقييمات"><i class="fas fa-star"></i></button>
-      <button class="nav-item-mobile" data-page="facebook" aria-label="إعدادات فيسبوك"><i class="fab fa-facebook-square"></i></button>
-      <button class="nav-item-mobile" data-page="bots" aria-label="إدارة البوتات"><i class="fas fa-robot"></i></button>
-      <button class="nav-item-mobile logout-btn" aria-label="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i></button>
-      <button id="mobile-nav-toggle" class="nav-toggle-btn" aria-label="تبديل القائمة"><i class="fas fa-chevron-up"></i></button>
-    </nav>
-  </div>
-
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js')
-          .then(registration => {
-            console.log('Service Worker Registered');
-          })
-          .catch(err => {
-            console.error('Service Worker Registration Failed:', err);
-          });
-      });
+      // Display subscription end date or "معطل" if bot is inactive
+      if (!bot.isActive) {
+        subscriptionEndEl.textContent = 'معطل';
+        remainingDaysEl.textContent = 'غير متاح';
+      } else if (bot.autoStopDate) {
+        const endDate = new Date(bot.autoStopDate);
+        subscriptionEndEl.textContent = endDate.toLocaleDateString('ar-EG');
+        const remainingDays = Math.ceil((endDate - new Date()) / (1000 * 60 * 60 * 24));
+        remainingDaysEl.textContent = remainingDays > 0 ? `${remainingDays} يوم` : 'منتهي';
+      } else {
+        subscriptionEndEl.textContent = 'غير محدد';
+        remainingDaysEl.textContent = 'غير محدد';
+      }
+    } catch (err) {
+      console.error('Error loading bot info:', err);
+      subscriptionTypeEl.textContent = 'يرجى اختيار بوت';
+      subscriptionEndEl.textContent = 'يرجى اختيار بوت';
+      remainingDaysEl.textContent = 'يرجى اختيار بوت';
+      localStorage.removeItem("selectedBotId"); // Clear invalid bot ID
     }
+  }
 
-    const currentTheme = localStorage.getItem("theme") || "dark";
-    document.body.classList.add(currentTheme === "light" ? "light-mode" : "dark-mode");
-    if (currentTheme === "light") {
+  // Load welcome bar (username and bot info)
+  async function loadWelcomeBar() {
+    await loadUsername();
+    await loadBotInfo();
+  }
+
+  const content = document.getElementById("content");
+  const botSelect = document.getElementById("botSelectDashboard");
+  const navItems = document.querySelectorAll(".sidebar-nav .nav-item");
+  const mobileNavItems = document.querySelectorAll(".mobile-nav-bottom .nav-item-mobile");
+  const logoutBtn = document.querySelector(".sidebar-footer .logout-btn");
+  const mobileLogoutBtn = document.querySelector(".mobile-nav-bottom .logout-btn");
+  const themeToggleButton = document.getElementById("theme-toggle");
+  const sidebar = document.querySelector(".sidebar");
+  const sidebarToggleBtn = document.getElementById("sidebar-toggle");
+  const mobileNav = document.querySelector(".mobile-nav-bottom");
+  const mobileNavToggle = document.getElementById("mobile-nav-toggle");
+  const mainContent = document.querySelector(".main-content");
+  const notificationsBtn = document.getElementById("notifications-btn");
+  const notificationsModal = document.getElementById("notifications-modal");
+  const notificationsList = document.getElementById("notifications-list");
+  const notificationsCount = document.getElementById("notifications-count");
+  const closeNotificationsBtn = document.getElementById("close-notifications-btn");
+  const settingsBtn = document.getElementById("settings-btn");
+
+  // Map of pages to their respective CSS files
+  const pageCssMap = {
+    bots: "/css/bots.css",
+    rules: "/css/rules.css",
+    "chat-page": "/css/chatPage.css",
+    analytics: "/css/analytics.css",
+    messages: "/css/messages.css",
+    feedback: "/css/feedback.css",
+    facebook: "/css/facebook.css",
+    settings: "/css/settings.css",
+  };
+
+  // Load CSS dynamically
+  function loadPageCss(page) {
+    document.querySelectorAll('link[data-page-css]').forEach(link => link.remove());
+    if (pageCssMap[page]) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = pageCssMap[page];
+      link.dataset.pageCss = page;
+      document.head.appendChild(link);
+    }
+  }
+
+  // Load assistantBot.css when assistant modal is shown
+  function loadAssistantCss() {
+    if (!document.querySelector('link[href="/css/assistantBot.css"]')) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "/css/assistantBot.css";
+      document.head.appendChild(link);
+    }
+  }
+
+  // Load notifications.css
+  function loadNotificationsCss() {
+    if (!document.querySelector('link[href="/css/notifications.css"]')) {
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = "/css/notifications.css";
+      document.head.appendChild(link);
+    }
+  }
+
+  // Theme Handling
+  const applyTheme = (theme) => {
+    if (theme === "light") {
       document.body.classList.remove("dark-mode");
+      document.body.classList.add("light-mode");
+    } else {
+      document.body.classList.remove("light-mode");
+      document.body.classList.add("dark-mode");
     }
-  </script>
-  <script defer src="/js/utils.js"></script>
-  <script defer src="/js/bots.js"></script>
-  <script defer src="/js/rules.js"></script>
-  <script defer src="/js/chatPage.js"></script>
-  <script defer src="/js/analytics.js"></script>
-  <script defer src="/js/messages.js"></script>
-  <script defer src="/js/feedback.js"></script>
-  <script defer src="/js/facebook.js"></script>
-  <script defer src="/js/settings.js"></script>
-  <script defer src="/js/assistantBot.js"></script>
-  <script defer src="/js/dashboard_new.js"></script>
-</body>
-</html>
+    localStorage.setItem("theme", theme);
+  };
+
+  const currentTheme = localStorage.getItem("theme") || "dark";
+  applyTheme(currentTheme);
+
+  themeToggleButton.addEventListener("click", () => {
+    const newTheme = document.body.classList.contains("dark-mode") ? "light" : "dark";
+    applyTheme(newTheme);
+  });
+
+  // Sidebar Toggle for Desktop
+  sidebarToggleBtn.addEventListener("click", () => {
+    sidebar.classList.toggle("collapsed");
+    mainContent.classList.toggle("collapsed");
+  });
+
+  // Mobile Navigation Toggle
+  if (mobileNavToggle) {
+    mobileNavToggle.addEventListener("click", () => {
+      mobileNav.classList.toggle("collapsed");
+    });
+  }
+
+  // Bot Selector
+  async function populateBotSelect() {
+    try {
+      const bots = await handleApiRequest("/api/bots", {
+        headers: { Authorization: `Bearer ${token}` },
+      }, content, "فشل في جلب البوتات");
+
+      console.log('Fetched bots:', bots);
+
+      botSelect.innerHTML = "<option value=\"\">اختر بوت</option>";
+      let userBots = bots;
+      if (role !== "superadmin") {
+        userBots = bots.filter(bot => {
+          const botUserId = typeof bot.userId === 'object' && bot.userId._id ? bot.userId._id : bot.userId;
+          return botUserId === userId;
+        });
+      }
+
+      if (userBots.length === 0) {
+        content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-robot"></i> لا يوجد بوتات متاحة</h2><p>يرجى التواصل مع المسؤول لإضافة بوت لحسابك أو إنشاء بوت جديد.</p></div>`;
+        botSelect.disabled = true;
+        localStorage.removeItem("selectedBotId"); // Clear invalid bot ID
+        availableBots = []; // Clear available bots
+        await loadWelcomeBar(); // Update welcome bar with no bots
+        return;
+      }
+
+      // Store available bots
+      availableBots = userBots;
+      userBots.forEach((bot) => {
+        botSelect.innerHTML += `<option value="${bot._id}">${bot.name}</option>`;
+      });
+
+      const selectedBotId = localStorage.getItem("selectedBotId");
+      console.log('Current selectedBotId from localStorage:', selectedBotId);
+
+      if (selectedBotId && userBots.some(bot => String(bot._id) === String(selectedBotId))) {
+        botSelect.value = selectedBotId;
+        console.log(`Selected bot ${selectedBotId} found in bots list`);
+      } else {
+        console.log('Selected bot not found or invalid, clearing selectedBotId');
+        localStorage.removeItem("selectedBotId");
+        if (userBots.length > 0) {
+          botSelect.value = userBots[0]._id;
+          localStorage.setItem("selectedBotId", userBots[0]._id);
+          console.log(`Set new selectedBotId to first bot: ${userBots[0]._id}`);
+        }
+      }
+
+      await loadInitialPage();
+      await loadWelcomeBar(); // Update welcome bar after bots are loaded
+    } catch (err) {
+      console.error('Error in populateBotSelect:', err);
+      content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>خطأ في جلب البوتات: ${err.message}. حاول تحديث الصفحة.</p></div>`;
+      botSelect.disabled = true;
+      localStorage.removeItem("selectedBotId"); // Clear invalid bot ID
+      availableBots = []; // Clear available bots
+      await loadWelcomeBar(); // Update welcome bar with error
+    }
+  }
+
+  botSelect.addEventListener("change", async () => {
+    const selectedBotId = botSelect.value;
+    console.log('Bot selection changed to:', selectedBotId);
+    if (selectedBotId) {
+      localStorage.setItem("selectedBotId", selectedBotId);
+      await loadInitialPage();
+      await loadWelcomeBar(); // Update welcome bar when bot changes
+    } else {
+      localStorage.removeItem("selectedBotId");
+      content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض المحتوى.</p></div>`;
+      await loadWelcomeBar(); // Update welcome bar with no bot selected
+    }
+  });
+
+  // Navigation Helpers
+  const setActiveButton = (page) => {
+    navItems.forEach(item => {
+      item.classList.remove("active");
+      if (item.dataset.page === page) {
+        item.classList.add("active");
+      }
+    });
+    mobileNavItems.forEach(item => {
+      item.classList.remove("active");
+      if (item.dataset.page === page) {
+        item.classList.add("active");
+      }
+    });
+  };
+
+  const loadPageContent = async (page) => {
+    console.log(`Attempting to load page: ${page}`);
+    content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`;
+    const selectedBotId = localStorage.getItem("selectedBotId");
+
+    loadPageCss(page);
+
+    if (!selectedBotId && !(role === "superadmin" && page === "bots")) {
+      content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض هذا القسم.</p></div>`;
+      setActiveButton(page);
+      window.location.hash = page;
+      return;
+    }
+
+    setActiveButton(page);
+    window.location.hash = page;
+
+    try {
+      switch (page) {
+        case "bots":
+          if (role === "superadmin") {
+            if (typeof window.loadBotsPage === "function") {
+              console.log(`Loading bots page for superadmin`);
+              await window.loadBotsPage();
+            } else {
+              throw new Error("loadBotsPage function not found. Ensure bots.js is loaded and the function is defined.");
+            }
+          } else {
+            throw new Error("غير مصرح لك بالوصول لهذه الصفحة.");
+          }
+          break;
+        case "rules":
+          if (typeof window.loadRulesPage === "function") {
+            console.log(`Loading rules page`);
+            await window.loadRulesPage();
+          } else {
+            throw new Error("loadRulesPage function not found. Ensure rules.js is loaded and the function is defined.");
+          }
+          break;
+        case "chat-page":
+          if (typeof window.loadChatPage === "function") {
+            console.log(`Loading chat-page`);
+            await window.loadChatPage();
+          } else {
+            throw new Error("loadChatPage function not found. Ensure chatPage.js is loaded and the function is defined.");
+          }
+          break;
+        case "analytics":
+          if (typeof window.loadAnalyticsPage === "function") {
+            console.log(`Loading analytics page`);
+            await window.loadAnalyticsPage();
+          } else {
+            throw new Error("loadAnalyticsPage function not found. Ensure analytics.js is loaded and the function is defined.");
+          }
+          break;
+        case "messages":
+          if (typeof window.loadMessagesPage === "function") {
+            console.log(`Loading messages page`);
+            await window.loadMessagesPage();
+          } else {
+            throw new Error("loadMessagesPage function not found. Ensure messages.js is loaded and the function is defined.");
+          }
+          break;
+        case "feedback":
+          if (typeof window.loadFeedbackPage === "function") {
+            console.log(`Loading feedback page`);
+            await window.loadFeedbackPage();
+          } else {
+            throw new Error("loadFeedbackPage function not found. Ensure feedback.js is loaded and the function is defined.");
+          }
+          break;
+        case "facebook":
+          if (typeof window.loadFacebookPage === "function") {
+            console.log(`Loading facebook page`);
+            await window.loadFacebookPage();
+          } else {
+            throw new Error("loadFacebookPage function not found. Ensure facebook.js is loaded and the function is defined.");
+          }
+          break;
+        default:
+          throw new Error("الصفحة المطلوبة غير متوفرة.");
+      }
+    } catch (error) {
+      console.error(`Error loading page ${page}:`, error.message);
+      content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>${error.message || "حدث خطأ أثناء تحميل محتوى الصفحة."}</p></div>`;
+    }
+  };
+
+  // Initial Page Load
+  const loadInitialPage = async () => {
+    let pageToLoad = role === "superadmin" ? "bots" : "rules";
+    window.location.hash = pageToLoad;
+    await loadPageContent(pageToLoad);
+  };
+
+  window.addEventListener('hashchange', async () => {
+    const hash = window.location.hash.substring(1);
+    if (hash) {
+      await loadPageContent(hash);
+    }
+  });
+
+  // Add event listeners for nav items
+  navItems.forEach(item => {
+    if (item.dataset.page === "bots" && role !== "superadmin") {
+      item.style.display = "none";
+    }
+    item.addEventListener("click", async (e) => {
+      const page = item.dataset.page;
+      console.log(`Nav item clicked: ${page}`);
+      await loadPageContent(page);
+    });
+  });
+
+  mobileNavItems.forEach(item => {
+    if (item.dataset.page === "bots" && role !== "superadmin") {
+      item.style.display = "none";
+    }
+    item.addEventListener("click", async (e) => {
+      const page = item.dataset.page;
+      console.log(`Mobile nav item clicked: ${page}`);
+      await loadPageContent(page);
+    });
+  });
+
+  // Settings Button Event
+  settingsBtn.addEventListener("click", async () => {
+    console.log("Settings button clicked, attempting to load settings page");
+    content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`;
+    loadPageCss("settings");
+    try {
+      if (typeof window.loadSettingsPage === "function") {
+        await window.loadSettingsPage();
+        console.log("loadSettingsPage executed successfully");
+      } else {
+        console.error("loadSettingsPage function not found");
+        throw new Error("loadSettingsPage function not found. Ensure settings.js is loaded and the function is defined.");
+      }
+    } catch (error) {
+      console.error("Error loading settings page:", error.message);
+      content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>${error.message || "حدث خطأ أثناء تحميل إعدادات المستخدم."}</p></div>`;
+    }
+  });
+
+  // Logout
+  async function logoutUser() {
+    const username = localStorage.getItem("username");
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    localStorage.removeItem("userId");
+    localStorage.removeItem("username");
+    localStorage.removeItem("selectedBotId");
+    localStorage.removeItem("theme");
+    console.log("Logout initiated, localStorage cleared");
+    window.location.href = "/login.html";
+
+    try {
+      await handleApiRequest("/api/auth/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username }),
+      }, null, "خطأ في إرسال إشعار تسجيل الخروج");
+      console.log("Server logout notification sent.");
+    } catch (err) {
+      console.error("Error sending logout notification to server:", err);
+    }
+  }
+
+  logoutBtn.addEventListener("click", logoutUser);
+  if (mobileLogoutBtn) {
+    mobileLogoutBtn.addEventListener("click", logoutUser);
+  }
+
+  // Notifications Handling
+  let showAllNotifications = false;
+
+  async function fetchNotifications() {
+    try {
+      const response = await fetch('/api/notifications', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) {
+        throw new Error('فشل في جلب الإشعارات: ' + response.statusText);
+      }
+      const notifications = await response.json();
+      const unreadCount = notifications.filter(n => !n.isRead).length;
+      notificationsCount.textContent = unreadCount;
+      if (unreadCount > 0) {
+        notificationsBtn.classList.add('has-unread');
+      } else {
+        notificationsBtn.classList.remove('has-unread');
+      }
+
+      notificationsList.innerHTML = '';
+      const displayNotifications = showAllNotifications ? notifications : notifications.slice(0, 5);
+
+      if (displayNotifications.length === 0) {
+        notificationsList.innerHTML = '<p class="no-notifications">لا توجد إشعارات</p>';
+      } else {
+        displayNotifications.forEach(notification => {
+          const notificationItem = document.createElement('div');
+          notificationItem.classList.add('notification-item');
+          if (!notification.isRead) {
+            notificationItem.classList.add('unread');
+          }
+          notificationItem.innerHTML = `
+            <p class="notification-title">${notification.title}</p>
+            <small>${new Date(notification.createdAt).toLocaleString('ar-EG')}</small>
+          `;
+          notificationItem.addEventListener('click', () => {
+            showNotificationModal(notification);
+            if (!notification.isRead) {
+              markNotificationAsRead(notification._id);
+            }
+          });
+          notificationsList.appendChild(notificationItem);
+        });
+
+        if (!showAllNotifications && notifications.length > 5) {
+          const moreButton = document.createElement('button');
+          moreButton.classList.add('btn', 'btn-secondary', 'more-notifications');
+          moreButton.textContent = 'عرض المزيد';
+          moreButton.addEventListener('click', () => {
+            showAllNotifications = true;
+            fetchNotifications();
+          });
+          notificationsList.appendChild(moreButton);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      notificationsList.innerHTML = '<p class="no-notifications">فشل في جلب الإشعارات</p>';
+    }
+  }
+
+  async function markNotificationAsRead(notificationId) {
+    try {
+      await fetch(`/api/notifications/${notificationId}/read`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      await fetchNotifications();
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  }
+
+  function showNotificationModal(notification) {
+    const modal = document.createElement("div");
+    modal.classList.add("modal");
+    modal.innerHTML = `
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>${notification.title}</h3>
+          <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="notification-content">
+          <p>${notification.message}</p>
+          <small>${new Date(notification.createdAt).toLocaleString('ar-EG')}</small>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-secondary modal-close-btn">إغلاق</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    modal.querySelectorAll(".modal-close-btn").forEach(btn => {
+      btn.addEventListener("click", () => modal.remove());
+    });
+  }
+
+  notificationsBtn.addEventListener("click", () => {
+    loadNotificationsCss();
+    notificationsModal.style.display = 'block';
+    showAllNotifications = false;
+    fetchNotifications();
+  });
+
+  closeNotificationsBtn.addEventListener("click", () => {
+    notificationsModal.style.display = 'none';
+  });
+
+  // Assistant Bot
+  const assistantButton = document.getElementById("assistantButton");
+  if (assistantButton) {
+    assistantButton.addEventListener("click", loadAssistantCss);
+    console.log("Assistant button found.");
+  } else {
+    console.warn("Assistant button element not found.");
+  }
+
+  // Initialize
+  await populateBotSelect(); // Load bots first
+  await fetchNotifications();
+});
+
+// Simple JWT decode function
+function jwtDecode(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    throw new Error('Invalid token');
+  }
+}
