@@ -12,6 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('token');
     const selectedBotId = localStorage.getItem('selectedBotId');
 
+    console.log('loadAnalyticsPage: selectedBotId:', selectedBotId);
+    console.log('loadAnalyticsPage: token:', token);
+
     if (!selectedBotId) {
       content.innerHTML = `
         <h2>التحليلات</h2>
@@ -46,48 +49,53 @@ document.addEventListener('DOMContentLoaded', () => {
             <h3>إحصائيات الرسائل</h3>
             <div id="messagesByChannel">
               <h4>توزيع الرسائل حسب القناة</h4>
-              <div class="section-spinner">
+              <div class="section-spinner" id="messagesByChannelSpinner">
                 <div class="loader"></div>
               </div>
               <div id="messagesByChannelChart" class="ct-chart" style="display: none;"></div>
               <div id="messagesByChannelStats" class="stats-text" style="display: none;"></div>
+              <div id="messagesByChannelError" class="error-message" style="display: none;"></div>
             </div>
             <div id="dailyMessages">
               <h4>معدل الرسائل يوميًا</h4>
-              <div class="section-spinner">
+              <div class="section-spinner" id="dailyMessagesSpinner">
                 <div class="loader"></div>
               </div>
               <div id="dailyMessagesChart" class="ct-chart" style="display: none;"></div>
               <div id="dailyMessagesStats" class="stats-text" style="display: none;"></div>
+              <div id="dailyMessagesError" class="error-message" style="display: none;"></div>
             </div>
           </div>
           <div id="feedbackAnalytics">
             <h3>إحصائيات التقييمات</h3>
             <div id="feedbackRatio">
               <h4>نسبة التقييمات الإيجابية مقابل السلبية</h4>
-              <div class="section-spinner">
+              <div class="section-spinner" id="feedbackRatioSpinner">
                 <div class="loader"></div>
               </div>
               <div id="feedbackRatioChart" class="ct-chart" style="display: none;"></div>
               <div id="feedbackRatioStats" class="stats-text" style="display: none;"></div>
+              <div id="feedbackRatioError" class="error-message" style="display: none;"></div>
             </div>
             <div id="topNegativeReplies">
               <h4>أكثر الردود السلبية</h4>
-              <div class="section-spinner">
+              <div class="section-spinner" id="topNegativeRepliesSpinner">
                 <div class="loader"></div>
               </div>
               <ul id="negativeRepliesList" style="display: none;"></ul>
+              <div id="topNegativeRepliesError" class="error-message" style="display: none;"></div>
             </div>
           </div>
           <div id="rulesAnalytics">
             <h3>إحصائيات القواعد</h3>
             <div id="rulesType">
               <h4>توزيع أنواع القواعد</h4>
-              <div class="section-spinner">
+              <div class="section-spinner" id="rulesTypeSpinner">
                 <div class="loader"></div>
               </div>
               <div id="rulesTypeChart" class="ct-chart" style="display: none;"></div>
               <div id="rulesTypeStats" class="stats-text" style="display: none;"></div>
+              <div id="rulesTypeError" class="error-message" style="display: none;"></div>
             </div>
           </div>
         </div>
@@ -106,17 +114,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // إعادة جلب البيانات عند تطبيق الفلتر
     applyFilterBtn.addEventListener('click', async () => {
+      console.log('Applying filter with startDate:', startDateFilter.value, 'and endDate:', endDateFilter.value);
       await loadMessagesAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
       await loadFeedbackAnalytics(selectedBotId, token, startDateFilter.value, endDateFilter.value);
       await loadRulesAnalytics(selectedBotId, token);
     });
 
     async function loadMessagesAnalytics(botId, token, startDate, endDate) {
+      console.log('Loading messages analytics for botId:', botId);
       try {
         // 1. عدد الرسائل حسب القناة
-        const messagesByChannelSpinner = document.querySelector('#messagesByChannel .section-spinner');
+        const messagesByChannelSpinner = document.getElementById('messagesByChannelSpinner');
         const messagesByChannelChart = document.getElementById('messagesByChannelChart');
         const messagesByChannelStats = document.getElementById('messagesByChannelStats');
+        const messagesByChannelError = document.getElementById('messagesByChannelError');
 
         const channels = ['facebook', 'web', 'whatsapp'];
         const messagesByChannelData = { facebook: 0, web: 0, whatsapp: 0 };
@@ -127,9 +138,10 @@ document.addEventListener('DOMContentLoaded', () => {
             ...(startDate && { startDate }),
             ...(endDate && { endDate }),
           });
+          console.log(`Fetching messages for channel ${channel} with query: ${query.toString()}`);
           const conversations = await handleApiRequest(`/api/messages/${botId}?${query}`, {
             headers: { Authorization: `Bearer ${token}` },
-          }, analyticsContent, `فشل في جلب رسائل ${channel}`);
+          }, messagesByChannelError, `فشل في جلب رسائل ${channel}`);
 
           let messageCount = 0;
           conversations.forEach(conv => {
@@ -137,6 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             messageCount += conv.messages.filter(msg => msg.role === 'assistant').length;
           });
           messagesByChannelData[channel] = messageCount;
+          console.log(`Messages for ${channel}: ${messageCount}`);
         }
 
         const totalMessages = messagesByChannelData.facebook + messagesByChannelData.web + messagesByChannelData.whatsapp;
@@ -169,22 +182,26 @@ document.addEventListener('DOMContentLoaded', () => {
         messagesByChannelSpinner.style.display = 'none';
         messagesByChannelChart.style.display = 'block';
         messagesByChannelStats.style.display = 'block';
+        messagesByChannelError.style.display = 'none';
 
         // 2. معدل الرسائل يوميًا
-        const dailyMessagesSpinner = document.querySelector('#dailyMessages .section-spinner');
+        const dailyMessagesSpinner = document.getElementById('dailyMessagesSpinner');
         const dailyMessagesChart = document.getElementById('dailyMessagesChart');
         const dailyMessagesStats = document.getElementById('dailyMessagesStats');
+        const dailyMessagesError = document.getElementById('dailyMessagesError');
 
         const dailyQuery = new URLSearchParams({
           ...(startDate && { startDate }),
           ...(endDate && { endDate }),
         });
+        console.log(`Fetching daily messages with query: ${dailyQuery.toString()}`);
         const dailyData = await handleApiRequest(`/api/messages/daily/${botId}?${dailyQuery}&role=assistant`, {
           headers: { Authorization: `Bearer ${token}` },
-        }, analyticsContent, 'فشل في جلب معدل الرسائل يوميًا');
+        }, dailyMessagesError, 'فشل في جلب معدل الرسائل يوميًا');
 
         const labels = dailyData.map(item => item.date);
         const series = dailyData.map(item => item.count);
+        console.log('Daily messages data:', { labels, series });
 
         // رسم Bar Chart لمعدل الرسائل يوميًا
         new Chartist.Bar('#dailyMessagesChart', {
@@ -221,26 +238,33 @@ document.addEventListener('DOMContentLoaded', () => {
         dailyMessagesSpinner.style.display = 'none';
         dailyMessagesChart.style.display = 'block';
         dailyMessagesStats.style.display = 'block';
+        dailyMessagesError.style.display = 'none';
 
       } catch (err) {
-        // الخطأ تم التعامل معه في handleApiRequest
+        console.error('Error in loadMessagesAnalytics:', err);
+        // التأكد إن السبينر يختفي حتى لو حصل خطأ
+        document.getElementById('messagesByChannelSpinner').style.display = 'none';
+        document.getElementById('dailyMessagesSpinner').style.display = 'none';
       }
     }
 
     async function loadFeedbackAnalytics(botId, token, startDate, endDate) {
+      console.log('Loading feedback analytics for botId:', botId);
       try {
         // 1. نسبة التقييمات الإيجابية مقابل السلبية
-        const feedbackRatioSpinner = document.querySelector('#feedbackRatio .section-spinner');
+        const feedbackRatioSpinner = document.getElementById('feedbackRatioSpinner');
         const feedbackRatioChart = document.getElementById('feedbackRatioChart');
         const feedbackRatioStats = document.getElementById('feedbackRatioStats');
+        const feedbackRatioError = document.getElementById('feedbackRatioError');
 
         const feedbackQuery = new URLSearchParams({
           ...(startDate && { startDate }),
           ...(endDate && { endDate }),
         });
+        console.log(`Fetching feedback with query: ${feedbackQuery.toString()}`);
         const feedbackData = await handleApiRequest(`/api/bots/${botId}/feedback?${feedbackQuery}`, {
           headers: { Authorization: `Bearer ${token}` },
-        }, analyticsContent, 'فشل في جلب التقييمات');
+        }, feedbackRatioError, 'فشل في جلب التقييمات');
 
         let positiveCount = 0;
         let negativeCount = 0;
@@ -280,14 +304,17 @@ document.addEventListener('DOMContentLoaded', () => {
         feedbackRatioSpinner.style.display = 'none';
         feedbackRatioChart.style.display = 'block';
         feedbackRatioStats.style.display = 'block';
+        feedbackRatioError.style.display = 'none';
 
         // 2. أكثر الردود السلبية
-        const negativeRepliesSpinner = document.querySelector('#topNegativeReplies .section-spinner');
+        const negativeRepliesSpinner = document.getElementById('topNegativeRepliesSpinner');
         const negativeRepliesList = document.getElementById('negativeRepliesList');
+        const negativeRepliesError = document.getElementById('topNegativeRepliesError');
 
+        console.log(`Fetching negative replies with query: ${feedbackQuery.toString()}`);
         const negativeRepliesData = await handleApiRequest(`/api/bots/feedback/negative-replies/${botId}?${feedbackQuery}`, {
           headers: { Authorization: `Bearer ${token}` },
-        }, analyticsContent, 'فشل في جلب الردود السلبية');
+        }, negativeRepliesError, 'فشل في جلب الردود السلبية');
 
         negativeRepliesList.innerHTML = '';
 
@@ -304,23 +331,30 @@ document.addEventListener('DOMContentLoaded', () => {
         // إخفاء السبينر وإظهار المحتوى
         negativeRepliesSpinner.style.display = 'none';
         negativeRepliesList.style.display = 'block';
+        negativeRepliesError.style.display = 'none';
 
       } catch (err) {
-        // الخطأ تم التعامل معه في handleApiRequest
+        console.error('Error in loadFeedbackAnalytics:', err);
+        // التأكد إن السبينر يختفي حتى لو حصل خطأ
+        document.getElementById('feedbackRatioSpinner').style.display = 'none';
+        document.getElementById('topNegativeRepliesSpinner').style.display = 'none';
       }
     }
 
     async function loadRulesAnalytics(botId, token) {
+      console.log('Loading rules analytics for botId:', botId);
       try {
         // 1. توزيع أنواع القواعد
-        const rulesTypeSpinner = document.querySelector('#rulesType .section-spinner');
+        const rulesTypeSpinner = document.getElementById('rulesTypeSpinner');
         const rulesTypeChart = document.getElementById('rulesTypeChart');
         const rulesTypeStats = document.getElementById('rulesTypeStats');
+        const rulesTypeError = document.getElementById('rulesTypeError');
 
         const rulesQuery = new URLSearchParams({ botId });
+        console.log(`Fetching rules with query: ${rulesQuery.toString()}`);
         const rulesData = await handleApiRequest(`/api/rules?${rulesQuery}`, {
           headers: { Authorization: `Bearer ${token}` },
-        }, analyticsContent, 'فشل في جلب القواعد');
+        }, rulesTypeError, 'فشل في جلب القواعد');
 
         const rulesTypesCount = {
           general: 0,
@@ -375,9 +409,12 @@ document.addEventListener('DOMContentLoaded', () => {
         rulesTypeSpinner.style.display = 'none';
         rulesTypeChart.style.display = 'block';
         rulesTypeStats.style.display = 'block';
+        rulesTypeError.style.display = 'none';
 
       } catch (err) {
-        // الخطأ تم التعامل معه في handleApiRequest
+        console.error('Error in loadRulesAnalytics:', err);
+        // التأكد إن السبينر يختفي حتى لو حصل خطأ
+        document.getElementById('rulesTypeSpinner').style.display = 'none';
       }
     }
   }
