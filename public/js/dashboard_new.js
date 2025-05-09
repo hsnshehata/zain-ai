@@ -357,7 +357,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         case "analytics":
           if (typeof window.loadAnalyticsPage === "function") {
             console.log(`Loading analytics page`);
-            await window.loadAnalyticsPage();
+            try {
+              await window.loadAnalyticsPage();
+            } catch (analyticsErr) {
+              console.error('Error executing loadAnalyticsPage:', analyticsErr);
+              throw new Error(`Failed to load analytics page: ${analyticsErr.message}`);
+            }
           } else {
             throw new Error("loadAnalyticsPage function not found. Ensure analytics.js is loaded and the function is defined.");
           }
