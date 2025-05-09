@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   // Check for token in URL (from /verify/:token redirect)
   const urlParams = new URLSearchParams(window.location.search);
   const tokenFromUrl = urlParams.get('token');
@@ -64,6 +64,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
+      // Fetch all bots to verify selectedBotId
+      const bots = await handleApiRequest("/api/bots", {
+        headers: { Authorization: `Bearer ${token}` },
+      }, subscriptionTypeEl, "فشل في جلب البوتات");
+
+      if (bots.length === 0) {
+        subscriptionTypeEl.textContent = 'لا توجد بوتات متاحة';
+        subscriptionEndEl.textContent = 'لا توجد بوتات متاحة';
+        remainingDaysEl.textContent = 'لا توجد بوتات متاحة';
+        return;
+      }
+
+      // Check if selectedBotId exists in bots
+      const selectedBot = bots.find(bot => bot._id === selectedBotId);
+      if (!selectedBot) {
+        localStorage.removeItem("selectedBotId");
+        subscriptionTypeEl.textContent = 'يرجى اختيار بوت';
+        subscriptionEndEl.textContent = 'يرجى اختيار بوت';
+        remainingDaysEl.textContent = 'يرجى اختيار بوت';
+        return;
+      }
+
+      // Fetch bot details
       const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, subscriptionTypeEl, 'فشل في جلب بيانات البوت');
@@ -90,9 +113,9 @@ document.addEventListener("DOMContentLoaded", () => {
         remainingDaysEl.textContent = 'غير محدد';
       }
     } catch (err) {
-      subscriptionTypeEl.textContent = 'يرجى اختيار بوت';
-      subscriptionEndEl.textContent = 'يرجى اختيار بوت';
-      remainingDaysEl.textContent = 'يرجى اختيار بوت';
+      subscriptionTypeEl.textContent = 'لا توجد بوتات متاحة';
+      subscriptionEndEl.textContent = 'لا توجد بوتات متاحة';
+      remainingDaysEl.textContent = 'لا توجد بوتات متاحة';
       console.error('Error loading bot info:', err);
     }
   }
@@ -219,7 +242,7 @@ document.addEventListener("DOMContentLoaded", () => {
         content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-robot"></i> لا يوجد بوتات متاحة</h2><p>يرجى التواصل مع المسؤول لإضافة بوت لحسابك أو إنشاء بوت جديد.</p></div>`;
         botSelect.disabled = true;
         localStorage.removeItem("selectedBotId"); // Clear invalid bot ID
-        loadWelcomeBar(); // Update welcome bar with no bot selected
+        await loadWelcomeBar(); // Update welcome bar with no bots
         return;
       }
 
@@ -230,33 +253,34 @@ document.addEventListener("DOMContentLoaded", () => {
       const selectedBotId = localStorage.getItem("selectedBotId");
       if (selectedBotId && userBots.some(bot => bot._id === selectedBotId)) {
         botSelect.value = selectedBotId;
-      } else if (userBots.length > 0) {
-        botSelect.value = userBots[0]._id;
-        localStorage.setItem("selectedBotId", userBots[0]._id);
       } else {
         localStorage.removeItem("selectedBotId");
+        if (userBots.length > 0) {
+          botSelect.value = userBots[0]._id;
+          localStorage.setItem("selectedBotId", userBots[0]._id);
+        }
       }
 
-      loadInitialPage();
-      loadWelcomeBar(); // Update welcome bar with selected bot
+      await loadInitialPage();
+      await loadWelcomeBar(); // Update welcome bar after bots are loaded
     } catch (err) {
       content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>خطأ في جلب البوتات: ${err.message}. حاول تحديث الصفحة.</p></div>`;
       botSelect.disabled = true;
       localStorage.removeItem("selectedBotId"); // Clear invalid bot ID
-      loadWelcomeBar(); // Update welcome bar with error
+      await loadWelcomeBar(); // Update welcome bar with error
     }
   }
 
-  botSelect.addEventListener("change", () => {
+  botSelect.addEventListener("change", async () => {
     const selectedBotId = botSelect.value;
     if (selectedBotId) {
       localStorage.setItem("selectedBotId", selectedBotId);
-      loadInitialPage();
-      loadWelcomeBar(); // Update welcome bar when bot changes
+      await loadInitialPage();
+      await loadWelcomeBar(); // Update welcome bar when bot changes
     } else {
       localStorage.removeItem("selectedBotId");
       content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض المحتوى.</p></div>`;
-      loadWelcomeBar(); // Update welcome bar with no bot selected
+      await loadWelcomeBar(); // Update welcome bar with no bot selected
     }
   });
 
@@ -337,16 +361,16 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   // Initial Page Load
-  const loadInitialPage = () => {
+  const loadInitialPage = async () => {
     let pageToLoad = role === "superadmin" ? "bots" : "rules";
     window.location.hash = pageToLoad;
-    loadPageContent(pageToLoad);
+    await loadPageContent(pageToLoad);
   };
 
-  window.addEventListener('hashchange', () => {
+  window.addEventListener('hashchange', async () => {
     const hash = window.location.hash.substring(1);
     if (hash) {
-      loadPageContent(hash);
+      await loadPageContent(hash);
     }
   });
 
@@ -447,7 +471,7 @@ document.addEventListener("DOMContentLoaded", () => {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      fetchNotifications();
+      await fetchNotifications();
     } catch (error) {
       console.error('Error marking notification as read:', error);
     }
@@ -499,21 +523,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Initialize
-  loadWelcomeBar();
-  populateBotSelect();
-  fetchNotifications();
+  await populateBotSelect(); // Load bots first
+  await fetchNotifications();
 });
-
-// Simple JWT decode function
-function jwtDecode(token) {
-  try {
-    const base64Url = token.split('.')[1];
-    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-    }).join(''));
-    return JSON.parse(jsonPayload);
-  } catch (e) {
-    throw new Error('Invalid token');
-  }
-}
