@@ -328,41 +328,69 @@ document.addEventListener("DOMContentLoaded", async () => {
       switch (page) {
         case "bots":
           if (role === "superadmin") {
-            if (typeof loadBotsPage === "function") await loadBotsPage();
-            else throw new Error("loadBotsPage function not found");
+            if (typeof window.loadBotsPage === "function") {
+              console.log(`Loading bots page for superadmin`);
+              await window.loadBotsPage();
+            } else {
+              throw new Error("loadBotsPage function not found. Ensure bots.js is loaded and the function is defined.");
+            }
           } else {
             throw new Error("غير مصرح لك بالوصول لهذه الصفحة.");
           }
           break;
         case "rules":
-          if (typeof loadRulesPage === "function") await loadRulesPage();
-          else throw new Error("loadRulesPage function not found");
+          if (typeof window.loadRulesPage === "function") {
+            console.log(`Loading rules page`);
+            await window.loadRulesPage();
+          } else {
+            throw new Error("loadRulesPage function not found. Ensure rules.js is loaded and the function is defined.");
+          }
           break;
         case "chat-page":
-          if (typeof loadChatPage === "function") await loadChatPage();
-          else throw new Error("loadChatPage function not found");
+          if (typeof window.loadChatPage === "function") {
+            console.log(`Loading chat-page`);
+            await window.loadChatPage();
+          } else {
+            throw new Error("loadChatPage function not found. Ensure chatPage.js is loaded and the function is defined.");
+          }
           break;
         case "analytics":
-          if (typeof loadAnalyticsPage === "function") await loadAnalyticsPage();
-          else throw new Error("loadAnalyticsPage function not found");
+          if (typeof window.loadAnalyticsPage === "function") {
+            console.log(`Loading analytics page`);
+            await window.loadAnalyticsPage();
+          } else {
+            throw new Error("loadAnalyticsPage function not found. Ensure analytics.js is loaded and the function is defined.");
+          }
           break;
         case "messages":
-          if (typeof loadMessagesPage === "function") await loadMessagesPage();
-          else throw new Error("loadMessagesPage function not found");
+          if (typeof window.loadMessagesPage === "function") {
+            console.log(`Loading messages page`);
+            await window.loadMessagesPage();
+          } else {
+            throw new Error("loadMessagesPage function not found. Ensure messages.js is loaded and the function is defined.");
+          }
           break;
         case "feedback":
-          if (typeof loadFeedbackPage === "function") await loadFeedbackPage();
-          else throw new Error("loadFeedbackPage function not found");
+          if (typeof window.loadFeedbackPage === "function") {
+            console.log(`Loading feedback page`);
+            await window.loadFeedbackPage();
+          } else {
+            throw new Error("loadFeedbackPage function not found. Ensure feedback.js is loaded and the function is defined.");
+          }
           break;
         case "facebook":
-          if (typeof loadFacebookPage === "function") await loadFacebookPage();
-          else throw new Error("loadFacebookPage function not found");
+          if (typeof window.loadFacebookPage === "function") {
+            console.log(`Loading facebook page`);
+            await window.loadFacebookPage();
+          } else {
+            throw new Error("loadFacebookPage function not found. Ensure facebook.js is loaded and the function is defined.");
+          }
           break;
         default:
           throw new Error("الصفحة المطلوبة غير متوفرة.");
       }
     } catch (error) {
-      console.error(`Error loading page ${page}:`, error);
+      console.error(`Error loading page ${page}:`, error.message);
       content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>${error.message || "حدث خطأ أثناء تحميل محتوى الصفحة."}</p></div>`;
     }
   };
@@ -378,6 +406,48 @@ document.addEventListener("DOMContentLoaded", async () => {
     const hash = window.location.hash.substring(1);
     if (hash) {
       await loadPageContent(hash);
+    }
+  });
+
+  // Add event listeners for nav items
+  navItems.forEach(item => {
+    if (item.dataset.page === "bots" && role !== "superadmin") {
+      item.style.display = "none";
+    }
+    item.addEventListener("click", async (e) => {
+      const page = item.dataset.page;
+      console.log(`Nav item clicked: ${page}`);
+      await loadPageContent(page);
+    });
+  });
+
+  mobileNavItems.forEach(item => {
+    if (item.dataset.page === "bots" && role !== "superadmin") {
+      item.style.display = "none";
+    }
+    item.addEventListener("click", async (e) => {
+      const page = item.dataset.page;
+      console.log(`Mobile nav item clicked: ${page}`);
+      await loadPageContent(page);
+    });
+  });
+
+  // Settings Button Event
+  settingsBtn.addEventListener("click", async () => {
+    console.log("Settings button clicked, attempting to load settings page");
+    content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`;
+    loadPageCss("settings");
+    try {
+      if (typeof window.loadSettingsPage === "function") {
+        await window.loadSettingsPage();
+        console.log("loadSettingsPage executed successfully");
+      } else {
+        console.error("loadSettingsPage function not found");
+        throw new Error("loadSettingsPage function not found. Ensure settings.js is loaded and the function is defined.");
+      }
+    } catch (error) {
+      console.error("Error loading settings page:", error.message);
+      content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>${error.message || "حدث خطأ أثناء تحميل إعدادات المستخدم."}</p></div>`;
     }
   });
 
