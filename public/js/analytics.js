@@ -129,6 +129,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const messagesByChannelStats = document.getElementById('messagesByChannelStats');
         const messagesByChannelError = document.getElementById('messagesByChannelError');
 
+        // Check if Chartist is available
+        if (typeof Chartist === 'undefined') {
+          console.error('Chartist library is not loaded');
+          messagesByChannelError.textContent = 'فشل في تحميل الرسوم البيانية: مكتبة Chartist غير متوفرة';
+          messagesByChannelError.style.display = 'block';
+          messagesByChannelSpinner.style.display = 'none';
+          return;
+        }
+
         const channels = ['facebook', 'web', 'whatsapp'];
         const messagesByChannelData = { facebook: 0, web: 0, whatsapp: 0 };
 
@@ -257,6 +266,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const feedbackRatioStats = document.getElementById('feedbackRatioStats');
         const feedbackRatioError = document.getElementById('feedbackRatioError');
 
+        // Check if Chartist is available
+        if (typeof Chartist === 'undefined') {
+          console.error('Chartist library is not loaded');
+          feedbackRatioError.textContent = 'فشل في تحميل الرسوم البيانية: مكتبة Chartist غير متوفرة';
+          feedbackRatioError.style.display = 'block';
+          feedbackRatioSpinner.style.display = 'none';
+          return;
+        }
+
         const feedbackQuery = new URLSearchParams({
           ...(startDate && { startDate }),
           ...(endDate && { endDate }),
@@ -349,6 +367,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const rulesTypeChart = document.getElementById('rulesTypeChart');
         const rulesTypeStats = document.getElementById('rulesTypeStats');
         const rulesTypeError = document.getElementById('rulesTypeError');
+
+        // Check if Chartist is available
+        if (typeof Chartist === 'undefined') {
+          console.error('Chartist library is not loaded');
+          rulesTypeError.textContent = 'فشل في تحميل الرسوم البيانية: مكتبة Chartist غير متوفرة';
+          rulesTypeError.style.display = 'block';
+          rulesTypeSpinner.style.display = 'none';
+          return;
+        }
 
         const rulesQuery = new URLSearchParams({ botId });
         console.log(`Fetching rules with query: ${rulesQuery.toString()}`);
