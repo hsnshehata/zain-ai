@@ -20,17 +20,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 10px;
-  border-bottom: 1px solid;
+  padding: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   margin-bottom: 15px;
-}
-
-body.dark-mode .feedback-column .column-header {
-  border-bottom-color: var(--dark-border);
-}
-
-body.light-mode .feedback-column .column-header {
-  border-bottom-color: var(--light-border);
 }
 
 .feedback-column h3 {
@@ -39,6 +31,7 @@ body.light-mode .feedback-column .column-header {
   display: flex;
   align-items: center;
   gap: 8px;
+  color: var(--turquoise);
 }
 
 .column-actions {
@@ -60,11 +53,12 @@ body.light-mode .feedback-column .column-header {
 
 .feedback-card .card-body p {
   margin: 8px 0;
+  color: #d3d3d3;
 }
 
 .feedback-card .card-body p strong {
   font-weight: 600;
-  margin-left: 5px; /* RTL */
+  margin-left: 5px;
 }
 
 .feedback-card .card-footer {
@@ -79,17 +73,18 @@ body.light-mode .feedback-column .column-header {
   display: flex;
   align-items: center;
   gap: 5px;
+  color: #E0E0E0;
 }
 
 /* Positive and Negative Column Styling */
 .positive-column .column-header {
-  background-color: rgba(40, 167, 69, 0.1); /* Success color with opacity */
+  background: linear-gradient(45deg, rgba(40, 167, 69, 0.2), rgba(52, 208, 88, 0.1));
   padding: 10px;
   border-radius: 6px 6px 0 0;
 }
 
 .negative-column .column-header {
-  background-color: rgba(220, 53, 69, 0.1); /* Error color with opacity */
+  background: linear-gradient(45deg, rgba(220, 53, 69, 0.2), rgba(255, 79, 65, 0.1));
   padding: 10px;
   border-radius: 6px 6px 0 0;
 }
