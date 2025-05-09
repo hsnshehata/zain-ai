@@ -6,6 +6,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const assistantMessageInput = document.getElementById('assistantMessageInput');
   const assistantSendMessageBtn = document.getElementById('assistantSendMessageBtn');
   const assistantChatMessages = document.getElementById('assistantChatMessages');
+  const welcomeTimestamp = document.getElementById('welcomeTimestamp');
+
+  // Check if required elements exist
+  if (!assistantButton || !assistantChatModal || !closeAssistantChatBtn || !assistantMessageInput || !assistantSendMessageBtn || !assistantChatMessages) {
+    console.error('One or more required elements for assistant chat are missing in the DOM');
+    return;
+  }
 
   const ASSISTANT_BOT_ID = '68087d93c0124c9fe05a6996';
   const selectedBotId = localStorage.getItem('selectedBotId');
@@ -34,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   localStorage.setItem('lastSelectedBotId', selectedBotId);
 
-  const welcomeTimestamp = document.getElementById('welcomeTimestamp');
   if (welcomeTimestamp) {
     welcomeTimestamp.textContent = new Date().toLocaleString('ar-EG');
   }
