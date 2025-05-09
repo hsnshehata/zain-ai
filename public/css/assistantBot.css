@@ -8,7 +8,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -17,12 +17,13 @@
 
 .chat-modal-content {
   width: 90%;
-  max-width: 600px;
+  max-width: 500px; /* تغيير من 600px لتطابق التصميم في dashboard_new.html */
   border-radius: 10px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   max-height: 80vh;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* إضافة من dashboard_new.html */
 }
 
 body.dark-mode .chat-modal-content {
@@ -36,6 +37,8 @@ body.light-mode .chat-modal-content {
 }
 
 .chat-header {
+  background: var(--turquoise); /* إضافة من dashboard_new.html */
+  color: white; /* إضافة من dashboard_new.html */
   padding: 15px;
   border-bottom: 1px solid;
   display: flex;
@@ -53,46 +56,54 @@ body.light-mode .chat-header {
 
 .chat-header h3 {
   margin: 0;
-  font-size: 1.3em;
+  font-size: 1.2em; /* تغيير من 1.3em لتطابق dashboard_new.html */
 }
 
 .chat-close-btn {
   background: none;
   border: none;
-  font-size: 1.5em;
+  font-size: 1.2em; /* تغيير من 1.5em لتطابق dashboard_new.html */
   cursor: pointer;
 }
 
 body.dark-mode .chat-close-btn {
-  color: var(--dark-text);
+  color: white; /* إضافة من dashboard_new.html */
 }
 
 body.light-mode .chat-close-btn {
-  color: var(--light-text);
+  color: white; /* إضافة من dashboard_new.html */
 }
 
 .chat-messages {
-  flex-grow: 1;
+  flex: 1; /* إضافة من dashboard_new.html */
   padding: 15px;
   overflow-y: auto;
+  background: var(--dark-background); /* إضافة من dashboard_new.html */
+  color: var(--dark-text); /* إضافة من dashboard_new.html */
+}
+
+body.light-mode .chat-messages {
+  background: var(--light-background); /* إضافة من dashboard_new.html */
+  color: var(--light-text); /* إضافة من dashboard_new.html */
 }
 
 .message {
   margin-bottom: 15px;
   padding: 10px;
-  border-radius: 6px;
+  border-radius: 8px; /* تغيير من 6px لتطابق dashboard_new.html */
   max-width: 80%;
+  word-wrap: break-word; /* إضافة من dashboard_new.html */
 }
 
 .user-message {
-  margin-right: 10px; /* RTL */
+  margin-left: auto; /* RTL - إضافة من dashboard_new.html */
   background-color: var(--turquoise);
   color: white;
-  align-self: flex-end;
+  text-align: right; /* إضافة من dashboard_new.html */
 }
 
 .bot-message {
-  margin-left: 10px; /* RTL */
+  margin-right: auto; /* RTL - إضافة من dashboard_new.html */
   background-color: rgba(128, 128, 128, 0.2);
 }
 
@@ -109,13 +120,16 @@ body.light-mode .bot-message {
 }
 
 .message small {
-  font-size: 0.85em;
+  display: block; /* إضافة من dashboard_new.html */
+  font-size: 0.8em; /* تغيير من 0.85em لتطابق dashboard_new.html */
+  margin-top: 5px; /* إضافة من dashboard_new.html */
   opacity: 0.7;
 }
 
 .chat-footer {
-  padding: 15px;
+  padding: 10px; /* تغيير من 15px لتطابق dashboard_new.html */
   border-top: 1px solid;
+  background: var(--dark-card); /* إضافة من dashboard_new.html */
 }
 
 body.dark-mode .chat-footer {
@@ -124,6 +138,7 @@ body.dark-mode .chat-footer {
 
 body.light-mode .chat-footer {
   border-top-color: var(--light-border);
+  background: var(--light-card); /* إضافة من dashboard_new.html */
 }
 
 .chat-input {
@@ -135,20 +150,23 @@ body.light-mode .chat-footer {
 .chat-input input {
   flex: 1;
   padding: 10px;
-  border: none;
-  border-radius: 8px;
+  border: 1px solid; /* إضافة من dashboard_new.html */
+  border-radius: 5px; /* تغيير من 8px لتطابق dashboard_new.html */
   font-size: 0.95em;
   outline: none;
+  margin-right: 10px; /* إضافة من dashboard_new.html */
 }
 
 body.dark-mode .chat-input input {
-  background-color: var(--dark-card);
+  background-color: var(--dark-background); /* تغيير من var(--dark-card) لتطابق dashboard_new.html */
   color: var(--dark-text);
+  border-color: var(--dark-border); /* إضافة من dashboard_new.html */
 }
 
 body.light-mode .chat-input input {
-  background-color: var(--light-card);
+  background-color: var(--light-background); /* تغيير من var(--light-card) لتطابق dashboard_new.html */
   color: var(--light-text);
+  border-color: var(--light-border); /* إضافة من dashboard_new.html */
 }
 
 .chat-input button {
