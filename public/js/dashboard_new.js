@@ -56,7 +56,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const remainingDaysEl = document.getElementById("remaining-days");
 
     const selectedBotId = localStorage.getItem("selectedBotId");
+    console.log('Selected Bot ID:', selectedBotId);
+
     if (!selectedBotId) {
+      console.log('No bot selected, displaying default message');
       subscriptionTypeEl.textContent = 'يرجى اختيار بوت';
       subscriptionEndEl.textContent = 'يرجى اختيار بوت';
       remainingDaysEl.textContent = 'يرجى اختيار بوت';
@@ -64,32 +67,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     try {
-      // Fetch all bots to verify selectedBotId
-      const bots = await handleApiRequest("/api/bots", {
-        headers: { Authorization: `Bearer ${token}` },
-      }, subscriptionTypeEl, "فشل في جلب البوتات");
-
-      if (bots.length === 0) {
-        subscriptionTypeEl.textContent = 'لا توجد بوتات متاحة';
-        subscriptionEndEl.textContent = 'لا توجد بوتات متاحة';
-        remainingDaysEl.textContent = 'لا توجد بوتات متاحة';
-        return;
-      }
-
-      // Check if selectedBotId exists in bots
-      const selectedBot = bots.find(bot => bot._id === selectedBotId);
-      if (!selectedBot) {
-        localStorage.removeItem("selectedBotId");
-        subscriptionTypeEl.textContent = 'يرجى اختيار بوت';
-        subscriptionEndEl.textContent = 'يرجى اختيار بوت';
-        remainingDaysEl.textContent = 'يرجى اختيار بوت';
-        return;
-      }
-
-      // Fetch bot details
+      console.log(`Fetching bot data for ID: ${selectedBotId}`);
       const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, subscriptionTypeEl, 'فشل في جلب بيانات البوت');
+      console.log('Bot data fetched:', bot);
 
       // Display subscription type
       const subscriptionTypes = {
@@ -113,10 +95,11 @@ document.addEventListener("DOMContentLoaded", async () => {
         remainingDaysEl.textContent = 'غير محدد';
       }
     } catch (err) {
-      subscriptionTypeEl.textContent = 'لا توجد بوتات متاحة';
-      subscriptionEndEl.textContent = 'لا توجد بوتات متاحة';
-      remainingDaysEl.textContent = 'لا توجد بوتات متاحة';
       console.error('Error loading bot info:', err);
+      subscriptionTypeEl.textContent = 'يرجى اختيار بوت';
+      subscriptionEndEl.textContent = 'يرجى اختيار بوت';
+      remainingDaysEl.textContent = 'يرجى اختيار بوت';
+      localStorage.removeItem("selectedBotId"); // Clear invalid bot ID
     }
   }
 
@@ -229,6 +212,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         headers: { Authorization: `Bearer ${token}` },
       }, content, "فشل في جلب البوتات");
 
+      console.log('Fetched bots:', bots);
+
       botSelect.innerHTML = "<option value=\"\">اختر بوت</option>";
       let userBots = bots;
       if (role !== "superadmin") {
@@ -251,19 +236,25 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       const selectedBotId = localStorage.getItem("selectedBotId");
+      console.log('Current selectedBotId from localStorage:', selectedBotId);
+
       if (selectedBotId && userBots.some(bot => bot._id === selectedBotId)) {
         botSelect.value = selectedBotId;
+        console.log(`Selected bot ${selectedBotId} found in bots list`);
       } else {
+        console.log('Selected bot not found or invalid, clearing selectedBotId');
         localStorage.removeItem("selectedBotId");
         if (userBots.length > 0) {
           botSelect.value = userBots[0]._id;
           localStorage.setItem("selectedBotId", userBots[0]._id);
+          console.log(`Set new selectedBotId to first bot: ${userBots[0]._id}`);
         }
       }
 
       await loadInitialPage();
       await loadWelcomeBar(); // Update welcome bar after bots are loaded
     } catch (err) {
+      console.error('Error in populateBotSelect:', err);
       content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>خطأ في جلب البوتات: ${err.message}. حاول تحديث الصفحة.</p></div>`;
       botSelect.disabled = true;
       localStorage.removeItem("selectedBotId"); // Clear invalid bot ID
@@ -273,6 +264,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   botSelect.addEventListener("change", async () => {
     const selectedBotId = botSelect.value;
+    console.log('Bot selection changed to:', selectedBotId);
     if (selectedBotId) {
       localStorage.setItem("selectedBotId", selectedBotId);
       await loadInitialPage();
@@ -526,3 +518,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   await populateBotSelect(); // Load bots first
   await fetchNotifications();
 });
+
+// Simple JWT decode function
+function jwtDecode(token) {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    throw new Error('Invalid token');
+  }
+}
