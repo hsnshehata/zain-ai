@@ -35,6 +35,20 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
+  // Load welcome username
+  async function loadWelcomeUsername() {
+    const welcomeUsername = document.getElementById("welcome-username");
+    try {
+      const user = await handleApiRequest('/api/users/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      }, welcomeUsername, 'فشل في جلب بيانات المستخدم');
+      welcomeUsername.textContent = user.username || 'غير معروف';
+    } catch (err) {
+      welcomeUsername.textContent = 'خطأ في تحميل الاسم';
+      console.error('Error loading username:', err);
+    }
+  }
+
   const content = document.getElementById("content");
   const botSelect = document.getElementById("botSelectDashboard");
   const navItems = document.querySelectorAll(".sidebar-nav .nav-item");
@@ -66,7 +80,7 @@ document.addEventListener("DOMContentLoaded", () => {
     settings: "/css/settings.css",
   };
 
-  // Function to load CSS dynamically
+  // Load CSS dynamically
   function loadPageCss(page) {
     document.querySelectorAll('link[data-page-css]').forEach(link => link.remove());
     if (pageCssMap[page]) {
@@ -98,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // --- Theme Handling ---
+  // Theme Handling
   const applyTheme = (theme) => {
     if (theme === "light") {
       document.body.classList.remove("dark-mode");
@@ -118,20 +132,20 @@ document.addEventListener("DOMContentLoaded", () => {
     applyTheme(newTheme);
   });
 
-  // --- Sidebar Toggle for Desktop ---
+  // Sidebar Toggle for Desktop
   sidebarToggleBtn.addEventListener("click", () => {
     sidebar.classList.toggle("collapsed");
     mainContent.classList.toggle("collapsed");
   });
 
-  // --- Mobile Navigation Toggle ---
+  // Mobile Navigation Toggle
   if (mobileNavToggle) {
     mobileNavToggle.addEventListener("click", () => {
       mobileNav.classList.toggle("collapsed");
     });
   }
 
-  // --- Bot Selector ---
+  // Bot Selector
   async function populateBotSelect() {
     try {
       const bots = await handleApiRequest("/api/bots", {
@@ -139,11 +153,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }, content, "فشل في جلب البوتات");
 
       botSelect.innerHTML = "<option value=\"\">اختر بوت</option>";
-      // تبسيط تصفية البوتات
       let userBots = bots;
       if (role !== "superadmin") {
         userBots = bots.filter(bot => {
-          // التعامل مع حالة userId كـ string أو object
           const botUserId = typeof bot.userId === 'object' && bot.userId._id ? bot.userId._id : bot.userId;
           return botUserId === userId;
         });
@@ -185,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // --- Navigation Helpers ---
+  // Navigation Helpers
   const setActiveButton = (page) => {
     navItems.forEach(item => {
       item.classList.remove("active");
@@ -208,7 +220,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loadPageCss(page);
 
-    // تبسيط الشرط: لو مفيش بوت محدد ومش سوبر أدمن، منع تحميل الصفحة
     if (!selectedBotId && !(role === "superadmin" && page === "bots")) {
       content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض هذا القسم.</p></div>`;
       setActiveButton(page);
@@ -262,7 +273,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // --- Navigation Events ---
+  // Navigation Events
   navItems.forEach(item => {
     if (item.dataset.page === "bots" && role !== "superadmin") {
       item.style.display = "none";
@@ -283,7 +294,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // --- Settings Button Event ---
+  // Settings Button Event
   settingsBtn.addEventListener("click", async () => {
     console.log("Settings button clicked, attempting to load settings page");
     content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`;
@@ -302,7 +313,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // --- Initial Page Load ---
+  // Initial Page Load
   const loadInitialPage = () => {
     let pageToLoad = role === "superadmin" ? "bots" : "rules";
     window.location.hash = pageToLoad;
@@ -316,7 +327,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // --- Logout ---
+  // Logout
   async function logoutUser() {
     const username = localStorage.getItem("username");
     localStorage.removeItem("token");
@@ -345,7 +356,7 @@ document.addEventListener("DOMContentLoaded", () => {
     mobileLogoutBtn.addEventListener("click", logoutUser);
   }
 
-  // --- Notifications Handling ---
+  // Notifications Handling
   let showAllNotifications = false;
 
   async function fetchNotifications() {
@@ -455,7 +466,7 @@ document.addEventListener("DOMContentLoaded", () => {
     notificationsModal.style.display = 'none';
   });
 
-  // --- Assistant Bot ---
+  // Assistant Bot
   const assistantButton = document.getElementById("assistantButton");
   if (assistantButton) {
     assistantButton.addEventListener("click", loadAssistantCss);
@@ -464,12 +475,13 @@ document.addEventListener("DOMContentLoaded", () => {
     console.warn("Assistant button element not found.");
   }
 
-  // --- Initialize ---
+  // Initialize
+  loadWelcomeUsername();
   populateBotSelect();
   fetchNotifications();
 });
 
-// Simple JWT decode function (since we don't have jwt-decode library)
+// Simple JWT decode function
 function jwtDecode(token) {
   try {
     const base64Url = token.split('.')[1];
