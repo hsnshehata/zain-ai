@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  // Ensure the modal is hidden initially
+  assistantChatModal.style.display = 'none';
+
   const ASSISTANT_BOT_ID = '68087d93c0124c9fe05a6996';
   const selectedBotId = localStorage.getItem('selectedBotId');
   let userId = localStorage.getItem('userId') || 'dashboard_user_' + Date.now();
