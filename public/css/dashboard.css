@@ -350,6 +350,53 @@
     display: flex;
   }
 
+  /* Welcome Bar */
+  .welcome-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    background-color: var(--dark-card);
+    padding: 10px 25px;
+    border-bottom: 1px solid var(--dark-border);
+    font-size: 1.1em;
+    color: var(--dark-text);
+    text-align: right;
+    flex-wrap: wrap;
+  }
+
+  &.light-mode .welcome-bar {
+    background-color: var(--light-card);
+    border-bottom: 1px solid var(--light-border);
+    color: var(--light-text);
+  }
+
+  .welcome-bar i {
+    color: var(--turquoise);
+  }
+
+  .welcome-bar span {
+    font-weight: 600;
+  }
+
+  .welcome-bar .info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .welcome-bar .no-bots {
+    color: var(--error-color);
+    font-weight: bold;
+  }
+
+  @media (max-width: 768px) {
+    .welcome-bar {
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+    }
+  }
+
   /* Page Content Area */
   .page-content {
     padding: 25px;
