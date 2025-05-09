@@ -19,13 +19,14 @@
     .welcome-bar {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 20px;
       background-color: var(--dark-card);
       padding: 10px 25px;
       border-bottom: 1px solid var(--dark-border);
       font-size: 1.1em;
       color: var(--dark-text);
       text-align: right;
+      flex-wrap: wrap;
     }
     .light-mode .welcome-bar {
       background-color: var(--light-card);
@@ -37,6 +38,18 @@
     }
     .welcome-bar span {
       font-weight: 600;
+    }
+    .welcome-bar .info-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    @media (max-width: 768px) {
+      .welcome-bar {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 10px;
+      }
     }
   </style>
 </head>
@@ -86,8 +99,22 @@
       </header>
 
       <div class="welcome-bar">
-        <i class="fas fa-user"></i>
-        <span>مرحباً: <span id="welcome-username">جاري التحميل...</span></span>
+        <div class="info-item">
+          <i class="fas fa-user"></i>
+          <span>مرحباً: <span id="welcome-username">جاري التحميل...</span></span>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-tags"></i>
+          <span>نوع الاشتراك: <span id="subscription-type">جاري التحميل...</span></span>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-calendar-alt"></i>
+          <span>انتهاء الاشتراك: <span id="subscription-end">جاري التحميل...</span></span>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-clock"></i>
+          <span>الأيام المتبقية: <span id="remaining-days">جاري التحميل...</span></span>
+        </div>
       </div>
 
       <div id="content" class="page-content" aria-live="polite"></div>
