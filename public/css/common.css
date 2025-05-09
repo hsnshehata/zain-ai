@@ -8,6 +8,8 @@
   --icon-dark: #00C4B4; /* تركواز */
   --button-dark: #00C4B4; /* تركواز */
   --accent-dark: #ffd700; /* ذهبي */
+  --error-dark: #dc3545; /* أحمر للأخطاء */
+  --border-dark: rgba(255, 255, 255, 0.1); /* حدود خفيفة */
 
   --background-light: #f0f0f0; /* رمادي فاتح */
   --element-light: #ffffff; /* أبيض */
@@ -15,6 +17,8 @@
   --icon-light: #00C4B4; /* تركواز */
   --button-light: #00C4B4; /* تركواز */
   --accent-light: #ffd700; /* ذهبي */
+  --error-light: #dc3545; /* أحمر للأخطاء */
+  --border-light: rgba(0, 0, 0, 0.1); /* حدود خفيفة */
 }
 
 /* تطبيق الألوان بناءً على الوضع */
@@ -25,6 +29,8 @@ body.dark-mode {
   --icon: var(--icon-dark);
   --button: var(--button-dark);
   --accent: var(--accent-dark);
+  --error: var(--error-dark);
+  --border: var(--border-dark);
 }
 
 body.light-mode {
@@ -34,6 +40,8 @@ body.light-mode {
   --icon: var(--icon-light);
   --button: var(--button-light);
   --accent: var(--accent-light);
+  --error: var(--error-light);
+  --border: var(--border-light);
 }
 
 /* ستايل أساسي للـ body */
@@ -43,6 +51,7 @@ body {
   font-family: 'Cairo', sans-serif;
   margin: 0;
   padding: 0;
+  line-height: 1.6;
 }
 
 /* ستايل للـ container */
@@ -61,12 +70,17 @@ body {
   border-radius: 50px;
   cursor: pointer;
   font-weight: bold;
-  transition: transform 0.2s ease, box-shadow 0.3s ease;
+  font-size: 1em;
+  transition: transform 0.2s ease, box-shadow 0.3s ease, background 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .btn:hover {
   transform: translateY(-3px);
   box-shadow: 0 5px 15px rgba(0, 196, 180, 0.4);
+  background: #00e0c4; /* لون تركواز أفتح */
 }
 
 .btn:focus {
@@ -74,25 +88,68 @@ body {
   outline-offset: 2px;
 }
 
+.btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.btn.btn-secondary {
+  background: #6c757d;
+}
+
+.btn.btn-secondary:hover {
+  background: #5a6268;
+}
+
+.btn.btn-danger {
+  background: var(--error);
+}
+
+.btn.btn-danger:hover {
+  background: #c82333;
+}
+
 /* ستايل للـ inputs */
 input, textarea, select {
   background: var(--element);
   color: var(--text);
-  border: 1px solid var(--icon);
+  border: 1px solid var(--border);
   padding: 10px;
   border-radius: 5px;
   width: 100%;
   box-sizing: border-box;
+  font-size: 1em;
+  transition: border-color 0.3s ease;
 }
 
 input:focus, textarea:focus, select:focus {
   border-color: var(--accent);
   outline: none;
+  box-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+/* ستايل للـ form-group */
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: var(--text);
 }
 
 /* ستايل للـ modals */
 .modal {
-  display: flex;
+  display: none;
   justify-content: center;
   align-items: center;
   position: fixed;
@@ -104,6 +161,10 @@ input:focus, textarea:focus, select:focus {
   z-index: 1000;
 }
 
+.modal.active {
+  display: flex;
+}
+
 .modal-content {
   background: var(--element);
   padding: 20px;
@@ -111,6 +172,7 @@ input:focus, textarea:focus, select:focus {
   width: 90%;
   max-width: 500px;
   position: relative;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .close-button {
@@ -122,6 +184,11 @@ input:focus, textarea:focus, select:focus {
   font-size: 1.5em;
   cursor: pointer;
   color: var(--text);
+  transition: color 0.3s ease;
+}
+
+.close-button:hover {
+  color: var(--accent);
 }
 
 /* ستايل للـ cards */
@@ -131,6 +198,11 @@ input:focus, textarea:focus, select:focus {
   padding: 20px;
   margin-bottom: 20px;
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
 }
 
 body.dark-mode .card {
@@ -145,14 +217,19 @@ table {
 }
 
 table th, table td {
-  padding: 10px;
+  padding: 12px;
   text-align: right;
-  border-bottom: 1px solid var(--icon);
+  border-bottom: 1px solid var(--border);
 }
 
 table th {
   background: var(--button);
   color: #ffffff;
+  font-weight: bold;
+}
+
+table td {
+  color: var(--text);
 }
 
 table tr:hover {
@@ -174,6 +251,8 @@ table tr:hover {
   padding: 8px 12px;
   border-radius: 5px;
   cursor: pointer;
+  font-size: 0.9em;
+  transition: background 0.3s ease;
 }
 
 .pagination button.active {
@@ -183,6 +262,11 @@ table tr:hover {
 .pagination button:disabled {
   background: #ccc;
   cursor: not-allowed;
+}
+
+.pagination span {
+  color: var(--text);
+  padding: 8px;
 }
 
 /* ستايل للـ spinner */
@@ -205,4 +289,72 @@ table tr:hover {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* ستايل للـ error messages */
+.error-message {
+  color: var(--error);
+  font-size: 0.9em;
+  margin-top: 10px;
+  display: none;
+}
+
+/* Media Queries للتوافق مع الموبايل */
+@media (max-width: 768px) {
+  .container {
+    width: 95%;
+    padding: 0 10px;
+  }
+
+  .btn {
+    padding: 8px 15px;
+    font-size: 0.9em;
+  }
+
+  .modal-content {
+    width: 95%;
+    max-width: 400px;
+    padding: 15px;
+  }
+
+  .card {
+    padding: 15px;
+  }
+
+  table th, table td {
+    padding: 8px;
+    font-size: 0.9em;
+  }
+
+  .pagination button {
+    padding: 6px 10px;
+    font-size: 0.8em;
+  }
+}
+
+@media (max-width: 480px) {
+  .form-group {
+    margin-bottom: 15px;
+  }
+
+  input, textarea, select {
+    padding: 8px;
+    font-size: 0.9em;
+  }
+
+  .modal-content {
+    width: 90%;
+    max-width: 350px;
+  }
+}
+
+/* تحسينات للـ Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .btn:hover, .card:hover {
+    transform: none;
+  }
+
+  .btn, .pagination button {
+    transition: none;
+  }
 }
