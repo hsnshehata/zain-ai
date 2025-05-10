@@ -37,11 +37,11 @@ body.light-mode .settings-card .card-header {
 }
 
 .settings-card .card-body {
-  padding-bottom: 10px;
+  padding-bottom: 15px; /* Increased for better spacing */
 }
 
 .settings-card .form-group {
-  margin-bottom: 15px;
+  margin-bottom: 12px; /* Reduced for mobile */
 }
 
 .settings-card .form-group label {
@@ -58,7 +58,7 @@ body.light-mode .settings-card .card-header {
 
 .info-text code {
   background-color: rgba(128, 128, 128, 0.2);
-  padding: 2px 5px;
+  padding: 4px 8px; /* Increased for clarity */
   border-radius: 3px;
 }
 
@@ -72,7 +72,7 @@ body.light-mode .settings-card .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
+  padding: 12px; /* Increased for mobile */
   border-radius: 6px;
 }
 
@@ -109,21 +109,44 @@ body.light-mode .setting-item {
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .facebook-settings-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
   }
 
   .setting-item {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
+    padding: 10px;
   }
 
   .setting-item .switch {
     align-self: flex-end;
   }
+
+  .toggles-grid {
+    gap: 12px;
+  }
+
+  .settings-card .card-body {
+    padding-bottom: 12px;
+  }
+
+  .settings-card .form-group {
+    margin-bottom: 10px;
+  }
+
+  .info-text {
+    font-size: 0.9em;
+  }
 }
 
 @media (max-width: 576px) {
+  .facebook-settings-grid {
+    grid-template-columns: 1fr; /* Full width */
+    gap: 10px;
+  }
+
   .settings-card .card-header h3 {
     font-size: 1.2em;
   }
@@ -131,4 +154,91 @@ body.light-mode .setting-item {
   .info-text {
     font-size: 0.9em;
   }
+
+  .setting-item {
+    padding: 8px;
+  }
+
+  .toggles-grid {
+    gap: 10px;
+  }
+
+  .settings-card .card-body {
+    padding-bottom: 10px;
+  }
+
+  .setting-info h4 {
+    font-size: 1em;
+  }
+
+  .setting-info p {
+    font-size: 0.85em;
+  }
+
+  .small-error {
+    font-size: 0.85em;
+  }
+}
+
+@media (max-width: 360px) {
+  .facebook-settings-grid {
+    gap: 8px;
+  }
+
+  .settings-card .card-header h3 {
+    font-size: 1.1em;
+  }
+
+  .info-text {
+    font-size: 0.85em;
+  }
+
+  .setting-item {
+    padding: 6px;
+  }
+
+  .toggles-grid {
+    gap: 8px;
+  }
+
+  .settings-card .form-group {
+    margin-bottom: 8px;
+  }
+
+  .setting-info h4 {
+    font-size: 0.95em;
+  }
+
+  .setting-info p {
+    font-size: 0.8em;
+  }
+
+  .small-error {
+    font-size: 0.8em;
+  }
+
+  .info-text code {
+    padding: 3px 6px;
+  }
+}
+
+/* Override Switch for Mobile */
+.switch {
+  width: 55px; /* Increased for mobile */
+  height: 28px;
+}
+
+.slider {
+  border-radius: 28px;
+}
+
+.slider:before {
+  height: 22px; /* Adjusted for new switch size */
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+}
+
+input:checked + .slider:before {
+  transform: translateX(27px); /* Adjusted for new switch size */
 }
