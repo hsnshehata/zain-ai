@@ -607,7 +607,6 @@
     box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
     z-index: 1000;
     padding: 10px 5px;
-    transition: transform var(--transition-speed) ease;
     overflow-x: auto; /* Enable horizontal scroll */
     white-space: nowrap; /* Keep items in a single row */
     scrollbar-width: none; /* Hide scrollbar for Firefox */
@@ -620,10 +619,6 @@
   &.light-mode .mobile-nav-bottom {
     background-color: var(--light-sidebar);
     box-shadow: 0 -2px 10px var(--shadow-light);
-  }
-
-  .mobile-nav-bottom.collapsed {
-    transform: translateY(calc(var(--mobile-nav-height) - 30px));
   }
 
   .mobile-nav-bottom {
@@ -680,30 +675,7 @@
   }
 
   .nav-toggle-btn {
-    background: var(--turquoise);
-    border: none;
-    padding: 5px;
-    border-radius: 50%;
-    position: absolute;
-    top: -25px;
-    left: 50%;
-    transform: translateX(-50%);
-    cursor: pointer;
-    font-size: 0.9em;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-  }
-
-  .nav-toggle-btn i {
-    transition: transform var(--transition-speed) ease;
-  }
-
-  .mobile-nav-bottom.collapsed .nav-toggle-btn i {
-    transform: rotate(180deg);
+    display: none; /* Hide toggle button */
   }
 
   /* Responsive Adjustments */
@@ -773,9 +745,6 @@
       width: 100%;
       justify-content: flex-start;
       gap: 8px;
-    }
-    .bot-selector-container {
-      width: 100%;
     }
     .bot-selector-container {
       width: 100%;
