@@ -404,21 +404,6 @@
     font-weight: bold;
   }
 
-  .welcome-bar .username-item {
-    flex-shrink: 0; /* Keep username fixed */
-  }
-
-  .welcome-bar .rotating-items {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .welcome-bar .rotating-item {
-    display: flex; /* Show all items by default on desktop */
-    align-items: center;
-    gap: 8px;
-  }
-
   /* Page Content Area */
   .page-content {
     padding: 20px;
@@ -735,33 +720,15 @@
       padding-bottom: calc(var(--mobile-nav-height) + 20px);
     }
     .welcome-bar {
-      font-size: 0.7em; /* Larger font for mobile */
-      padding: 6px 10px;
-      gap: 10px;
-      flex-wrap: nowrap;
-      justify-content: space-between;
+      font-size: 0.5em; /* Small font for mobile */
+      padding: 4px 7.5px;
+      gap: 4px;
     }
     .welcome-bar i {
-      font-size: 0.8em;
+      font-size: 0.6em;
     }
     .welcome-bar .info-item {
-      gap: 6px;
-    }
-    .welcome-bar .rotating-items {
-      flex: 1;
-      position: relative;
-      overflow: hidden;
-    }
-    .welcome-bar .rotating-item {
-      display: none; /* Hide non-active items on mobile */
-      position: absolute;
-      width: 100%;
-      top: 0;
-      left: 0;
-    }
-    .welcome-bar .rotating-item.active {
-      display: flex; /* Show active item */
-      animation: fadeInWelcome 0.5s ease-in;
+      gap: 4px;
     }
     .bot-selector-container {
       min-width: 100px;
@@ -778,9 +745,9 @@
 
   @media (max-width: 768px) {
     .welcome-bar {
-      font-size: 0.65em;
-      padding: 5px 8px;
-      gap: 8px;
+      font-size: 0.45em;
+      padding: 3px 5px;
+      gap: 3px;
     }
     .page-header {
       flex-direction: column;
@@ -834,12 +801,12 @@
       gap: 10px;
     }
     .welcome-bar {
-      font-size: 0.6em;
-      padding: 4px 6px;
-      gap: 6px;
+      font-size: 0.425em;
+      padding: 2.5px 4px;
+      gap: 3px;
     }
     .welcome-bar .info-item {
-      gap: 5px;
+      gap: 3px;
     }
     .modal-content {
       max-width: 98vw;
@@ -873,7 +840,7 @@
       font-size: 0.65em;
     }
     .welcome-bar {
-      font-size: 0.55em;
+      font-size: 0.4em;
     }
     #botSelectDashboard {
       font-size: 0.4em;
@@ -897,15 +864,5 @@
   @keyframes slideIn {
     from { transform: translateY(-20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
-  }
-
-  @keyframes fadeInWelcome {
-    from { opacity: 0; transform: translateX(20px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-
-  @keyframes fadeOutWelcome {
-    from { opacity: 1; transform: translateX(0); }
-    to { opacity: 0; transform: translateX(-20px); }
   }
 }
