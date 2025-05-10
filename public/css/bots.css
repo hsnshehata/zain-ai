@@ -89,7 +89,7 @@ body.light-mode .user-bot-card .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
+  padding: 12px; /* Increased for mobile */
   border-radius: 6px;
   transition: background-color var(--transition-speed);
 }
@@ -124,7 +124,7 @@ body.light-mode .bot-entry {
 
 .bot-actions {
   display: flex;
-  gap: 5px;
+  gap: 8px; /* Increased for mobile */
 }
 
 .no-bots {
@@ -182,11 +182,11 @@ body.light-mode .form-card h3 {
 .modal-content {
   background-color: var(--dark-card);
   border-radius: 12px;
-  padding: 25px;
-  max-width: 600px;
-  width: 90%;
-  max-height: 80vh; /* تحديد أقصى ارتفاع للنافذة */
-  overflow-y: auto; /* إضافة سكرول عمودي */
+  padding: 20px;
+  max-width: 600px; /* Default for desktop */
+  width: 90vw; /* Responsive */
+  max-height: 80vh;
+  overflow-y: auto;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
   position: relative;
   animation: slideIn 0.3s ease-in-out;
@@ -201,7 +201,7 @@ body.light-mode .modal-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
 }
 
 .modal-header h3 {
@@ -220,7 +220,7 @@ body.light-mode .modal-header h3 {
   font-size: 1.3em;
   cursor: pointer;
   color: var(--dark-text);
-  transition: color var(--transition-speed);
+  transition: color var(--transition-speed), transform 0.2s;
 }
 
 body.light-mode .modal-close-btn {
@@ -229,10 +229,11 @@ body.light-mode .modal-close-btn {
 
 .modal-close-btn:hover {
   color: var(--turquoise);
+  transform: scale(1.1);
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 15px; /* Reduced for mobile */
 }
 
 .form-group label {
@@ -295,6 +296,7 @@ body.light-mode .form-group textarea {
   font-size: 1em;
   font-weight: 500;
   transition: background-color var(--transition-speed), transform 0.2s;
+  min-width: 100px; /* Touch-friendly */
 }
 
 .btn-primary {
@@ -304,7 +306,7 @@ body.light-mode .form-group textarea {
 
 .btn-primary:hover {
   background-color: #00a89a;
-  transform: translateY(-2px);
+  transform: scale(1.05);
 }
 
 .btn-secondary {
@@ -319,7 +321,7 @@ body.light-mode .btn-secondary {
 
 .btn-secondary:hover {
   background-color: #4a4a5e;
-  transform: translateY(-2px);
+  transform: scale(1.05);
 }
 
 body.light-mode .btn-secondary:hover {
@@ -330,6 +332,7 @@ body.light-mode .btn-secondary:hover {
   color: #dc3545;
   font-size: 0.9em;
   margin-top: 10px;
+  max-width: 90vw; /* Prevent overflow */
 }
 
 /* Quick Control Panel Table */
@@ -341,7 +344,7 @@ body.light-mode .btn-secondary:hover {
 
 .bots-table th,
 .bots-table td {
-  padding: 12px;
+  padding: 14px; /* Increased for mobile */
   text-align: right;
   border-bottom: 1px solid var(--dark-border);
 }
@@ -387,7 +390,7 @@ body.light-mode .bots-table td {
 }
 
 .bots-table .btn-icon {
-  font-size: 1.2em;
+  font-size: 1.4em; /* Increased for mobile */
   color: var(--dark-text);
 }
 
@@ -397,6 +400,7 @@ body.light-mode .bots-table .btn-icon {
 
 .bots-table .btn-icon:hover {
   color: var(--turquoise);
+  transform: scale(1.1);
 }
 
 /* Animation Keyframes */
@@ -413,25 +417,33 @@ body.light-mode .bots-table .btn-icon {
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .user-bot-card .card-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    flex-direction: row; /* Keep horizontal */
+    align-items: center;
+    gap: 8px;
+    padding-bottom: 10px;
+  }
+
+  .user-bot-card .card-header h4 {
+    font-size: 1.2em;
   }
 
   .bot-entry {
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
+    padding: 10px;
   }
 
   .bot-actions {
     width: 100%;
     justify-content: flex-end;
+    gap: 6px;
   }
 
   .modal-content {
-    width: 95%;
+    width: 95vw;
     padding: 15px;
+    max-width: 95vw;
   }
 
   .bots-table {
@@ -440,7 +452,24 @@ body.light-mode .bots-table .btn-icon {
 
   .bots-table th,
   .bots-table td {
-    padding: 8px;
+    padding: 10px;
+  }
+
+  .form-card {
+    padding: 15px;
+  }
+
+  .form-group {
+    margin-bottom: 12px;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    font-size: 0.95em;
+  }
+
+  .bots-table .btn-icon {
+    font-size: 1.3em;
   }
 }
 
@@ -450,12 +479,92 @@ body.light-mode .bots-table .btn-icon {
   }
 
   .btn {
-    padding: 10px 18px;
-    font-size: 0.95em;
+    padding: 8px 16px;
+    font-size: 0.9em;
+    min-width: 90px;
   }
 
   .bots-table {
     display: block;
     overflow-x: auto;
+    font-size: 0.85em;
+  }
+
+  .user-bot-card .card-header h4 {
+    font-size: 1.1em;
+  }
+
+  .bot-entry {
+    padding: 8px;
+  }
+
+  .form-card {
+    padding: 12px;
+  }
+
+  .modal-content {
+    padding: 10px;
+    max-width: 98vw;
+  }
+
+  .modal-header h3 {
+    font-size: 1.4em;
+  }
+}
+
+@media (max-width: 360px) {
+  .bots-users-container h3 {
+    font-size: 1.3em;
+  }
+
+  .user-bot-card .card-header {
+    gap: 5px;
+  }
+
+  .user-bot-card .card-header h4 {
+    font-size: 1em;
+  }
+
+  .bot-entry {
+    padding: 6px;
+  }
+
+  .bot-actions {
+    gap: 5px;
+  }
+
+  .form-group {
+    margin-bottom: 10px;
+  }
+
+  .form-group label {
+    font-size: 0.9em;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 10px;
+    font-size: 0.9em;
+  }
+
+  .btn {
+    padding: 6px 14px;
+    font-size: 0.85em;
+    min-width: 80px;
+  }
+
+  .bots-table th,
+  .bots-table td {
+    padding: 8px;
+    font-size: 0.8em;
+  }
+
+  .bots-table .btn-icon {
+    font-size: 1.2em;
+  }
+
+  .modal-header h3 {
+    font-size: 1.2em;
   }
 }
