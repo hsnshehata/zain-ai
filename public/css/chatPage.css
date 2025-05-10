@@ -15,7 +15,7 @@
 
 .preview-section, .settings-section {
   flex: 1;
-  min-width: 300px;
+  min-width: 300px; /* Default for desktop */
 }
 
 /* Preview Section */
@@ -44,7 +44,7 @@ body.light-mode .chat-preview-container {
 }
 
 .chat-container {
-  max-width: 400px;
+  max-width: 400px; /* Default for desktop */
   margin: 0 auto;
   border-radius: 12px;
   overflow: hidden;
@@ -87,13 +87,13 @@ body.light-mode .chat-container {
   border: none;
   border-radius: 16px;
   cursor: pointer;
-  font-size: 0.8em;
+  font-size: 0.85em; /* Increased for mobile */
   transition: transform 0.2s, background-color: 0.3s;
 }
 
 .chat-messages {
   padding: 10px;
-  height: 200px;
+  height: 200px; /* Default for desktop */
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -170,17 +170,17 @@ body.light-mode .chat-input {
 .color-schemes-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 12px; /* Increased for mobile */
   justify-content: center;
 }
 
 .color-scheme-btn {
   flex: 1 1 auto;
-  padding: 6px 12px;
+  padding: 8px 16px; /* Increased for mobile */
   border: none;
   border-radius: 16px;
   cursor: pointer;
-  font-size: 0.8em;
+  font-size: 0.85em;
   transition: transform 0.2s;
 }
 
@@ -315,7 +315,7 @@ body.light-mode .questions-list li {
   padding: 15px;
   box-shadow: 0 4px 10px var(--shadow-dark);
   z-index: 1300;
-  width: 250px;
+  width: 250px; /* Default for desktop */
 }
 
 body.light-mode .settings-popup {
@@ -362,19 +362,21 @@ body.light-mode .settings-popup {
 
 /* Submit Button */
 .submit-btn {
-  padding: 8px 15px;
+  padding: 10px 20px; /* Increased for mobile */
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.95em;
   font-weight: 600;
-  transition: background-color var(--transition-speed);
+  transition: background-color var(--transition-speed), transform 0.2s;
   background-color: var(--turquoise);
   color: white;
+  min-width: 100px; /* Touch-friendly */
 }
 
 .submit-btn:hover {
   background-color: var(--button-hover-bg);
+  transform: scale(1.05);
 }
 
 /* Input Group Container for Buttons Below */
@@ -386,7 +388,7 @@ body.light-mode .settings-popup {
 
 .input-group-buttons {
   display: flex;
-  gap: 10px;
+  gap: 12px; /* Increased for mobile */
   justify-content: flex-start; /* Changed to flex-start for RTL to align buttons on the right */
 }
 
@@ -396,8 +398,12 @@ body.light-mode .settings-popup {
     flex-direction: column;
   }
 
+  .preview-section, .settings-section {
+    min-width: 100%; /* Full width */
+  }
+
   .chat-container {
-    max-width: 100%;
+    max-width: 90vw; /* Responsive width */
   }
 
   .color-schemes-buttons {
@@ -408,11 +414,25 @@ body.light-mode .settings-popup {
 
   .color-scheme-btn {
     flex: 1 1 auto;
+    padding: 6px 14px;
+    font-size: 0.8em;
   }
 
   .settings-popup {
-    width: 100%;
-    max-width: 300px;
+    width: 90vw; /* Responsive width */
+    padding: 10px;
+  }
+
+  .chat-preview-container {
+    padding: 10px;
+  }
+
+  .suggested-questions-container {
+    padding: 10px;
+  }
+
+  .chat-messages {
+    height: 150px; /* Reduced for mobile */
   }
 }
 
@@ -422,7 +442,7 @@ body.light-mode .settings-popup {
   }
 
   .suggested-question {
-    font-size: 0.75em;
+    font-size: 0.8em;
   }
 
   .question-input-group {
@@ -432,5 +452,81 @@ body.light-mode .settings-popup {
   .logo-preview-img {
     max-width: 50px;
     max-height: 50px;
+  }
+
+  .chat-container {
+    max-width: 85vw;
+  }
+
+  .settings-popup {
+    width: 95vw;
+    padding: 8px;
+  }
+
+  .chat-preview-container {
+    padding: 8px;
+  }
+
+  .suggested-questions-container {
+    padding: 8px;
+  }
+
+  .submit-btn {
+    padding: 8px 16px;
+    font-size: 0.9em;
+    min-width: 90px;
+  }
+
+  .chat-messages {
+    height: 120px;
+  }
+}
+
+@media (max-width: 360px) {
+  .chat-page-settings {
+    margin-top: 15px;
+  }
+
+  .preview-section h3, .settings-section h3 {
+    font-size: 1.2em;
+  }
+
+  .chat-container {
+    max-width: 80vw;
+  }
+
+  .color-scheme-btn {
+    padding: 5px 12px;
+    font-size: 0.75em;
+  }
+
+  .settings-popup {
+    width: 98vw;
+    padding: 6px;
+  }
+
+  .chat-preview-container {
+    padding: 6px;
+  }
+
+  .suggested-questions-container {
+    padding: 6px;
+  }
+
+  .submit-btn {
+    padding: 6px 14px;
+    font-size: 0.85em;
+  }
+
+  .chat-title {
+    font-size: 1em;
+  }
+
+  .suggested-question {
+    font-size: 0.75em;
+  }
+
+  .chat-messages {
+    height: 100px;
   }
 }
