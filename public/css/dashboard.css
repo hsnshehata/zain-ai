@@ -626,7 +626,7 @@
     justify-content: flex-start; /* Align items to start */
     align-items: center;
     flex-wrap: nowrap; /* Prevent wrapping */
-    gap: 10px; /* Reduced gap for better fit */
+    gap: 6px; /* Reduced gap for closer buttons */
   }
 
   .nav-item-mobile {
