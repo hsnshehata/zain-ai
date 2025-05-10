@@ -64,21 +64,23 @@
       </header>
 
       <div class="welcome-bar">
-        <div class="info-item">
+        <div class="info-item username-item">
           <i class="fas fa-user"></i>
           <span>مرحباً: <span id="welcome-username">جاري التحميل...</span></span>
         </div>
-        <div class="info-item">
-          <i class="fas fa-tags"></i>
-          <span>نوع الاشتراك: <span id="subscription-type">جاري التحميل...</span></span>
-        </div>
-        <div class="info-item">
-          <i class="fas fa-calendar-alt"></i>
-          <span>انتهاء الاشتراك: <span id="subscription-end">جاري التحميل...</span></span>
-        </div>
-        <div class="info-item">
-          <i class="fas fa-clock"></i>
-          <span>الأيام المتبقية: <span id="remaining-days">جاري التحميل...</span></span>
+        <div class="rotating-items">
+          <div class="info-item rotating-item" id="subscription-type-item">
+            <i class="fas fa-tags"></i>
+            <span>نوع الاشتراك: <span id="subscription-type">جاري التحميل...</span></span>
+          </div>
+          <div class="info-item rotating-item" id="subscription-end-item">
+            <i class="fas fa-calendar-alt"></i>
+            <span>انتهاء الاشتراك: <span id="subscription-end">جاري التحميل...</span></span>
+          </div>
+          <div class="info-item rotating-item" id="remaining-days-item">
+            <i class="fas fa-clock"></i>
+            <span>الأيام المتبقية: <span id="remaining-days">جاري التحميل...</span></span>
+          </div>
         </div>
       </div>
 
