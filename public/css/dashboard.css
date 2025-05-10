@@ -597,7 +597,7 @@
 
   /* Mobile Bottom Navigation Bar */
   .mobile-nav-bottom {
-    display: none;
+    display: none; /* Hidden by default */
     position: fixed;
     bottom: 0;
     left: 0;
@@ -708,7 +708,7 @@
       margin-right: 0;
     }
     .mobile-nav-bottom {
-      display: flex;
+      display: flex; /* Show on mobile */
     }
     .sidebar-toggle-btn {
       display: none;
@@ -740,6 +740,15 @@
       font-size: 0.5em;
       padding: 5px 17.5px 5px 7.5px;
       min-width: 90px;
+    }
+  }
+
+  @media (min-width: 993px) {
+    .mobile-nav-bottom {
+      display: none !important; /* Ensure hidden on desktop */
+    }
+    .sidebar-toggle-btn {
+      display: block;
     }
   }
 
