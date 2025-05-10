@@ -18,7 +18,7 @@
 
 .chat-modal-content {
   width: 90%;
-  max-width: 550px;
+  max-width: 550px; /* Default for desktop */
   border-radius: 15px;
   overflow: hidden;
   display: flex;
@@ -93,38 +93,34 @@ body.light-mode .chat-close-btn {
   background: var(--dark-background);
   color: var(--dark-text);
   position: relative;
-  /* إخفاء الـ scrollbar بشكل افتراضي */
-  scrollbar-width: none; /* لـ Firefox */
-  -ms-overflow-style: none; /* لـ Internet Explorer */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-/* إخفاء الـ scrollbar بشكل افتراضي في Webkit (Chrome/Safari) */
 .chat-messages::-webkit-scrollbar {
   width: 0;
   background: transparent;
 }
 
-/* إظهار الـ scrollbar عند الـ hover أو الـ scroll */
 .chat-messages:hover::-webkit-scrollbar,
 .chat-messages:active::-webkit-scrollbar {
-  width: 8px; /* عرض الـ scrollbar */
+  width: 8px;
 }
 
-/* تخصيص شكل الـ scrollbar */
 .chat-messages::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.1); /* خلفية المسار */
+  background: rgba(0, 0, 0, 0.1);
   border-radius: 10px;
 }
 
 .chat-messages::-webkit-scrollbar-thumb {
-  background: var(--turquoise); /* لون الـ thumb */
+  background: var(--turquoise);
   border-radius: 10px;
-  border: 2px solid transparent; /* حدود شفافة */
-  background-clip: padding-box; /* لون الـ thumb بس */
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 .chat-messages::-webkit-scrollbar-thumb:hover {
-  background: #00a89c; /* لون الـ thumb لما نعمل hover */
+  background: #00a89c;
 }
 
 body.light-mode .chat-messages {
@@ -132,7 +128,6 @@ body.light-mode .chat-messages {
   color: var(--light-text);
 }
 
-/* تحسين شكل الرسايل */
 .message {
   margin-bottom: 15px;
   padding: 12px 18px;
@@ -142,6 +137,7 @@ body.light-mode .chat-messages {
   position: relative;
   animation: slideInMessage 0.3s ease-in-out;
   transition: background-color 0.3s ease, transform 0.2s ease;
+  font-size: 0.95em;
 }
 
 .message:hover {
@@ -292,30 +288,13 @@ body.light-mode .chat-input input {
   transform: rotate(45deg);
 }
 
-/* Loading Spinner for Messages (غير مستخدم حاليًا) */
-.message-loading {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 10px;
-}
-
-.message-loading::after {
-  content: '';
-  width: 20px;
-  height: 20px;
-  border: 3px solid var(--turquoise);
-  border-top: 3px solid transparent;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
 /* Responsive Adjustments */
 @media (max-width: 576px) {
   .chat-modal-content {
     width: 95%;
     max-height: 90vh;
     border-radius: 10px;
+    padding: 15px;
   }
 
   .chat-header {
@@ -356,6 +335,49 @@ body.light-mode .chat-input input {
   .chat-input button {
     width: 40px;
     height: 40px;
+  }
+
+  .chat-input button i {
+    font-size: 1.2em;
+  }
+}
+
+@media (max-width: 360px) {
+  .chat-modal-content {
+    width: 98%;
+    padding: 10px;
+  }
+
+  .chat-header {
+    padding: 10px 12px;
+  }
+
+  .chat-header h3 {
+    font-size: 1em;
+  }
+
+  .chat-messages {
+    padding: 12px;
+  }
+
+  .message {
+    padding: 8px 12px;
+    font-size: 0.85em;
+  }
+
+  .chat-input {
+    padding: 6px;
+    gap: 8px;
+  }
+
+  .chat-input input {
+    padding: 6px 10px;
+    font-size: 0.85em;
+  }
+
+  .chat-input button {
+    width: 35px;
+    height: 35px;
   }
 
   .chat-input button i {
