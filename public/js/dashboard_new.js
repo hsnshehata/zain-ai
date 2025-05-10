@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       subscriptionTypeEl.textContent = 'يرجى اختيار بوت';
       subscriptionEndEl.textContent = 'يرجى اختيار بوت';
       remainingDaysEl.textContent = 'يرجى اختيار بوت';
-      return false; // Indicate failure to load bot info
+      return;
     }
 
     try {
@@ -81,7 +81,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         subscriptionTypeEl.textContent = 'يرجى اختيار بوت';
         subscriptionEndEl.textContent = 'يرجى اختيار بوت';
         remainingDaysEl.textContent = 'يرجى اختيار بوت';
-        return false; // Indicate failure
+        return;
       }
 
       // Display subscription type
@@ -105,67 +105,19 @@ document.addEventListener("DOMContentLoaded", async () => {
         subscriptionEndEl.textContent = 'غير محدد';
         remainingDaysEl.textContent = 'غير محدد';
       }
-      return true; // Indicate success
     } catch (err) {
       console.error('Error loading bot info:', err);
       subscriptionTypeEl.textContent = 'يرجى اختيار بوت';
       subscriptionEndEl.textContent = 'يرجى اختيار بوت';
       remainingDaysEl.textContent = 'يرجى اختيار بوت';
       localStorage.removeItem("selectedBotId"); // Clear invalid bot ID
-      return false; // Indicate failure
     }
   }
 
   // Load welcome bar (username and bot info)
   async function loadWelcomeBar() {
     await loadUsername();
-    const botInfoLoaded = await loadBotInfo();
-    console.log('Bot info loaded:', botInfoLoaded);
-    rotateWelcomeBar(); // Start rotation regardless of bot info
-  }
-
-  // Welcome Bar Rotation for Mobile
-  function rotateWelcomeBar() {
-    const isMobile = window.matchMedia("(max-width: 992px)").matches;
-    const rotatingItems = document.querySelectorAll(".rotating-item");
-
-    console.log('rotateWelcomeBar called, isMobile:', isMobile, 'rotatingItems count:', rotatingItems.length);
-
-    if (isMobile && rotatingItems.length > 0) {
-      let currentIndex = 0;
-
-      // Show the first item initially
-      rotatingItems[currentIndex].classList.add("active");
-      console.log('Initial item shown:', rotatingItems[currentIndex].id);
-
-      setInterval(() => {
-        // Apply fade out to current item
-        rotatingItems[currentIndex].style.animation = "fadeOutWelcome 0.5s ease-out forwards";
-        console.log('Fading out item:', rotatingItems[currentIndex].id);
-
-        // After fade out, hide the current item
-        setTimeout(() => {
-          rotatingItems[currentIndex].classList.remove("active");
-          rotatingItems[currentIndex].style.animation = ""; // Reset animation
-          console.log('Hid item:', rotatingItems[currentIndex].id);
-
-          // Move to the next item
-          currentIndex = (currentIndex + 1) % rotatingItems.length;
-
-          // Show the next item with fade in
-          rotatingItems[currentIndex].classList.add("active");
-          console.log('Showing next item:', rotatingItems[currentIndex].id);
-        }, 500); // Match the animation duration
-      }, 4000); // Rotate every 4 seconds
-    } else if (!isMobile) {
-      // Ensure all items are visible on desktop
-      rotatingItems.forEach(item => {
-        item.classList.remove("active");
-        item.style.animation = ""; // Reset any animations
-        item.style.display = "flex"; // Show all items
-      });
-      console.log('Desktop mode: All rotating items shown');
-    }
+    await loadBotInfo();
   }
 
   const content = document.getElementById("content");
