@@ -404,6 +404,28 @@
     font-weight: bold;
   }
 
+  .welcome-bar .username-item {
+    flex-shrink: 0; /* Keep username fixed */
+  }
+
+  .welcome-bar .rotating-items {
+    flex: 1;
+    position: relative;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .welcome-bar .rotating-item {
+    display: none; /* Hide all rotating items by default */
+    align-items: center;
+    gap: 8px;
+  }
+
+  .welcome-bar .rotating-item.active {
+    display: flex; /* Show active rotating item */
+    animation: fadeInWelcome 0.5s ease-in;
+  }
+
   /* Page Content Area */
   .page-content {
     padding: 20px;
@@ -720,36 +742,45 @@
       padding-bottom: calc(var(--mobile-nav-height) + 20px);
     }
     .welcome-bar {
-      font-size: 0.5em; /* Half size for mobile */
-      padding: 4px 7.5px;
-      gap: 4px;
+      font-size: 0.7em; /* Larger font for mobile */
+      padding: 6px 10px;
+      gap: 10px;
+      flex-wrap: nowrap;
+      justify-content: space-between;
     }
     .welcome-bar i {
-      font-size: 0.6em;
+      font-size: 0.8em;
     }
     .welcome-bar .info-item {
-      gap: 4px;
+      gap: 6px;
+    }
+    .welcome-bar .rotating-items {
+      flex: 1;
+    }
+    .welcome-bar .rotating-item {
+      position: absolute;
+      width: 100%;
+      top: 0;
+      left: 0;
     }
     .bot-selector-container {
-      min-width: 100px; /* Half size */
+      min-width: 100px;
     }
     .form-group.bot-selector label {
-      font-size: 0.45em; /* Half size */
+      font-size: 0.45em;
     }
     #botSelectDashboard {
-      font-size: 0.5em; /* Half size */
-      padding: 5px 17.5px 5px 7.5px; /* Half padding */
-      min-width: 90px; /* Half size */
+      font-size: 0.5em;
+      padding: 5px 17.5px 5px 7.5px;
+      min-width: 90px;
     }
   }
 
   @media (max-width: 768px) {
     .welcome-bar {
-      flex-direction: row;
-      align-items: center;
-      gap: 3px;
-      padding: 3px 5px;
-      font-size: 0.45em;
+      font-size: 0.65em;
+      padding: 5px 8px;
+      gap: 8px;
     }
     .page-header {
       flex-direction: column;
@@ -765,7 +796,7 @@
     }
     #botSelectDashboard {
       width: 100%;
-      min-width: 75px; /* Half size */
+      min-width: 75px;
       font-size: 0.45em;
       padding: 4px 15px 4px 6px;
     }
@@ -803,11 +834,12 @@
       gap: 10px;
     }
     .welcome-bar {
-      font-size: 0.425em;
-      padding: 2.5px 4px;
+      font-size: 0.6em;
+      padding: 4px 6px;
+      gap: 6px;
     }
     .welcome-bar .info-item {
-      gap: 3px;
+      gap: 5px;
     }
     .modal-content {
       max-width: 98vw;
@@ -841,7 +873,7 @@
       font-size: 0.65em;
     }
     .welcome-bar {
-      font-size: 0.4em;
+      font-size: 0.55em;
     }
     #botSelectDashboard {
       font-size: 0.4em;
@@ -865,5 +897,15 @@
   @keyframes slideIn {
     from { transform: translateY(-20px); opacity: 0; }
     to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes fadeInWelcome {
+    from { opacity: 0; transform: translateX(20px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes fadeOutWelcome {
+    from { opacity: 1; transform: translateX(0); }
+    to { opacity: 0; transform: translateX(-20px); }
   }
 }
