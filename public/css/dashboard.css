@@ -608,6 +608,13 @@
     z-index: 1000;
     padding: 10px 5px;
     transition: transform var(--transition-speed) ease;
+    overflow-x: auto; /* Enable horizontal scroll */
+    white-space: nowrap; /* Keep items in a single row */
+    scrollbar-width: none; /* Hide scrollbar for Firefox */
+  }
+
+  .mobile-nav-bottom::-webkit-scrollbar {
+    display: none; /* Hide scrollbar for Chrome/Safari */
   }
 
   &.light-mode .mobile-nav-bottom {
@@ -621,10 +628,10 @@
 
   .mobile-nav-bottom {
     display: flex;
-    justify-content: space-between;
+    justify-content: flex-start; /* Align items to start */
     align-items: center;
-    flex-wrap: nowrap;
-    gap: 15px;
+    flex-wrap: nowrap; /* Prevent wrapping */
+    gap: 10px; /* Reduced gap for better fit */
   }
 
   .nav-item-mobile {
@@ -634,11 +641,11 @@
     cursor: pointer;
     color: var(--dark-text);
     transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease, transform 0.2s;
-    display: flex;
+    display: inline-flex; /* Inline-flex for horizontal scroll */
     flex-direction: column;
     align-items: center;
-    font-size: 1.3em;
-    min-width: 50px;
+    font-size: 1.2em; /* Slightly smaller font */
+    min-width: 60px; /* Ensure touch-friendly size */
   }
 
   &.light-mode .nav-item-mobile {
@@ -646,7 +653,7 @@
   }
 
   .nav-item-mobile span {
-    font-size: 0.75em;
+    font-size: 0.7em; /* Smaller text */
     margin-top: 4px;
     white-space: nowrap;
   }
@@ -770,6 +777,9 @@
     .bot-selector-container {
       width: 100%;
     }
+    .bot-selector-container {
+      width: 100%;
+    }
     #botSelectDashboard {
       width: 100%;
       min-width: 75px;
@@ -800,11 +810,11 @@
     }
     .nav-item-mobile {
       padding: 6px;
-      font-size: 1.2em;
-      min-width: 45px;
+      font-size: 1.1em;
+      min-width: 55px; /* Slightly smaller for smaller screens */
     }
     .nav-item-mobile span {
-      font-size: 0.7em;
+      font-size: 0.65em;
     }
     .header-right {
       gap: 10px;
@@ -842,11 +852,11 @@
     }
     .nav-item-mobile {
       padding: 5px;
-      font-size: 1.1em;
-      min-width: 40px;
+      font-size: 1em;
+      min-width: 50px; /* Even smaller for tiny screens */
     }
     .nav-item-mobile span {
-      font-size: 0.65em;
+      font-size: 0.6em;
     }
     .welcome-bar {
       font-size: 0.4em;
