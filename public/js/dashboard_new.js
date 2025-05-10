@@ -118,6 +118,37 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function loadWelcomeBar() {
     await loadUsername();
     await loadBotInfo();
+    rotateWelcomeBar(); // Start rotation after loading data
+  }
+
+  // Welcome Bar Rotation for Mobile
+  function rotateWelcomeBar() {
+    const isMobile = window.matchMedia("(max-width: 992px)").matches;
+    const rotatingItems = document.querySelectorAll(".rotating-item");
+
+    if (isMobile && rotatingItems.length > 0) {
+      let currentIndex = 0;
+
+      // Show the first item initially
+      rotatingItems[currentIndex].classList.add("active");
+
+      setInterval(() => {
+        // Remove active class and apply fade out
+        rotatingItems[currentIndex].style.animation = "fadeOutWelcome 0.5s ease-out forwards";
+
+        // After fade out, hide the current item
+        setTimeout(() => {
+          rotatingItems[currentIndex].classList.remove("active");
+          rotatingItems[currentIndex].style.animation = ""; // Reset animation
+
+          // Move to the next item
+          currentIndex = (currentIndex + 1) % rotatingItems.length;
+
+          // Show the next item with fade in
+          rotatingItems[currentIndex].classList.add("active");
+        }, 500); // Match the animation duration
+      }, 4000); // Rotate every 4 seconds
+    }
   }
 
   const content = document.getElementById("content");
