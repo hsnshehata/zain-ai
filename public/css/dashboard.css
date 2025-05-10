@@ -410,20 +410,13 @@
 
   .welcome-bar .rotating-items {
     flex: 1;
-    position: relative;
     min-width: 0;
-    overflow: hidden;
   }
 
   .welcome-bar .rotating-item {
-    display: none; /* Hide all rotating items by default */
+    display: flex; /* Show all items by default on desktop */
     align-items: center;
     gap: 8px;
-  }
-
-  .welcome-bar .rotating-item.active {
-    display: flex; /* Show active rotating item */
-    animation: fadeInWelcome 0.5s ease-in;
   }
 
   /* Page Content Area */
@@ -756,12 +749,19 @@
     }
     .welcome-bar .rotating-items {
       flex: 1;
+      position: relative;
+      overflow: hidden;
     }
     .welcome-bar .rotating-item {
+      display: none; /* Hide non-active items on mobile */
       position: absolute;
       width: 100%;
       top: 0;
       left: 0;
+    }
+    .welcome-bar .rotating-item.active {
+      display: flex; /* Show active item */
+      animation: fadeInWelcome 0.5s ease-in;
     }
     .bot-selector-container {
       min-width: 100px;
