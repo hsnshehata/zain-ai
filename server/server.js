@@ -3,7 +3,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const rateLimit = require('express-rate-limit'); // استيراد مكتبة Rate Limiting
+const rateLimit = require('express-rate-limit');
 const facebookRoutes = require('./routes/facebook');
 const webhookRoutes = require('./routes/webhook');
 const authRoutes = require('./routes/auth');
@@ -52,6 +52,21 @@ app.set('trust proxy', 1);
 // إضافة Cross-Origin-Opener-Policy Header
 app.use((req, res, next) => {
   res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups');
+  next();
+});
+
+// Middleware لإضافة Cache-Control headers
+app.use((req, res, next) => {
+  // لملفات HTML، منع التخزين في الكاش
+  if (req.path.match(/\.(html)$/i) || ['/', '/dashboard', '/dashboard_new', '/login', '/register', '/set-whatsapp', '/chat/'].some(path => req.path.startsWith(path))) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+  // للملفات الثابتة (CSS, JS, صور)، السماح بالتخزين لمدة 5 دقايق
+  else if (req.path.match(/\.(css|js|png|jpg|jpeg|gif|ico|json)$/i)) {
+    res.setHeader('Cache-Control', 'public, max-age=300');
+  }
   next();
 });
 
