@@ -402,14 +402,25 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Initial Page Load
   const loadInitialPage = async () => {
-    let pageToLoad = role === "superadmin" ? "bots" : "rules";
-    window.location.hash = pageToLoad;
+    // Check if there's a hash in the URL (e.g., #rules, #analytics)
+    const hash = window.location.hash.substring(1);
+    let pageToLoad = hash || (role === "superadmin" ? "bots" : "rules");
+    
+    // Validate pageToLoad to ensure it's a valid page
+    const validPages = ['bots', 'rules', 'chat-page', 'analytics', 'messages', 'feedback', 'facebook', 'settings'];
+    if (!validPages.includes(pageToLoad)) {
+      pageToLoad = role === "superadmin" ? "bots" : "rules";
+    }
+
+    console.log(`Loading initial page: ${pageToLoad}`);
     await loadPageContent(pageToLoad);
   };
 
+  // Handle hash change
   window.addEventListener('hashchange', async () => {
     const hash = window.location.hash.substring(1);
     if (hash) {
+      console.log(`Hash changed, loading page: ${hash}`);
       await loadPageContent(hash);
     }
   });
