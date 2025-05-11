@@ -2,6 +2,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Global variable to store available bots
   let availableBots = [];
 
+  // Valid pages to prevent unexpected page loads
+  const validPages = ['bots', 'rules', 'chat-page', 'analytics', 'messages', 'feedback', 'facebook', 'settings'];
+
   // Check for token in URL (from /verify/:token redirect)
   const urlParams = new URLSearchParams(window.location.search);
   const tokenFromUrl = urlParams.get('token');
@@ -36,6 +39,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       window.location.href = "/login.html";
     }
     return;
+  }
+
+  // Validate initial hash to prevent unexpected page loads
+  let initialHash = window.location.hash.substring(1);
+  if (initialHash && !validPages.includes(initialHash)) {
+    console.warn(`⚠️ Invalid initial hash: ${initialHash}, resetting to default`);
+    initialHash = '';
+    window.location.hash = '';
   }
 
   // Load username
@@ -308,6 +319,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   const loadPageContent = async (page) => {
+    if (!validPages.includes(page)) {
+      console.warn(`⚠️ Attempted to load invalid page: ${page}, ignoring`);
+      return;
+    }
+
     console.log(`Attempting to load page: ${page}`);
     content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`;
     const selectedBotId = localStorage.getItem("selectedBotId");
@@ -400,30 +416,47 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   };
 
+  // Debounce function to prevent rapid hashchange events
+  function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  }
+
   // Initial Page Load
   const loadInitialPage = async () => {
     // Check if there's a hash in the URL (e.g., #rules, #analytics)
-    const hash = window.location.hash.substring(1);
-    let pageToLoad = hash || (role === "superadmin" ? "bots" : "rules");
-    
+    let pageToLoad = initialHash || (role === "superadmin" ? "bots" : "rules");
+
     // Validate pageToLoad to ensure it's a valid page
-    const validPages = ['bots', 'rules', 'chat-page', 'analytics', 'messages', 'feedback', 'facebook', 'settings'];
     if (!validPages.includes(pageToLoad)) {
+      console.warn(`⚠️ Invalid pageToLoad: ${pageToLoad}, defaulting to ${role === "superadmin" ? "bots" : "rules"}`);
       pageToLoad = role === "superadmin" ? "bots" : "rules";
+      window.location.hash = pageToLoad;
     }
 
     console.log(`Loading initial page: ${pageToLoad}`);
     await loadPageContent(pageToLoad);
   };
 
-  // Handle hash change
-  window.addEventListener('hashchange', async () => {
+  // Handle hash change with debounce
+  const debouncedHashChange = debounce(async () => {
     const hash = window.location.hash.substring(1);
-    if (hash) {
+    if (hash && validPages.includes(hash)) {
       console.log(`Hash changed, loading page: ${hash}`);
       await loadPageContent(hash);
+    } else {
+      console.warn(`⚠️ Invalid hash: ${hash}, ignoring`);
     }
-  });
+  }, 100);
+
+  window.addEventListener('hashchange', debouncedHashChange);
 
   // Add event listeners for nav items
   navItems.forEach(item => {
