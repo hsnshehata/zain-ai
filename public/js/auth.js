@@ -9,6 +9,35 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
+  // Handle API requests with error handling
+  async function handleApiRequest(url, options, errorDiv, defaultErrorMessage) {
+    try {
+      const response = await fetch(url, options);
+      const data = await response.json();
+      if (!response.ok) {
+        // Check for token expiration error
+        if (response.status === 401 && data.error === 'TokenExpiredError') {
+          console.log('❌ Token expired, initiating auto-logout');
+          localStorage.removeItem('token');
+          localStorage.removeItem('role');
+          localStorage.removeItem('userId');
+          localStorage.removeItem('username');
+          console.log('✅ Auto-logout successful, redirecting to login page');
+          window.location.href = '/login.html';
+          throw new Error('التوكن منتهي الصلاحية، يرجى تسجيل الدخول مرة أخرى');
+        }
+        throw new Error(data.message || defaultErrorMessage);
+      }
+      return data;
+    } catch (err) {
+      if (errorDiv) {
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = err.message || defaultErrorMessage;
+      }
+      throw err;
+    }
+  }
+
   // Handle login form submission
   if (loginForm) {
     loginForm.addEventListener('submit', async (e) => {
