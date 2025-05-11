@@ -105,10 +105,10 @@ router.get('/verify/:token', async (req, res) => {
     const authToken = jwt.sign(
       { userId: user._id, role: user.role, username: user.username },
       process.env.JWT_SECRET || 'your_jwt_secret',
-      { expiresIn: '24h' }
+      { expiresIn: '30d' } // تغيير لمدة 30 يوم
     );
 
-    console.log(`✅ Account verified and bot created for user ${user.username}`);
+    console.log(`✅ Account verified and bot created for user ${user.username}, token valid for 30 days`);
     res.redirect(`/dashboard_new.html?token=${authToken}`);
   } catch (err) {
     console.error('❌ خطأ في تفعيل الحساب:', err.message, err.stack);
@@ -141,9 +141,9 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign(
       { userId: user._id, role: user.role, username: user.username },
       process.env.JWT_SECRET || 'your_jwt_secret',
-      { expiresIn: '24h' }
+      { expiresIn: '30d' } // تغيير لمدة 30 يوم
     );
-    console.log(`✅ Login successful for username ${username}`);
+    console.log(`✅ Login successful for username ${username}, token valid for 30 days`);
     res.status(200).json({ token, role: user.role, userId: user._id, username: user.username, success: true });
   } catch (err) {
     console.error('❌ خطأ في تسجيل الدخول:', err.message, err.stack);
@@ -180,9 +180,9 @@ router.post('/google', async (req, res) => {
       const token = jwt.sign(
         { userId: user._id, role: user.role, username: user.username },
         process.env.JWT_SECRET || 'your_jwt_secret',
-        { expiresIn: '24h' }
+        { expiresIn: '30d' } // تغيير لمدة 30 يوم
       );
-      console.log(`✅ Google login successful for email ${email}`);
+      console.log(`✅ Google login successful for email ${email}, token valid for 30 days`);
       res.json({ token, role: user.role, userId: user._id, username: user.username, newUser: false, success: true });
     } else {
       const existingEmailUser = await User.findOne({ email });
@@ -220,9 +220,9 @@ router.post('/google', async (req, res) => {
       const token = jwt.sign(
         { userId: user._id, role: user.role, username: user.username },
         process.env.JWT_SECRET || 'your_jwt_secret',
-        { expiresIn: '24h' }
+        { expiresIn: '30d' } // تغيير لمدة 30 يوم
       );
-      console.log(`✅ Google registration successful for email ${email}, username ${username}`);
+      console.log(`✅ Google registration successful for email ${email}, username ${username}, token valid for 30 days`);
       res.json({ token, role: user.role, userId: user._id, username: user.username, newUser: true, success: true });
     }
   } catch (error) {
