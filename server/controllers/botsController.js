@@ -2,12 +2,34 @@ const express = require('express');
 const Bot = require('../models/Bot');
 const User = require('../models/User');
 const Feedback = require('../models/Feedback');
+const Notification = require('../models/Notification');
 const axios = require('axios');
 
 // جلب كل البوتات
 exports.getBots = async (req, res) => {
   try {
     const bots = await Bot.find().populate('userId');
+    const currentDate = new Date();
+
+    // التحقق من autoStopDate لكل بوت وتحديث الحالة إذا لزم الأمر
+    for (const bot of bots) {
+      if (bot.autoStopDate && new Date(bot.autoStopDate) <= currentDate && bot.isActive) {
+        bot.isActive = false;
+        await bot.save();
+
+        // إنشاء إشعار للمستخدم
+        const notification = new Notification({
+          user: bot.userId,
+          title: `توقف البوت ${bot.name}`,
+          message: `البوت ${bot.name} توقف تلقائيًا بسبب انتهاء الاشتراك في ${new Date(bot.autoStopDate).toLocaleDateString('ar-EG')}`,
+          isRead: false
+        });
+        await notification.save();
+
+        console.log(`✅ Bot ${bot.name} stopped due to expired subscription and notification sent to user ${bot.userId}`);
+      }
+    }
+
     res.status(200).json(bots);
   } catch (err) {
     console.error('❌ خطأ في جلب البوتات:', err.message, err.stack);
