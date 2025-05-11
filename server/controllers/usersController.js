@@ -6,11 +6,11 @@ const jwt = require('jsonwebtoken');
 
 // إنشاء مستخدم جديد
 exports.createUser = async (req, res) => {
-  const { username, email, whatsapp, password, confirmPassword, role, subscriptionType, subscriptionEndDate } = req.body;
+  const { username, email, whatsapp, password, confirmPassword, role, subscriptionType, subscriptionEndDate, botName } = req.body;
 
-  if (!username || !email || !whatsapp || !password || !confirmPassword) {
+  if (!username || !email || !whatsapp || !password || !confirmPassword || !botName) {
     console.log('❌ Create user failed: All fields are required');
-    return res.status(400).json({ message: 'جميع الحقول مطلوبة' });
+    return res.status(400).json({ message: 'جميع الحقول مطلوبة، بما في ذلك اسم البوت' });
   }
 
   if (password !== confirmPassword) {
@@ -42,8 +42,26 @@ exports.createUser = async (req, res) => {
     });
 
     await user.save();
-    console.log(`✅ User ${username} created successfully`);
-    res.status(201).json(user);
+    
+    // إنشاء بوت جديد مع فترة مجانية 30 يوم
+    const freeTrialEndDate = new Date();
+    freeTrialEndDate.setDate(freeTrialEndDate.getDate() + 30); // إضافة 30 يوم من تاريخ الإنشاء
+    
+    const bot = new Bot({
+      name: botName,
+      userId: user._id,
+      subscriptionType: 'free',
+      autoStopDate: freeTrialEndDate,
+      isActive: true
+    });
+    await bot.save();
+
+    // إضافة البوت لقايمة bots بتاعة اليوزر
+    user.bots.push(bot._id);
+    await user.save();
+
+    console.log(`✅ User ${username} created successfully with bot ${botName}`);
+    res.status(201).json({ user, bot });
   } catch (err) {
     console.error('❌ خطأ في إنشاء المستخدم:', err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
