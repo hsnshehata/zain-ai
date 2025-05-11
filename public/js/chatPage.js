@@ -1,6 +1,7 @@
-// public/js/chatPage.js (Updated for unified error handling and CSS loading)
+// public/js/chatPage.js
 
 async function loadChatPage() {
+  console.log('🔍 loadChatPage called');
   return new Promise(async (resolve, reject) => {
     // إضافة chatPage.css ديناميكيًا
     const link = document.createElement("link");
@@ -269,11 +270,11 @@ async function loadChatPage() {
     supportButton.style.display = 'block';
   });
 </script>
-                `.trim();
+          `.trim();
 
           let fullIframeCode = `
-    <iframe src="${data.link}" style="width: 100%; height: 100%; border: none;" scrolling="no"></iframe>
-            `.trim();
+<iframe src="${data.link}" style="width: 100%; height: 100%; border: none;" scrolling="no"></iframe>
+          `.trim();
 
           chatPageContent.innerHTML = `
             <div class="form-group">
@@ -631,6 +632,7 @@ async function loadChatPage() {
           };
 
           function updatePreviewStyles() {
+            console.log('🔄 Updating preview styles');
             if (!data.headerHidden) {
               previewChatHeader.style.backgroundColor = colorValues.headerColor;
               previewChatTitle.style.color = colorValues.titleColor;
@@ -667,6 +669,7 @@ async function loadChatPage() {
 
           document.querySelectorAll('.settings-gear').forEach(gear => {
             gear.addEventListener('click', (e) => {
+              console.log('⚙️ Settings gear clicked:', gear.getAttribute('data-target'));
               e.stopPropagation();
               const targetId = gear.getAttribute('data-target');
               const popup = document.getElementById(targetId);
@@ -678,12 +681,14 @@ async function loadChatPage() {
 
           document.querySelectorAll('.settings-popup .close-btn').forEach(btn => {
             btn.addEventListener('click', () => {
+              console.log('❌ Closing settings popup');
               btn.parentElement.style.display = 'none';
             });
           });
 
           document.querySelectorAll('.color-scheme-btn').forEach(btn => {
             btn.addEventListener('click', () => {
+              console.log('🎨 Color scheme selected:', btn.textContent);
               const schemeIndex = btn.getAttribute('data-scheme-index');
               const selectedScheme = colorSchemes[schemeIndex];
               colorValues = { ...selectedScheme.colors };
@@ -696,6 +701,7 @@ async function loadChatPage() {
             colorInputs.forEach(input => {
               const colorId = input.getAttribute('data-color-id');
               input.addEventListener('input', (e) => {
+                console.log(`🌈 Color changed for ${colorId}: ${e.target.value}`);
                 colorValues[colorId] = e.target.value;
                 updatePreviewStyles();
               });
@@ -703,6 +709,7 @@ async function loadChatPage() {
           }, 0);
 
           document.getElementById('title').addEventListener('input', (e) => {
+            console.log('✍️ Title updated:', e.target.value);
             previewChatTitle.textContent = e.target.value || 'صفحة الدردشة';
           });
 
@@ -712,6 +719,7 @@ async function loadChatPage() {
           logoInput.addEventListener('change', () => {
             const file = logoInput.files[0];
             if (file) {
+              console.log('🖼️ Logo file selected:', file.name);
               const reader = new FileReader();
               reader.onload = (e) => {
                 logoPreview.src = e.target.result;
@@ -721,6 +729,7 @@ async function loadChatPage() {
               };
               reader.readAsDataURL(file);
             } else {
+              console.log('🖼️ Logo removed');
               logoPreview.style.display = 'none';
               previewChatLogo.style.display = 'none';
             }
@@ -730,9 +739,10 @@ async function loadChatPage() {
             const linkInput = document.getElementById('chatLink');
             try {
               await navigator.clipboard.writeText(linkInput.value);
+              console.log('📋 Chat link copied:', linkInput.value);
               alert('تم نسخ الرابط بنجاح!');
             } catch (err) {
-              console.error('خطأ في نسخ الرابط:', err);
+              console.error('❌ Error copying chat link:', err);
               alert('فشل في نسخ الرابط، حاول مرة أخرى');
             }
           });
@@ -746,6 +756,7 @@ async function loadChatPage() {
           const copyLinkBtn = document.getElementById('copyLinkBtn');
 
           editLinkBtn.addEventListener('click', () => {
+            console.log('✏️ Edit link button clicked');
             editLinkForm.style.display = 'block';
             editLinkBtn.style.display = 'none';
             copyLinkBtn.style.display = 'none';
@@ -754,6 +765,7 @@ async function loadChatPage() {
           });
 
           cancelLinkBtn.addEventListener('click', () => {
+            console.log('❌ Cancel edit link');
             editLinkForm.style.display = 'none';
             editLinkBtn.style.display = 'inline-block';
             copyLinkBtn.style.display = 'inline-block';
@@ -762,6 +774,7 @@ async function loadChatPage() {
 
           saveLinkBtn.addEventListener('click', async () => {
             const newLinkId = newLinkIdInput.value.trim();
+            console.log('💾 Saving new link ID:', newLinkId);
             if (!newLinkId) {
               alert('يرجى إدخال رابط صالح');
               return;
@@ -789,6 +802,7 @@ async function loadChatPage() {
                 body: formData,
               }, chatPageContent, "فشل في تحديث الرابط");
 
+              console.log('✅ Link updated:', result.link);
               chatLinkInput.value = result.link;
               floatingButtonCode = floatingButtonCode.replace(data.link, result.link);
               fullIframeCode = fullIframeCode.replace(data.link, result.link);
@@ -800,7 +814,7 @@ async function loadChatPage() {
               copyLinkBtn.style.display = 'inline-block';
               alert('تم تحديث الرابط بنجاح!');
             } catch (err) {
-              // الخطأ تم التعامل معه في handleApiRequest
+              console.error('❌ Error updating link:', err);
             }
           });
 
@@ -808,9 +822,10 @@ async function loadChatPage() {
             const floatingButtonCodeInput = document.getElementById('floatingButtonCode');
             try {
               await navigator.clipboard.writeText(floatingButtonCodeInput.value);
+              console.log('📋 Floating button code copied');
               alert('تم نسخ كود زر الدعم العائم بنجاح!');
             } catch (err) {
-              console.error('خطأ في نسخ كود زر الدعم العائم:', err);
+              console.error('❌ Error copying floating button code:', err);
               alert('فشل في نسخ الكود، حاول مرة أخرى');
             }
           });
@@ -819,9 +834,10 @@ async function loadChatPage() {
             const fullIframeCodeInput = document.getElementById('fullIframeCode');
             try {
               await navigator.clipboard.writeText(fullIframeCodeInput.value);
+              console.log('📋 Full iframe code copied');
               alert('تم نسخ كود تضمين صفحة الدردشة بنجاح!');
             } catch (err) {
-              console.error('خطأ في نسخ كود تضمين صفحة الدردشة:', err);
+              console.error('❌ Error copying full iframe code:', err);
               alert('فشل في نسخ الكود، حاول مرة أخرى');
             }
           });
@@ -830,6 +846,7 @@ async function loadChatPage() {
           const suggestedQuestionsContainer = document.getElementById('suggestedQuestionsContainer');
           const suggestedQuestionsGear = document.getElementById('suggestedQuestionsGear');
           suggestedQuestionsEnabledCheckbox.addEventListener('change', () => {
+            console.log('🔄 Suggested questions enabled:', suggestedQuestionsEnabledCheckbox.checked);
             suggestedQuestionsContainer.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
             previewSuggestedQuestions.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
             suggestedQuestionsGear.style.display = suggestedQuestionsEnabledCheckbox.checked ? 'block' : 'none';
@@ -842,6 +859,7 @@ async function loadChatPage() {
 
           const headerHiddenCheckbox = document.getElementById('headerHidden');
           headerHiddenCheckbox.addEventListener('change', () => {
+            console.log('🔄 Header hidden:', headerHiddenCheckbox.checked);
             previewChatHeaderContainer.style.display = headerHiddenCheckbox.checked ? 'none' : 'block';
           });
 
@@ -850,6 +868,7 @@ async function loadChatPage() {
             const newQuestionInput = document.getElementById('newQuestion');
             const question = newQuestionInput.value.trim();
             if (question) {
+              console.log('➕ Adding new question:', question);
               questions.push(question);
               newQuestionInput.value = '';
               updateQuestionsList();
@@ -860,6 +879,7 @@ async function loadChatPage() {
           });
 
           function updateQuestionsList() {
+            console.log('🔄 Updating questions list:', questions);
             const questionsList = document.getElementById('questionsList');
             questionsList.innerHTML = '';
             questions.forEach((question, index) => {
@@ -876,6 +896,7 @@ async function loadChatPage() {
           }
 
           function updatePreviewSuggestedQuestions() {
+            console.log('🔄 Updating preview suggested questions:', questions);
             const shuffleArray = (array) => {
               for (let i = array.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -916,6 +937,7 @@ async function loadChatPage() {
           window.editQuestion = (index) => {
             const newQuestion = prompt('أدخل السؤال الجديد:', questions[index]);
             if (newQuestion && newQuestion.trim()) {
+              console.log('✏️ Editing question at index', index, 'to:', newQuestion.trim());
               questions[index] = newQuestion.trim();
               updateQuestionsList();
               updatePreviewSuggestedQuestions();
@@ -924,6 +946,7 @@ async function loadChatPage() {
 
           window.deleteQuestion = (index) => {
             if (confirm('هل أنت متأكد من حذف هذا السؤال؟')) {
+              console.log('🗑️ Deleting question at index', index);
               questions.splice(index, 1);
               updateQuestionsList();
               updatePreviewSuggestedQuestions();
@@ -936,11 +959,13 @@ async function loadChatPage() {
           }
 
           document.getElementById('imageUploadEnabled').addEventListener('change', (e) => {
+            console.log('🔄 Image upload enabled:', e.target.checked);
             previewImageInputBtn.style.display = e.target.checked ? 'flex' : 'none';
           });
 
           document.getElementById('customizationForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            console.log('💾 Saving customization settings');
             const formData = new FormData(e.target);
             formData.set('title', formData.get('title'));
             formData.set('titleColor', colorValues.titleColor);
@@ -969,6 +994,7 @@ async function loadChatPage() {
                 body: formData,
               }, chatPageContent, "فشل في حفظ الإعدادات");
 
+              console.log('✅ Customization settings saved:', result);
               if (result.logoUrl) {
                 document.querySelector('.logo-preview-container p').innerHTML = `الشعار الحالي: <img src="${result.logoUrl}" alt="Logo Preview" class="logo-preview-img" />`;
                 logoPreview.src = result.logoUrl;
@@ -1002,7 +1028,7 @@ async function loadChatPage() {
               previewChatHeaderContainer.style.display = data.headerHidden ? 'none' : 'block';
               alert('تم حفظ الإعدادات بنجاح!');
             } catch (err) {
-              // الخطأ تم التعامل معه في handleApiRequest
+              console.error('❌ Error saving customization settings:', err);
             }
           });
 
@@ -1029,6 +1055,7 @@ async function loadChatPage() {
                   }),
                 }, chatPageContent, "فشل في إنشاء صفحة الدردشة");
 
+                console.log('✅ Created new chat page:', result);
                 data = {
                   link: result.link,
                   chatPageId: result.chatPageId,
@@ -1056,7 +1083,7 @@ async function loadChatPage() {
                 await loadChatPageSettings();
                 resolve();
               } catch (err) {
-                // الخطأ تم التعامل معه في handleApiRequest
+                console.error('❌ Error creating chat page:', err);
                 reject(err);
               }
             });
@@ -1075,10 +1102,6 @@ async function loadChatPage() {
     }
   });
 }
-
-loadChatPage().catch(err => {
-  console.error('خطأ في تحميل صفحة الدردشة:', err);
-});
 
 // Make loadChatPage globally accessible
 window.loadChatPage = loadChatPage;
