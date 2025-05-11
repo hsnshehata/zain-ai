@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", async () => {
   // Global variable to store available bots
   let availableBots = [];
+  let isInitialLoad = true; // Flag to control initial page load
 
   // Valid pages to prevent unexpected page loads
   const validPages = ['bots', 'rules', 'chat-page', 'analytics', 'messages', 'feedback', 'facebook', 'settings'];
@@ -230,6 +231,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Bot Selector
   async function populateBotSelect() {
     try {
+      content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`; // Show loader until bots are fetched
       const bots = await handleApiRequest("/api/bots", {
         headers: { Authorization: `Bearer ${token}` },
       }, content, "فشل في جلب البوتات");
@@ -276,8 +278,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
       }
 
+      // Load initial page only after bot selection is complete
       await loadInitialPage();
       await loadWelcomeBar(); // Update welcome bar after bots are loaded
+      isInitialLoad = false; // Mark initial load as complete
     } catch (err) {
       console.error('Error in populateBotSelect:', err);
       content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>خطأ في جلب البوتات: ${err.message}. حاول تحديث الصفحة.</p></div>`;
@@ -285,6 +289,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       localStorage.removeItem("selectedBotId"); // Clear invalid bot ID
       availableBots = []; // Clear available bots
       await loadWelcomeBar(); // Update welcome bar with error
+      isInitialLoad = false;
     }
   }
 
@@ -321,6 +326,12 @@ document.addEventListener("DOMContentLoaded", async () => {
   const loadPageContent = async (page) => {
     if (!validPages.includes(page)) {
       console.warn(`⚠️ Attempted to load invalid page: ${page}, ignoring`);
+      return;
+    }
+
+    // Prevent page load during initial load
+    if (isInitialLoad && page !== (role === "superadmin" ? "bots" : "rules")) {
+      console.warn(`⚠️ Attempted to load ${page} during initial load, ignoring`);
       return;
     }
 
@@ -649,8 +660,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // Initialize
-  await populateBotSelect(); // Load bots first
-  await fetchNotifications();
+  await fetchNotifications(); // Load notifications first
+  await populateBotSelect(); // Load bots and select bot before any page load
 });
 
 // Simple JWT decode function
