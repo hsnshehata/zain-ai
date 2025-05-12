@@ -161,13 +161,21 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log('البيانات المرسلة:', { facebookApiKey, facebookPageId }); // Log data for debugging
 
       try {
+        // Fetch the bot to get its current name
+        const botResponse = await handleApiRequest(`/api/bots/${botId}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        }, errorMessage, "فشل جلب بيانات البوت");
+
+        const botName = botResponse.name || "Bot"; // Fallback name if not found
+
         const response = await handleApiRequest(`/api/bots/${botId}`, {
-          method: "PUT", // Changed from PATCH to PUT
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ facebookApiKey, facebookPageId }),
+          body: JSON.stringify({ name: botName, facebookApiKey, facebookPageId }),
         }, errorMessage, "فشل حفظ معلومات الربط");
 
         console.log('رد السيرفر:', response); // Log server response
@@ -179,6 +187,9 @@ document.addEventListener("DOMContentLoaded", () => {
           errorMessage.style.display = 'block';
         } else if (err.message.includes('البوت غير موجود')) {
           errorMessage.textContent = 'البوت غير موجود. تأكد من اختيار بوت صالح.';
+          errorMessage.style.display = 'block';
+        } else {
+          errorMessage.textContent = 'خطأ في السيرفر أثناء حفظ معلومات الربط: ' + (err.message || 'غير معروف');
           errorMessage.style.display = 'block';
         }
       }
