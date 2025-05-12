@@ -14,23 +14,6 @@ const apiCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 router.get('/:id/settings', authenticate, getSettings);
 router.patch('/:id/settings', authenticate, updateSettings);
 
-// جلب بوت معين بناءً على الـ ID
-router.get('/:id', authenticate, async (req, res) => {
-  try {
-    console.log(`[GET /api/bots/${req.params.id}] جاري جلب البوت | Bot ID: ${req.params.id} | User ID: ${req.user.userId}`);
-    const bot = await Bot.findById(req.params.id);
-    if (!bot) {
-      console.log(`[GET /api/bots/${req.params.id}] البوت غير موجود`);
-      return res.status(404).json({ message: 'البوت غير موجود' });
-    }
-    console.log(`[GET /api/bots/${req.params.id}] تم جلب البوت بنجاح:`, bot);
-    res.status(200).json(bot);
-  } catch (err) {
-    console.error(`[GET /api/bots/${req.params.id}] ❌ خطأ في جلب البوت:`, err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر' });
-  }
-});
-
 // معالجة رسايل الدردشة
 router.post('/', async (req, res) => {
   try {
