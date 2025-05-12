@@ -2,11 +2,15 @@ const request = require('request');
 const NodeCache = require('node-cache');
 const Bot = require('../models/Bot');
 const { processMessage, processFeedback } = require('../botEngine');
+const Conversation = require('../models/Conversation');
 
 // إعداد cache لتخزين الـ webhook events مؤقتاً (5 دقايق)
 const webhookCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 // Cache لتخزين الـ messageId بتاع الرسايل الأصلية
 const messageIdCache = new NodeCache({ stdTTL: 600, checkperiod: 60 });
+
+// دالة مساعدة لإضافة timestamp للـ logs
+const getTimestamp = () => new Date().toISOString();
 
 const handleMessage = async (req, res) => {
   try {
@@ -45,10 +49,29 @@ const handleMessage = async (req, res) => {
       if (entry.messaging && entry.messaging.length > 0) {
         const webhookEvent = entry.messaging[0];
         const senderPsid = webhookEvent.sender?.id;
+        const recipientId = webhookEvent.recipient?.id;
 
         if (!senderPsid) {
           console.log('❌ Sender PSID not found in webhook event:', webhookEvent);
           continue;
+        }
+
+        // Validate that senderId is not the page itself
+        if (senderPsid === bot.facebookPageId) {
+          console.log(`⚠️ Skipping message because senderId (${senderPsid}) is the page itself`);
+          continue;
+        }
+
+        // Validate that recipientId matches the page
+        if (recipientId !== bot.facebookPageId) {
+          console.log(`⚠️ Skipping message because recipientId (${recipientId}) does not match pageId (${bot.facebookPageId})`);
+          continue;
+        }
+
+        // Check if the message is an echo (sent by the bot itself)
+        if (webhookEvent.message && webhookEvent.message.is_echo) {
+          console.log(`⚠️ Ignoring echo message from bot: ${webhookEvent.message.text}`);
+          continue; // Skip processing echo messages
         }
 
         // التعامل مع الـ messaging_optins
@@ -92,6 +115,11 @@ const handleMessage = async (req, res) => {
         // التعامل مع الـ inbox_labels
         if (bot.inboxLabelsEnabled) {
           console.log(`🏷️ Adding label to conversation for user ${senderPsid}`);
+          let conversation = await Conversation.findOne({ botId: bot._id, userId: senderPsid });
+          if (conversation) {
+            conversation.label = 'active'; // Example label, adjust as needed
+            await conversation.save();
+          }
         }
 
         // التعامل مع الـ response_feedback
@@ -192,7 +220,7 @@ const sendMessage = (senderPsid, responseText, facebookApiKey) => {
 
     request(
       {
-        uri: 'https://graph.facebook.com/v2.6/me/messages',
+        uri: 'https://graph.facebook.com/v20.0/me/messages', // تحديث الإصدار إلى v20.0
         qs: { access_token: facebookApiKey },
         method: 'POST',
         json: requestBody,
@@ -225,7 +253,7 @@ const replyToComment = (commentId, responseText, facebookApiKey) => {
 
     request(
       {
-        uri: `https://graph.facebook.com/v22.0/${commentId}/comments`,
+        uri: `https://graph.facebook.com/v20.0/${commentId}/comments`, // تحديث الإصدار إلى v20.0
         qs: { access_token: facebookApiKey },
         method: 'POST',
         json: requestBody,
