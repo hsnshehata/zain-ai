@@ -1,28 +1,44 @@
-// /server/routes/bots.js
-
 const express = require('express');
 const router = express.Router();
-const mongoose = require('mongoose');
-const Bot = require('../models/Bot');
-const User = require('../models/User');
-const Feedback = require('../models/Feedback');
-const authenticate = require('../middleware/authenticate');
 const botsController = require('../controllers/botsController');
+const botController = require('../controllers/botController');
+const authenticate = require('../middleware/authenticate');
 
 // جلب كل البوتات
 router.get('/', authenticate, botsController.getBots);
 
-// جلب التقييمات بناءً على botId مع اسم المستخدم من فيسبوك (التقييمات المرئية فقط)
+// جلب بوت معين بناءً على الـ ID
+router.get('/:id', authenticate, async (req, res) => {
+  try {
+    console.log(`[GET /api/bots/${req.params.id}] جاري جلب البوت | Bot ID: ${req.params.id} | User ID: ${req.user.userId}`);
+    const bot = await Bot.findById(req.params.id);
+    if (!bot) {
+      console.log(`[GET /api/bots/${req.params.id}] البوت غير موجود`);
+      return res.status(404).json({ message: 'البوت غير موجود' });
+    }
+    console.log(`[GET /api/bots/${req.params.id}] تم جلب البوت بنجاح:`, bot);
+    res.status(200).json(bot);
+  } catch (err) {
+    console.error(`[GET /api/bots/${req.params.id}] ❌ خطأ في جلب البوت:`, err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر' });
+  }
+});
+
+// Routes for settings with botId in the URL
+router.get('/:id/settings', authenticate, botController.getSettings);
+router.patch('/:id/settings', authenticate, botController.updateSettings);
+
+// جلب التقييمات لبوت معين
 router.get('/:id/feedback', authenticate, botsController.getFeedback);
 
 // جلب أكثر الردود السلبية
-router.get('/feedback/negative-replies/:botId', authenticate, botsController.getTopNegativeReplies);
+router.get('/:id/negative-replies', authenticate, botsController.getTopNegativeReplies);
 
-// إخفاء تقييم معين (بدل الحذف)
+// إخفاء تقييم معين
 router.delete('/:id/feedback/:feedbackId', authenticate, botsController.hideFeedback);
 
-// إخفاء جميع التقييمات (إيجابية أو سلبية) دفعة واحدة
-router.delete('/:id/feedback/clear/:type', authenticate, botsController.clearFeedbackByType);
+// إخفاء جميع التقييمات (إيجابية أو سلبية)
+router.delete('/:id/feedback/:type/clear', authenticate, botsController.clearFeedbackByType);
 
 // إنشاء بوت جديد
 router.post('/', authenticate, botsController.createBot);
