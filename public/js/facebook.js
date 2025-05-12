@@ -38,25 +38,12 @@ document.addEventListener("DOMContentLoaded", () => {
         headers: { Authorization: `Bearer ${token}` },
       }, content, "فشل في جلب البوتات");
 
-      console.log('Fetched bots:', bots);
-
       let userBots = bots;
       if (role !== "superadmin") {
         userBots = bots.filter(bot => {
           const botUserId = typeof bot.userId === 'object' && bot.userId._id ? bot.userId._id : bot.userId;
           return botUserId === userId;
         });
-      }
-
-      if (userBots.length === 0) {
-        localStorage.removeItem("selectedBotId");
-        content.innerHTML = `
-          <div class="placeholder error">
-            <h2><i class="fas fa-robot"></i> لا يوجد بوتات متاحة</h2>
-            <p>يرجى التواصل مع المسؤول لإضافة بوت لحسابك أو إنشاء بوت جديد.</p>
-          </div>
-        `;
-        return;
       }
 
       const selectedBot = userBots.find(bot => String(bot._id) === String(selectedBotId));
@@ -199,6 +186,73 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    async function updateWebhookSetting(botId, key, value) {
+      togglesError.style.display = "none";
+
+      try {
+        await handleApiRequest(`/api/bots/${botId}/settings`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ [key]: value }),
+        }, togglesError, `فشل تحديث إعداد ${key}`);
+
+        console.log(`✅ Updated ${key} to ${value} for bot ${botId}`);
+      } catch (err) {
+        const toggleInput = document.querySelector(`input[data-setting-key="${key}"]`);
+        if (toggleInput) toggleInput.checked = !value;
+        // الخطأ تم التعامل معه في handleApiRequest
+      }
+    }
+
+    // Function to exchange short-lived token for a long-lived token (should be moved to backend for security)
+    async function exchangeForLongLivedToken(shortLivedToken) {
+      try {
+        const appId = '499020366015281'; // Your App ID
+        const appSecret = 'YOUR_APP_SECRET'; // Replace with your App Secret (should be stored securely on backend)
+        const response = await fetch(`https://graph.facebook.com/v20.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${shortLivedToken}`);
+        const data = await response.json();
+        if (data.access_token) {
+          console.log('✅ Successfully exchanged for long-lived token:', data.access_token);
+          return data.access_token;
+        } else {
+          console.error('❌ Failed to exchange token:', data);
+          throw new Error('Failed to exchange for long-lived token: ' + (data.error?.message || 'Unknown error'));
+        }
+      } catch (err) {
+        console.error('Error exchanging token:', err);
+        throw err;
+      }
+    }
+
+    // Function to add the page to the app
+    async function addPageToApp(pageId, accessToken) {
+      try {
+        const appId = '499020366015281'; // Your App ID
+        const response = await fetch(`https://graph.facebook.com/v20.0/${pageId}?access_token=${accessToken}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            app_id: appId,
+          }),
+        });
+        const data = await response.json();
+        if (data.success || response.ok) {
+          console.log(`✅ Successfully added page ${pageId} to app ${appId}`);
+        } else {
+          console.error('❌ Failed to add page to app:', data);
+          throw new Error('Failed to add page to app: ' + (data.error?.message || 'Unknown error'));
+        }
+      } catch (err) {
+        console.error('Error adding page to app:', err);
+        throw err;
+      }
+    }
+
     async function saveApiKeys(botId, facebookApiKey, facebookPageId) {
       errorMessage.style.display = "none";
 
@@ -212,13 +266,19 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log('البيانات المرسلة:', { facebookApiKey, facebookPageId }); // Log data for debugging
 
       try {
+        // Exchange the short-lived token for a long-lived token
+        const longLivedToken = await exchangeForLongLivedToken(facebookApiKey);
+
+        // Add the page to the app
+        await addPageToApp(facebookPageId, longLivedToken);
+
         const response = await handleApiRequest(`/api/bots/${botId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ facebookApiKey, facebookPageId }),
+          body: JSON.stringify({ facebookApiKey: longLivedToken, facebookPageId }),
         }, errorMessage, "فشل حفظ معلومات الربط");
 
         console.log('رد السيرفر:', response); // Log server response
@@ -257,7 +317,7 @@ document.addEventListener("DOMContentLoaded", () => {
           errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ';
           errorMessage.style.display = 'block';
         }
-      }, { scope: 'public_profile,pages_show_list,pages_messaging' });
+      }, { scope: 'public_profile,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement' });
     }
 
     function getUserPages(accessToken) {
@@ -269,15 +329,53 @@ document.addEventListener("DOMContentLoaded", () => {
             errorMessage.style.display = 'block';
             return;
           }
-          // Assume the user selects the first page
-          const page = response.data[0]; // First page
-          if (!page.access_token || !page.id) {
-            errorMessage.textContent = 'فشل جلب بيانات الصفحة: مفتاح الوصول أو معرف الصفحة غير موجود';
-            errorMessage.style.display = 'block';
-            return;
-          }
-          console.log('بيانات الصفحة المختارة:', { access_token: page.access_token, page_id: page.id });
-          saveApiKeys(selectedBotId, page.access_token, page.id);
+
+          // Create a dropdown to select a single page
+          const modal = document.createElement("div");
+          modal.classList.add("modal");
+          modal.innerHTML = `
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3>اختر صفحة واحدة لربطها بالبوت</h3>
+                <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+              </div>
+              <div class="modal-body">
+                <select id="pageSelect" class="form-control">
+                  <option value="">اختر صفحة</option>
+                  ${response.data.map(page => `<option value="${page.id}" data-token="${page.access_token}">${page.name}</option>`).join('')}
+                </select>
+              </div>
+              <div class="form-actions">
+                <button id="confirmPageBtn" class="btn btn-primary">تأكيد</button>
+                <button class="btn btn-secondary modal-close-btn">إلغاء</button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(modal);
+
+          // Close modal on cancel
+          modal.querySelectorAll(".modal-close-btn").forEach(btn => {
+            btn.addEventListener("click", () => modal.remove());
+          });
+
+          // Handle page selection
+          document.getElementById("confirmPageBtn").addEventListener("click", () => {
+            const pageSelect = document.getElementById("pageSelect");
+            const selectedPageId = pageSelect.value;
+            const selectedOption = pageSelect.options[pageSelect.selectedIndex];
+            const accessToken = selectedOption.dataset.token;
+
+            if (!selectedPageId || !accessToken) {
+              errorMessage.textContent = 'يرجى اختيار صفحة لربطها بالبوت';
+              errorMessage.style.display = 'block';
+              modal.remove();
+              return;
+            }
+
+            console.log('بيانات الصفحة المختارة:', { access_token: accessToken, page_id: selectedPageId });
+            saveApiKeys(selectedBotId, accessToken, selectedPageId);
+            modal.remove();
+          });
         } else {
           errorMessage.textContent = 'خطأ في جلب الصفحات: ' + (response.error.message || 'غير معروف');
           errorMessage.style.display = 'block';
