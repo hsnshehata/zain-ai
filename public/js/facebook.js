@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       try {
         const response = await handleApiRequest(`/api/bots/${botId}`, {
-          method: "PATCH",
+          method: "PUT", // Changed from PATCH to PUT
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -174,7 +174,13 @@ document.addEventListener("DOMContentLoaded", () => {
         alert("تم ربط الصفحة بنجاح!");
       } catch (err) {
         console.error('خطأ في حفظ الإعدادات:', err); // Log error details
-        // الخطأ تم التعامل معه في handleApiRequest
+        if (err.message.includes('غير مصرح لك')) {
+          errorMessage.textContent = 'غير مصرح لك بتعديل هذا البوت. تأكد إنك صاحب البوت.';
+          errorMessage.style.display = 'block';
+        } else if (err.message.includes('البوت غير موجود')) {
+          errorMessage.textContent = 'البوت غير موجود. تأكد من اختيار بوت صالح.';
+          errorMessage.style.display = 'block';
+        }
       }
     }
 
