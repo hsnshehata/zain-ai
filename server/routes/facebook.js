@@ -1,10 +1,15 @@
+// /server/routes/facebook.js
+
 const express = require('express');
 const router = express.Router();
-const { getSettings, updateSettings } = require('../controllers/botController');
-const authMiddleware = require('../middleware/authenticate');
+const facebookController = require('../controllers/facebookController');
+const facebookTokenController = require('../controllers/facebookTokenController');
+const authenticate = require('../middleware/authenticate');
 
-// Routes for settings with botId in the URL
-router.get('/:id/settings', authMiddleware, getSettings);
-router.patch('/:id/settings', authMiddleware, updateSettings);
+// Webhook endpoint
+router.post('/', facebookController.handleMessage);
+
+// New endpoint to exchange short-lived token for long-lived token
+router.post('/exchange-token', authenticate, facebookTokenController.exchangeToken);
 
 module.exports = router;
