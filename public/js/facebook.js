@@ -157,6 +157,16 @@ document.addEventListener("DOMContentLoaded", () => {
           headers: { Authorization: `Bearer ${token}` },
         }, pageStatus, "فشل في جلب بيانات البوت");
 
+        if (!bot) {
+          pageStatus.innerHTML = `
+            <div style="display: inline-block; color: red;">
+              <strong>حالة الربط:</strong> غير مربوط ❌<br>
+              <strong>السبب:</strong> البوت غير موجود أو تم حذفه
+            </div>
+          `;
+          return;
+        }
+
         if (bot.facebookPageId && bot.facebookApiKey) {
           // Fetch page details from Facebook Graph API
           const response = await fetch(`https://graph.facebook.com/${bot.facebookPageId}?fields=name&access_token=${bot.facebookApiKey}`);
@@ -174,7 +184,7 @@ document.addEventListener("DOMContentLoaded", () => {
             pageStatus.innerHTML = `
               <div style="display: inline-block; color: red;">
                 <strong>حالة الربط:</strong> غير مربوط ❌<br>
-                <strong>السبب:</strong> فشل في جلب بيانات الصفحة (التوكن قد يكون غير صالح)
+                <strong>السبب:</strong> فشل في جلب بيانات الصفحة (التوكن قد يكون غير صالح أو منتهي)
               </div>
             `;
           }
@@ -190,7 +200,7 @@ document.addEventListener("DOMContentLoaded", () => {
         pageStatus.innerHTML = `
           <div style="display: inline-block; color: red;">
             <strong>حالة الربط:</strong> غير مربوط ❌<br>
-            <strong>السبب:</strong> خطأ في جلب بيانات البوت
+            <strong>السبب:</strong> خطأ في جلب بيانات البوت: ${err.message || 'غير معروف'}
           </div>
         `;
       }
