@@ -3,6 +3,7 @@ const router = express.Router();
 const botsController = require('../controllers/botsController');
 const botController = require('../controllers/botController');
 const authenticate = require('../middleware/authenticate');
+const Bot = require('../models/Bot'); // Add this line
 
 // جلب كل البوتات
 router.get('/', authenticate, botsController.getBots);
