@@ -152,12 +152,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Function to load the linked page status and details
     async function loadPageStatus(botId) {
+      console.log(`جاري جلب بيانات البوت بالـ ID: ${botId}`); // Log the botId being used
       try {
         const bot = await handleApiRequest(`/api/bots/${botId}`, {
           headers: { Authorization: `Bearer ${token}` },
         }, pageStatus, "فشل في جلب بيانات البوت");
 
         if (!bot) {
+          console.log(`البوت بالـ ID ${botId} مش موجود`);
           pageStatus.innerHTML = `
             <div style="display: inline-block; color: red;">
               <strong>حالة الربط:</strong> غير مربوط ❌<br>
@@ -167,12 +169,16 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
+        console.log(`بيانات البوت:`, bot); // Log the bot data
+
         if (bot.facebookPageId && bot.facebookApiKey) {
+          console.log(`جاري جلب بيانات الصفحة بالـ ID: ${bot.facebookPageId}`);
           // Fetch page details from Facebook Graph API
           const response = await fetch(`https://graph.facebook.com/${bot.facebookPageId}?fields=name&access_token=${bot.facebookApiKey}`);
           const pageData = await response.json();
 
           if (pageData.name) {
+            console.log(`تم جلب بيانات الصفحة بنجاح:`, pageData);
             pageStatus.innerHTML = `
               <div style="display: inline-block; color: green;">
                 <strong>حالة الربط:</strong> مربوط ✅<br>
@@ -181,6 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
             `;
           } else {
+            console.log(`فشل في جلب بيانات الصفحة:`, pageData);
             pageStatus.innerHTML = `
               <div style="display: inline-block; color: red;">
                 <strong>حالة الربط:</strong> غير مربوط ❌<br>
@@ -189,6 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
           }
         } else {
+          console.log(`البوت مش مرتبط بصفحة`);
           pageStatus.innerHTML = `
             <div style="display: inline-block; color: red;">
               <strong>حالة الربط:</strong> غير مربوط ❌
@@ -232,7 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
         alert("تم ربط الصفحة بنجاح!");
 
         // Reload page status after linking
-        await loadPageStatus(selectedBotId);
+        await loadPageStatus(botId); // Use the same botId as the one used for saving
       } catch (err) {
         console.error('خطأ في حفظ الإعدادات:', err); // Log error details
         if (err.message.includes('غير مصرح لك')) {
