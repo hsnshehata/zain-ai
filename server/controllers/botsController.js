@@ -215,7 +215,7 @@ exports.updateBot = async (req, res) => {
   const { name, userId, facebookApiKey, facebookPageId, isActive, autoStopDate, subscriptionType, welcomeMessage } = req.body;
 
   try {
-    console.log(`[${getTimestamp()}] 📝 محاولة تعديل البوت | Bot ID: ${req.params.id} | User ID: ${req.user._id} | Data:`, req.body);
+    console.log(`[${getTimestamp()}] 📝 محاولة تعديل البوت | Bot ID: ${req.params.id} | User ID: ${req.user.userId} | Data:`, req.body);
 
     const bot = await Bot.findById(req.params.id);
     if (!bot) {
@@ -224,8 +224,8 @@ exports.updateBot = async (req, res) => {
     }
 
     // التحقق إن المستخدم هو صاحب البوت
-    if (bot.userId.toString() !== req.user._id.toString()) {
-      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user._id}`);
+    if (bot.userId.toString() !== req.user.userId.toString()) {
+      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
       return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
@@ -294,8 +294,8 @@ exports.deleteBot = async (req, res) => {
     }
 
     // التحقق إن المستخدم هو صاحب البوت
-    if (bot.userId.toString() !== req.user._id.toString()) {
-      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user._id}`);
+    if (bot.userId.toString() !== req.user.userId.toString()) {
+      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
       return res.status(403).json({ message: 'غير مصرح لك بحذف هذا البوت' });
     }
 
