@@ -9,6 +9,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const content = document.getElementById("content");
     const token = localStorage.getItem("token");
     const selectedBotId = localStorage.getItem("selectedBotId");
+    const userId = localStorage.getItem("userId");
+    const role = localStorage.getItem("role");
 
     if (!selectedBotId) {
       content.innerHTML = `
@@ -25,6 +27,55 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="placeholder error">
           <h2><i class="fas fa-exclamation-triangle"></i> تسجيل الدخول مطلوب</h2>
           <p>يرجى تسجيل الدخول لعرض إعدادات فيسبوك.</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Validate selectedBotId
+    try {
+      const bots = await handleApiRequest("/api/bots", {
+        headers: { Authorization: `Bearer ${token}` },
+      }, content, "فشل في جلب البوتات");
+
+      console.log('Fetched bots:', bots);
+
+      let userBots = bots;
+      if (role !== "superadmin") {
+        userBots = bots.filter(bot => {
+          const botUserId = typeof bot.userId === 'object' && bot.userId._id ? bot.userId._id : bot.userId;
+          return botUserId === userId;
+        });
+      }
+
+      if (userBots.length === 0) {
+        localStorage.removeItem("selectedBotId");
+        content.innerHTML = `
+          <div class="placeholder error">
+            <h2><i class="fas fa-robot"></i> لا يوجد بوتات متاحة</h2>
+            <p>يرجى التواصل مع المسؤول لإضافة بوت لحسابك أو إنشاء بوت جديد.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const selectedBot = userBots.find(bot => String(bot._id) === String(selectedBotId));
+      if (!selectedBot) {
+        localStorage.removeItem("selectedBotId");
+        content.innerHTML = `
+          <div class="placeholder error">
+            <h2><i class="fas fa-exclamation-triangle"></i> البوت غير موجود</h2>
+            <p>البوت المختار غير موجود أو غير متاح. يرجى اختيار بوت آخر من القائمة العلوية.</p>
+          </div>
+        `;
+        return;
+      }
+    } catch (err) {
+      console.error('Error validating selectedBotId:', err);
+      content.innerHTML = `
+        <div class="placeholder error">
+          <h2><i class="fas fa-exclamation-circle"></i> خطأ</h2>
+          <p>خطأ في التحقق من البوت: ${err.message}. يرجى اختيار بوت آخر من القائمة العلوية.</p>
         </div>
       `;
       return;
@@ -161,21 +212,13 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log('البيانات المرسلة:', { facebookApiKey, facebookPageId }); // Log data for debugging
 
       try {
-        // Fetch the bot to get its current name
-        const botResponse = await handleApiRequest(`/api/bots/${botId}`, {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        }, errorMessage, "فشل جلب بيانات البوت");
-
-        const botName = botResponse.name || "Bot"; // Fallback name if not found
-
         const response = await handleApiRequest(`/api/bots/${botId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ name: botName, facebookApiKey, facebookPageId }),
+          body: JSON.stringify({ facebookApiKey, facebookPageId }),
         }, errorMessage, "فشل حفظ معلومات الربط");
 
         console.log('رد السيرفر:', response); // Log server response
@@ -186,33 +229,12 @@ document.addEventListener("DOMContentLoaded", () => {
           errorMessage.textContent = 'غير مصرح لك بتعديل هذا البوت. تأكد إنك صاحب البوت.';
           errorMessage.style.display = 'block';
         } else if (err.message.includes('البوت غير موجود')) {
-          errorMessage.textContent = 'البوت غير موجود. تأكد من اختيار بوت صالح.';
+          errorMessage.textContent = 'البوت غير موجود. تأكد من اختيار بوت صالح من قايمة البوتات.';
           errorMessage.style.display = 'block';
         } else {
           errorMessage.textContent = 'خطأ في السيرفر أثناء حفظ معلومات الربط: ' + (err.message || 'غير معروف');
           errorMessage.style.display = 'block';
         }
-      }
-    }
-
-    async function updateWebhookSetting(botId, key, value) {
-      togglesError.style.display = "none";
-
-      try {
-        await handleApiRequest(`/api/bots/${botId}/settings`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ [key]: value }),
-        }, togglesError, `فشل تحديث إعداد ${key}`);
-
-        console.log(`✅ Updated ${key} to ${value} for bot ${botId}`);
-      } catch (err) {
-        const toggleInput = document.querySelector(`input[data-setting-key="${key}"]`);
-        if (toggleInput) toggleInput.checked = !value;
-        // الخطأ تم التعامل معه في handleApiRequest
       }
     }
 
