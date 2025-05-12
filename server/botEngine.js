@@ -56,23 +56,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       console.log('📋 Found existing conversation:', conversation._id);
     }
 
-    // فحص تكرار الرسالة
-    if (messageId) {
-      if (conversation.messages.some(msg => msg.messageId === messageId)) {
-        console.log(`⚠️ Duplicate message detected with messageId ${messageId} for ${userId}, skipping...`);
-        return 'تم معالجة هذه الرسالة من قبل';
-      }
-    } else {
-      const messageKey = `${message}-${Date.now()}`;
-      if (conversation.messages.some(msg => 
-        msg.content === message && 
-        Math.abs(new Date(msg.timestamp) - Date.now()) < 1000
-      )) {
-        console.log(`⚠️ Duplicate message detected in conversation for ${userId}, skipping...`);
-        return 'تم معالجة هذه الرسالة من قبل';
-      }
-    }
-
     const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
     console.log('📜 Rules found:', rules);
 
@@ -165,6 +148,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         // معالجة النصوص باستخدام chat.completions.create
         const messages = [
           { role: 'system', content: systemPrompt },
+          ...k
           ...conversation.messages.map((msg) => ({ role: msg.role, content: msg.content })),
         ];
         const response = await openai.chat.completions.create({
