@@ -135,7 +135,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
             {
               role: 'user',
               content: [
-                { type: 'input_text', text: 'اطلب معلومات عن المنتج الموجود في الصورة' },
+                { type: 'input_text', text: 'رد على حسب محتوى الصورة' },
                 { type: 'input_image', image_url: message },
               ],
             },
