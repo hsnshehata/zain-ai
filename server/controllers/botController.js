@@ -1,15 +1,21 @@
 const Bot = require('../models/Bot');
 
+// دالة مساعدة لإضافة timestamp للـ logs
+const getTimestamp = () => new Date().toISOString();
+
 // جلب بوت معين بناءً على الـ ID
 exports.getBot = async (req, res) => {
   try {
+    console.log(`[${getTimestamp()}] 📝 محاولة جلب البوت | Bot ID: ${req.params.id} | User ID: ${req.user._id}`);
     const bot = await Bot.findById(req.params.id);
     if (!bot) {
+      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${req.params.id}`);
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
+    console.log(`[${getTimestamp()}] ✅ تم جلب البوت بنجاح | Bot ID: ${req.params.id}`);
     res.status(200).json(bot);
   } catch (err) {
-    console.error('❌ خطأ في جلب البوت:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في جلب البوت | Bot ID: ${req.params.id}:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
   }
 };
@@ -18,11 +24,14 @@ exports.getBot = async (req, res) => {
 exports.getSettings = async (req, res) => {
   try {
     const botId = req.params.id; // الحصول على botId من الـ URL
+    console.log(`[${getTimestamp()}] 📝 محاولة جلب إعدادات البوت | Bot ID: ${botId} | User ID: ${req.user._id}`);
     const bot = await Bot.findById(botId);
     if (!bot) {
+      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
+    console.log(`[${getTimestamp()}] ✅ تم جلب إعدادات البوت بنجاح | Bot ID: ${botId}`);
     res.status(200).json({
       messagingOptinsEnabled: bot.messagingOptinsEnabled || false,
       messageReactionsEnabled: bot.messageReactionsEnabled || false,
@@ -31,7 +40,7 @@ exports.getSettings = async (req, res) => {
       inboxLabelsEnabled: bot.inboxLabelsEnabled || false,
     });
   } catch (err) {
-    console.error('❌ خطأ في جلب إعدادات البوت:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في جلب إعدادات البوت | Bot ID: ${req.params.id}:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
   }
 };
@@ -40,8 +49,10 @@ exports.getSettings = async (req, res) => {
 exports.updateSettings = async (req, res) => {
   try {
     const botId = req.params.id; // الحصول على botId من الـ URL
+    console.log(`[${getTimestamp()}] 📝 محاولة تحديث إعدادات البوت | Bot ID: ${botId} | User ID: ${req.user._id} | Updates:`, req.body);
     const bot = await Bot.findById(botId);
     if (!bot) {
+      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
@@ -63,14 +74,16 @@ exports.updateSettings = async (req, res) => {
     }
 
     if (Object.keys(filteredUpdates).length === 0) {
+      console.log(`[${getTimestamp()}] ⚠️ لا توجد تحديثات صالحة للحفظ | Bot ID: ${botId}`);
       return res.status(400).json({ message: 'لا توجد تحديثات صالحة للحفظ' });
     }
 
     await Bot.updateOne({ _id: botId }, { $set: filteredUpdates });
+    console.log(`[${getTimestamp()}] ✅ تم تحديث إعدادات البوت بنجاح | Bot ID: ${botId}`);
 
     res.status(200).json({ message: 'تم تحديث الإعدادات بنجاح' });
   } catch (err) {
-    console.error('❌ خطأ في تحديث إعدادات البوت:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في تحديث إعدادات البوت | Bot ID: ${req.params.id}:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
   }
 };
