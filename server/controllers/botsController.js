@@ -5,6 +5,9 @@ const Feedback = require('../models/Feedback');
 const Notification = require('../models/Notification');
 const axios = require('axios');
 
+// دالة مساعدة لإضافة timestamp للـ logs
+const getTimestamp = () => new Date().toISOString();
+
 // جلب كل البوتات
 exports.getBots = async (req, res) => {
   try {
@@ -26,13 +29,13 @@ exports.getBots = async (req, res) => {
         });
         await notification.save();
 
-        console.log(`✅ Bot ${bot.name} stopped due to expired subscription and notification sent to user ${bot.userId}`);
+        console.log(`[${getTimestamp()}] ✅ Bot ${bot.name} stopped due to expired subscription and notification sent to user ${bot.userId}`);
       }
     }
 
     res.status(200).json(bots);
   } catch (err) {
-    console.error('❌ خطأ في جلب البوتات:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في جلب البوتات:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
@@ -70,7 +73,7 @@ exports.getFeedback = async (req, res) => {
             }
           }
         } catch (err) {
-          console.error(`❌ خطأ في جلب اسم المستخدم ${item.userId} من فيسبوك:`, err.message);
+          console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم ${item.userId} من فيسبوك:`, err.message);
         }
 
         return {
@@ -82,7 +85,7 @@ exports.getFeedback = async (req, res) => {
 
     res.status(200).json(feedbackWithUsernames);
   } catch (err) {
-    console.error('❌ خطأ في جلب التقييمات:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في جلب التقييمات:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
@@ -123,7 +126,7 @@ exports.getTopNegativeReplies = async (req, res) => {
 
     res.status(200).json(result);
   } catch (err) {
-    console.error('❌ خطأ في جلب الردود السلبية:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في جلب الردود السلبية:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
@@ -144,7 +147,7 @@ exports.hideFeedback = async (req, res) => {
 
     res.status(200).json({ message: 'تم إخفاء التقييم بنجاح' });
   } catch (err) {
-    console.error('❌ خطأ في إخفاء التقييم:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في إخفاء التقييم:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
@@ -166,7 +169,7 @@ exports.clearFeedbackByType = async (req, res) => {
 
     res.status(200).json({ message: 'تم إخفاء التقييمات بنجاح' });
   } catch (err) {
-    console.error('❌ خطأ في إخفاء التقييمات:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في إخفاء التقييمات:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
@@ -202,7 +205,7 @@ exports.createBot = async (req, res) => {
 
     res.status(201).json(bot);
   } catch (err) {
-    console.error('❌ خطأ في إنشاء البوت:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في إنشاء البوت:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
@@ -212,13 +215,17 @@ exports.updateBot = async (req, res) => {
   const { name, userId, facebookApiKey, facebookPageId, isActive, autoStopDate, subscriptionType, welcomeMessage } = req.body;
 
   try {
+    console.log(`[${getTimestamp()}] 📝 محاولة تعديل البوت | Bot ID: ${req.params.id} | User ID: ${req.user._id} | Data:`, req.body);
+
     const bot = await Bot.findById(req.params.id);
     if (!bot) {
-      return res.status(403).json({ message: 'البوت غير موجود' });
+      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${req.params.id}`);
+      return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
     // التحقق إن المستخدم هو صاحب البوت
     if (bot.userId.toString() !== req.user._id.toString()) {
+      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user._id}`);
       return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
@@ -233,26 +240,47 @@ exports.updateBot = async (req, res) => {
     bot.welcomeMessage = welcomeMessage !== undefined ? welcomeMessage : bot.welcomeMessage;
 
     if (facebookApiKey && !facebookPageId) {
+      console.log(`[${getTimestamp()}] ⚠️ معرف صفحة الفيسبوك مفقود | facebookApiKey provided without facebookPageId`);
       return res.status(400).json({ message: 'معرف صفحة الفيسبوك مطلوب عند إدخال رقم API' });
     }
 
     if (subscriptionType && !['free', 'monthly', 'yearly'].includes(subscriptionType)) {
+      console.log(`[${getTimestamp()}] ⚠️ نوع الاشتراك غير صالح | Subscription Type: ${subscriptionType}`);
       return res.status(400).json({ message: 'نوع الاشتراك غير صالح' });
     }
 
     // إذا كان هناك مستخدم جديد، تحديث قائمة البوتات في المستخدمين
     if (userId && userId !== bot.userId.toString()) {
-      // إزالة البوت من المستخدم القديم
-      await User.findByIdAndUpdate(bot.userId, { $pull: { bots: bot._id } });
-      // إضافة البوت للمستخدم الجديد
-      await User.findByIdAndUpdate(userId, { $push: { bots: bot._id } });
+      console.log(`[${getTimestamp()}] 🔄 تحديث userId | Old User ID: ${bot.userId} | New User ID: ${userId}`);
+      try {
+        const oldUser = await User.findById(bot.userId);
+        if (oldUser) {
+          await User.findByIdAndUpdate(bot.userId, { $pull: { bots: bot._id } });
+        } else {
+          console.warn(`[${getTimestamp()}] ⚠️ المستخدم القديم غير موجود | Old User ID: ${bot.userId}`);
+        }
+
+        const newUser = await User.findById(userId);
+        if (newUser) {
+          await User.findByIdAndUpdate(userId, { $push: { bots: bot._id } });
+        } else {
+          console.error(`[${getTimestamp()}] ❌ المستخدم الجديد غير موجود | New User ID: ${userId}`);
+          return res.status(400).json({ message: 'المستخدم الجديد غير موجود' });
+        }
+      } catch (err) {
+        console.error(`[${getTimestamp()}] ❌ خطأ في تحديث قائمة البوتات في المستخدمين:`, err.message, err.stack);
+        throw err;
+      }
     }
 
+    console.log(`[${getTimestamp()}] 💾 محاولة حفظ البوت | Bot ID: ${bot._id} | Updated Data:`, bot);
     await bot.save();
+    console.log(`[${getTimestamp()}] ✅ تم حفظ البوت بنجاح | Bot ID: ${bot._id}`);
+
     res.status(200).json(bot);
   } catch (err) {
-    console.error('❌ خطأ في تعديل البوت:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر' });
+    console.error(`[${getTimestamp()}] ❌ خطأ في تعديل البوت | Bot ID: ${req.params.id} | Error:`, err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر', error: err.message });
   }
 };
 
@@ -261,20 +289,23 @@ exports.deleteBot = async (req, res) => {
   try {
     const bot = await Bot.findById(req.params.id);
     if (!bot) {
+      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${req.params.id}`);
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
     // التحقق إن المستخدم هو صاحب البوت
     if (bot.userId.toString() !== req.user._id.toString()) {
+      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user._id}`);
       return res.status(403).json({ message: 'غير مصرح لك بحذف هذا البوت' });
     }
 
     await User.findByIdAndUpdate(bot.userId, { $pull: { bots: bot._id } });
 
     await Bot.deleteOne({ _id: req.params.id });
+    console.log(`[${getTimestamp()}] ✅ تم حذف البوت بنجاح | Bot ID: ${req.params.id}`);
     res.status(200).json({ message: 'تم حذف البوت بنجاح' });
   } catch (err) {
-    console.error('❌ خطأ في حذف البوت:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في حذف البوت:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
