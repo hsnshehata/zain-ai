@@ -36,6 +36,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <h2><i class="fab fa-facebook-square"></i> إعدادات ربط فيسبوك</h2>
         <div class="header-actions">
           <button id="connectFacebookBtn" class="btn btn-primary"><i class="fab fa-facebook"></i> ربط صفحتك على فيسبوك</button>
+          <div id="pageStatus" class="page-status" style="margin-left: 20px;"></div>
         </div>
       </div>
 
@@ -114,6 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const errorMessage = document.getElementById("errorMessage");
     const settingsContainer = document.getElementById("facebookSettingsContainer");
     const connectFacebookBtn = document.getElementById("connectFacebookBtn");
+    const pageStatus = document.getElementById("pageStatus");
 
     // Toggle elements
     const toggles = settingsContainer.querySelectorAll(".switch input[type=\"checkbox\"]");
@@ -148,6 +150,52 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    // Function to load the linked page status and details
+    async function loadPageStatus(botId) {
+      try {
+        const bot = await handleApiRequest(`/api/bots/${botId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }, pageStatus, "فشل في جلب بيانات البوت");
+
+        if (bot.facebookPageId && bot.facebookApiKey) {
+          // Fetch page details from Facebook Graph API
+          const response = await fetch(`https://graph.facebook.com/${bot.facebookPageId}?fields=name&access_token=${bot.facebookApiKey}`);
+          const pageData = await response.json();
+
+          if (pageData.name) {
+            pageStatus.innerHTML = `
+              <div style="display: inline-block; color: green;">
+                <strong>حالة الربط:</strong> مربوط ✅<br>
+                <strong>اسم الصفحة:</strong> ${pageData.name}<br>
+                <strong>معرف الصفحة:</strong> ${bot.facebookPageId}
+              </div>
+            `;
+          } else {
+            pageStatus.innerHTML = `
+              <div style="display: inline-block; color: red;">
+                <strong>حالة الربط:</strong> غير مربوط ❌<br>
+                <strong>السبب:</strong> فشل في جلب بيانات الصفحة (التوكن قد يكون غير صالح)
+              </div>
+            `;
+          }
+        } else {
+          pageStatus.innerHTML = `
+            <div style="display: inline-block; color: red;">
+              <strong>حالة الربط:</strong> غير مربوط ❌
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error('Error loading page status:', err);
+        pageStatus.innerHTML = `
+          <div style="display: inline-block; color: red;">
+            <strong>حالة الربط:</strong> غير مربوط ❌<br>
+            <strong>السبب:</strong> خطأ في جلب بيانات البوت
+          </div>
+        `;
+      }
+    }
+
     async function saveApiKeys(botId, facebookApiKey, facebookPageId) {
       errorMessage.style.display = "none";
 
@@ -172,6 +220,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         console.log('رد السيرفر:', response); // Log server response
         alert("تم ربط الصفحة بنجاح!");
+
+        // Reload page status after linking
+        await loadPageStatus(selectedBotId);
       } catch (err) {
         console.error('خطأ في حفظ الإعدادات:', err); // Log error details
         if (err.message.includes('غير مصرح لك')) {
@@ -227,7 +278,7 @@ document.addEventListener("DOMContentLoaded", () => {
           errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ';
           errorMessage.style.display = 'block';
         }
-      }, { scope: 'public_profile,pages_show_list,pages_messaging' });
+      }, { scope: 'public_profile,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement' });
     }
 
     function getUserPages(accessToken) {
@@ -239,15 +290,53 @@ document.addEventListener("DOMContentLoaded", () => {
             errorMessage.style.display = 'block';
             return;
           }
-          // Assume the user selects the first page
-          const page = response.data[0]; // First page
-          if (!page.access_token || !page.id) {
-            errorMessage.textContent = 'فشل جلب بيانات الصفحة: مفتاح الوصول أو معرف الصفحة غير موجود';
-            errorMessage.style.display = 'block';
-            return;
-          }
-          console.log('بيانات الصفحة المختارة:', { access_token: page.access_token, page_id: page.id });
-          saveApiKeys(selectedBotId, page.access_token, page.id);
+
+          // Create a dropdown to select a single page
+          const modal = document.createElement("div");
+          modal.classList.add("modal");
+          modal.innerHTML = `
+            <div class="modal-content">
+              <div class="modal-header">
+                <h3>اختر صفحة واحدة لربطها بالبوت</h3>
+                <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+              </div>
+              <div class="modal-body">
+                <select id="pageSelect" class="form-control">
+                  <option value="">اختر صفحة</option>
+                  ${response.data.map(page => `<option value="${page.id}" data-token="${page.access_token}">${page.name}</option>`).join('')}
+                </select>
+              </div>
+              <div class="form-actions">
+                <button id="confirmPageBtn" class="btn btn-primary">تأكيد</button>
+                <button class="btn btn-secondary modal-close-btn">إلغاء</button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(modal);
+
+          // Close modal on cancel
+          modal.querySelectorAll(".modal-close-btn").forEach(btn => {
+            btn.addEventListener("click", () => modal.remove());
+          });
+
+          // Handle page selection
+          document.getElementById("confirmPageBtn").addEventListener("click", () => {
+            const pageSelect = document.getElementById("pageSelect");
+            const selectedPageId = pageSelect.value;
+            const selectedOption = pageSelect.options[pageSelect.selectedIndex];
+            const accessToken = selectedOption.dataset.token;
+
+            if (!selectedPageId || !accessToken) {
+              errorMessage.textContent = 'يرجى اختيار صفحة لربطها بالبوت';
+              errorMessage.style.display = 'block';
+              modal.remove();
+              return;
+            }
+
+            console.log('بيانات الصفحة المختارة:', { access_token: accessToken, page_id: selectedPageId });
+            saveApiKeys(selectedBotId, accessToken, selectedPageId);
+            modal.remove();
+          });
         } else {
           errorMessage.textContent = 'خطأ في جلب الصفحات: ' + (response.error.message || 'غير معروف');
           errorMessage.style.display = 'block';
@@ -270,6 +359,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- Initial Load ---
     loadBotSettings(selectedBotId);
+    loadPageStatus(selectedBotId); // Load page status on initial load
   }
 
   // Make loadFacebookPage globally accessible
