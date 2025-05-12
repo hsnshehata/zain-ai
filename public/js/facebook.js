@@ -150,67 +150,79 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Function to load the linked page status and details
-    async function loadPageStatus(botId) {
-      console.log(`جاري جلب بيانات البوت بالـ ID: ${botId}`); // Log the botId being used
-      try {
-        const bot = await handleApiRequest(`/api/bots/${botId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }, pageStatus, "فشل في جلب بيانات البوت");
+    // Function to delay execution
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-        if (!bot) {
-          console.log(`البوت بالـ ID ${botId} مش موجود`);
-          pageStatus.innerHTML = `
-            <div style="display: inline-block; color: red;">
-              <strong>حالة الربط:</strong> غير مربوط ❌<br>
-              <strong>السبب:</strong> البوت غير موجود أو تم حذفه
-            </div>
-          `;
-          return;
-        }
+    // Function to load the linked page status and details with retry
+    async function loadPageStatus(botId, retries = 5, delayMs = 1000) {
+      console.log(`جاري جلب بيانات البوت بالـ ID: ${botId} (محاولة ${6 - retries}/${5})`);
+      for (let attempt = 0; attempt < retries; attempt++) {
+        try {
+          const bot = await handleApiRequest(`/api/bots/${botId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }, pageStatus, "فشل في جلب بيانات البوت");
 
-        console.log(`بيانات البوت:`, bot); // Log the bot data
-
-        if (bot.facebookPageId && bot.facebookApiKey) {
-          console.log(`جاري جلب بيانات الصفحة بالـ ID: ${bot.facebookPageId}`);
-          // Fetch page details from Facebook Graph API
-          const response = await fetch(`https://graph.facebook.com/${bot.facebookPageId}?fields=name&access_token=${bot.facebookApiKey}`);
-          const pageData = await response.json();
-
-          if (pageData.name) {
-            console.log(`تم جلب بيانات الصفحة بنجاح:`, pageData);
-            pageStatus.innerHTML = `
-              <div style="display: inline-block; color: green;">
-                <strong>حالة الربط:</strong> مربوط ✅<br>
-                <strong>اسم الصفحة:</strong> ${pageData.name}<br>
-                <strong>معرف الصفحة:</strong> ${bot.facebookPageId}
-              </div>
-            `;
-          } else {
-            console.log(`فشل في جلب بيانات الصفحة:`, pageData);
+          if (!bot) {
+            console.log(`البوت بالـ ID ${botId} مش موجود`);
             pageStatus.innerHTML = `
               <div style="display: inline-block; color: red;">
                 <strong>حالة الربط:</strong> غير مربوط ❌<br>
-                <strong>السبب:</strong> فشل في جلب بيانات الصفحة (التوكن قد يكون غير صالح أو منتهي)
+                <strong>السبب:</strong> البوت غير موجود أو تم حذفه
+              </div>
+            `;
+            return;
+          }
+
+          console.log(`بيانات البوت:`, bot); // Log the bot data
+
+          if (bot.facebookPageId && bot.facebookApiKey) {
+            console.log(`جاري جلب بيانات الصفحة بالـ ID: ${bot.facebookPageId}`);
+            // Fetch page details from Facebook Graph API
+            const response = await fetch(`https://graph.facebook.com/${bot.facebookPageId}?fields=name&access_token=${bot.facebookApiKey}`);
+            const pageData = await response.json();
+
+            if (pageData.name) {
+              console.log(`تم جلب بيانات الصفحة بنجاح:`, pageData);
+              pageStatus.innerHTML = `
+                <div style="display: inline-block; color: green;">
+                  <strong>حالة الربط:</strong> مربوط ✅<br>
+                  <strong>اسم الصفحة:</strong> ${pageData.name}<br>
+                  <strong>معرف الصفحة:</strong> ${bot.facebookPageId}
+                </div>
+              `;
+            } else {
+              console.log(`فشل في جلب بيانات الصفحة:`, pageData);
+              pageStatus.innerHTML = `
+                <div style="display: inline-block; color: red;">
+                  <strong>حالة الربط:</strong> غير مربوط ❌<br>
+                  <strong>السبب:</strong> فشل في جلب بيانات الصفحة (التوكن قد يكون غير صالح أو منتهي)
+                </div>
+              `;
+            }
+          } else {
+            console.log(`البوت مش مرتبط بصفحة`);
+            pageStatus.innerHTML = `
+              <div style="display: inline-block; color: red;">
+                <strong>حالة الربط:</strong> غير مربوط ❌
               </div>
             `;
           }
-        } else {
-          console.log(`البوت مش مرتبط بصفحة`);
-          pageStatus.innerHTML = `
-            <div style="display: inline-block; color: red;">
-              <strong>حالة الربط:</strong> غير مربوط ❌
-            </div>
-          `;
+          return; // Exit if successful
+        } catch (err) {
+          console.error(`محاولة ${attempt + 1} فشلت في جلب بيانات البوت:`, err);
+          if (attempt < retries - 1) {
+            console.log(`جاري إعادة المحاولة بعد ${delayMs}ms...`);
+            await delay(delayMs);
+          } else {
+            console.error('Error loading page status after retries:', err);
+            pageStatus.innerHTML = `
+              <div style="display: inline-block; color: red;">
+                <strong>حالة الربط:</strong> غير مربوط ❌<br>
+                <strong>السبب:</strong> خطأ في جلب بيانات البوت: ${err.message || 'غير معروف'}
+              </div>
+            `;
+          }
         }
-      } catch (err) {
-        console.error('Error loading page status:', err);
-        pageStatus.innerHTML = `
-          <div style="display: inline-block; color: red;">
-            <strong>حالة الربط:</strong> غير مربوط ❌<br>
-            <strong>السبب:</strong> خطأ في جلب بيانات البوت: ${err.message || 'غير معروف'}
-          </div>
-        `;
       }
     }
 
