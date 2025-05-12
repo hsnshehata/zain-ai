@@ -161,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log('البيانات المرسلة:', { facebookApiKey, facebookPageId }); // Log data for debugging
 
       try {
-        await handleApiRequest(`/api/bots/${botId}/settings`, {
+        const response = await handleApiRequest(`/api/bots/${botId}`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -170,8 +170,10 @@ document.addEventListener("DOMContentLoaded", () => {
           body: JSON.stringify({ facebookApiKey, facebookPageId }),
         }, errorMessage, "فشل حفظ معلومات الربط");
 
+        console.log('رد السيرفر:', response); // Log server response
         alert("تم ربط الصفحة بنجاح!");
       } catch (err) {
+        console.error('خطأ في حفظ الإعدادات:', err); // Log error details
         // الخطأ تم التعامل معه في handleApiRequest
       }
     }
