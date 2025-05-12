@@ -7,11 +7,12 @@ const getTimestamp = () => new Date().toISOString();
 exports.getSettings = async (req, res) => {
   try {
     const botId = req.params.id;
+    console.log(`[${getTimestamp()}] 📝 جاري البحث عن البوت بالـ ID: ${botId} | User ID: ${req.user.userId}`);
     const bot = await Bot.findById(botId);
     if (!bot) {
+      console.log(`[${getTimestamp()}] ❌ البوت غير موجود | Bot ID: ${botId}`);
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
-
     console.log(`[${getTimestamp()}] 📝 محاولة جلب إعدادات البوت | Bot ID: ${botId} | User ID: ${req.user.userId}`);
     const settings = {
       messagingOptinsEnabled: bot.messagingOptinsEnabled,
