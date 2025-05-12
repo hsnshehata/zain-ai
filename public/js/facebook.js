@@ -1,11 +1,11 @@
-// public/js/facebook.js (Updated for new dashboard design and unified error handling)
+// public/js/facebook.js (Updated for new dashboard design and unified error handling with Facebook Login)
 
 document.addEventListener("DOMContentLoaded", () => {
   async function loadFacebookPage() {
-  const link = document.createElement("link");
-  link.rel = "stylesheet";
-  link.href = "/css/facebook.css";
-  document.head.appendChild(link);
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "/css/facebook.css";
+    document.head.appendChild(link);
     const content = document.getElementById("content");
     const token = localStorage.getItem("token");
     const selectedBotId = localStorage.getItem("selectedBotId");
@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="page-header">
         <h2><i class="fab fa-facebook-square"></i> إعدادات ربط فيسبوك</h2>
         <div class="header-actions">
-          <!-- Actions like refresh or test connection could go here -->
+          <button id="connectFacebookBtn" class="btn btn-primary"><i class="fab fa-facebook"></i> ربط صفحتك على فيسبوك</button>
         </div>
       </div>
 
@@ -43,22 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <div id="errorMessage" class="error-message" style="display: none;"></div>
 
       <div id="facebookSettingsContainer" class="settings-container facebook-settings-grid" style="display: none;">
-
-        <div class="card settings-card">
-          <div class="card-header"><h3><i class="fas fa-key"></i> معلومات الربط الأساسية</h3></div>
-          <div class="card-body">
-            <div class="form-group">
-              <label for="fbApiKey">مفتاح API لفيسبوك (Page Access Token)</label>
-              <input type="password" id="fbApiKey" class="form-control" placeholder="أدخل مفتاح الوصول الخاص بالصفحة">
-            </div>
-            <div class="form-group">
-              <label for="fbPageId">معرف صفحة فيسبوك (Page ID)</label>
-              <input type="text" id="fbPageId" class="form-control" placeholder="أدخل معرف الصفحة الرقمي">
-            </div>
-             <button id="saveApiKeysBtn" class="btn btn-primary"><i class="fas fa-save"></i> حفظ معلومات الربط</button>
-             <p id="apiKeysError" class="error-message small-error" style="display: none;"></p>
-          </div>
-        </div>
 
         <div class="card settings-card">
           <div class="card-header"><h3><i class="fas fa-cogs"></i> إعدادات Webhook</h3></div>
@@ -86,29 +70,26 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="card settings-card">
           <div class="card-header"><h3><i class="fas fa-toggle-on"></i> تفعيل ميزات Webhook</h3></div>
           <div class="card-body toggles-grid">
-
             <div class="setting-item toggle-item">
               <div class="setting-info">
                 <h4>رسائل الترحيب (Opt-ins)</h4>
-                <p>إرسال رسالة ترحيب من البوت بمجرد فتح دردشة مع الصفحة لأول مرة قبل بدء المحادثة .</p>
+                <p>إرسال رسالة ترحيب من البوت بمجرد فتح دردشة مع الصفحة لأول مرة قبل بدء المحادثة.</p>
               </div>
               <label class="switch">
                 <input type="checkbox" id="messagingOptinsToggle" data-setting-key="messagingOptinsEnabled">
                 <span class="slider"></span>
               </label>
             </div>
-
             <div class="setting-item toggle-item">
               <div class="setting-info">
                 <h4>ردود الفعل (Reactions)</h4>
-                <p>تسمح للبوت بالردود على عمليات التفاعل مع الرسالة مثل اعجاب او قلب .</p>
+                <p>تسمح للبوت بالردود على عمليات التفاعل مع الرسالة مثل اعجاب او قلب.</p>
               </div>
               <label class="switch">
                 <input type="checkbox" id="messageReactionsToggle" data-setting-key="messageReactionsEnabled">
                 <span class="slider"></span>
               </label>
             </div>
-
             <div class="setting-item toggle-item">
               <div class="setting-info">
                 <h4>تتبع المصدر (Referrals)</h4>
@@ -119,45 +100,45 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span class="slider"></span>
               </label>
             </div>
-
             <div class="setting-item toggle-item">
               <div class="setting-info">
                 <h4>تعديلات الرسائل (Edits)</h4>
-                <p> استقبال إشعارات عندما يقوم المستخدم بتعديل رسالة وتوليد رد جديد بناء على التعديل.</p>
+                <p>استقبال إشعارات عندما يقوم المستخدم بتعديل رسالة وتوليد رد جديد بناء على التعديل.</p>
               </div>
               <label class="switch">
                 <input type="checkbox" id="messageEditsToggle" data-setting-key="messageEditsEnabled">
                 <span class="slider"></span>
               </label>
             </div>
-
             <div class="setting-item toggle-item">
               <div class="setting-info">
                 <h4>تصنيفات المحادثات (Labels)</h4>
-                <p>تسمح للبوت بوضع تصنيفات و تعديل حالات المحادثة (يتطلب اعدادت صلاحيات صفحة خاص ).</p>
+                <p>تسمح للبوت بوضع تصنيفات وتعديل حالات المحادثة (يتطلب اعدادت صلاحيات صفحة خاص).</p>
               </div>
               <label class="switch">
                 <input type="checkbox" id="inboxLabelsToggle" data-setting-key="inboxLabelsEnabled">
                 <span class="slider"></span>
               </label>
             </div>
-
           </div>
-           <p id="togglesError" class="error-message small-error" style="display: none;"></p>
+          <p id="togglesError" class="error-message small-error" style="display: none;"></p>
         </div>
 
       </div>
     `;
 
+    // Load Facebook SDK
+    const fbScript = document.createElement("script");
+    fbScript.src = "https://connect.facebook.net/en_US/sdk.js";
+    fbScript.async = true;
+    fbScript.defer = true;
+    fbScript.crossOrigin = "anonymous";
+    document.head.appendChild(fbScript);
+
     const loadingSpinner = document.getElementById("loadingSpinner");
     const errorMessage = document.getElementById("errorMessage");
     const settingsContainer = document.getElementById("facebookSettingsContainer");
-
-    // API Key elements
-    const fbApiKeyInput = document.getElementById("fbApiKey");
-    const fbPageIdInput = document.getElementById("fbPageId");
-    const saveApiKeysBtn = document.getElementById("saveApiKeysBtn");
-    const apiKeysError = document.getElementById("apiKeysError");
+    const connectFacebookBtn = document.getElementById("connectFacebookBtn");
 
     // Webhook elements
     const webhookUrlInput = document.getElementById("webhookUrl");
@@ -181,10 +162,6 @@ document.addEventListener("DOMContentLoaded", () => {
           headers: { Authorization: `Bearer ${token}` },
         }, errorMessage, "حدث خطأ أثناء تحميل الإعدادات");
 
-        // Populate API Keys
-        fbApiKeyInput.value = settings.facebookApiKey || "";
-        fbPageIdInput.value = settings.facebookPageId || "";
-
         // Populate Webhook Info
         const webhookBaseUrl = window.location.origin;
         webhookUrlInput.value = `${webhookBaseUrl}/api/webhook/facebook/${botId}`;
@@ -207,19 +184,8 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    async function saveApiKeys(botId) {
-      const apiKey = fbApiKeyInput.value.trim();
-      const pageId = fbPageIdInput.value.trim();
-      apiKeysError.style.display = "none";
-
-      if (!apiKey || !pageId) {
-        apiKeysError.textContent = "يرجى إدخال مفتاح API ومعرف الصفحة.";
-        apiKeysError.style.display = "block";
-        return;
-      }
-
-      saveApiKeysBtn.disabled = true;
-      saveApiKeysBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جار الحفظ...`;
+    async function saveApiKeys(botId, facebookApiKey, facebookPageId) {
+      errorMessage.style.display = "none";
 
       try {
         await handleApiRequest(`/api/bots/${botId}/settings`, {
@@ -228,15 +194,12 @@ document.addEventListener("DOMContentLoaded", () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ facebookApiKey: apiKey, facebookPageId: pageId }),
-        }, apiKeysError, "فشل حفظ معلومات الربط");
+          body: JSON.stringify({ facebookApiKey, facebookPageId }),
+        }, errorMessage, "فشل حفظ معلومات الربط");
 
-        alert("تم حفظ معلومات الربط بنجاح!");
+        alert("تم ربط الصفحة بنجاح!");
       } catch (err) {
         // الخطأ تم التعامل معه في handleApiRequest
-      } finally {
-        saveApiKeysBtn.disabled = false;
-        saveApiKeysBtn.innerHTML = `<i class="fas fa-save"></i> حفظ معلومات الربط`;
       }
     }
 
@@ -272,8 +235,49 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
+    // Initialize Facebook SDK
+    window.fbAsyncInit = function () {
+      FB.init({
+        appId: '499020366015281', // Your App ID
+        cookie: true,
+        xfbml: true,
+        version: 'v20.0'
+      });
+    };
+
+    function loginWithFacebook() {
+      FB.login(function (response) {
+        if (response.authResponse) {
+          console.log('تم تسجيل الدخول!');
+          getUserPages(response.authResponse.accessToken);
+        } else {
+          errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ';
+          errorMessage.style.display = 'block';
+        }
+      }, { scope: 'public_profile,pages_show_list,pages_messaging' });
+    }
+
+    function getUserPages(accessToken) {
+      FB.api('/me/accounts', { access_token: accessToken }, function (response) {
+        if (response && !response.error) {
+          console.log('الصفحات:', response.data);
+          if (response.data.length === 0) {
+            errorMessage.textContent = 'لم يتم العثور على صفحات مرتبطة بحسابك';
+            errorMessage.style.display = 'block';
+            return;
+          }
+          // Assume the user selects the first page (you can add a UI to choose)
+          const page = response.data[0]; // First page
+          saveApiKeys(selectedBotId, page.access_token, page.id);
+        } else {
+          errorMessage.textContent = 'خطأ في جلب الصفحات: ' + (response.error.message || 'غير معروف');
+          errorMessage.style.display = 'block';
+        }
+      });
+    }
+
     // --- Event Listeners ---
-    saveApiKeysBtn.addEventListener("click", () => saveApiKeys(selectedBotId));
+    connectFacebookBtn.addEventListener("click", loginWithFacebook);
 
     toggles.forEach(toggle => {
       toggle.addEventListener("change", (e) => {
