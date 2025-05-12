@@ -1,6 +1,6 @@
 // public/service-worker.js
 
-const CACHE_NAME = 'zain-ai-v0.0001'; // غيرنا الاسم عشان الكاش يتجدد
+const CACHE_NAME = 'zain-ai-v5'; // غيرنا الاسم عشان الكاش يتجدد
 const urlsToCache = [
   '/',
   '/index.html',
