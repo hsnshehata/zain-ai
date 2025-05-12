@@ -148,7 +148,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         // معالجة النصوص باستخدام chat.completions.create
         const messages = [
           { role: 'system', content: systemPrompt },
-          ...k
           ...conversation.messages.map((msg) => ({ role: msg.role, content: msg.content })),
         ];
         const response = await openai.chat.completions.create({
