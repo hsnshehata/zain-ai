@@ -209,16 +209,17 @@ exports.createBot = async (req, res) => {
 
 // تعديل بوت
 exports.updateBot = async (req, res) => {
-  if (req.user.role !== 'superadmin') {
-    return res.status(403).json({ message: 'غير مصرح لك بتعديل البوت' });
-  }
-
   const { name, userId, facebookApiKey, facebookPageId, isActive, autoStopDate, subscriptionType, welcomeMessage } = req.body;
 
   try {
     const bot = await Bot.findById(req.params.id);
     if (!bot) {
-      return res.status(404).json({ message: 'البوت غير موجود' });
+      return res.status(403).json({ message: 'البوت غير موجود' });
+    }
+
+    // التحقق إن المستخدم هو صاحب البوت
+    if (bot.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
     // تحديث الحقول
@@ -257,14 +258,15 @@ exports.updateBot = async (req, res) => {
 
 // حذف بوت
 exports.deleteBot = async (req, res) => {
-  if (req.user.role !== 'superadmin') {
-    return res.status(403).json({ message: 'غير مصرح لك بحذف البوت' });
-  }
-
   try {
     const bot = await Bot.findById(req.params.id);
     if (!bot) {
       return res.status(404).json({ message: 'البوت غير موجود' });
+    }
+
+    // التحقق إن المستخدم هو صاحب البوت
+    if (bot.userId.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: 'غير مصرح لك بحذف هذا البوت' });
     }
 
     await User.findByIdAndUpdate(bot.userId, { $pull: { bots: bot._id } });
