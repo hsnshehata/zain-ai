@@ -1,13 +1,18 @@
 const express = require('express');
 const router = express.Router();
-const Bot = require('../models/Bot');
+const { getSettings, updateSettings } = require('../controllers/botController');
 const authenticate = require('../middleware/authenticate');
+const Bot = require('../models/Bot');
+const Conversation = require('../models/Conversation');
 const botEngine = require('../botEngine');
 const NodeCache = require('node-cache');
-const Conversation = require('../models/Conversation');
 
 // إعداد cache لتخزين الطلبات مؤقتاً (5 دقايق)
 const apiCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
+
+// Routes for settings with botId in the URL
+router.get('/:id/settings', authenticate, getSettings);
+router.patch('/:id/settings', authenticate, updateSettings);
 
 // جلب بوت معين بناءً على الـ ID
 router.get('/:id', authenticate, async (req, res) => {
