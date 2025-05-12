@@ -1,4 +1,4 @@
-// public/js/facebook.js (Updated for new dashboard design and unified error handling with Facebook Login)
+// public/js/facebook.js (Updated for new dashboard design, unified error handling, and removed Webhook settings)
 
 document.addEventListener("DOMContentLoaded", () => {
   async function loadFacebookPage() {
@@ -43,30 +43,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <div id="errorMessage" class="error-message" style="display: none;"></div>
 
       <div id="facebookSettingsContainer" class="settings-container facebook-settings-grid" style="display: none;">
-
-        <div class="card settings-card">
-          <div class="card-header"><h3><i class="fas fa-cogs"></i> إعدادات Webhook</h3></div>
-          <div class="card-body">
-            <p>لاستقبال الرسائل من فيسبوك، يجب إعداد Webhook. استخدم المعلومات التالية في <a href="https://developers.facebook.com/apps/" target="_blank">لوحة تحكم مطوري فيسبوك</a> لتطبيقك.</p>
-            <div class="form-group">
-                <label for="webhookUrl">عنوان URL للـ Webhook:</label>
-                <div class="input-group">
-                    <input type="text" id="webhookUrl" class="form-control" readonly>
-                    <button id="copyWebhookUrlBtn" class="btn btn-secondary btn-sm" title="نسخ"><i class="fas fa-copy"></i></button>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="verifyToken">رمز التحقق (Verify Token):</label>
-                 <div class="input-group">
-                    <input type="text" id="verifyToken" class="form-control" readonly>
-                    <button id="copyVerifyTokenBtn" class="btn btn-secondary btn-sm" title="نسخ"><i class="fas fa-copy"></i></button>
-                </div>
-            </div>
-            <p class="info-text">تأكد من الاشتراك في حقول Webhook التالية على الأقل: <code>messages</code>, <code>messaging_postbacks</code>.</p>
-            <p class="info-text">قد تحتاج أيضًا إلى: <code>messaging_optins</code>, <code>message_reactions</code>, <code>messaging_referrals</code>, <code>message_edits</code>, <code>inbox_labels</code> بناءً على الإعدادات التي تفعلها أدناه.</p>
-          </div>
-        </div>
-
         <div class="card settings-card">
           <div class="card-header"><h3><i class="fas fa-toggle-on"></i> تفعيل ميزات Webhook</h3></div>
           <div class="card-body toggles-grid">
@@ -123,7 +99,6 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <p id="togglesError" class="error-message small-error" style="display: none;"></p>
         </div>
-
       </div>
     `;
 
@@ -140,12 +115,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const settingsContainer = document.getElementById("facebookSettingsContainer");
     const connectFacebookBtn = document.getElementById("connectFacebookBtn");
 
-    // Webhook elements
-    const webhookUrlInput = document.getElementById("webhookUrl");
-    const verifyTokenInput = document.getElementById("verifyToken");
-    const copyWebhookUrlBtn = document.getElementById("copyWebhookUrlBtn");
-    const copyVerifyTokenBtn = document.getElementById("copyVerifyTokenBtn");
-
     // Toggle elements
     const toggles = settingsContainer.querySelectorAll(".switch input[type=\"checkbox\"]");
     const togglesError = document.getElementById("togglesError");
@@ -161,11 +130,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const settings = await handleApiRequest(`/api/bots/${botId}/settings`, {
           headers: { Authorization: `Bearer ${token}` },
         }, errorMessage, "حدث خطأ أثناء تحميل الإعدادات");
-
-        // Populate Webhook Info
-        const webhookBaseUrl = window.location.origin;
-        webhookUrlInput.value = `${webhookBaseUrl}/api/webhook/facebook/${botId}`;
-        verifyTokenInput.value = settings.facebookVerifyToken || "hassanshehata";
 
         // Populate Toggles
         toggles.forEach(toggle => {
@@ -186,6 +150,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function saveApiKeys(botId, facebookApiKey, facebookPageId) {
       errorMessage.style.display = "none";
+
+      // Validate inputs
+      if (!facebookApiKey || !facebookPageId) {
+        errorMessage.textContent = "فشل حفظ معلومات الربط: مفتاح API أو معرف الصفحة غير موجود";
+        errorMessage.style.display = "block";
+        return;
+      }
+
+      console.log('البيانات المرسلة:', { facebookApiKey, facebookPageId }); // Log data for debugging
 
       try {
         await handleApiRequest(`/api/bots/${botId}/settings`, {
@@ -224,17 +197,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    function copyToClipboard(text, btn) {
-      navigator.clipboard.writeText(text).then(() => {
-        const originalIcon = btn.innerHTML;
-        btn.innerHTML = `<i class="fas fa-check"></i> تم النسخ`;
-        setTimeout(() => { btn.innerHTML = originalIcon; }, 1500);
-      }).catch(err => {
-        console.error("فشل النسخ:", err);
-        alert("فشل النسخ إلى الحافظة.");
-      });
-    }
-
     // Initialize Facebook SDK
     window.fbAsyncInit = function () {
       FB.init({
@@ -266,8 +228,14 @@ document.addEventListener("DOMContentLoaded", () => {
             errorMessage.style.display = 'block';
             return;
           }
-          // Assume the user selects the first page (you can add a UI to choose)
+          // Assume the user selects the first page
           const page = response.data[0]; // First page
+          if (!page.access_token || !page.id) {
+            errorMessage.textContent = 'فشل جلب بيانات الصفحة: مفتاح الوصول أو معرف الصفحة غير موجود';
+            errorMessage.style.display = 'block';
+            return;
+          }
+          console.log('بيانات الصفحة المختارة:', { access_token: page.access_token, page_id: page.id });
           saveApiKeys(selectedBotId, page.access_token, page.id);
         } else {
           errorMessage.textContent = 'خطأ في جلب الصفحات: ' + (response.error.message || 'غير معروف');
@@ -288,9 +256,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     });
-
-    copyWebhookUrlBtn.addEventListener("click", (e) => copyToClipboard(webhookUrlInput.value, e.currentTarget));
-    copyVerifyTokenBtn.addEventListener("click", (e) => copyToClipboard(verifyTokenInput.value, e.currentTarget));
 
     // --- Initial Load ---
     loadBotSettings(selectedBotId);
