@@ -207,19 +207,23 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Function to exchange short-lived token for a long-lived token (should be moved to backend for security)
+    // Function to exchange short-lived token for a long-lived token using backend endpoint
     async function exchangeForLongLivedToken(shortLivedToken) {
       try {
-        const appId = '499020366015281'; // Your App ID
-        const appSecret = 'YOUR_APP_SECRET'; // Replace with your App Secret (should be stored securely on backend)
-        const response = await fetch(`https://graph.facebook.com/v20.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${shortLivedToken}`);
-        const data = await response.json();
-        if (data.access_token) {
-          console.log('✅ Successfully exchanged for long-lived token:', data.access_token);
-          return data.access_token;
+        const response = await handleApiRequest(`/api/facebook/exchange-token`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ shortLivedToken }),
+        }, errorMessage, "فشل في تحويل التوكن إلى طويل الأجل");
+
+        if (response.longLivedToken) {
+          console.log('✅ Successfully exchanged for long-lived token:', response.longLivedToken);
+          return response.longLivedToken;
         } else {
-          console.error('❌ Failed to exchange token:', data);
-          throw new Error('Failed to exchange for long-lived token: ' + (data.error?.message || 'Unknown error'));
+          throw new Error('Failed to exchange token: No long-lived token returned');
         }
       } catch (err) {
         console.error('Error exchanging token:', err);
@@ -266,7 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log('البيانات المرسلة:', { facebookApiKey, facebookPageId }); // Log data for debugging
 
       try {
-        // Exchange the short-lived token for a long-lived token
+        // Exchange the short-lived token for a long-lived token using backend endpoint
         const longLivedToken = await exchangeForLongLivedToken(facebookApiKey);
 
         // Add the page to the app
