@@ -3,9 +3,10 @@ const NodeCache = require('node-cache');
 const Bot = require('../models/Bot');
 const { processMessage, processFeedback } = require('../botEngine');
 const Conversation = require('../models/Conversation');
+const Notification = require('../models/Notification');
 
-// إعداد cache لتخزين الـ webhook events مؤقتاً (5 دقايق)
-const webhookCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
+// إعداد cache لتخزين الـ webhook events مؤقتاً (10 دقايق)
+const webhookCache = new NodeCache({ stdTTL: 600, checkperiod: 60 });
 // Cache لتخزين الـ messageId بتاع الرسايل الأصلية
 const messageIdCache = new NodeCache({ stdTTL: 600, checkperiod: 60 });
 
@@ -24,9 +25,18 @@ const handleMessage = async (req, res) => {
     }
 
     // فحص تكرار الـ webhook event
-    const eventHash = JSON.stringify(body);
+    let eventHash = '';
+    const entry = body.entry[0];
+    if (entry.messaging && entry.messaging[0]?.message) {
+      eventHash = entry.messaging[0].message.mid;
+    } else if (entry.changes && entry.changes[0]?.value.comment_id) {
+      eventHash = entry.changes[0].value.comment_id;
+    } else {
+      eventHash = JSON.stringify(body);
+    }
+
     if (webhookCache.get(eventHash)) {
-      console.log('⚠️ Duplicate webhook event detected, skipping...');
+      console.log(`⚠️ Duplicate webhook event detected for ${eventHash}, skipping...`);
       return res.status(200).send('EVENT_RECEIVED');
     }
     webhookCache.set(eventHash, true);
@@ -43,7 +53,7 @@ const handleMessage = async (req, res) => {
       // التحقق من حالة البوت
       if (!bot.isActive) {
         console.log(`⚠️ Bot ${bot.name} (ID: ${bot._id}) is inactive, skipping message processing.`);
-        continue; // تجاهل أي معالجة إذا كان البوت متوقف
+        continue;
       }
 
       if (entry.messaging && entry.messaging.length > 0) {
@@ -71,7 +81,7 @@ const handleMessage = async (req, res) => {
         // Check if the message is an echo (sent by the bot itself)
         if (webhookEvent.message && webhookEvent.message.is_echo) {
           console.log(`⚠️ Ignoring echo message from bot: ${webhookEvent.message.text}`);
-          continue; // Skip processing echo messages
+          continue;
         }
 
         // التعامل مع الـ messaging_optins
@@ -117,7 +127,7 @@ const handleMessage = async (req, res) => {
           console.log(`🏷️ Adding label to conversation for user ${senderPsid}`);
           let conversation = await Conversation.findOne({ botId: bot._id, userId: senderPsid });
           if (conversation) {
-            conversation.label = 'active'; // Example label, adjust as needed
+            conversation.label = 'active';
             await conversation.save();
           }
         }
@@ -130,7 +140,6 @@ const handleMessage = async (req, res) => {
 
           console.log(`📊 Feedback received from ${senderPsid}: ${feedback} for message ID: ${mid}`);
 
-          // جلب الـ messageId الأصلي من الـ cache
           const originalMessageId = messageIdCache.get(`${senderPsid}_${bot._id}`);
           if (originalMessageId) {
             await processFeedback(bot._id, senderPsid, originalMessageId, feedback);
@@ -147,7 +156,6 @@ const handleMessage = async (req, res) => {
           const mid = message.mid || `temp_${Date.now()}`;
           const messageContent = message.text || (message.attachments ? JSON.stringify(message.attachments) : 'رسالة غير نصية');
 
-          // تخزين الـ messageId في الـ cache
           messageIdCache.set(`${senderPsid}_${bot._id}`, mid);
 
           let responseText = '';
@@ -213,6 +221,7 @@ const handleMessage = async (req, res) => {
 
 const sendMessage = (senderPsid, responseText, facebookApiKey) => {
   return new Promise((resolve, reject) => {
+    console.log(`📤 Attempting to send message to ${senderPsid} with token: ${facebookApiKey.slice(0, 10)}...`);
     const requestBody = {
       recipient: { id: senderPsid },
       message: { text: responseText },
@@ -220,12 +229,12 @@ const sendMessage = (senderPsid, responseText, facebookApiKey) => {
 
     request(
       {
-        uri: 'https://graph.facebook.com/v20.0/me/messages', // تحديث الإصدار إلى v20.0
+        uri: 'https://graph.facebook.com/v20.0/me/messages',
         qs: { access_token: facebookApiKey },
         method: 'POST',
         json: requestBody,
       },
-      (err, res, body) => {
+      async (err, res, body) => {
         if (err) {
           console.error('❌ Error sending message to Facebook:', err.message, err.stack);
           return reject(err);
@@ -234,6 +243,17 @@ const sendMessage = (senderPsid, responseText, facebookApiKey) => {
           console.error('❌ Failed to send message to Facebook:', body);
           if (body.error && body.error.code === 190 && body.error.error_subcode === 463) {
             console.error('⚠️ Facebook Access Token has expired. Please update the token for this bot.');
+            const bot = await Bot.findOne({ facebookApiKey });
+            if (bot) {
+              const notification = new Notification({
+                user: bot.userId,
+                title: `توكن فيسبوك منتهي`,
+                message: `التوكن بتاع البوت ${bot.name} منتهي. من فضلك جدد التوكن من إعدادات فيسبوك.`,
+                isRead: false,
+              });
+              await notification.save();
+              console.log(`🔔 Notification sent to user ${bot.userId} for expired token`);
+            }
             return reject(new Error('Facebook Access Token has expired. Please update the token.'));
           }
           return reject(new Error('Failed to send message to Facebook'));
@@ -247,18 +267,19 @@ const sendMessage = (senderPsid, responseText, facebookApiKey) => {
 
 const replyToComment = (commentId, responseText, facebookApiKey) => {
   return new Promise((resolve, reject) => {
+    console.log(`📤 Attempting to reply to comment ${commentId} with token: ${facebookApiKey.slice(0, 10)}...`);
     const requestBody = {
       message: responseText,
     };
 
     request(
       {
-        uri: `https://graph.facebook.com/v20.0/${commentId}/comments`, // تحديث الإصدار إلى v20.0
+        uri: `https://graph.facebook.com/v20.0/${commentId}/comments`,
         qs: { access_token: facebookApiKey },
         method: 'POST',
         json: requestBody,
       },
-      (err, res, body) => {
+      async (err, res, body) => {
         if (err) {
           console.error('❌ Error replying to comment on Facebook:', err.message, err.stack);
           return reject(err);
@@ -267,6 +288,17 @@ const replyToComment = (commentId, responseText, facebookApiKey) => {
           console.error('❌ Failed to reply to comment on Facebook:', body);
           if (body.error && body.error.code === 190 && body.error.error_subcode === 463) {
             console.error('⚠️ Facebook Access Token has expired. Please update the token for this bot.');
+            const bot = await Bot.findOne({ facebookApiKey });
+            if (bot) {
+              const notification = new Notification({
+                user: bot.userId,
+                title: `توكن فيسبوك منتهي`,
+                message: `التوكن بتاع البوت ${bot.name} منتهي. من فضلك جدد التوكن من إعدادات فيسبوك.`,
+                isRead: false,
+              });
+              await notification.save();
+              console.log(`🔔 Notification sent to user ${bot.userId} for expired token`);
+            }
             return reject(new Error('Facebook Access Token has expired. Please update the token.'));
           }
           return reject(new Error('Failed to reply to comment on Facebook'));
