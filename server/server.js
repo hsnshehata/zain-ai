@@ -1,5 +1,3 @@
-// /server/server.js
-
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -348,7 +346,7 @@ connectDB();
 // تشغيل وظيفة التحقق من الإيقاف التلقائي
 checkAutoStopBots();
 
-// Global Error Handler
+// Global Error Handler (معدل عشان يمنع الـ crash)
 app.use((err, req, res, next) => {
   const userId = req.user ? req.user.userId : 'N/A';
   console.error(`[${getTimestamp()}] ❌ Server error | Method: ${req.method} | URL: ${req.url} | User: ${userId}`, err.message, err.stack);
@@ -357,9 +355,21 @@ app.use((err, req, res, next) => {
     error: err.name || 'ServerError',
     details: err.message
   });
+  // بدل ما السيرفر يعمل crash، بنرجّع رد ونكمل
+});
+
+// التقاط أخطاء غير متوقعة على مستوى العملية
+process.on('uncaughtException', (err) => {
+  console.error(`[${getTimestamp()}] ❌ Uncaught Exception:`, err.message, err.stack);
+  // لا نوقف السيرفر، بنكمل التشغيل
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error(`[${getTimestamp()}] ❌ Unhandled Rejection at:`, promise, 'reason:', reason);
+  // لا نوقف السيرفر، بنكمل التشغيل
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`[${getTimestamp()}] ✅ Server running on port ${PORT}`);
 });
