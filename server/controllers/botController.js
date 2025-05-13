@@ -10,7 +10,8 @@ exports.getSettings = async (req, res) => {
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
-    if (bot.userId.toString() !== req.user.userId.toString()) {
+    // التحقق من الصلاحيات: السوبر أدمن يقدر يعدل أي بوت، غير كده لازم يكون صاحب البوت
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
       console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
       return res.status(403).json({ message: 'غير مصرح لك بالوصول إلى إعدادات هذا البوت' });
     }
@@ -43,7 +44,8 @@ exports.updateSettings = async (req, res) => {
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
-    if (bot.userId.toString() !== req.user.userId.toString()) {
+    // التحقق من الصلاحيات: السوبر أدمن يقدر يعدل أي بوت، غير كده لازم يكون صاحب البوت
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
       console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
       return res.status(403).json({ message: 'غير مصرح لك بتحديث إعدادات هذا البوت' });
     }
