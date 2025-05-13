@@ -310,4 +310,52 @@ exports.deleteBot = async (req, res) => {
   }
 };
 
+// ربط صفحة فيسبوك بالبوت (جديد)
+exports.linkFacebookPage = async (req, res) => {
+  try {
+    const botId = req.params.id;
+    const { facebookApiKey, facebookPageId } = req.body;
+
+    if (!facebookApiKey || !facebookPageId) {
+      console.log(`[${getTimestamp()}] ⚠️ مفتاح API أو معرف الصفحة مفقود | Bot ID: ${botId}`);
+      return res.status(400).json({ message: 'مفتاح API ومعرف الصفحة مطلوبان' });
+    }
+
+    const bot = await Bot.findById(botId);
+    if (!bot) {
+      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      return res.status(404).json({ message: 'البوت غير موجود' });
+    }
+
+    // التحقق إن المستخدم هو صاحب البوت
+    if (bot.userId.toString() !== req.user.userId.toString()) {
+      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا البوت' });
+    }
+
+    // طلب توكن طويل الأمد
+    const response = await axios.get(
+      `https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=499020366015281&client_secret=${process.env.FACEBOOK_APP_SECRET}&fb_exchange_token=${facebookApiKey}`
+    );
+
+    if (!response.data.access_token) {
+      console.log(`[${getTimestamp()}] ❌ فشل في جلب توكن طويل الأمد | Bot ID: ${botId}`);
+      return res.status(400).json({ message: 'فشل في جلب توكن طويل الأمد: ' + (response.data.error?.message || 'غير معروف') });
+    }
+
+    const longLivedToken = response.data.access_token;
+
+    // تحديث البوت بالتوكن الطويل الأمد ومعرف الصفحة
+    bot.facebookApiKey = longLivedToken;
+    bot.facebookPageId = facebookPageId;
+    await bot.save();
+
+    console.log(`[${getTimestamp()}] ✅ تم ربط صفحة فيسبوك بنجاح | Bot ID: ${botId} | Page ID: ${facebookPageId}`);
+    res.status(200).json({ message: 'تم ربط الصفحة بنجاح' });
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ خطأ في ربط صفحة فيسبوك:`, err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
+  }
+};
+
 module.exports = exports;
