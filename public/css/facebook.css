@@ -106,29 +106,54 @@ body.light-mode .setting-item {
   margin-top: 10px;
 }
 
-/* Instructions Container (New Addition) */
+/* Instructions Container (Updated with Dark/Light Mode Support) */
 .instructions-container {
-  background-color: #f8f9fa;
-  border: 1px solid #e0e0e0;
+  border: 1px solid;
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 20px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+body.dark-mode .instructions-container {
+  background-color: var(--dark-card);
+  border-color: var(--dark-border);
+  box-shadow: 0 2px 4px var(--shadow-dark);
+}
+
+body.light-mode .instructions-container {
+  background-color: #f8f9fa; /* Light mode background */
+  border-color: var(--light-border);
+  box-shadow: 0 2px 4px var(--shadow-light);
+}
+
 .instructions-container h3 {
   margin-top: 0;
-  color: #333;
   font-size: 18px;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
+body.dark-mode .instructions-container h3 {
+  color: var(--dark-heading);
+}
+
+body.light-mode .instructions-container h3 {
+  color: var(--light-heading);
+}
+
 .instructions-container p {
   margin: 10px 0;
-  color: #555;
   line-height: 1.6;
+}
+
+body.dark-mode .instructions-container p {
+  color: var(--dark-text);
+}
+
+body.light-mode .instructions-container p {
+  color: #555; /* Slightly lighter for light mode */
 }
 
 .instructions-container ul {
@@ -139,16 +164,23 @@ body.light-mode .setting-item {
 
 .instructions-container li {
   margin-bottom: 15px;
-  color: #333;
   line-height: 1.6;
 }
 
+body.dark-mode .instructions-container li {
+  color: var(--dark-text);
+}
+
+body.light-mode .instructions-container li {
+  color: #333;
+}
+
 .instructions-container li strong {
-  color: #007bff;
+  color: var(--turquoise); /* Use turquoise for emphasis */
 }
 
 .instructions-container a {
-  color: #007bff;
+  color: var(--turquoise);
   text-decoration: none;
 }
 
@@ -164,7 +196,7 @@ body.light-mode .setting-item {
 }
 
 .btn-primary {
-  background-color: #007bff;
+  background-color: var(--turquoise);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -176,7 +208,7 @@ body.light-mode .setting-item {
 }
 
 .btn-primary:hover {
-  background-color: #0056b3;
+  background-color: var(--button-hover-bg);
 }
 
 .page-status {
