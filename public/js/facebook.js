@@ -238,27 +238,17 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log('البيانات المرسلة:', { facebookApiKey, facebookPageId });
 
       try {
-        // طلب توكن طويل الأمد
-        const response = await fetch(
-          `https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=499020366015281&client_secret=${process.env.FACEBOOK_APP_SECRET}&fb_exchange_token=${facebookApiKey}`
-        );
-        const data = await response.json();
-        if (!data.access_token) {
-          throw new Error('فشل في جلب توكن طويل الأمد: ' + (data.error?.message || 'غير معروف'));
-        }
-        const longLivedToken = data.access_token;
-
-        // حفظ التوكن الطويل الأمد
-        const saveResponse = await handleApiRequest(`/api/bots/${botId}`, {
-          method: "PUT",
+        // إرسال التوكن قصير الأمد للـ backend لتحويله إلى توكن طويل الأمد
+        const saveResponse = await handleApiRequest(`/api/bots/${botId}/link-facebook`, {
+          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ facebookApiKey: longLivedToken, facebookPageId }),
+          body: JSON.stringify({ facebookApiKey, facebookPageId }),
         }, errorMessage, "فشل حفظ معلومات الربط");
 
-        console.log('✅ توكن طويل الأمد تم حفظه بنجاح:', longLivedToken.slice(0, 10) + '...');
+        console.log('✅ التوكن تم حفظه بنجاح:', facebookApiKey.slice(0, 10) + '...');
         alert("تم ربط الصفحة بنجاح!");
         await loadPageStatus(botId);
       } catch (err) {
