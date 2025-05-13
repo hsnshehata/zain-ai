@@ -3,7 +3,7 @@ const router = express.Router();
 const botsController = require('../controllers/botsController');
 const botController = require('../controllers/botController');
 const authenticate = require('../middleware/authenticate');
-const Bot = require('../models/Bot'); // Add this line
+const Bot = require('../models/Bot');
 
 // جلب كل البوتات
 router.get('/', authenticate, botsController.getBots);
@@ -46,6 +46,9 @@ router.post('/', authenticate, botsController.createBot);
 
 // تعديل بوت
 router.put('/:id', authenticate, botsController.updateBot);
+
+// ربط صفحة فيسبوك بالبوت (جديد)
+router.post('/:id/link-facebook', authenticate, botsController.linkFacebookPage);
 
 // حذف بوت
 router.delete('/:id', authenticate, botsController.deleteBot);
