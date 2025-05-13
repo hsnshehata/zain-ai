@@ -233,7 +233,7 @@ exports.updateBot = async (req, res) => {
     bot.name = name || bot.name;
     bot.userId = userId || bot.userId;
     bot.facebookApiKey = facebookApiKey !== undefined ? facebookApiKey : bot.facebookApiKey;
-    bot.facebookPageId = facebookPageId !== undefined ? facebookPageId : bot.facebookPageId;
+    bot.facebookPageId = facebookPageId !== undefined ? facebookPageId : bot.facebookApiKey;
     bot.isActive = isActive !== undefined ? isActive : bot.isActive;
     bot.autoStopDate = autoStopDate !== undefined ? autoStopDate : bot.autoStopDate;
     bot.subscriptionType = subscriptionType || bot.subscriptionType;
@@ -310,7 +310,7 @@ exports.deleteBot = async (req, res) => {
   }
 };
 
-// ربط صفحة فيسبوك بالبوت (جديد)
+// ربط صفحة فيسبوك بالبوت (معدل عشان يضيف الاشتراكات)
 exports.linkFacebookPage = async (req, res) => {
   try {
     const botId = req.params.id;
@@ -351,7 +351,44 @@ exports.linkFacebookPage = async (req, res) => {
     await bot.save();
 
     console.log(`[${getTimestamp()}] ✅ تم ربط صفحة فيسبوك بنجاح | Bot ID: ${botId} | Page ID: ${facebookPageId}`);
-    res.status(200).json({ message: 'تم ربط الصفحة بنجاح' });
+
+    // الاشتراك في الـ Webhook Events
+    const subscribedFields = [
+      'messages',
+      'messaging_postbacks',
+      'messaging_optins',
+      'messaging_optouts',
+      'messaging_referrals',
+      'message_edits',
+      'message_reactions',
+      'inbox_labels',
+      'messaging_customer_information',
+      'response_feedback',
+      'messaging_integrity',
+      'feed'
+    ].join(',');
+
+    try {
+      const subscriptionResponse = await axios.post(
+        `https://graph.facebook.com/v20.0/${facebookPageId}/subscribed_apps`,
+        {
+          subscribed_fields: subscribedFields,
+          access_token: longLivedToken
+        }
+      );
+
+      if (subscriptionResponse.data.success) {
+        console.log(`[${getTimestamp()}] ✅ تم الاشتراك في Webhook Events بنجاح | Bot ID: ${botId} | Fields: ${subscribedFields}`);
+      } else {
+        console.error(`[${getTimestamp()}] ❌ فشل في الاشتراك في Webhook Events | Bot ID: ${botId} | Response:`, subscriptionResponse.data);
+        return res.status(400).json({ message: 'فشل في الاشتراك في Webhook Events: ' + (subscriptionResponse.data.error?.message || 'غير معروف') });
+      }
+    } catch (err) {
+      console.error(`[${getTimestamp()}] ❌ خطأ أثناء الاشتراك في Webhook Events | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
+      return res.status(500).json({ message: 'خطأ أثناء الاشتراك في Webhook Events: ' + (err.response?.data?.error?.message || err.message) });
+    }
+
+    res.status(200).json({ message: 'تم ربط الصفحة بنجاح والاشتراك في Webhook Events' });
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ خطأ في ربط صفحة فيسبوك:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
