@@ -223,8 +223,8 @@ exports.updateBot = async (req, res) => {
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
-    // التحقق إن المستخدم هو صاحب البوت
-    if (bot.userId.toString() !== req.user.userId.toString()) {
+    // التحقق من الصلاحيات: السوبر أدمن يقدر يعدل أي بوت، غير كده لازم يكون صاحب البوت
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
       console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
       return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا البوت' });
     }
@@ -293,8 +293,8 @@ exports.deleteBot = async (req, res) => {
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
-    // التحقق إن المستخدم هو صاحب البوت
-    if (bot.userId.toString() !== req.user.userId.toString()) {
+    // التحقق من الصلاحيات: السوبر أدمن يقدر يحذف أي بوت، غير كده لازم يكون صاحب البوت
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
       console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
       return res.status(403).json({ message: 'غير مصرح لك بحذف هذا البوت' });
     }
@@ -327,8 +327,8 @@ exports.linkFacebookPage = async (req, res) => {
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
-    // التحقق إن المستخدم هو صاحب البوت
-    if (bot.userId.toString() !== req.user.userId.toString()) {
+    // التحقق من الصلاحيات: السوبر أدمن يقدر يربط أي بوت، غير كده لازم يكون صاحب البوت
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
       console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
       return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا البوت' });
     }
