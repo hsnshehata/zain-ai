@@ -187,6 +187,12 @@ const handleMessage = async (req, res) => {
       }
 
       if (entry.changes && entry.changes.length > 0) {
+        // التحقق من تفعيل ميزة الرد على الكومنتات
+        if (!bot.commentsRepliesEnabled) {
+          console.log(`⚠️ Comment replies disabled for bot ${bot.name} (ID: ${bot._id}), skipping comment processing.`);
+          continue;
+        }
+
         for (const change of entry.changes) {
           if (change.field === 'feed' && change.value.item === 'comment' && change.value.verb === 'add') {
             const commentEvent = change.value;
