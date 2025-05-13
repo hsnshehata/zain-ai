@@ -119,67 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Toggle elements
     const toggles = settingsContainer.querySelectorAll(".switch input[type=\"checkbox\"]");
-    const togglesError = document.getElementById("togglesError");
-
-    // --- Functions ---
-
-    async function loadBotSettings(botId) {
-      loadingSpinner.style.display = "flex";
-      settingsContainer.style.display = "none";
-      errorMessage.style.display = "none";
-
-      try {
-        const settings = await handleApiRequest(`/api/bots/${botId}/settings`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }, errorMessage, "حدث خطأ أثناء تحميل الإعدادات");
-
-        // Populate Toggles
-        toggles.forEach(toggle => {
-          const key = toggle.dataset.settingKey;
-          if (key && settings.hasOwnProperty(key)) {
-            toggle.checked = settings[key];
-          }
-        });
-
-        settingsContainer.style.display = "grid";
-
-      } catch (err) {
-        // الخطأ تم التعامل معه في handleApiRequest
-      } finally {
-        loadingSpinner.style.display = "none";
-      }
-    }
-
-    // Function to load the linked page status and details
-    async function loadPageStatus(botId) {
-      console.log(`جاري جلب بيانات البوت بالـ ID: ${botId}`);
-      try {
-        const bot = await handleApiRequest(`/api/bots/${botId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }, pageStatus, "فشل في جلب بيانات البوت");
-
-        if (!bot) {
-          console.log(`البوت بالـ ID ${botId} مش موجود`);
-          pageStatus.innerHTML = `
-            <div style="display: inline-block; color: red;">
-              <strong>حالة الربط:</strong> غير مربوط ❌<br>
-              <strong>السبب:</strong> البوت غير موجود أو تم حذفه
-            </div>
-          `;
-          return;
-        }
-
-        console.log(`بيانات البوت:`, bot); // Log the bot data
-
-        if (bot.facebookPageId && bot.facebookApiKey) {
-          console.log(`جاري جلب بيانات الصفحة بالـ ID: ${bot.facebookPageId}`);
-          // Fetch page details from Facebook Graph API
-          const response = await fetch(`https://graph.facebook.com/${bot.facebookPageId}?fields=name&access_token=${bot.facebookApiKey}`);
-          const pageData = await response.json();
-
-          if (pageData.name) {
-            console.log(`تم جلب بيانات الصفحة بنجاح:`, pageData);
-            pageStatus.innerHTML = `
+    const togglesError = document.getElementBygo to pageStatus.innerHTML = `
               <div style="display: inline-block; color: green;">
                 <strong>حالة الربط:</strong> مربوط ✅<br>
                 <strong>اسم الصفحة:</strong> ${pageData.name}<br>
@@ -224,35 +164,36 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      console.log('البيانات المرسلة:', { facebookApiKey, facebookPageId }); // Log data for debugging
+      console.log('البيانات المرسلة:', { facebookApiKey, facebookPageId });
 
       try {
-        const response = await handleApiRequest(`/api/bots/${botId}`, {
+        // طلب توكن طويل الأمد
+        const response = await fetch(
+          `https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=499020366015281&client_secret=${process.env.FACEBOOK_APP_SECRET}&fb_exchange_token=${facebookApiKey}`
+        );
+        const data = await response.json();
+        if (!data.access_token) {
+          throw new Error('فشل في جلب توكن طويل الأمد: ' + (data.error?.message || 'غير معروف'));
+        }
+        const longLivedToken = data.access_token;
+
+        // حفظ التوكن الطويل الأمد
+        const saveResponse = await handleApiRequest(`/api/bots/${botId}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ facebookApiKey, facebookPageId }),
+          body: JSON.stringify({ facebookApiKey: longLivedToken, facebookPageId }),
         }, errorMessage, "فشل حفظ معلومات الربط");
 
-        console.log('رد السيرفر:', response); // Log server response
+        console.log('✅ توكن طويل الأمد تم حفظه بنجاح:', longLivedToken.slice(0, 10) + '...');
         alert("تم ربط الصفحة بنجاح!");
-
-        // Reload page status after linking
-        await loadPageStatus(botId); // Use the same botId as the one used for saving
+        await loadPageStatus(botId);
       } catch (err) {
-        console.error('خطأ في حفظ الإعدادات:', err); // Log error details
-        if (err.message.includes('غير مصرح لك')) {
-          errorMessage.textContent = 'غير مصرح لك بتعديل هذا البوت. تأكد إنك صاحب البوت.';
-          errorMessage.style.display = 'block';
-        } else if (err.message.includes('البوت غير موجود')) {
-          errorMessage.textContent = 'البوت غير موجود. تأكد من اختيار بوت صالح من قايمة البوتات.';
-          errorMessage.style.display = 'block';
-        } else {
-          errorMessage.textContent = 'خطأ في السيرفر أثناء حفظ معلومات الربط: ' + (err.message || 'غير معروف');
-          errorMessage.style.display = 'block';
-        }
+        console.error('❌ خطأ في حفظ التوكن:', err);
+        errorMessage.textContent = 'خطأ في حفظ التوكن: ' + (err.message || 'غير معروف');
+        errorMessage.style.display = 'block';
       }
     }
 
@@ -273,14 +214,13 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (err) {
         const toggleInput = document.querySelector(`input[data-setting-key="${key}"]`);
         if (toggleInput) toggleInput.checked = !value;
-        // الخطأ تم التعامل معه في handleApiRequest
       }
     }
 
     // Initialize Facebook SDK
     window.fbAsyncInit = function () {
       FB.init({
-        appId: '499020366015281', // Your App ID
+        appId: '499020366015281',
         cookie: true,
         xfbml: true,
         version: 'v20.0'
@@ -296,7 +236,9 @@ document.addEventListener("DOMContentLoaded", () => {
           errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ';
           errorMessage.style.display = 'block';
         }
-      }, { scope: 'public_profile,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement' });
+      }, { 
+        scope: 'public_profile,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_engagement' 
+      });
     }
 
     function getUserPages(accessToken) {
@@ -377,7 +319,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // --- Initial Load ---
     loadBotSettings(selectedBotId);
-    loadPageStatus(selectedBotId); // Load page status on initial load
+    loadPageStatus(selectedBotId);
   }
 
   // Make loadFacebookPage globally accessible
