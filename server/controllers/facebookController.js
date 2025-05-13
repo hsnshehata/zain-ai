@@ -201,6 +201,12 @@ const handleMessage = async (req, res) => {
               continue;
             }
 
+            // تجاهل الكومنتات من الصفحة نفسها (ردود البوت)
+            if (commenterId === bot.facebookPageId) {
+              console.log(`⚠️ Skipping comment because commenterId (${commenterId}) is the page itself`);
+              continue;
+            }
+
             console.log(`💬 Comment received on post ${postId} from ${commenterName} (${commenterId}): ${message}`);
 
             const responseText = await processMessage(bot._id, commenterId, message, false, false, `comment_${commentId}`);
