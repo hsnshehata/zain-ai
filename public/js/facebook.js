@@ -119,7 +119,79 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Toggle elements
     const toggles = settingsContainer.querySelectorAll(".switch input[type=\"checkbox\"]");
-    const togglesError = document.getElementBygo to pageStatus.innerHTML = `
+    const togglesError = document.getElementById("togglesError");
+
+    // --- Functions ---
+
+    async function handleApiRequest(url, options, errorElement, defaultErrorMessage) {
+      try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || defaultErrorMessage);
+        }
+        return await response.json();
+      } catch (err) {
+        errorElement.textContent = err.message;
+        errorElement.style.display = "block";
+        throw err;
+      }
+    }
+
+    async function loadBotSettings(botId) {
+      loadingSpinner.style.display = "flex";
+      settingsContainer.style.display = "none";
+      errorMessage.style.display = "none";
+
+      try {
+        const settings = await handleApiRequest(`/api/bots/${botId}/settings`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }, errorMessage, "حدث خطأ أثناء تحميل الإعدادات");
+
+        // Populate Toggles
+        toggles.forEach(toggle => {
+          const key = toggle.dataset.settingKey;
+          if (key && settings.hasOwnProperty(key)) {
+            toggle.checked = settings[key];
+          }
+        });
+
+        settingsContainer.style.display = "grid";
+      } catch (err) {
+        // الخطأ تم التعامل معه في handleApiRequest
+      } finally {
+        loadingSpinner.style.display = "none";
+      }
+    }
+
+    async function loadPageStatus(botId) {
+      console.log(`جاري جلب بيانات البوت بالـ ID: ${botId}`);
+      try {
+        const bot = await handleApiRequest(`/api/bots/${botId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }, pageStatus, "فشل في جلب بيانات البوت");
+
+        if (!bot) {
+          console.log(`البوت بالـ ID ${botId} مش موجود`);
+          pageStatus.innerHTML = `
+            <div style="display: inline-block; color: red;">
+              <strong>حالة الربط:</strong> غير مربوط ❌<br>
+              <strong>السبب:</strong> البوت غير موجود أو تم حذفه
+            </div>
+          `;
+          return;
+        }
+
+        console.log(`بيانات البوت:`, bot);
+
+        if (bot.facebookPageId && bot.facebookApiKey) {
+          console.log(`جاري جلب بيانات الصفحة بالـ ID: ${bot.facebookPageId}`);
+          const response = await fetch(`https://graph.facebook.com/${bot.facebookPageId}?fields=name&access_token=${bot.facebookApiKey}`);
+          const pageData = await response.json();
+
+          if (pageData.name) {
+            console.log(`تم جلب بيانات الصفحة بنجاح:`, pageData);
+            pageStatus.innerHTML = `
               <div style="display: inline-block; color: green;">
                 <strong>حالة الربط:</strong> مربوط ✅<br>
                 <strong>اسم الصفحة:</strong> ${pageData.name}<br>
@@ -157,7 +229,6 @@ document.addEventListener("DOMContentLoaded", () => {
     async function saveApiKeys(botId, facebookApiKey, facebookPageId) {
       errorMessage.style.display = "none";
 
-      // Validate inputs
       if (!facebookApiKey || !facebookPageId) {
         errorMessage.textContent = "فشل حفظ معلومات الربط: مفتاح API أو معرف الصفحة غير موجود";
         errorMessage.style.display = "block";
@@ -251,7 +322,6 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
           }
 
-          // Create a dropdown to select a single page
           const modal = document.createElement("div");
           modal.classList.add("modal");
           modal.innerHTML = `
@@ -274,12 +344,10 @@ document.addEventListener("DOMContentLoaded", () => {
           `;
           document.body.appendChild(modal);
 
-          // Close modal on cancel
           modal.querySelectorAll(".modal-close-btn").forEach(btn => {
             btn.addEventListener("click", () => modal.remove());
           });
 
-          // Handle page selection
           document.getElementById("confirmPageBtn").addEventListener("click", () => {
             const pageSelect = document.getElementById("pageSelect");
             const selectedPageId = pageSelect.value;
@@ -324,4 +392,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Make loadFacebookPage globally accessible
   window.loadFacebookPage = loadFacebookPage;
+
+  // Ensure the function is available even if called early
+  if (window.loadFacebookPage) {
+    console.log('✅ loadFacebookPage is defined and ready');
+  } else {
+    console.error('❌ loadFacebookPage is not defined');
+  }
 });
