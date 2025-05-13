@@ -97,6 +97,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 <span class="slider"></span>
               </label>
             </div>
+            <div class="setting-item toggle-item">
+              <div class="setting-info">
+                <h4>الرد على التعليقات (Comments)</h4>
+                <p>تسمح للبوت بالرد على تعليقات المستخدمين على بوستات الصفحة بنفس طريقة الرد على الرسايل.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="commentsRepliesToggle" data-setting-key="commentsRepliesEnabled">
+                <span class="slider"></span>
+              </label>
+            </div>
           </div>
           <p id="togglesError" class="error-message small-error" style="display: none;"></p>
         </div>
