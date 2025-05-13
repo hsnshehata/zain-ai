@@ -1,4 +1,4 @@
-// public/js/facebook.js (Updated for new dashboard design, unified error handling, and removed Webhook settings)
+// public/js/facebook.js (Updated with instructions container for Tester invitation)
 
 document.addEventListener("DOMContentLoaded", () => {
   async function loadFacebookPage() {
@@ -34,6 +34,33 @@ document.addEventListener("DOMContentLoaded", () => {
     content.innerHTML = `
       <div class="page-header">
         <h2><i class="fab fa-facebook-square"></i> إعدادات ربط فيسبوك</h2>
+        <div id="instructionsContainer" class="instructions-container" style="display: none;">
+          <h3>📋 تعليمات مهمة لإتمام عملية الربط لبدء التجربة المجانية</h3>
+          <p>لإتمام عملية الربط بنجاح، يرجى اتباع الخطوات التالية بعناية:</p>
+          <ul>
+            <li>
+              <strong>قبول دعوة المختبر:</strong> سنقوم بإرسال دعوة لك للانضمام كـ <strong>مختبر (Tester)</strong> لتطبيقنا على منصة Meta Developer. بمجرد استلام الدعوة، يرجى قبولها من خلال حسابك على Meta Developer.
+              <br>
+              <span style="display: block; margin-top: 5px; color: #555;">
+                <strong>خطوات القبول:</strong> 
+                1. سجل دخولك إلى حسابك على <a href="https://developers.facebook.com/" target="_blank">Meta Developer</a>.<br>
+                2. اضغط على "My Apps" من القائمة العلوية.<br>
+                3. ابحث عن التطبيق الذي تمت دعوتك إليه (سيظهر إشعار أو دعوة في الصفحة الرئيسية).<br>
+                4. اضغط على "Accept Invitation" لتصبح مختبرًا.
+              </span>
+            </li>
+            <li>
+              <strong>صلاحيات الصفحة:</strong> تأكد أن لديك صلاحيات تحكم كامل (Admin) للصفحة التي تريد تشغيل البوت عليها.
+            </li>
+            <li>
+              <strong>التواصل مع الدعم:</strong> بعد قبول الدعوة، تواصل معنا عبر واتساب على الرقم 
+              <a href="https://wa.me/01279425543" target="_blank">01279425543</a> وأرسل لنا رابط ملفك الشخصي على Meta Developer لربطه بتطبيق فيسبوك.
+            </li>
+            <li>
+              <strong>اختيار الصفحة:</strong> بعد اتمام العملية، يمكنك اختيار الصفحة من الزر أدناه.
+            </li>
+          </ul>
+        </div>
         <div class="header-actions">
           <button id="connectFacebookBtn" class="btn btn-primary"><i class="fab fa-facebook"></i> ربط صفحتك على فيسبوك</button>
           <div id="pageStatus" class="page-status" style="margin-left: 20px;"></div>
@@ -124,6 +151,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const loadingSpinner = document.getElementById("loadingSpinner");
     const errorMessage = document.getElementById("errorMessage");
     const settingsContainer = document.getElementById("facebookSettingsContainer");
+    const instructionsContainer = document.getElementById("instructionsContainer");
     const connectFacebookBtn = document.getElementById("connectFacebookBtn");
     const pageStatus = document.getElementById("pageStatus");
 
@@ -189,11 +217,13 @@ document.addEventListener("DOMContentLoaded", () => {
               <strong>السبب:</strong> البوت غير موجود أو تم حذفه
             </div>
           `;
+          instructionsContainer.style.display = "block"; // Show instructions if bot is not linked
           return;
         }
 
         console.log(`بيانات البوت:`, bot);
 
+        // Check if bot is linked to a Facebook page
         if (bot.facebookPageId && bot.facebookApiKey) {
           console.log(`جاري جلب بيانات الصفحة بالـ ID: ${bot.facebookPageId}`);
           const response = await fetch(`https://graph.facebook.com/${bot.facebookPageId}?fields=name&access_token=${bot.facebookApiKey}`);
@@ -208,6 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <strong>معرف الصفحة:</strong> ${bot.facebookPageId}
               </div>
             `;
+            instructionsContainer.style.display = "none"; // Hide instructions if bot is linked
           } else {
             console.log(`فشل في جلب بيانات الصفحة:`, pageData);
             pageStatus.innerHTML = `
@@ -216,6 +247,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <strong>السبب:</strong> فشل في جلب بيانات الصفحة (التوكن قد يكون غير صالح أو منتهي)
               </div>
             `;
+            instructionsContainer.style.display = "block"; // Show instructions if bot is not linked
           }
         } else {
           console.log(`البوت مش مرتبط بصفحة`);
@@ -224,6 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <strong>حالة الربط:</strong> غير مربوط ❌
             </div>
           `;
+          instructionsContainer.style.display = "block"; // Show instructions if bot is not linked
         }
       } catch (err) {
         console.error('Error loading page status:', err);
@@ -233,6 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <strong>السبب:</strong> خطأ في جلب بيانات البوت: ${err.message || 'غير معروف'}
           </div>
         `;
+        instructionsContainer.style.display = "block"; // Show instructions if bot is not linked
       }
     }
 
