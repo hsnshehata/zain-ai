@@ -106,6 +106,83 @@ body.light-mode .setting-item {
   margin-top: 10px;
 }
 
+/* Instructions Container (New Addition) */
+.instructions-container {
+  background-color: #f8f9fa;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.instructions-container h3 {
+  margin-top: 0;
+  color: #333;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.instructions-container p {
+  margin: 10px 0;
+  color: #555;
+  line-height: 1.6;
+}
+
+.instructions-container ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.instructions-container li {
+  margin-bottom: 15px;
+  color: #333;
+  line-height: 1.6;
+}
+
+.instructions-container li strong {
+  color: #007bff;
+}
+
+.instructions-container a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.instructions-container a:hover {
+  text-decoration: underline;
+}
+
+/* Header Actions (for the connect button and page status) */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.btn-primary:hover {
+  background-color: #0056b3;
+}
+
+.page-status {
+  font-size: 14px;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .facebook-settings-grid {
@@ -138,6 +215,18 @@ body.light-mode .setting-item {
 
   .info-text {
     font-size: 0.9em;
+  }
+
+  .instructions-container {
+    padding: 15px;
+  }
+
+  .instructions-container h3 {
+    font-size: 16px;
+  }
+
+  .instructions-container li {
+    margin-bottom: 12px;
   }
 }
 
@@ -177,6 +266,18 @@ body.light-mode .setting-item {
 
   .small-error {
     font-size: 0.85em;
+  }
+
+  .instructions-container {
+    padding: 12px;
+  }
+
+  .instructions-container h3 {
+    font-size: 15px;
+  }
+
+  .instructions-container li {
+    margin-bottom: 10px;
   }
 }
 
@@ -219,6 +320,18 @@ body.light-mode .setting-item {
 
   .info-text code {
     padding: 3px 6px;
+  }
+
+  .instructions-container {
+    padding: 10px;
+  }
+
+  .instructions-container h3 {
+    font-size: 14px;
+  }
+
+  .instructions-container li {
+    margin-bottom: 8px;
   }
 }
 
