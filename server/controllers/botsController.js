@@ -358,4 +358,7 @@ exports.linkFacebookPage = async (req, res) => {
   }
 };
 
+// تصدير getTimestamp بشكل صريح
+exports.getTimestamp = getTimestamp;
+
 module.exports = exports;
