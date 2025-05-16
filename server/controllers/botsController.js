@@ -348,7 +348,7 @@ exports.unlinkFacebookPage = async (req, res) => {
     console.log(`[${getTimestamp()}] ✅ تم إلغاء ربط صفحة فيسبوك بنجاح | Bot ID: ${botId}`);
     res.status(200).json({ message: 'تم إلغاء ربط الصفحة بنجاح' });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ sulfide في إلغاء ربط صفحة فيسبوك:`, err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في إلغاء ربط صفحة فيسبوك:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
   }
 };
@@ -440,7 +440,7 @@ exports.linkSocialPage = async (req, res) => {
 
     await bot.save();
 
-    console.log(`[${getTimestamp()}] ✅ تم ربط صفحة (${platform}) بنجاح | Bot ID: ${botId} | Page ID: ${pageId}`);
+    console.log(`[${getTimestamp()}] ✅ تم ربط صفحة ${platform} بنجاح | Bot ID: ${botId} | Page ID: ${pageId}`);
 
     // الاشتراك في الـ Webhook Events
     try {
@@ -501,8 +501,9 @@ exports.exchangeInstagramCode = async (req, res) => {
     // تبادل الـ code بـ access token (التوكن طويل الأمد مباشرة)
     let tokenResponse;
     try {
+      console.log(`[${getTimestamp()}] 🔄 Sending OAuth token exchange request for bot ${botId}`);
       tokenResponse = await axios.post('https://api.instagram.com/oauth/access_token', new URLSearchParams({
-       ಲ, client_id: '2288330081539329',
+        client_id: '2288330081539329',
         client_secret: process.env.INSTAGRAM_APP_SECRET || '2b9ad161ae42d821095ed15d5ff94c87',
         grant_type: 'authorization_code',
         redirect_uri: redirectUri,
@@ -543,6 +544,7 @@ exports.exchangeInstagramCode = async (req, res) => {
     // تحديث البوت بالتوكن ومعرف الحساب
     bot.instagramApiKey = accessToken;
     bot.instagramPageId = instagramPageId;
+    bot.lastInstagramTokenRefresh = new Date(); // تحديث تاريخ التجديد
     await bot.save();
 
     // الاشتراك في الـ Webhook Events باستخدام الـ Instagram Graph API
@@ -628,6 +630,7 @@ exports.refreshInstagramToken = async (req, res) => {
 
     // تحديث التوكن في البوت
     bot.instagramApiKey = newToken;
+    bot.lastInstagramTokenRefresh = new Date(); // تحديث تاريخ التجديد
     await bot.save();
 
     console.log(`[${getTimestamp()}] ✅ تم تجديد توكن إنستجرام بنجاح | Bot ID: ${botId} | New Token: ${newToken.slice(0, 10)}... | Expires In: ${expiresIn} seconds`);
