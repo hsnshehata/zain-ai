@@ -3,7 +3,6 @@ const Bot = require('../models/Bot');
 const botEngine = require('../utils/botEngine');
 const botsController = require('./botsController');
 
-// دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
 
 exports.webhook = async (req, res) => {
@@ -14,16 +13,11 @@ exports.webhook = async (req, res) => {
       const webhookEvent = entry.messaging ? entry.messaging[0] : entry.changes[0];
 
       if (webhookEvent) {
-        // معالجة الرسائل
         if (webhookEvent.message) {
           await handleMessage(webhookEvent);
-        }
-        // معالجة التعليقات
-        else if (webhookEvent.field === 'feed' && webhookEvent.value && webhookEvent.value.item === 'comment') {
+        } else if (webhookEvent.field === 'feed' && webhookEvent.value && webhookEvent.value.item === 'comment') {
           await handleComment(webhookEvent);
-        }
-        // معالجة الـ feedback
-        else if (webhookEvent.field === 'response_feedback') {
+        } else if (webhookEvent.field === 'response_feedback') {
           await handleFeedback(webhookEvent);
         }
       }
@@ -80,10 +74,8 @@ async function handleMessage(event) {
       return;
     }
 
-    // استخدام botEngine لمعالجة الرسالة
     const reply = await botEngine.processMessage(bot._id, senderId, messageText, false, false, messageId);
 
-    // إرسال الرد للمستخدم
     await axios.post(
       `https://graph.facebook.com/v20.0/me/messages`,
       {
@@ -123,10 +115,8 @@ async function handleComment(event) {
       return;
     }
 
-    // استخدام botEngine لمعالجة التعليق
     const reply = await botEngine.processMessage(bot._id, commentId, commentText, false, false, commentId);
 
-    // إرسال الرد على التعليق
     await axios.post(
       `https://graph.facebook.com/v20.0/${commentId}/comments`,
       {
@@ -144,7 +134,7 @@ async function handleComment(event) {
 }
 
 async function handleFeedback(event) {
-  const feedbackValue = event.value.feedback_value; // 'positive' or 'negative'
+  const feedbackValue = event.value.feedback_value;
   const messageId = event.value.message_id;
   const userId = event.value.from.id;
   const pageId = event.value.recipient_id;
@@ -156,7 +146,6 @@ async function handleFeedback(event) {
       return;
     }
 
-    // استخدام botEngine لتسجيل الـ feedback
     await botEngine.processFeedback(bot._id, userId, messageId, feedbackValue);
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error handling feedback:`, err.message, err.stack);
