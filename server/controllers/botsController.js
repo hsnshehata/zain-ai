@@ -548,4 +548,9 @@ exports.exchangeInstagramCode = async (req, res) => {
     }
 
     res.status(200).json({ success: true, message: 'تم ربط حساب الإنستجرام بنجاح والاشتراك في Webhook Events' });
-  } catch (err)
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ خطأ في تبادل OAuth code:`, err.message, err.stack);
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر: ' + err.message });
+  }
+}; // إضافة القوس النهائي للدالة exchangeInstagramCode
+}; // إضافة القوس النهائي للموديول exports
