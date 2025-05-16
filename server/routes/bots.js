@@ -28,6 +28,8 @@ router.get('/:id', authenticate, async (req, res) => {
 // Routes for settings with botId in the URL
 router.get('/:id/settings', authenticate, botController.getSettings);
 router.patch('/:id/settings', authenticate, botController.updateSettings);
+router.get('/:id/instagram-settings', authenticate, botController.getSettings);
+router.patch('/:id/instagram-settings', authenticate, botController.updateSettings);
 
 // جلب التقييمات لبوت معين
 router.get('/:id/feedback', authenticate, botsController.getFeedback);
@@ -47,8 +49,8 @@ router.post('/', authenticate, botsController.createBot);
 // تعديل بوت
 router.put('/:id', authenticate, botsController.updateBot);
 
-// ربط صفحة فيسبوك بالبوت (جديد)
-router.post('/:id/link-facebook', authenticate, botsController.linkFacebookPage);
+// ربط صفحة فيسبوك أو إنستجرام بالبوت
+router.post('/:id/link-social', authenticate, botsController.linkSocialPage);
 
 // حذف بوت
 router.delete('/:id', authenticate, botsController.deleteBot);
