@@ -96,11 +96,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       messageId: messageId || `msg_${Date.now()}` 
     });
 
-    // التأكد إن الـ messages ما يزيدش عن 20 رسالة
-    if (conversation.messages.length > 20) {
-      conversation.messages = conversation.messages.slice(-20);
-    }
-
     await conversation.save();
     console.log('💬 User message added to conversation:', userMessageContent);
 
@@ -182,11 +177,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       timestamp: new Date(),
       messageId: responseMessageId 
     });
-
-    // التأكد إن الـ messages ما يزيدش عن 20 رسالة بعد إضافة رد البوت
-    if (conversation.messages.length > 20) {
-      conversation.messages = conversation.messages.slice(-20);
-    }
 
     await conversation.save();
     console.log('💬 Assistant reply added to conversation:', reply);
