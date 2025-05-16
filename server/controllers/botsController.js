@@ -371,20 +371,10 @@ exports.linkSocialPage = async (req, res) => {
       bot.facebookPageId = facebookPageId;
     } else if (instagramApiKey && instagramPageId) {
       platform = 'instagram';
-      // طلب توكن طويل الأمد لإنستجرام
-      const response = await axios.get(
-        `https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=2288330081539329&client_secret=${process.env.INSTAGRAM_APP_SECRET}&fb_exchange_token=${instagramApiKey}`
-      );
-
-      if (!response.data.access_token) {
-        console.log(`[${getTimestamp()}] ❌ فشل في جلب توكن طويل الأمد لإنستجرام | Bot ID: ${botId}`);
-        return res.status(400).json({ message: 'فشل في جلب توكن طويل الأمد: ' + (response.data.error?.message || 'غير معروف') });
-      }
-
-      longLivedToken = response.data.access_token;
+      longLivedToken = instagramApiKey; // التوكن قصير الأمد مرسل من الـ frontend
       pageId = instagramPageId;
 
-      // تحديث البوت بالتوكن الطويل الأمد ومعرف الصفحة
+      // تحديث البوت بالتوكن ومعرف الصفحة
       bot.instagramApiKey = longLivedToken;
       bot.instagramPageId = instagramPageId;
     }
@@ -433,7 +423,95 @@ exports.linkSocialPage = async (req, res) => {
   }
 };
 
-// تصدير getTimestamp بشكل صريح
-exports.getTimestamp = getTimestamp;
+// تبادل Instagram OAuth code بـ access token
+exports.exchangeInstagramCode = async (req, res) => {
+  try {
+    const botId = req.params.id;
+    const { code } = req.body;
 
-module.exports = exports;
+    if (!code) {
+      console.log(`[${getTimestamp()}] ⚠️ OAuth code مفقود | Bot ID: ${botId}`);
+      return res.status(400).json({ success: false, message: 'OAuth code مطلوب' });
+    }
+
+    const bot = await Bot.findById(botId);
+    if (!bot) {
+      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      return res.status(404).json({ success: false, message: 'البوت غير موجود' });
+    }
+
+    // التحقق من الصلاحيات
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
+      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      return res.status(403).json({ success: false, message: 'غير مصرح لك بتعديل هذا البوت' });
+    }
+
+    // تبادل الـ code بـ access token
+    const response = await axios.post('https://api.instagram.com/oauth/access_token', new URLSearchParams({
+      client_id: '2288330081539329',
+      client_secret: process.env.INSTAGRAM_APP_SECRET,
+      grant_type: 'authorization_code',
+      redirect_uri: `${req.protocol}://${req.get('host')}/dashboard_new.html`,
+      code: code,
+    }), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+    });
+
+    if (!response.data.access_token || !response.data.user_id) {
+      console.log(`[${getTimestamp()}] ❌ فشل في تبادل OAuth code | Bot ID: ${botId} | Response:`, response.data);
+      return res.status(400).json({ success: false, message: 'فشل في جلب التوكن: ' + (response.data.error_message || 'غير معروف') });
+    }
+
+    const accessToken = response.data.access_token;
+    const userId = response.data.user_id;
+
+    console.log(`[${getTimestamp()}] ✅ تم تبادل OAuth code بنجاح | Bot ID: ${botId} | User ID: ${userId}`);
+
+    // تحديث البوت بالتوكن ومعرف الحساب
+    bot.instagramApiKey = accessToken;
+    bot.instagramPageId = userId;
+    await bot.save();
+
+    // الاشتراك في الـ Webhook Events
+    const subscribedFields = [
+      'messages',
+      'messaging_postbacks',
+      'messaging_optins',
+      'messaging_referrals',
+      'message_edits',
+      'message_reactions',
+      'inbox_labels',
+      'response_feedback',
+      'comments'
+    ].join(',');
+
+    try {
+      const subscriptionResponse = await axios.post(
+        `https://graph.instagram.com/v20.0/${userId}/subscriptions`,
+        {
+          object: 'user',
+          callback_url: `${req.protocol}://${req.get('host')}/api/webhook/instagram`,
+          fields: subscribedFields,
+          access_token: accessToken,
+        }
+      );
+
+      if (subscriptionResponse.data.success) {
+        console.log(`[${getTimestamp()}] ✅ تم الاشتراك في Webhook Events بنجاح | Bot ID: ${botId} | Fields: ${subscribedFields}`);
+      } else {
+        console.error(`[${getTimestamp()}] ❌ فشل في الاشتراك في Webhook Events | Bot ID: ${botId} | Response:`, subscriptionResponse.data);
+        return res.status(400).json({ success: false, message: 'فشل في الاشتراك في Webhook Events: ' + (subscriptionResponse.data.error?.message || 'غير معروف') });
+      }
+    } catch (err) {
+      console.error(`[${getTimestamp()}] ❌ خطأ أثناء الاشتراك في Webhook Events | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
+      return res.status(500).json({ success: false, message: 'خطأ أثناء الاشتراك في Webhook Events: ' + (err.response?.data?.error?.message || err.message) });
+    }
+
+    res.status(200).json({ success: true, message: 'تم ربط حساب الإنستجرام بنجاح والاشتراك في Webhook Events' });
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ خطأ في تبادل OAuth code:`, err.message, err.stack);
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر: ' + err.message });
+  }
+};
