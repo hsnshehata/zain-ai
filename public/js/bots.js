@@ -1,4 +1,4 @@
-// public/js/bots.js (Updated for new dashboard design and unified error handling)
+// public/js/bots.js (Updated for new dashboard design and unified error handling with Instagram support)
 
 async function loadBotsPage() {
   const link = document.createElement("link");
@@ -98,11 +98,13 @@ function renderUsersGrid(usersToRender, gridElement) {
     const botsHtml = user.bots && user.bots.length > 0
       ? user.bots.map(bot => `
           <div class="bot-entry">
-            <span><i class="fas fa-robot"></i> ${bot.name} ${bot.facebookPageId ? 
-              `<a href="https://facebook.com/${bot.facebookPageId}" target="_blank" title="صفحة فيسبوك"><i class="fab fa-facebook-square"></i></a>` : ''}</span>
+            <span><i class="fas fa-robot"></i> ${bot.name} 
+              ${bot.facebookPageId ? `<a href="https://facebook.com/${bot.facebookPageId}" target="_blank" title="صفحة فيسبوك"><i class="fab fa-facebook-square"></i></a>` : ''} 
+              ${bot.instagramPageId ? `<a href="https://instagram.com/${bot.instagramPageId}" target="_blank" title="حساب إنستجرام"><i class="fab fa-instagram"></i></a>` : ''}
+            </span>
             <span class="bot-status">${bot.isActive ? 'يعمل' : 'متوقف'}</span>
             <div class="bot-actions">
-              <button class="btn-icon btn-edit" onclick="showEditBotModal('${bot._id}', '${bot.name}', '${bot.facebookApiKey || ''}', '${bot.facebookPageId || ''}', '${user._id}', ${bot.isActive}, '${bot.autoStopDate || ''}', '${bot.subscriptionType}', '${bot.welcomeMessage || ''}')" title="تعديل البوت"><i class="fas fa-edit"></i></button>
+              <button class="btn-icon btn-edit" onclick="showEditBotModal('${bot._id}', '${bot.name}', '${bot.facebookApiKey || ''}', '${bot.facebookPageId || ''}', '${user._id}', ${bot.isActive}, '${bot.autoStopDate || ''}', '${bot.subscriptionType}', '${bot.welcomeMessage || ''}', '${bot.instagramApiKey || ''}', '${bot.instagramPageId || ''}')" title="تعديل البوت"><i class="fas fa-edit"></i></button>
               <button class="btn-icon btn-toggle" onclick="toggleBotStatus('${bot._id}', ${bot.isActive})" title="${bot.isActive ? 'إيقاف البوت' : 'تشغيل البوت'}"><i class="fas ${bot.isActive ? 'fa-pause' : 'fa-play'}"></i></button>
               <button class="btn-icon btn-delete" onclick="deleteBot('${bot._id}')" title="حذف البوت"><i class="fas fa-trash-alt"></i></button>
             </div>
@@ -561,6 +563,14 @@ function showCreateBotForm(container) {
           <input type="text" id="facebookPageId">
         </div>
         <div class="form-group">
+          <label for="instagramApiKey">مفتاح API لإنستجرام (اختياري)</label>
+          <input type="text" id="instagramApiKey">
+        </div>
+        <div class="form-group" id="instagramPageIdContainer" style="display: none;">
+          <label for="instagramPageId">معرف حساب إنستجرام (مطلوب إذا تم إدخال API)</label>
+          <input type="text" id="instagramPageId">
+        </div>
+        <div class="form-group">
           <label for="subscriptionType">نوع الاشتراك</label>
           <select id="subscriptionType">
             <option value="free">مجاني</option>
@@ -585,11 +595,20 @@ function showCreateBotForm(container) {
   const facebookApiKeyInput = document.getElementById("facebookApiKey");
   const facebookPageIdContainer = document.getElementById("facebookPageIdContainer");
   const facebookPageIdInput = document.getElementById("facebookPageId");
+  const instagramApiKeyInput = document.getElementById("instagramApiKey");
+  const instagramPageIdContainer = document.getElementById("instagramPageIdContainer");
+  const instagramPageIdInput = document.getElementById("instagramPageId");
 
   facebookApiKeyInput.addEventListener("input", () => {
     const hasApiKey = facebookApiKeyInput.value.trim() !== "";
     facebookPageIdContainer.style.display = hasApiKey ? "block" : "none";
     facebookPageIdInput.required = hasApiKey;
+  });
+
+  instagramApiKeyInput.addEventListener("input", () => {
+    const hasApiKey = instagramApiKeyInput.value.trim() !== "";
+    instagramPageIdContainer.style.display = hasApiKey ? "block" : "none";
+    instagramPageIdInput.required = hasApiKey;
   });
 
   // Populate user select
@@ -615,6 +634,8 @@ function showCreateBotForm(container) {
     const userId = document.getElementById("botUserId").value;
     const facebookApiKey = document.getElementById("facebookApiKey").value.trim();
     const facebookPageId = document.getElementById("facebookPageId").value.trim();
+    const instagramApiKey = document.getElementById("instagramApiKey").value.trim();
+    const instagramPageId = document.getElementById("instagramPageId").value.trim();
     const subscriptionType = document.getElementById("subscriptionType").value;
     const welcomeMessage = document.getElementById("welcomeMessage").value.trim();
     const errorEl = document.getElementById("botFormError");
@@ -630,6 +651,11 @@ function showCreateBotForm(container) {
       errorEl.style.display = "block";
       return;
     }
+    if (instagramApiKey && !instagramPageId) {
+      errorEl.textContent = "يرجى إدخال معرف حساب إنستجرام طالما تم إدخال مفتاح API.";
+      errorEl.style.display = "block";
+      return;
+    }
 
     try {
       await handleApiRequest("/api/bots", {
@@ -638,7 +664,7 @@ function showCreateBotForm(container) {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId, subscriptionType, welcomeMessage }),
+        body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId, instagramApiKey, instagramPageId, subscriptionType, welcomeMessage }),
       }, errorEl, "فشل في إنشاء البوت");
       alert("تم إنشاء البوت بنجاح!");
       hideForm(container);
@@ -649,7 +675,7 @@ function showCreateBotForm(container) {
   });
 }
 
-function showEditBotModal(botId, currentName, currentApiKey, currentPageId, ownerUserId, isActive, autoStopDate, subscriptionType, welcomeMessage) {
+function showEditBotModal(botId, currentName, currentApiKey, currentPageId, ownerUserId, isActive, autoStopDate, subscriptionType, welcomeMessage, currentInstagramApiKey, currentInstagramPageId) {
   const modal = document.createElement("div");
   modal.classList.add("modal");
   modal.innerHTML = `
@@ -676,6 +702,14 @@ function showEditBotModal(botId, currentName, currentApiKey, currentPageId, owne
         <div class="form-group" id="editFacebookPageIdContainer" style="display: ${currentApiKey ? 'block' : 'none'}">
           <label for="editFacebookPageId">معرف صفحة فيسبوك (مطلوب إذا تم إدخال API)</label>
           <input type="text" id="editFacebookPageId" value="${currentPageId || ''}">
+        </div>
+        <div class="form-group">
+          <label for="editInstagramApiKey">مفتاح API لإنستجرام (اختياري)</label>
+          <input type="text" id="editInstagramApiKey" value="${currentInstagramApiKey || ''}">
+        </div>
+        <div class="form-group" id="editInstagramPageIdContainer" style="display: ${currentInstagramApiKey ? 'block' : 'none'}">
+          <label for="editInstagramPageId">معرف حساب إنستجرام (مطلوب إذا تم إدخال API)</label>
+          <input type="text" id="editInstagramPageId" value="${currentInstagramPageId || ''}">
         </div>
         <div class="form-group">
           <label for="editBotStatus">حالة البوت</label>
@@ -713,11 +747,20 @@ function showEditBotModal(botId, currentName, currentApiKey, currentPageId, owne
   const facebookApiKeyInput = modal.querySelector("#editFacebookApiKey");
   const facebookPageIdContainer = modal.querySelector("#editFacebookPageIdContainer");
   const facebookPageIdInput = modal.querySelector("#editFacebookPageId");
+  const instagramApiKeyInput = modal.querySelector("#editInstagramApiKey");
+  const instagramPageIdContainer = modal.querySelector("#editInstagramPageIdContainer");
+  const instagramPageIdInput = modal.querySelector("#editInstagramPageId");
 
   facebookApiKeyInput.addEventListener("input", () => {
     const hasApiKey = facebookApiKeyInput.value.trim() !== "";
     facebookPageIdContainer.style.display = hasApiKey ? "block" : "none";
     facebookPageIdInput.required = hasApiKey;
+  });
+
+  instagramApiKeyInput.addEventListener("input", () => {
+    const hasApiKey = instagramApiKeyInput.value.trim() !== "";
+    instagramPageIdContainer.style.display = hasApiKey ? "block" : "none";
+    instagramPageIdInput.required = hasApiKey;
   });
 
   // Populate user select
@@ -747,6 +790,8 @@ function showEditBotModal(botId, currentName, currentApiKey, currentPageId, owne
     const userId = modal.querySelector("#editBotUserId").value;
     const facebookApiKey = modal.querySelector("#editFacebookApiKey").value.trim();
     const facebookPageId = modal.querySelector("#editFacebookPageId").value.trim();
+    const instagramApiKey = modal.querySelector("#editInstagramApiKey").value.trim();
+    const instagramPageId = modal.querySelector("#editInstagramPageId").value.trim();
     const isActive = modal.querySelector("#editBotStatus").value === "true";
     const autoStopDate = modal.querySelector("#editAutoStopDate").value || null;
     const subscriptionType = modal.querySelector("#editSubscriptionType").value;
@@ -764,6 +809,11 @@ function showEditBotModal(botId, currentName, currentApiKey, currentPageId, owne
       errorEl.style.display = "block";
       return;
     }
+    if (instagramApiKey && !instagramPageId) {
+      errorEl.textContent = "يرجى إدخال معرف حساب إنستجرام طالما تم إدخال مفتاح API.";
+      errorEl.style.display = "block";
+      return;
+    }
 
     try {
       await handleApiRequest(`/api/bots/${botId}`, {
@@ -772,7 +822,7 @@ function showEditBotModal(botId, currentName, currentApiKey, currentPageId, owne
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId, isActive, autoStopDate, subscriptionType, welcomeMessage }),
+        body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId, instagramApiKey, instagramPageId, isActive, autoStopDate, subscriptionType, welcomeMessage }),
       }, errorEl, "فشل في تعديل البوت");
       alert("تم تعديل البوت بنجاح!");
       modal.remove();
