@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </span>
             </li>
             <li>
-              <strong>تسجيل الدخول بحساب إنستجرام:</strong> لما تضغط على زر الربط، هيفتحلك نافذة تسجيل دخول إنستجرام. سجّل دخول بحساب إنستجرام مهني (Business أو Creator).
+              <strong>تسجيل الدخول بحساب إنستجرام:</strong> لما تضغط على زر الربط، هيفتحلك صفحة تسجيل دخول إنستجرام. سجّل دخول بحساب إنستجرام مهني (Business أو Creator).
             </li>
             <li>
               <strong>لو فشلت في الربط:</strong> لو ماعرفتش تربط الحساب، اتأكد إن:
@@ -322,31 +322,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Handle Instagram OAuth flow with Pop-up
+    // Handle Instagram OAuth flow
     function loginWithInstagram() {
       const authUrl = `https://www.instagram.com/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPES}&response_type=code`;
-      console.log('Opening Instagram OAuth URL in Pop-up:', authUrl);
-
-      // فتح Pop-up
-      const width = 600;
-      const height = 600;
-      const left = (window.screen.width - width) / 2;
-      const top = (window.screen.height - height) / 2;
-      const popup = window.open(authUrl, 'InstagramLogin', `width=${width},height=${height},top=${top},left=${left}`);
-
-      if (!popup) {
-        errorMessage.textContent = 'يرجى السماح بفتح النوافذ المنبثقة (Pop-ups) لتسجيل الدخول';
-        errorMessage.style.display = 'block';
-        return;
-      }
-
-      // مراقبة الـ Pop-up لاستقبال الـ code
-      const interval = setInterval(() => {
-        if (popup.closed) {
-          clearInterval(interval);
-          // الـ code هيتعامل معاه في handleInstagramCallback
-        }
-      }, 500);
+      console.log('Opening Instagram OAuth URL in same page:', authUrl);
+      window.location.href = authUrl;
     }
 
     // Check for OAuth code in URL and send it to backend
@@ -379,6 +359,9 @@ document.addEventListener("DOMContentLoaded", () => {
           console.error('Error exchanging code for access token:', err);
           errorMessage.textContent = 'خطأ أثناء ربط الحساب: ' + (err.message || 'غير معروف');
           errorMessage.style.display = 'block';
+        } finally {
+          // تحديث الصفحة حتى لو حصل خطأ
+          await loadPageStatus(selectedBotId);
         }
       }
     }
