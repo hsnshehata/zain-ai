@@ -3,6 +3,7 @@ const cors = require('cors');
 const path = require('path');
 const rateLimit = require('express-rate-limit');
 const facebookRoutes = require('./routes/facebook');
+const instagramRoutes = require('./routes/instagram');
 const webhookRoutes = require('./routes/webhook');
 const authRoutes = require('./routes/auth');
 const botsRoutes = require('./routes/bots');
@@ -87,6 +88,7 @@ app.get('/api/config', (req, res) => {
 // Routes
 app.use('/api/webhook', webhookRoutes);
 app.use('/api/bots', facebookRoutes);
+app.use('/api/bots', instagramRoutes);
 app.use('/api/bots', botsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
