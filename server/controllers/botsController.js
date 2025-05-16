@@ -324,6 +324,35 @@ exports.deleteBot = async (req, res) => {
   }
 };
 
+// إلغاء ربط صفحة فيسبوك
+exports.unlinkFacebookPage = async (req, res) => {
+  try {
+    const botId = req.params.id;
+    const bot = await Bot.findById(botId);
+    if (!bot) {
+      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      return res.status(404).json({ message: 'البوت غير موجود' });
+    }
+
+    // التحقق من الصلاحيات: السوبر أدمن يقدر يعدل أي بوت، غير كده لازم يكون صاحب البوت
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
+      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا البوت' });
+    }
+
+    // إلغاء ربط صفحة فيسبوك
+    bot.facebookApiKey = '';
+    bot.facebookPageId = '';
+    await bot.save();
+
+    console.log(`[${getTimestamp()}] ✅ تم إلغاء ربط صفحة فيسبوك بنجاح | Bot ID: ${botId}`);
+    res.status(200).json({ message: 'تم إلغاء ربط الصفحة بنجاح' });
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ خطأ في إلغاء ربط صفحة فيسبوك:`, err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
+  }
+};
+
 // ربط صفحة فيسبوك أو إنستجرام بالبوت
 exports.linkSocialPage = async (req, res) => {
   try {
@@ -355,23 +384,37 @@ exports.linkSocialPage = async (req, res) => {
     let subscribedFields;
     if (facebookApiKey && facebookPageId) {
       platform = 'facebook';
-      longLivedToken = facebookApiKey;
+      // طلب توكن طويل الأمد لفيسبوك
+      const response = await axios.get(
+        `https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=499020366015281&client_secret=${process.env.FACEBOOK_APP_SECRET}&fb_exchange_token=${facebookApiKey}`
+      );
+
+      if (!response.data.access_token) {
+        console.log(`[${getTimestamp()}] ❌ فشل في جلب توكن طويل الأمد لفيسبوك | Bot ID: ${botId}`);
+        return res.status(400).json({ message: 'فشل في جلب توكن طويل الأمد: ' + (response.data.error?.message || 'غير معروف') });
+      }
+
+      longLivedToken = response.data.access_token;
       pageId = facebookPageId;
 
       // تحديث البوت بالتوكن ومعرف الصفحة
       bot.facebookApiKey = longLivedToken;
       bot.facebookPageId = facebookPageId;
 
-      // حقول فيسبوك المشترك فيها
+      // حقول فيسبوك المشترك فيها (زي النسخة القديمة)
       subscribedFields = [
         'messages',
         'messaging_postbacks',
         'messaging_optins',
+        'messaging_optouts',
         'messaging_referrals',
         'message_edits',
         'message_reactions',
         'inbox_labels',
-        'response_feedback'
+        'messaging_customer_information',
+        'response_feedback',
+        'messaging_integrity',
+        'feed'
       ].join(',');
     } else if (instagramApiKey && instagramPageId) {
       platform = 'instagram';
@@ -382,7 +425,7 @@ exports.linkSocialPage = async (req, res) => {
       bot.instagramApiKey = longLivedToken;
       bot.instagramPageId = instagramPageId;
 
-      // حقول إنستجرام المشترك فيها (بتدعم "comments")
+      // حقول إنستجرام المشترك فيها
       subscribedFields = [
         'messages',
         'messaging_postbacks',
@@ -399,7 +442,7 @@ exports.linkSocialPage = async (req, res) => {
 
     console.log(`[${getTimestamp()}] ✅ تم ربط صفحة ${platform} بنجاح | Bot ID: ${botId} | Page ID: ${pageId}`);
 
-    // الاشتراك في الـ Webhook Events (باستثناء الـ comments لفيسبوك)
+    // الاشتراك في الـ Webhook Events
     try {
       const subscriptionResponse = await axios.post(
         `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`,
@@ -418,32 +461,6 @@ exports.linkSocialPage = async (req, res) => {
     } catch (err) {
       console.error(`[${getTimestamp()}] ❌ خطأ أثناء الاشتراك في Webhook Events | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
       return res.status(500).json({ message: 'خطأ أثناء الاشتراك في Webhook Events: ' + (err.response?.data?.error?.message || err.message) });
-    }
-
-    // الاشتراك في الـ Comments Webhook لفيسبوك بشكل منفصل
-    if (platform === 'facebook' && bot.commentsRepliesEnabled) {
-      try {
-        const commentsSubscriptionResponse = await axios.post(
-          `https://graph.facebook.com/v20.0/${pageId}/subscriptions`,
-          {
-            object: 'page',
-            callback_url: process.env.FACEBOOK_WEBHOOK_URL || 'https://zain-ai-a06a.onrender.com/api/facebook/webhook',
-            fields: 'feed',
-            verify_token: process.env.FACEBOOK_VERIFY_TOKEN || 'your_verify_token_here',
-            access_token: longLivedToken
-          }
-        );
-
-        if (commentsSubscriptionResponse.data.success) {
-          console.log(`[${getTimestamp()}] ✅ تم الاشتراك في Comments Webhook بنجاح | Bot ID: ${botId}`);
-        } else {
-          console.error(`[${getTimestamp()}] ❌ فشل في الاشتراك في Comments Webhook | Bot ID: ${botId} | Response:`, commentsSubscriptionResponse.data);
-          return res.status(400).json({ message: 'فشل في الاشتراك في Comments Webhook: ' + (commentsSubscriptionResponse.data.error?.message || 'غير معروف') });
-        }
-      } catch (err) {
-        console.error(`[${getTimestamp()}] ❌ خطأ أثناء الاشتراك في Comments Webhook | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
-        return res.status(500).json({ message: 'خطأ أثناء الاشتراك في Comments Webhook: ' + (err.response?.data?.error?.message || err.message) });
-      }
     }
 
     res.status(200).json({ message: `تم ربط صفحة ${platform} بنجاح والاشتراك في Webhook Events` });
@@ -530,14 +547,14 @@ exports.exchangeInstagramCode = async (req, res) => {
 
     // الاشتراك في الـ Webhook Events باستخدام الـ Instagram Graph API
     const subscribedFields = [
-        'messages',
-        'messaging_postbacks',
-        'messaging_optins',
-        'messaging_referrals',
-        'message_edits',
-        'messaging_handover',
-        'message_reactions',
-        'comments'
+      'messages',
+      'messaging_postbacks',
+      'messaging_optins',
+      'messaging_referrals',
+      'message_edits',
+      'messaging_handover',
+      'message_reactions',
+      'comments'
     ].join(',');
 
     try {
@@ -566,3 +583,8 @@ exports.exchangeInstagramCode = async (req, res) => {
     res.status(500).json({ success: false, message: 'خطأ في السيرفر: ' + err.message });
   }
 };
+
+// تصدير getTimestamp بشكل صريح
+exports.getTimestamp = getTimestamp;
+
+module.exports = exports;
