@@ -1,6 +1,6 @@
 const axios = require('axios');
 const Bot = require('../models/Bot');
-const botEngine = require('./botEngine'); // تعديل المسار من '../utils/botEngine' إلى './botEngine'
+const botEngine = require('../botEngine'); // تعديل المسار من '../utils/botEngine' إلى './botEngine'
 const botsController = require('./botsController');
 
 // دالة مساعدة لإضافة timestamp للـ logs
