@@ -8,6 +8,24 @@ const axios = require('axios');
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
 
+// دالة لجلب App Access Token
+const getAppAccessToken = async () => {
+  try {
+    const response = await axios.get(
+      `https://graph.facebook.com/oauth/access_token?client_id=2288330081539329&client_secret=${process.env.INSTAGRAM_APP_SECRET}&grant_type=client_credentials`
+    );
+
+    if (!response.data.access_token) {
+      throw new Error('فشل في جلب App Access Token: ' + (response.data.error?.message || 'غير معروف'));
+    }
+
+    return response.data.access_token;
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ خطأ في جلب App Access Token:`, err.message, err.response?.data);
+    throw err;
+  }
+};
+
 // جلب كل البوتات
 exports.getBots = async (req, res) => {
   try {
@@ -510,13 +528,17 @@ exports.exchangeInstagramCode = async (req, res) => {
     ].join(',');
 
     try {
+      // جلب App Access Token
+      const appAccessToken = await getAppAccessToken();
+      console.log(`[${getTimestamp()}] ✅ تم جلب App Access Token بنجاح | Bot ID: ${botId}`);
+
       const subscriptionResponse = await axios.post(
         `https://graph.facebook.com/v20.0/2288330081539329/subscriptions`,
         {
           object: 'instagram',
           callback_url: `${req.protocol}://${req.get('host')}/api/webhook/instagram`,
           fields: subscribedFields,
-          access_token: accessToken, // استخدام User Access Token
+          access_token: appAccessToken, // استخدام App Access Token
         }
       );
 
