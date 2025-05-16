@@ -351,43 +351,56 @@ exports.linkSocialPage = async (req, res) => {
     let pageId;
     let platform;
 
+    // تحديد الحقول المشترك فيها بناءً على المنصة
+    let subscribedFields;
     if (facebookApiKey && facebookPageId) {
       platform = 'facebook';
-      // استخدام التوكن مباشرة (مش محتاجين تحويله لأنه طويل الأمد بالفعل)
       longLivedToken = facebookApiKey;
       pageId = facebookPageId;
 
       // تحديث البوت بالتوكن ومعرف الصفحة
       bot.facebookApiKey = longLivedToken;
       bot.facebookPageId = facebookPageId;
+
+      // حقول فيسبوك المشترك فيها
+      subscribedFields = [
+        'messages',
+        'messaging_postbacks',
+        'messaging_optins',
+        'messaging_referrals',
+        'message_edits',
+        'message_reactions',
+        'inbox_labels',
+        'response_feedback'
+      ].join(',');
     } else if (instagramApiKey && instagramPageId) {
       platform = 'instagram';
-      // استخدام التوكن مباشرة (مش محتاجين تحويله لأنه طويل الأمد بالفعل)
       longLivedToken = instagramApiKey;
       pageId = instagramPageId;
 
       // تحديث البوت بالتوكن ومعرف الصفحة
       bot.instagramApiKey = longLivedToken;
       bot.instagramPageId = instagramPageId;
+
+      // حقول إنستجرام المشترك فيها (بتدعم "comments")
+      subscribedFields = [
+        'messages',
+        'messaging_postbacks',
+        'messaging_optins',
+        'messaging_referrals',
+        'message_edits',
+        'message_reactions',
+        'inbox_labels',
+        'response_feedback',
+        'comments'
+      ].join(',');
     }
 
     await bot.save();
 
     console.log(`[${getTimestamp()}] ✅ تم ربط صفحة ${platform} بنجاح | Bot ID: ${botId} | Page ID: ${pageId}`);
 
-    // الاشتراك في الـ Webhook Events
-    const subscribedFields = [
-      'messages',
-      'messaging_postbacks',
-      'messaging_optins',
-      'messaging_referrals',
-      'message_edits',
-      'message_reactions',
-      'inbox_labels',
-      'response_feedback',
-      'comments'
-    ].join(',');
-
+    // الاشتراك في الـ Webhook Events (باستثناء الـ comments لفيسبوك)
     try {
       const subscriptionResponse = await axios.post(
         `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`,
@@ -406,6 +419,32 @@ exports.linkSocialPage = async (req, res) => {
     } catch (err) {
       console.error(`[${getTimestamp()}] ❌ خطأ أثناء الاشتراك في Webhook Events | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
       return res.status(500).json({ message: 'خطأ أثناء الاشتراك في Webhook Events: ' + (err.response?.data?.error?.message || err.message) });
+    }
+
+    // الاشتراك في الـ Comments Webhook لفيسبوك بشكل منفصل
+    if (platform === 'facebook' && bot.commentsRepliesEnabled) {
+      try {
+        const commentsSubscriptionResponse = await axios.post(
+          `https://graph.facebook.com/v20.0/${pageId}/subscriptions`,
+          {
+            object: 'page',
+            callback_url: process.env.FACEBOOK_WEBHOOK_URL || 'https://zain-ai-a06a.onrender.com/api/facebook/webhook',
+            fields: 'feed',
+            verify_token: process.env.FACEBOOK_VERIFY_TOKEN || 'your_verify_token_here',
+            access_token: longLivedToken
+          }
+        );
+
+        if (commentsSubscriptionResponse.data.success) {
+          console.log(`[${getTimestamp()}] ✅ تم الاشتراك في Comments Webhook بنجاح | Bot ID: ${botId}`);
+        } else {
+          console.error(`[${getTimestamp()}] ❌ فشل في الاشتراك في Comments Webhook | Bot ID: ${botId} | Response:`, commentsSubscriptionResponse.data);
+          return res.status(400).json({ message: 'فشل في الاشتراك في Comments Webhook: ' + (commentsSubscriptionResponse.data.error?.message || 'غير معروف') });
+        }
+      } catch (err) {
+        console.error(`[${getTimestamp()}] ❌ خطأ أثناء الاشتراك في Comments Webhook | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
+        return res.status(500).json({ message: 'خطأ أثناء الاشتراك في Comments Webhook: ' + (err.response?.data?.error?.message || err.message) });
+      }
     }
 
     res.status(200).json({ message: `تم ربط صفحة ${platform} بنجاح والاشتراك في Webhook Events` });
