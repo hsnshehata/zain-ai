@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let isInitialLoad = true; // Flag to control initial page load
 
   // Valid pages to prevent unexpected page loads
-  const validPages = ['bots', 'rules', 'chat-page', 'analytics', 'messages', 'feedback', 'facebook', 'settings'];
+  const validPages = ['bots', 'rules', 'chat-page', 'analytics', 'messages', 'feedback', 'facebook', 'instagram', 'settings'];
 
   // Check for token in URL (from /verify/:token redirect)
   const urlParams = new URLSearchParams(window.location.search);
@@ -148,7 +148,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const notificationsModal = document.getElementById("notifications-modal");
   const notificationsList = document.getElementById("notifications-list");
   const notificationsCount = document.getElementById("notifications-count");
-  const closeNotificationsBtn = document.getElementById("close-notifications-btn");
+  const closeNotificationsBtn = document.getElementById("close-notifications");
   const settingsBtn = document.getElementById("settings-btn");
 
   // Map of pages to their respective CSS files
@@ -160,17 +160,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     messages: "/css/messages.css",
     feedback: "/css/feedback.css",
     facebook: "/css/facebook.css",
+    instagram: "/css/instagram.css",
     settings: "/css/settings.css",
   };
 
   // Load CSS dynamically
   function loadPageCss(page) {
-    document.querySelectorAll('link[data-page-css]').forEach(link => link.remove());
+    const existingDynamicLink = document.querySelector(`link[data-dynamic="true"]`);
+    if (existingDynamicLink) existingDynamicLink.remove();
     if (pageCssMap[page]) {
       const link = document.createElement("link");
       link.rel = "stylesheet";
       link.href = pageCssMap[page];
-      link.dataset.pageCss = page;
+      link.setAttribute("data-dynamic", "true");
       document.head.appendChild(link);
     }
   }
@@ -416,6 +418,22 @@ document.addEventListener("DOMContentLoaded", async () => {
             await window.loadFacebookPage();
           } else {
             throw new Error("loadFacebookPage function not found. Ensure facebook.js is loaded and the function is defined.");
+          }
+          break;
+        case "instagram":
+          if (typeof window.loadInstagramPage === "function") {
+            console.log(`Loading instagram page`);
+            await window.loadInstagramPage();
+          } else {
+            throw new Error("loadInstagramPage function not found. Ensure instagram.js is loaded and the function is defined.");
+          }
+          break;
+        case "settings":
+          if (typeof window.loadSettingsPage === "function") {
+            console.log(`Loading settings page`);
+            await window.loadSettingsPage();
+          } else {
+            throw new Error("loadSettingsPage function not found. Ensure settings.js is loaded and the function is defined.");
           }
           break;
         default:
