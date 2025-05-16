@@ -5,6 +5,9 @@ const botController = require('../controllers/botController');
 const authenticate = require('../middleware/authenticate');
 const Bot = require('../models/Bot');
 
+// Log عشان نتأكد إن الـ router شغال
+console.log('✅ Initializing bots routes');
+
 // جلب كل البوتات
 router.get('/', authenticate, botsController.getBots);
 
@@ -28,8 +31,8 @@ router.get('/:id', authenticate, async (req, res) => {
 // Routes for settings with botId in the URL
 router.get('/:id/settings', authenticate, botController.getSettings);
 router.patch('/:id/settings', authenticate, botController.updateSettings);
-router.get('/:id/instagram-settings', authenticate, botController.getSettings);
-router.patch('/:id/instagram-settings', authenticate, botController.updateSettings);
+router.get('/:id/instagram-settings', authenticate, botController.getInstagramSettings);
+router.patch('/:id/instagram-settings', authenticate, botController.updateInstagramSettings);
 
 // جلب التقييمات لبوت معين
 router.get('/:id/feedback', authenticate, botsController.getFeedback);
@@ -51,6 +54,12 @@ router.put('/:id', authenticate, botsController.updateBot);
 
 // ربط صفحة فيسبوك أو إنستجرام بالبوت
 router.post('/:id/link-social', authenticate, botsController.linkSocialPage);
+
+// تبادل Instagram OAuth code بـ access token
+router.post('/:id/exchange-instagram-code', authenticate, (req, res) => {
+  console.log(`📌 Received request for /api/bots/${req.params.id}/exchange-instagram-code`);
+  botsController.exchangeInstagramCode(req, res);
+});
 
 // حذف بوت
 router.delete('/:id', authenticate, botsController.deleteBot);
