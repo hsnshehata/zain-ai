@@ -155,7 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Instagram OAuth settings
     const CLIENT_ID = '2288330081539329'; // معرف تطبيق الإنستجرام
     const REDIRECT_URI = encodeURIComponent(window.location.origin + '/dashboard_new.html');
-    const SCOPES = 'instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,pages_manage_metadata';
+    const SCOPES = 'instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments';
 
     // متغيرات عشان نمنع التكرار
     let isProcessingCode = false;
