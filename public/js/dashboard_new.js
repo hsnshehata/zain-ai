@@ -180,12 +180,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   function loadPageCss(page) {
-    const existingLink = document.querySelector(`link[href^="/css/"]`);
-    if (existingLink) existingLink.remove();
+    // فقط إزالة الـ links الديناميكية (مش الأساسية)
+    const existingDynamicLink = document.querySelector(`link[data-dynamic="true"]`);
+    if (existingDynamicLink) existingDynamicLink.remove();
     if (pageCssMap[page]) {
       const link = document.createElement("link");
       link.rel = "stylesheet";
       link.href = pageCssMap[page];
+      link.setAttribute("data-dynamic", "true"); // نعلم الـ link إنه ديناميكي
       document.head.appendChild(link);
     }
   }
