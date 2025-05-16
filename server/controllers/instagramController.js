@@ -37,6 +37,10 @@ const sendMessage = (recipientId, messageText, accessToken) => {
     }, (error, response, body) => {
       if (error || response.statusCode !== 200) {
         console.error(`[${getTimestamp()}] ❌ Failed to send message to Instagram:`, body?.error || error);
+        if (body?.error?.error_subcode === 2534014) {
+          console.error(`[${getTimestamp()}] ⚠️ User ${recipientId} cannot be found or is not available to receive messages. Skipping message sending.`);
+          return resolve(); // نكمّل العملية بدون ما نفشلها
+        }
         return reject(new Error('Failed to send message to Instagram'));
       }
       console.log(`[${getTimestamp()}] ✅ Message sent to ${recipientId}: ${messageText}`);
