@@ -64,6 +64,12 @@ router.post('/:id/exchange-instagram-code', authenticate, (req, res) => {
   botsController.exchangeInstagramCode(req, res);
 });
 
+// تجديد توكن إنستجرام يدويًا
+router.post('/:id/refresh-instagram-token', authenticate, (req, res) => {
+  console.log(`📌 Received request for /api/bots/${req.params.id}/refresh-instagram-token`);
+  botsController.refreshInstagramToken(req, res);
+});
+
 // حذف بوت
 router.delete('/:id', authenticate, botsController.deleteBot);
 
