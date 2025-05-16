@@ -349,22 +349,36 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     function loginWithFacebook() {
-      // Force logout to ensure permission prompt appears
-      FB.logout(function(response) {
-        console.log('تم تسجيل الخروج من فيسبوك');
-        // After logout, proceed with login
-        FB.login(function (response) {
-          if (response.authResponse) {
-            console.log('تم تسجيل الدخول!');
-            getUserPages(response.authResponse.accessToken);
-          } else {
-            errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ';
-            errorMessage.style.display = 'block';
-          }
-        }, { 
-          scope: 'public_profile,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_engagement',
-          auth_type: 'reauthenticate' // Force re-authentication to show permission prompt
-        });
+      // First, check the login status
+      FB.getLoginStatus(function(response) {
+        if (response.status === 'connected') {
+          // If user is logged in, log them out first
+          console.log('المستخدم مسجّل دخوله، جاري تسجيل الخروج...');
+          FB.logout(function(logoutResponse) {
+            console.log('تم تسجيل الخروج من فيسبوك:', logoutResponse);
+            // Proceed with login after logout
+            performFacebookLogin();
+          });
+        } else {
+          // If user is not logged in, proceed with login directly
+          console.log('المستخدم غير مسجّل دخوله، جاري تسجيل الدخول...');
+          performFacebookLogin();
+        }
+      });
+    }
+
+    function performFacebookLogin() {
+      FB.login(function (response) {
+        if (response.authResponse) {
+          console.log('تم تسجيل الدخول!');
+          getUserPages(response.authResponse.accessToken);
+        } else {
+          errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ';
+          errorMessage.style.display = 'block';
+        }
+      }, { 
+        scope: 'public_profile,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_engagement',
+        auth_type: 'reauthenticate' // Force re-authentication to show permission prompt
       });
     }
 
