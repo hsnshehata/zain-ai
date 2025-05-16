@@ -157,8 +157,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const REDIRECT_URI = encodeURIComponent(window.location.origin + '/dashboard_new.html');
     const SCOPES = 'instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments';
 
-    // متغير عشان نتأكد إن handleInstagramCallback ما تتناديش أكتر من مرة لنفس الـ code
+    // متغيرات عشان نمنع التكرار
     let isProcessingCode = false;
+    let processedCode = null;
 
     // --- Functions ---
 
@@ -337,8 +338,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
 
-      if (code && !isProcessingCode) {
+      if (code && !isProcessingCode && code !== processedCode) {
         isProcessingCode = true; // منع التكرار
+        processedCode = code; // تخزين الـ code اللي اتعاملنا معاه
         console.log('OAuth code received:', code);
         try {
           // Send the code to the backend to exchange for access token
@@ -353,7 +355,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           if (response.success) {
             console.log('Access token exchanged successfully by backend');
-            // Clear the URL parameters
+            // Clear the URL parameters without triggering hashchange
             window.history.replaceState({}, document.title, '/dashboard_new.html#instagram');
             await loadPageStatus(selectedBotId);
           } else {
@@ -364,8 +366,6 @@ document.addEventListener("DOMContentLoaded", () => {
           errorMessage.textContent = 'خطأ أثناء ربط الحساب: ' + (err.message || 'غير معروف');
           errorMessage.style.display = 'block';
         } finally {
-          // تحديث الصفحة حتى لو حصل خطأ
-          await loadPageStatus(selectedBotId);
           isProcessingCode = false; // إعادة السماح بعد الانتهاء
         }
       }
@@ -387,7 +387,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- Initial Load ---
     loadBotSettings(selectedBotId);
     loadPageStatus(selectedBotId);
-    handleInstagramCallback(); // Check for OAuth callback
+
+    // Check for OAuth callback only once on initial load
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('code')) {
+      handleInstagramCallback();
+    }
   }
 
   // Make loadInstagramPage globally accessible
