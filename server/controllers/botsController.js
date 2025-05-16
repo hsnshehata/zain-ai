@@ -389,9 +389,8 @@ exports.linkSocialPage = async (req, res) => {
         'messaging_optins',
         'messaging_referrals',
         'message_edits',
+        'messaging_handover',
         'message_reactions',
-        'inbox_labels',
-        'response_feedback',
         'comments'
       ].join(',');
     }
@@ -531,15 +530,14 @@ exports.exchangeInstagramCode = async (req, res) => {
 
     // الاشتراك في الـ Webhook Events باستخدام الـ Instagram Graph API
     const subscribedFields = [
-      'messages',
-      'messaging_postbacks',
-      'messaging_optins',
-      'messaging_referrals',
-      'message_edits',
-      'message_reactions',
-      'inbox_labels',
-      'response_feedback',
-      'comments'
+        'messages',
+        'messaging_postbacks',
+        'messaging_optins',
+        'messaging_referrals',
+        'message_edits',
+        'messaging_handover',
+        'message_reactions',
+        'comments'
     ].join(',');
 
     try {
