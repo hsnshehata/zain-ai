@@ -449,6 +449,7 @@ exports.exchangeInstagramCode = async (req, res) => {
     // استخدام redirect_uri ثابت
     const redirectUri = 'https://zain-ai-a06a.onrender.com/dashboard_new.html';
     console.log(`[${getTimestamp()}] 📌 الـ redirect_uri المستخدم: ${redirectUri}`);
+    console.log(`[${getTimestamp()}] 📌 الـ code المستخدم: ${code}`);
 
     // تبادل الـ code بـ access token (Short-lived token)
     let tokenResponse;
@@ -479,22 +480,20 @@ exports.exchangeInstagramCode = async (req, res) => {
 
     console.log(`[${getTimestamp()}] ✅ تم تبادل OAuth code بنجاح | Bot ID: ${botId} | User ID: ${userId}`);
 
-    // تحويل الـ short-lived token لـ long-lived token
+    // تحويل الـ short-lived token لـ long-lived token باستخدام Instagram Graph API
     try {
       const longLivedResponse = await axios.get(
-        `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${process.env.INSTAGRAM_APP_SECRET}&access_token=${accessToken}`
+        `https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=2288330081539329&client_secret=${process.env.INSTAGRAM_APP_SECRET}&fb_exchange_token=${accessToken}`
       );
 
       if (!longLivedResponse.data.access_token) {
-        console.log(`[${getTimestamp()}] ❌ فشل في تحويل التوكن لـ long-lived token | Bot ID: ${botId} | Response:`, longLivedResponse.data);
-        return res.status(400).json({ success: false, message: 'فشل في تحويل التوكن: ' + (longLivedResponse.data.error_message || 'غير معروف') });
+        console.log(`[${getTimestamp()}] ⚠️ فشل في تحويل التوكن لـ long-lived token، بنستخدم الـ short-lived token | Bot ID: ${botId} | Response:`, longLivedResponse.data);
+      } else {
+        accessToken = longLivedResponse.data.access_token;
+        console.log(`[${getTimestamp()}] ✅ تم تحويل التوكن لـ long-lived token | Bot ID: ${botId} | Expires in: ${longLivedResponse.data.expires_in} seconds`);
       }
-
-      accessToken = longLivedResponse.data.access_token;
-      console.log(`[${getTimestamp()}] ✅ تم تحويل التوكن لـ long-lived token | Bot ID: ${botId} | Expires in: ${longLivedResponse.data.expires_in} seconds`);
     } catch (err) {
-      console.error(`[${getTimestamp()}] ❌ خطأ في تحويل التوكن لـ long-lived token | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
-      throw err;
+      console.error(`[${getTimestamp()}] ⚠️ خطأ في تحويل التوكن لـ long-lived token، بنستخدم الـ short-lived token | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
     }
 
     // تحديث البوت بالتوكن ومعرف الحساب
