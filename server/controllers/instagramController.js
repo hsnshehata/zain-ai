@@ -19,7 +19,7 @@ const validateAccessToken = async (accessToken) => {
     }
     return false;
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Access token validation failed:`, err.response?.data || err.message);
+    console.error(`[${getTimestamp()}] ❌ Accessazie token validation failed:`, err.response?.data || err.message);
     return false;
   }
 };
