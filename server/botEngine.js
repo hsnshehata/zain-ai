@@ -16,6 +16,19 @@ function getCurrentTime() {
   return new Date().toLocaleString('ar-EG', { timeZone: 'Africa/Cairo' });
 }
 
+// دالة مساعدة لإضافة timestamp للـ logs
+const getTimestamp = () => new Date().toISOString();
+
+// التحقق من صيغة URL
+const isValidUrl = (url) => {
+  try {
+    new URL(url);
+    return true;
+  } catch (err) {
+    return false;
+  }
+};
+
 async function transcribeAudio(audioUrl) {
   const body = new FormData();
   body.append('file', audioUrl);
@@ -36,28 +49,28 @@ async function transcribeAudio(audioUrl) {
         },
       }
     );
-    console.log('✅ Audio transcribed with LemonFox:', response.data.text);
+    console.log(`[${getTimestamp()}] ✅ Audio transcribed with LemonFox:`, response.data.text);
     return response.data.text;
   } catch (err) {
-    console.error('❌ Error transcribing audio with LemonFox:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ Error transcribing audio with LemonFox:`, err.message, err.stack);
     throw new Error(`Failed to transcribe audio: ${err.message}`);
   }
 }
 
-async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null) {
+async function processMessage(bot, userId, message, isImage = false, isVoice = false, messageId = null) {
   try {
-    console.log('🤖 Processing message for bot:', botId, 'user:', userId, 'message:', message);
+    console.log(`[${getTimestamp()}] 🤖 Processing message for bot: ${bot._id}, user: ${userId}, message: ${message}, isImage: ${isImage}, isVoice: ${isVoice}`);
 
-    let conversation = await Conversation.findOne({ botId, userId });
+    let conversation = await Conversation.findOne({ botId: bot._id, userId, platform: 'instagram' });
     if (!conversation) {
-      console.log('📋 Creating new conversation for bot:', botId, 'user:', userId);
-      conversation = await Conversation.create({ botId, userId, messages: [] });
+      console.log(`[${getTimestamp()}] 📋 Creating new conversation for bot: ${bot._id}, user: ${userId}, platform: instagram`);
+      conversation = await Conversation.create({ botId: bot._id, userId, platform: 'instagram', messages: [] });
     } else {
-      console.log('📋 Found existing conversation:', conversation._id);
+      console.log(`[${getTimestamp()}] 📋 Found existing conversation: ${conversation._id}`);
     }
 
-    const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
-    console.log('📜 Rules found:', rules);
+    const rules = await Rule.find({ $or: [{ botId: bot._id }, { type: 'global' }] });
+    console.log(`[${getTimestamp()}] 📜 Rules found:`, rules);
 
     // بناء الـ systemPrompt مع إضافة الوقت الحالي
     let systemPrompt = `أنت بوت ذكي يساعد المستخدمين بناءً على القواعد التالية. الوقت الحالي هو: ${getCurrentTime()}.\n`;
@@ -76,7 +89,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         }
       });
     }
-    console.log('📝 System prompt:', systemPrompt);
+    console.log(`[${getTimestamp()}] 📝 System prompt:`, systemPrompt);
 
     let userMessageContent = message;
 
@@ -85,7 +98,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       if (!userMessageContent) {
         throw new Error('Failed to transcribe audio: No text returned');
       }
-      console.log('💬 Transcribed audio message:', userMessageContent);
+      console.log(`[${getTimestamp()}] 💬 Transcribed audio message:`, userMessageContent);
     }
 
     // حفظ رسالة المستخدم
@@ -96,7 +109,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       messageId: messageId || `msg_${Date.now()}` 
     });
     await conversation.save();
-    console.log('💬 User message added to conversation:', userMessageContent);
+    console.log(`[${getTimestamp()}] 💬 User message added to conversation: ${userMessageContent}`);
 
     let reply = '';
 
@@ -126,24 +139,30 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     // إذا لم يتم العثور على قاعدة، استدعاء OpenAI
     if (!reply) {
       if (isImage) {
-        // معالجة الصور باستخدام responses.create مع input
-        const response = await openai.responses.create({
-          model: 'gpt-4.1-mini-2025-04-14',
-          input: [
-            { role: 'system', content: systemPrompt },
-            ...conversation.messages.map((msg) => ({ role: msg.role, content: msg.content })),
-            {
-              role: 'user',
-              content: [
-                { type: 'input_text', text: 'رد على حسب محتوى الصورة' },
-                { type: 'input_image', image_url: message },
-              ],
-            },
-          ],
-          max_output_tokens: 5000,
-        });
-        reply = response.output_text || 'عذرًا، لم أتمكن من تحليل الصورة.';
-        console.log('🖼️ Image processed:', reply);
+        // التحقق من صيغة الـ image_url
+        if (!isValidUrl(message)) {
+          console.error(`[${getTimestamp()}] ❌ Invalid image URL: ${message}`);
+          reply = 'عذرًا، لم أتمكن من معالجة الصورة بسبب رابط غير صالح.';
+        } else {
+          // معالجة الصور باستخدام responses.create مع input
+          const response = await openai.responses.create({
+            model: 'gpt-4.1-mini-2025-04-14',
+            input: [
+              { role: 'system', content: systemPrompt },
+              ...conversation.messages.map((msg) => ({ role: msg.role, content: msg.content })),
+              {
+                role: 'user',
+                content: [
+                  { type: 'input_text', text: 'رد على حسب محتوى الصورة' },
+                  { type: 'input_image', image_url: message },
+                ],
+              },
+            ],
+            max_output_tokens: 5000,
+          });
+          reply = response.output_text || 'عذرًا، لم أتمكن من تحليل الصورة.';
+          console.log(`[${getTimestamp()}] 🖼️ Image processed:`, reply);
+        }
       } else {
         // معالجة النصوص باستخدام chat.completions.create
         const messages = [
@@ -168,18 +187,18 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       messageId: responseMessageId 
     });
     await conversation.save();
-    console.log('💬 Assistant reply added to conversation:', reply);
+    console.log(`[${getTimestamp()}] 💬 Assistant reply added to conversation: ${reply}`);
 
     return reply;
   } catch (err) {
-    console.error('❌ Error processing message:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ Error processing message:`, err.message, err.stack);
     return 'عذرًا، حدث خطأ أثناء معالجة طلبك.';
   }
 }
 
 async function processFeedback(botId, userId, messageId, feedback) {
   try {
-    console.log(`📊 Processing feedback for bot: ${botId}, user: ${userId}, messageId: ${messageId}, feedback: ${feedback}`);
+    console.log(`[${getTimestamp()}] 📊 Processing feedback for bot: ${botId}, user: ${userId}, messageId: ${messageId}, feedback: ${feedback}`);
 
     // جلب المحادثة
     const conversation = await Conversation.findOne({ botId, userId });
@@ -211,9 +230,9 @@ async function processFeedback(botId, userId, messageId, feedback) {
     });
 
     await feedbackEntry.save();
-    console.log(`✅ Feedback saved: ${feedback} for message ID: ${messageId} with content: ${messageContent}`);
+    console.log(`[${getTimestamp()}] ✅ Feedback saved: ${feedback} for message ID: ${messageId} with content: ${messageContent}`);
   } catch (err) {
-    console.error('❌ Error processing feedback:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ Error processing feedback:`, err.message, err.stack);
   }
 }
 
