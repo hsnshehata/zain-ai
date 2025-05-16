@@ -40,7 +40,7 @@ exports.getBots = async (req, res) => {
   }
 };
 
-// جلب التقييمات بناءً على botId مع اسم المستخدم من فيسبوك (التقييمات المرئية فقط)
+// جلب التقييمات بناءً على botId مع اسم المستخدم من فيسبوك/إنستجرام (التقييمات المرئية فقط)
 exports.getFeedback = async (req, res) => {
   try {
     const botId = req.params.id;
@@ -65,15 +65,16 @@ exports.getFeedback = async (req, res) => {
         let username = item.userId;
         try {
           if (!item.userId.startsWith('web_')) {
+            const apiKey = bot.instagramPageId ? bot.instagramApiKey : bot.facebookApiKey;
             const response = await axios.get(
-              `https://graph.facebook.com/${item.userId}?fields=name&access_token=${bot.facebookApiKey}`
+              `https://graph.facebook.com/${item.userId}?fields=name&access_token=${apiKey}`
             );
             if (response.data.name) {
               username = response.data.name;
             }
           }
         } catch (err) {
-          console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم ${item.userId} من فيسبوك:`, err.message);
+          console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم ${item.userId} من فيسبوك/إنستجرام:`, err.message);
         }
 
         return {
@@ -176,7 +177,7 @@ exports.clearFeedbackByType = async (req, res) => {
 
 // إنشاء بوت جديد
 exports.createBot = async (req, res) => {
-  const { name, userId, facebookApiKey, facebookPageId, subscriptionType, welcomeMessage } = req.body;
+  const { name, userId, facebookApiKey, facebookPageId, instagramApiKey, instagramPageId, subscriptionType, welcomeMessage } = req.body;
 
   if (!name || !userId) {
     return res.status(400).json({ message: 'اسم البوت ومعرف المستخدم مطلوبان' });
@@ -184,6 +185,10 @@ exports.createBot = async (req, res) => {
 
   if (facebookApiKey && !facebookPageId) {
     return res.status(400).json({ message: 'معرف صفحة الفيسبوك مطلوب عند إدخال رقم API' });
+  }
+
+  if (instagramApiKey && !instagramPageId) {
+    return res.status(400).json({ message: 'معرف صفحة الإنستجرام مطلوب عند إدخال رقم API' });
   }
 
   if (subscriptionType && !['free', 'monthly', 'yearly'].includes(subscriptionType)) {
@@ -195,7 +200,9 @@ exports.createBot = async (req, res) => {
       name, 
       userId, 
       facebookApiKey, 
-      facebookPageId, 
+      facebookPageId,
+      instagramApiKey,
+      instagramPageId,
       subscriptionType: subscriptionType || 'free',
       welcomeMessage 
     });
@@ -212,7 +219,7 @@ exports.createBot = async (req, res) => {
 
 // تعديل بوت
 exports.updateBot = async (req, res) => {
-  const { name, userId, facebookApiKey, facebookPageId, isActive, autoStopDate, subscriptionType, welcomeMessage } = req.body;
+  const { name, userId, facebookApiKey, facebookPageId, instagramApiKey, instagramPageId, isActive, autoStopDate, subscriptionType, welcomeMessage } = req.body;
 
   try {
     console.log(`[${getTimestamp()}] 📝 محاولة تعديل البوت | Bot ID: ${req.params.id} | User ID: ${req.user.userId} | Data:`, req.body);
@@ -233,7 +240,9 @@ exports.updateBot = async (req, res) => {
     bot.name = name || bot.name;
     bot.userId = userId || bot.userId;
     bot.facebookApiKey = facebookApiKey !== undefined ? facebookApiKey : bot.facebookApiKey;
-    bot.facebookPageId = facebookPageId !== undefined ? facebookPageId : bot.facebookApiKey;
+    bot.facebookPageId = facebookPageId !== undefined ? facebookPageId : bot.facebookPageId;
+    bot.instagramApiKey = instagramApiKey !== undefined ? instagramApiKey : bot.instagramApiKey;
+    bot.instagramPageId = instagramPageId !== undefined ? instagramPageId : bot.instagramPageId;
     bot.isActive = isActive !== undefined ? isActive : bot.isActive;
     bot.autoStopDate = autoStopDate !== undefined ? autoStopDate : bot.autoStopDate;
     bot.subscriptionType = subscriptionType || bot.subscriptionType;
@@ -242,6 +251,11 @@ exports.updateBot = async (req, res) => {
     if (facebookApiKey && !facebookPageId) {
       console.log(`[${getTimestamp()}] ⚠️ معرف صفحة الفيسبوك مفقود | facebookApiKey provided without facebookPageId`);
       return res.status(400).json({ message: 'معرف صفحة الفيسبوك مطلوب عند إدخال رقم API' });
+    }
+
+    if (instagramApiKey && !instagramPageId) {
+      console.log(`[${getTimestamp()}] ⚠️ معرف صفحة الإنستجرام مفقود | instagramApiKey provided without instagramPageId`);
+      return res.status(400).json({ message: 'معرف صفحة الإنستجرام مطلوب عند إدخال رقم API' });
     }
 
     if (subscriptionType && !['free', 'monthly', 'yearly'].includes(subscriptionType)) {
@@ -310,15 +324,15 @@ exports.deleteBot = async (req, res) => {
   }
 };
 
-// ربط صفحة فيسبوك بالبوت (معدل عشان يضيف الاشتراكات)
-exports.linkFacebookPage = async (req, res) => {
+// ربط صفحة فيسبوك أو إنستجرام بالبوت
+exports.linkSocialPage = async (req, res) => {
   try {
     const botId = req.params.id;
-    const { facebookApiKey, facebookPageId } = req.body;
+    const { facebookApiKey, facebookPageId, instagramApiKey, instagramPageId } = req.body;
 
-    if (!facebookApiKey || !facebookPageId) {
+    if ((!facebookApiKey || !facebookPageId) && (!instagramApiKey || !instagramPageId)) {
       console.log(`[${getTimestamp()}] ⚠️ مفتاح API أو معرف الصفحة مفقود | Bot ID: ${botId}`);
-      return res.status(400).json({ message: 'مفتاح API ومعرف الصفحة مطلوبان' });
+      return res.status(400).json({ message: 'مفتاح API ومعرف الصفحة مطلوبان لفيسبوك أو إنستجرام' });
     }
 
     const bot = await Bot.findById(botId);
@@ -333,44 +347,68 @@ exports.linkFacebookPage = async (req, res) => {
       return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
-    // طلب توكن طويل الأمد
-    const response = await axios.get(
-      `https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=499020366015281&client_secret=${process.env.FACEBOOK_APP_SECRET}&fb_exchange_token=${facebookApiKey}`
-    );
+    let longLivedToken;
+    let pageId;
+    let platform;
 
-    if (!response.data.access_token) {
-      console.log(`[${getTimestamp()}] ❌ فشل في جلب توكن طويل الأمد | Bot ID: ${botId}`);
-      return res.status(400).json({ message: 'فشل في جلب توكن طويل الأمد: ' + (response.data.error?.message || 'غير معروف') });
+    if (facebookApiKey && facebookPageId) {
+      platform = 'facebook';
+      // طلب توكن طويل الأمد لفيسبوك
+      const response = await axios.get(
+        `https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=499020366015281&client_secret=${process.env.FACEBOOK_APP_SECRET}&fb_exchange_token=${facebookApiKey}`
+      );
+
+      if (!response.data.access_token) {
+        console.log(`[${getTimestamp()}] ❌ فشل في جلب توكن طويل الأمد لفيسبوك | Bot ID: ${botId}`);
+        return res.status(400).json({ message: 'فشل في جلب توكن طويل الأمد: ' + (response.data.error?.message || 'غير معروف') });
+      }
+
+      longLivedToken = response.data.access_token;
+      pageId = facebookPageId;
+
+      // تحديث البوت بالتوكن الطويل الأمد ومعرف الصفحة
+      bot.facebookApiKey = longLivedToken;
+      bot.facebookPageId = facebookPageId;
+    } else if (instagramApiKey && instagramPageId) {
+      platform = 'instagram';
+      // طلب توكن طويل الأمد لإنستجرام
+      const response = await axios.get(
+        `https://graph.facebook.com/oauth/access_token?grant_type=fb_exchange_token&client_id=2288330081539329&client_secret=${process.env.INSTAGRAM_APP_SECRET}&fb_exchange_token=${instagramApiKey}`
+      );
+
+      if (!response.data.access_token) {
+        console.log(`[${getTimestamp()}] ❌ فشل في جلب توكن طويل الأمد لإنستجرام | Bot ID: ${botId}`);
+        return res.status(400).json({ message: 'فشل في جلب توكن طويل الأمد: ' + (response.data.error?.message || 'غير معروف') });
+      }
+
+      longLivedToken = response.data.access_token;
+      pageId = instagramPageId;
+
+      // تحديث البوت بالتوكن الطويل الأمد ومعرف الصفحة
+      bot.instagramApiKey = longLivedToken;
+      bot.instagramPageId = instagramPageId;
     }
 
-    const longLivedToken = response.data.access_token;
-
-    // تحديث البوت بالتوكن الطويل الأمد ومعرف الصفحة
-    bot.facebookApiKey = longLivedToken;
-    bot.facebookPageId = facebookPageId;
     await bot.save();
 
-    console.log(`[${getTimestamp()}] ✅ تم ربط صفحة فيسبوك بنجاح | Bot ID: ${botId} | Page ID: ${facebookPageId}`);
+    console.log(`[${getTimestamp()}] ✅ تم ربط صفحة ${platform} بنجاح | Bot ID: ${botId} | Page ID: ${pageId}`);
 
     // الاشتراك في الـ Webhook Events
     const subscribedFields = [
       'messages',
       'messaging_postbacks',
       'messaging_optins',
-      'messaging_optouts',
       'messaging_referrals',
       'message_edits',
       'message_reactions',
       'inbox_labels',
-      'messaging_customer_information',
       'response_feedback',
-      'messaging_integrity',
-      'feed'
+      'comments'
     ].join(',');
 
     try {
       const subscriptionResponse = await axios.post(
-        `https://graph.facebook.com/v20.0/${facebookPageId}/subscribed_apps`,
+        `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`,
         {
           subscribed_fields: subscribedFields,
           access_token: longLivedToken
@@ -388,9 +426,9 @@ exports.linkFacebookPage = async (req, res) => {
       return res.status(500).json({ message: 'خطأ أثناء الاشتراك في Webhook Events: ' + (err.response?.data?.error?.message || err.message) });
     }
 
-    res.status(200).json({ message: 'تم ربط الصفحة بنجاح والاشتراك في Webhook Events' });
+    res.status(200).json({ message: `تم ربط صفحة ${platform} بنجاح والاشتراك في Webhook Events` });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في ربط صفحة فيسبوك:`, err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ خطأ في ربط صفحة فيسبوك/إنستجرام:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
   }
 };
