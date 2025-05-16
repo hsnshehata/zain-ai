@@ -1,10 +1,12 @@
+// public/js/dashboard_new.js
+
 document.addEventListener("DOMContentLoaded", async () => {
   // Global variable to store available bots
   let availableBots = [];
   let isInitialLoad = true; // Flag to control initial page load
 
   // Valid pages to prevent unexpected page loads
-  const validPages = ['bots', 'rules', 'chat-page', 'analytics', 'messages', 'feedback', 'facebook', 'settings'];
+  const validPages = ['bots', 'rules', 'chat-page', 'analytics', 'messages', 'feedback', 'facebook', 'instagram', 'settings'];
 
   // Check for token in URL (from /verify/:token redirect)
   const urlParams = new URLSearchParams(window.location.search);
@@ -160,6 +162,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     messages: "/css/messages.css",
     feedback: "/css/feedback.css",
     facebook: "/css/facebook.css",
+    instagram: "/css/facebook.css", // نستخدم نفس ستايل facebook.css
     settings: "/css/settings.css",
   };
 
@@ -416,6 +419,14 @@ document.addEventListener("DOMContentLoaded", async () => {
             await window.loadFacebookPage();
           } else {
             throw new Error("loadFacebookPage function not found. Ensure facebook.js is loaded and the function is defined.");
+          }
+          break;
+        case "instagram":
+          if (typeof window.loadInstagramPage === "function") {
+            console.log(`Loading instagram page`);
+            await window.loadInstagramPage();
+          } else {
+            throw new Error("loadInstagramPage function not found. Ensure instagram.js is loaded and the function is defined.");
           }
           break;
         default:
