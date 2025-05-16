@@ -1,5 +1,3 @@
-// public/js/facebook.js (Updated with new instructions for creating a Meta Developer account)
-
 document.addEventListener("DOMContentLoaded", () => {
   async function loadFacebookPage() {
     const link = document.createElement("link");
@@ -279,8 +277,8 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log('البيانات المرسلة:', { facebookApiKey, facebookPageId });
 
       try {
-        // إرسال التوكن قصير الأمد للـ backend لتحويله إلى توكن طويل الأمد
-        const saveResponse = await handleApiRequest(`/api/bots/${botId}/link-facebook`, {
+        // إرسال التوكن للـ backend
+        const saveResponse = await handleApiRequest(`/api/bots/${botId}/link-social`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
