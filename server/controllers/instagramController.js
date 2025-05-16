@@ -123,6 +123,7 @@ exports.handleMessage = async (req, res) => {
             userId: senderId,
             messages: []
           });
+          await conversation.save();
         }
 
         // إضافة ملصق "new_message" للمحادثة
@@ -130,6 +131,7 @@ exports.handleMessage = async (req, res) => {
         conversation.labels = conversation.labels || [];
         if (!conversation.labels.includes('new_message')) {
           conversation.labels.push('new_message');
+          await conversation.save();
         }
 
         // معالجة الرسالة
@@ -161,33 +163,13 @@ exports.handleMessage = async (req, res) => {
             continue;
           }
 
-          // إضافة رسالة المستخدم إلى المحادثة
-          conversation.messages.push({
-            role: 'user',
-            content: messageContent,
-            timestamp: new Date(timestamp),
-            messageId
-          });
-
           // معالجة الرسالة
           console.log(`[${getTimestamp()}] 🤖 Processing message for bot: ${bot._id} user: ${senderId} message: ${messageContent}`);
           const reply = await processMessage(bot, senderId, messageContent, isImage, isVoice, messageId);
 
-          // إضافة رد البوت إلى المحادثة
-          conversation.messages.push({
-            role: 'assistant',
-            content: reply,
-            timestamp: new Date(),
-            messageId: `response_${messageId}`
-          });
-
-          console.log(`[${getTimestamp()}] 📋 Found existing conversation: ${conversation._id}`);
-          await conversation.save();
-
           // إرسال الرد للمستخدم
           console.log(`[${getTimestamp()}] 📤 Attempting to send message to ${senderId} with token: ${bot.instagramApiKey.slice(0, 10)}...`);
           await sendMessage(senderId, reply, bot.instagramApiKey);
-          console.log(`[${getTimestamp()}] 💬 Assistant reply added to conversation: ${reply}`);
         } else {
           console.log(`[${getTimestamp()}] ⚠️ Unhandled event type from ${senderId}`);
         }
