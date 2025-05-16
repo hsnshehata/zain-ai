@@ -450,28 +450,52 @@ exports.exchangeInstagramCode = async (req, res) => {
     const redirectUri = 'https://zain-ai-a06a.onrender.com/dashboard_new.html';
     console.log(`[${getTimestamp()}] 📌 الـ redirect_uri المستخدم: ${redirectUri}`);
 
-    // تبادل الـ code بـ access token
-    const response = await axios.post('https://api.instagram.com/oauth/access_token', new URLSearchParams({
-      client_id: '2288330081539329',
-      client_secret: process.env.INSTAGRAM_APP_SECRET,
-      grant_type: 'authorization_code',
-      redirect_uri: redirectUri,
-      code: code,
-    }), {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    });
-
-    if (!response.data.access_token || !response.data.user_id) {
-      console.log(`[${getTimestamp()}] ❌ فشل في تبادل OAuth code | Bot ID: ${botId} | Response:`, response.data);
-      return res.status(400).json({ success: false, message: 'فشل في جلب التوكن: ' + (response.data.error_message || 'غير معروف') });
+    // تبادل الـ code بـ access token (Short-lived token)
+    let tokenResponse;
+    try {
+      tokenResponse = await axios.post('https://api.instagram.com/oauth/access_token', new URLSearchParams({
+        client_id: '2288330081539329',
+        client_secret: process.env.INSTAGRAM_APP_SECRET,
+        grant_type: 'authorization_code',
+        redirect_uri: redirectUri,
+        code: code,
+      }), {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      });
+    } catch (err) {
+      console.error(`[${getTimestamp()}] ❌ خطأ في تبادل OAuth code | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
+      throw err;
     }
 
-    const accessToken = response.data.access_token;
-    const userId = response.data.user_id;
+    if (!tokenResponse.data.access_token || !tokenResponse.data.user_id) {
+      console.log(`[${getTimestamp()}] ❌ فشل في تبادل OAuth code | Bot ID: ${botId} | Response:`, tokenResponse.data);
+      return res.status(400).json({ success: false, message: 'فشل في جلب التوكن: ' + (tokenResponse.data.error_message || 'غير معروف') });
+    }
+
+    let accessToken = tokenResponse.data.access_token;
+    const userId = tokenResponse.data.user_id;
 
     console.log(`[${getTimestamp()}] ✅ تم تبادل OAuth code بنجاح | Bot ID: ${botId} | User ID: ${userId}`);
+
+    // تحويل الـ short-lived token لـ long-lived token
+    try {
+      const longLivedResponse = await axios.get(
+        `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${process.env.INSTAGRAM_APP_SECRET}&access_token=${accessToken}`
+      );
+
+      if (!longLivedResponse.data.access_token) {
+        console.log(`[${getTimestamp()}] ❌ فشل في تحويل التوكن لـ long-lived token | Bot ID: ${botId} | Response:`, longLivedResponse.data);
+        return res.status(400).json({ success: false, message: 'فشل في تحويل التوكن: ' + (longLivedResponse.data.error_message || 'غير معروف') });
+      }
+
+      accessToken = longLivedResponse.data.access_token;
+      console.log(`[${getTimestamp()}] ✅ تم تحويل التوكن لـ long-lived token | Bot ID: ${botId} | Expires in: ${longLivedResponse.data.expires_in} seconds`);
+    } catch (err) {
+      console.error(`[${getTimestamp()}] ❌ خطأ في تحويل التوكن لـ long-lived token | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
+      throw err;
+    }
 
     // تحديث البوت بالتوكن ومعرف الحساب
     bot.instagramApiKey = accessToken;
@@ -481,24 +505,19 @@ exports.exchangeInstagramCode = async (req, res) => {
     // الاشتراك في الـ Webhook Events
     const subscribedFields = [
       'messages',
-      'messaging_postbacks',
-      'messaging_optins',
-      'messaging_referrals',
-      'message_edits',
+      'comments',
       'message_reactions',
-      'inbox_labels',
-      'response_feedback',
-      'comments'
+      'messaging_referrals',
     ].join(',');
 
     try {
       const subscriptionResponse = await axios.post(
-        `https://graph.instagram.com/v20.0/${userId}/subscriptions`,
+        `https://graph.facebook.com/v20.0/2288330081539329/subscriptions`,
         {
-          object: 'user',
+          object: 'instagram',
           callback_url: `${req.protocol}://${req.get('host')}/api/webhook/instagram`,
           fields: subscribedFields,
-          access_token: accessToken,
+          access_token: process.env.INSTAGRAM_APP_ACCESS_TOKEN, // استخدام App Access Token
         }
       );
 
