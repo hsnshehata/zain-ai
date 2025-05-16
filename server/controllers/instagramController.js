@@ -2,7 +2,7 @@ const request = require('request');
 const Conversation = require('../models/Conversation');
 const Bot = require('../models/Bot');
 const axios = require('axios');
-const { processMessage } = require('../botEngine'); // تعديل المسار ليشير إلى botEngine.js
+const { processMessage } = require('../botEngine');
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
@@ -134,31 +134,51 @@ exports.handleMessage = async (req, res) => {
 
         // معالجة الرسالة
         if (event.message) {
-          const messageText = event.message.text;
+          const messageId = event.message.mid || `msg_${Date.now()}`;
+          let messageContent = '';
+          let isImage = false;
+          let isVoice = false;
 
-          if (!messageText) {
-            console.log(`[${getTimestamp()}] ⚠️ No text in message from ${senderId}`);
+          if (event.message.text) {
+            messageContent = event.message.text;
+            console.log(`[${getTimestamp()}] 📝 Text message received from ${senderId}: ${messageContent}`);
+          } else if (event.message.attachments) {
+            const attachment = event.message.attachments[0];
+            if (attachment.type === 'image') {
+              isImage = true;
+              messageContent = attachment.payload.url;
+              console.log(`[${getTimestamp()}] 🖼️ Image received from ${senderId}: ${messageContent}`);
+            } else if (attachment.type === 'audio') {
+              isVoice = true;
+              messageContent = attachment.payload.url;
+              console.log(`[${getTimestamp()}] 🎙️ Audio received from ${senderId}: ${messageContent}`);
+            } else {
+              console.log(`[${getTimestamp()}] 📎 Unsupported attachment type from ${senderId}: ${attachment.type}`);
+              messageContent = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
+            }
+          } else {
+            console.log(`[${getTimestamp()}] ⚠️ No text or attachments in message from ${senderId}`);
             continue;
           }
 
-          console.log(`[${getTimestamp()}] 📝 Text message received from ${senderId}: ${messageText}`);
-
           // إضافة رسالة المستخدم إلى المحادثة
           conversation.messages.push({
-            sender: 'user',
-            content: messageText,
-            timestamp: new Date(timestamp)
+            role: 'user',
+            content: messageContent,
+            timestamp: new Date(timestamp),
+            messageId
           });
 
           // معالجة الرسالة
-          console.log(`[${getTimestamp()}] 🤖 Processing message for bot: ${bot._id} user: ${senderId} message: ${messageText}`);
-          const reply = await processMessage(bot, senderId, messageText, 'instagram');
+          console.log(`[${getTimestamp()}] 🤖 Processing message for bot: ${bot._id} user: ${senderId} message: ${messageContent}`);
+          const reply = await processMessage(bot, senderId, messageContent, isImage, isVoice, messageId);
 
           // إضافة رد البوت إلى المحادثة
           conversation.messages.push({
-            sender: 'bot',
+            role: 'assistant',
             content: reply,
-            timestamp: new Date()
+            timestamp: new Date(),
+            messageId: `response_${messageId}`
           });
 
           console.log(`[${getTimestamp()}] 📋 Found existing conversation: ${conversation._id}`);
