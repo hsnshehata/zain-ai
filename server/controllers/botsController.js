@@ -553,4 +553,3 @@ exports.exchangeInstagramCode = async (req, res) => {
     res.status(500).json({ success: false, message: 'خطأ في السيرفر: ' + err.message });
   }
 }; // إضافة القوس النهائي للدالة exchangeInstagramCode
-}; // إضافة القوس النهائي للموديول exports
