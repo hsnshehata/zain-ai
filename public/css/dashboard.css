@@ -137,7 +137,6 @@
     cursor: not-allowed;
     background-color: transparent !important;
     color: gray !important;
-    display: none;
   }
 
   .sidebar-footer {
@@ -671,7 +670,6 @@
     cursor: not-allowed;
     background-color: transparent !important;
     color: gray !important;
-    display: none;
   }
 
   .nav-toggle-btn {
