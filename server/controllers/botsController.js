@@ -416,6 +416,28 @@ exports.linkSocialPage = async (req, res) => {
         'messaging_integrity',
         'feed'
       ].join(',');
+
+      // الاشتراك في الـ Webhook Events لفيسبوك
+      try {
+        console.log(`[${getTimestamp()}] 🔄 Attempting to subscribe to Webhook Events for bot ${botId} | Page ID: ${pageId}`);
+        const subscriptionResponse = await axios.post(
+          `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`,
+          {
+            subscribed_fields: subscribedFields,
+            access_token: longLivedToken
+          }
+        );
+
+        if (subscriptionResponse.data.success) {
+          console.log(`[${getTimestamp()}] ✅ تم الاشتراك في Webhook Events بنجاح | Bot ID: ${botId} | Fields: ${subscribedFields}`);
+        } else {
+          console.error(`[${getTimestamp()}] ❌ فشل في الاشتراك في Webhook Events | Bot ID: ${botId} | Response:`, subscriptionResponse.data);
+          return res.status(400).json({ message: 'فشل في الاشتراك في Webhook Events: ' + (subscriptionResponse.data.error?.message || 'غير معروف') });
+        }
+      } catch (err) {
+        console.error(`[${getTimestamp()}] ❌ خطأ أثناء الاشتراك في Webhook Events | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
+        return res.status(500).json({ message: 'خطأ أثناء الاشتراك في Webhook Events: ' + (err.response?.data?.error?.message || err.message) });
+      }
     } else if (instagramApiKey && instagramPageId) {
       platform = 'instagram';
       longLivedToken = instagramApiKey;
@@ -424,46 +446,14 @@ exports.linkSocialPage = async (req, res) => {
       // تحديث البوت بالتوكن ومعرف الصفحة
       bot.instagramApiKey = longLivedToken;
       bot.instagramPageId = instagramPageId;
-
-      // حقول إنستجرام المشترك فيها
-      subscribedFields = [
-        'messages',
-        'messaging_postbacks',
-        'messaging_optins',
-        'messaging_referrals',
-        'message_edits',
-        'messaging_handover',
-        'message_reactions',
-        'comments'
-      ].join(',');
     }
 
     await bot.save();
 
     console.log(`[${getTimestamp()}] ✅ تم ربط صفحة ${platform} بنجاح | Bot ID: ${botId} | Page ID: ${pageId}`);
+    console.log(`[${getTimestamp()}] ℹ️ يرجى التأكد من إعداد الـ Webhook subscriptions يدويًا من Meta Developer Dashboard`);
 
-    // الاشتراك في الـ Webhook Events
-    try {
-      const subscriptionResponse = await axios.post(
-        `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`,
-        {
-          subscribed_fields: subscribedFields,
-          access_token: longLivedToken
-        }
-      );
-
-      if (subscriptionResponse.data.success) {
-        console.log(`[${getTimestamp()}] ✅ تم الاشتراك في Webhook Events بنجاح | Bot ID: ${botId} | Fields: ${subscribedFields}`);
-      } else {
-        console.error(`[${getTimestamp()}] ❌ فشل في الاشتراك في Webhook Events | Bot ID: ${botId} | Response:`, subscriptionResponse.data);
-        return res.status(400).json({ message: 'فشل في الاشتراك في Webhook Events: ' + (subscriptionResponse.data.error?.message || 'غير معروف') });
-      }
-    } catch (err) {
-      console.error(`[${getTimestamp()}] ❌ خطأ أثناء الاشتراك في Webhook Events | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
-      return res.status(500).json({ message: 'خطأ أثناء الاشتراك في Webhook Events: ' + (err.response?.data?.error?.message || err.message) });
-    }
-
-    res.status(200).json({ message: `تم ربط صفحة ${platform} بنجاح والاشتراك في Webhook Events` });
+    res.status(200).json({ message: `تم ربط صفحة ${platform} بنجاح. يرجى التأكد من إعداد الـ Webhook subscriptions يدويًا من Meta Developer Dashboard` });
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ خطأ في ربط صفحة فيسبوك/إنستجرام:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
@@ -547,39 +537,9 @@ exports.exchangeInstagramCode = async (req, res) => {
     bot.lastInstagramTokenRefresh = new Date(); // تحديث تاريخ التجديد
     await bot.save();
 
-    // الاشتراك في الـ Webhook Events باستخدام الـ Instagram Graph API
-    const subscribedFields = [
-      'messages',
-      'messaging_postbacks',
-      'messaging_optins',
-      'messaging_referrals',
-      'message_edits',
-      'messaging_handover',
-      'message_reactions',
-      'comments'
-    ].join(',');
+    console.log(`[${getTimestamp()}] ℹ️ يرجى التأكد من إعداد الـ Webhook subscriptions يدويًا من Meta Developer Dashboard`);
 
-    try {
-      const subscriptionResponse = await axios.post(
-        `https://graph.facebook.com/v22.0/${instagramPageId}/subscribed_apps`,
-        {
-          subscribed_fields: subscribedFields,
-          access_token: accessToken,
-        }
-      );
-
-      if (subscriptionResponse.data.success) {
-        console.log(`[${getTimestamp()}] ✅ تم الاشتراك في Webhook Events بنجاح | Bot ID: ${botId} | Fields: ${subscribedFields}`);
-      } else {
-        console.error(`[${getTimestamp()}] ❌ فشل في الاشتراك في Webhook Events | Bot ID: ${botId} | Response:`, subscriptionResponse.data);
-        return res.status(400).json({ success: false, message: 'فشل في الاشتراك في Webhook Events: ' + (subscriptionResponse.data.error?.message || 'غير معروف') });
-      }
-    } catch (err) {
-      console.error(`[${getTimestamp()}] ❌ خطأ أثناء الاشتراك في Webhook Events | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
-      return res.status(500).json({ success: false, message: 'خطأ أثناء الاشتراك في Webhook Events: ' + (err.response?.data?.error?.message || err.message) });
-    }
-
-    res.status(200).json({ success: true, message: 'تم ربط حساب الإنستجرام بنجاح والاشتراك في Webhook Events' });
+    res.status(200).json({ success: true, message: 'تم ربط حساب الإنستجرام بنجاح. يرجى التأكد من إعداد الـ Webhook subscriptions يدويًا من Meta Developer Dashboard' });
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ خطأ في تبادل OAuth code:`, err.message, err.stack);
     res.status(500).json({ success: false, message: 'خطأ في السيرفر: ' + err.message });
