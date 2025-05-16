@@ -19,7 +19,7 @@ const validateAccessToken = async (accessToken) => {
     }
     return false;
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Accessazie token validation failed:`, err.response?.data || err.message);
+    console.error(`[${getTimestamp()}] ❌ Access token validation failed:`, err.response?.data || err.message);
     return false;
   }
 };
@@ -110,6 +110,12 @@ exports.handleMessage = async (req, res) => {
         // تجاهل الرسائل المرسلة من الصفحة نفسها
         if (senderId === recipientId) {
           console.log(`[${getTimestamp()}] ⚠️ Ignoring message sent by the page itself: ${senderId}`);
+          continue;
+        }
+
+        // تجاهل الرسائل اللي هي Echo Events (رسائل أرسلها البوت نفسه)
+        if (event.message && event.message.is_echo) {
+          console.log(`[${getTimestamp()}] ⚠️ Ignoring echo message from bot: ${senderId}`);
           continue;
         }
 
