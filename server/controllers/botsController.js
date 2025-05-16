@@ -476,7 +476,7 @@ exports.exchangeInstagramCode = async (req, res) => {
     }
 
     let accessToken = tokenResponse.data.access_token;
-    const userId = tokenResponse.data.user_id;
+    let userId = tokenResponse.data.user_id;
 
     console.log(`[${getTimestamp()}] ✅ تم تبادل OAuth code بنجاح | Bot ID: ${botId} | User ID: ${userId}`);
 
@@ -496,9 +496,22 @@ exports.exchangeInstagramCode = async (req, res) => {
       console.error(`[${getTimestamp()}] ⚠️ خطأ في تحويل التوكن لـ long-lived token، بنستخدم الـ short-lived token | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
     }
 
+    // جلب الـ user_id الصحيح باستخدام /me endpoint
+    let instagramPageId;
+    try {
+      const userResponse = await axios.get(
+        `https://graph.instagram.com/v22.0/me?fields=user_id,username&access_token=${accessToken}`
+      );
+      instagramPageId = userResponse.data.user_id;
+      console.log(`[${getTimestamp()}] ✅ تم جلب Instagram Page ID بنجاح | Bot ID: ${botId} | Page ID: ${instagramPageId}`);
+    } catch (err) {
+      console.error(`[${getTimestamp()}] ❌ خطأ في جلب Instagram Page ID | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
+      return res.status(500).json({ success: false, message: 'خطأ في جلب معرف الصفحة: ' + (err.response?.data?.error?.message || err.message) });
+    }
+
     // تحديث البوت بالتوكن ومعرف الحساب
     bot.instagramApiKey = accessToken;
-    bot.instagramPageId = userId;
+    bot.instagramPageId = instagramPageId;
     await bot.save();
 
     // الاشتراك في الـ Webhook Events باستخدام الـ Instagram Graph API
@@ -516,7 +529,7 @@ exports.exchangeInstagramCode = async (req, res) => {
 
     try {
       const subscriptionResponse = await axios.post(
-        `https://graph.facebook.com/v20.0/${userId}/subscribed_apps`,
+        `https://graph.facebook.com/v22.0/${instagramPageId}/subscribed_apps`,
         {
           subscribed_fields: subscribedFields,
           access_token: accessToken,
@@ -535,8 +548,4 @@ exports.exchangeInstagramCode = async (req, res) => {
     }
 
     res.status(200).json({ success: true, message: 'تم ربط حساب الإنستجرام بنجاح والاشتراك في Webhook Events' });
-  } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في تبادل OAuth code:`, err.message, err.stack);
-    res.status(500).json({ success: false, message: 'خطأ في السيرفر: ' + err.message });
-  }
-};
+  } catch (err)
