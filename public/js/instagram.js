@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </span>
             </li>
             <li>
-              <strong>تسجيل الدخول بحساب إنستجرام:</strong> لما تضغط على زر الربط، هيفتحلك صفحة تسجيل دخول إنستجرام. سجّل دخول بحساب إنستجرام مهني (Business أو Creator).
+              <strong>تسجيل الدخول بحساب إنستجرام:</strong> لما تضغط على زر الربط، هيفتحلك نافذة تسجيل دخول إنستجرام. سجّل دخول بحساب إنستجرام مهني (Business أو Creator).
             </li>
             <li>
               <strong>لو فشلت في الربط:</strong> لو ماعرفتش تربط الحساب، اتأكد إن:
@@ -169,8 +169,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return await response.json();
       } catch (err) {
         if (errorElement) {
-          errorElement.textContent = err.message;
-          errorElement.style.display = "block";
+          errorMessage.textContent = err.message;
+          errorMessage.style.display = "block";
         }
         throw err;
       }
@@ -196,7 +196,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         settingsContainer.style.display = "grid";
       } catch (err) {
-        // الخطأ تم التعامل معه في handleApiRequest
+        errorMessage.textContent = "خطأ في تحميل الإعدادات: " + (err.message || "غير معروف");
+        errorMessage.style.display = "block";
       } finally {
         loadingSpinner.style.display = "none";
       }
@@ -321,11 +322,31 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Handle Instagram OAuth flow
+    // Handle Instagram OAuth flow with Pop-up
     function loginWithInstagram() {
-      const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPES}&response_type=code`;
-      console.log('Opening Instagram OAuth URL:', authUrl);
-      window.location.href = authUrl;
+      const authUrl = `https://www.instagram.com/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPES}&response_type=code`;
+      console.log('Opening Instagram OAuth URL in Pop-up:', authUrl);
+
+      // فتح Pop-up
+      const width = 600;
+      const height = 600;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
+      const popup = window.open(authUrl, 'InstagramLogin', `width=${width},height=${height},top=${top},left=${left}`);
+
+      if (!popup) {
+        errorMessage.textContent = 'يرجى السماح بفتح النوافذ المنبثقة (Pop-ups) لتسجيل الدخول';
+        errorMessage.style.display = 'block';
+        return;
+      }
+
+      // مراقبة الـ Pop-up لاستقبال الـ code
+      const interval = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(interval);
+          // الـ code هيتعامل معاه في handleInstagramCallback
+        }
+      }, 500);
     }
 
     // Check for OAuth code in URL and send it to backend
