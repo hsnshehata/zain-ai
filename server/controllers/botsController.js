@@ -502,7 +502,7 @@ exports.exchangeInstagramCode = async (req, res) => {
     bot.instagramPageId = userId;
     await bot.save();
 
-    // الاشتراك في الـ Webhook Events
+    // الاشتراك في الـ Webhook Events باستخدام الـ User Access Token
     const subscribedFields = [
       'messages',
       'comments',
@@ -512,12 +512,17 @@ exports.exchangeInstagramCode = async (req, res) => {
 
     try {
       const subscriptionResponse = await axios.post(
-        `https://graph.facebook.com/v20.0/2288330081539329/subscriptions`,
-        {
-          object: 'instagram',
+        `https://graph.instagram.com/v20.0/${userId}/subscriptions`,
+        new URLSearchParams({
+          object: 'user',
           callback_url: `${req.protocol}://${req.get('host')}/api/webhook/instagram`,
           fields: subscribedFields,
-          access_token: process.env.INSTAGRAM_APP_ACCESS_TOKEN, // استخدام App Access Token
+          access_token: accessToken,
+        }),
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
         }
       );
 
