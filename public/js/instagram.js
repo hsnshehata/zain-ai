@@ -161,6 +161,9 @@ document.addEventListener("DOMContentLoaded", () => {
     let isProcessingCode = false;
     let processedCode = null;
 
+    // التحقق من localStorage عشان نمنع التكرار
+    const processedCodes = JSON.parse(localStorage.getItem('processedInstagramCodes') || '[]');
+
     // --- Functions ---
 
     async function handleApiRequest(url, options, errorElement, defaultErrorMessage) {
@@ -275,37 +278,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    async function saveApiKeys(botId, instagramApiKey, instagramPageId) {
-      errorMessage.style.display = "none";
-
-      if (!instagramApiKey || !instagramPageId) {
-        errorMessage.textContent = "فشل حفظ معلومات الربط: مفتاح API أو معرف الحساب غير موجود";
-        errorMessage.style.display = "block";
-        return;
-      }
-
-      console.log('البيانات المرسلة:', { instagramApiKey, instagramPageId });
-
-      try {
-        const saveResponse = await handleApiRequest(`/api/bots/${botId}/link-social`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ instagramApiKey, instagramPageId }),
-        }, errorMessage, "فشل حفظ معلومات الربط");
-
-        console.log('✅ التوكن تم حفظه بنجاح:', instagramApiKey.slice(0, 10) + '...');
-        alert("تم ربط الحساب بنجاح!");
-        await loadPageStatus(botId);
-      } catch (err) {
-        console.error('❌ خطأ في حفظ التوكن:', err);
-        errorMessage.textContent = 'خطأ في حفظ التوكن: ' + (err.message || 'غير معروف');
-        errorMessage.style.display = 'block';
-      }
-    }
-
     async function updateWebhookSetting(botId, key, value) {
       togglesError.style.display = "none";
 
@@ -330,7 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function loginWithInstagram() {
       const authUrl = `https://www.instagram.com/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPES}&response_type=code`;
       console.log('Opening Instagram OAuth URL in same page:', authUrl);
-      window.location.href = authUrl;
+            window.location.href = authUrl;
     }
 
     // Check for OAuth code in URL and send it to backend
@@ -338,9 +310,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
 
-      if (code && !isProcessingCode && code !== processedCode) {
+      if (code && !isProcessingCode && code !== processedCode && !processedCodes.includes(code)) {
         isProcessingCode = true; // منع التكرار
         processedCode = code; // تخزين الـ code اللي اتعاملنا معاه
+        processedCodes.push(code); // إضافة الـ code لقائمة المعالجة
+        localStorage.setItem('processedInstagramCodes', JSON.stringify(processedCodes)); // حفظ القائمة في localStorage
         console.log('OAuth code received:', code);
         try {
           // Send the code to the backend to exchange for access token
