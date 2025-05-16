@@ -50,11 +50,19 @@ document.addEventListener("DOMContentLoaded", () => {
               </span>
             </li>
             <li>
-              <strong>تواصل معانا:</strong> بعد ما تعمل حساب المطور، ابعتلنا رسالة على واتساب على الرقم 
-              <a href="https://wa.me/01279425543" target="_blank">01279425543</a>، وهنبعتلك دعوة لتطبيقنا عشان تقدر تستخدمه.
+              <strong>تسجيل الدخول بحساب فيسبوك:</strong> لما تضغط على زر الربط، هيفتحلك صفحة تسجيل دخول فيسبوك. سجّل دخول بحساب فيسبوك اللي مرتبط بحساب إنستجرام المهني (Business أو Creator) بتاعك.
             </li>
             <li>
-              <strong>ربط الحساب:</strong> بعد ما تقبل الدعوة، تقدر تختار حساب إنستجرام اللي بتديره من الزر اللي تحت عشان البوت يشتغل عليه.
+              <strong>اختيار حساب إنستجرام:</strong> بعد تسجيل الدخول، هتختار صفحة فيسبوك مرتبطة بحساب إنستجرام مهني، وبعد كده هتختار حساب الإنستجرام اللي عايز تربطه.
+            </li>
+            <li>
+              <strong>لو فشلت في الربط:</strong> لو ماعرفتش تربط الحساب، اتأكد إن:
+              <ul>
+                <li>حساب الإنستجرام بتاعك مهني (Business أو Creator).</li>
+                <li>حساب الإنستجرام مرتبط بصفحة فيسبوك.</li>
+                <li>حساب الفيسبوك اللي بتسجل بيه هو نفس الحساب اللي بيدير صفحة الفيسبوك المرتبطة بالإنستجرام.</li>
+              </ul>
+              لو لسه في مشكلة، تواصل معانا على واتساب: <a href="https://wa.me/01279425543" target="_blank">01279425543</a>.
             </li>
           </ul>
         </div>
@@ -341,7 +349,7 @@ document.addEventListener("DOMContentLoaded", () => {
           errorMessage.style.display = 'block';
         }
       }, { 
-        scope: 'instagram_basic,instagram_manage_messages,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_engagement'
+        scope: 'instagram_basic,instagram_manage_messages,instagram_manage_comments,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_engagement'
       });
     }
 
@@ -350,7 +358,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (response && !response.error) {
           console.log('الصفحات:', response.data);
           if (response.data.length === 0) {
-            errorMessage.textContent = 'لم يتم العثور على صفحات مرتبطة بحسابك';
+            errorMessage.textContent = 'لم يتم العثور على صفحات فيسبوك مرتبطة بحسابك. تأكد إن حسابك بيدير صفحة فيسبوك مرتبطة بحساب إنستجرام مهني.';
             errorMessage.style.display = 'block';
             return;
           }
@@ -374,7 +382,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
               if (processed === response.data.length) {
                 if (instagramAccounts.length === 0) {
-                  errorMessage.textContent = 'لم يتم العثور على حسابات إنستجرام مرتبطة بصفحاتك';
+                  errorMessage.textContent = 'لم يتم العثور على حسابات إنستجرام مرتبطة بصفحاتك. تأكد إن لديك حساب إنستجرام مهني مرتبط بصفحة فيسبوك.';
                   errorMessage.style.display = 'block';
                   return;
                 }
