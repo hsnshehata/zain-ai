@@ -232,8 +232,30 @@ document.addEventListener("DOMContentLoaded", () => {
                 <strong>اسم الصفحة:</strong> ${pageData.name}<br>
                 <strong>معرف الصفحة:</strong> ${bot.facebookPageId}
               </div>
+              <button id="unlinkFacebookBtn" class="btn btn-danger" style="margin-left: 10px;">إلغاء الربط</button>
             `;
             instructionsContainer.style.display = "none"; // Hide instructions if bot is linked
+
+            // Add event listener for unlink button
+            const unlinkFacebookBtn = document.getElementById("unlinkFacebookBtn");
+            unlinkFacebookBtn.addEventListener("click", async () => {
+              if (confirm("هل أنت متأكد أنك تريد إلغاء ربط هذه الصفحة؟")) {
+                try {
+                  await handleApiRequest(`/api/bots/${botId}/unlink-facebook`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }, errorMessage, "فشل في إلغاء ربط الصفحة");
+
+                  alert("تم إلغاء ربط الصفحة بنجاح!");
+                  await loadPageStatus(botId);
+                } catch (err) {
+                  console.error('❌ خطأ في إلغاء الربط:', err);
+                }
+              }
+            });
           } else {
             console.log(`فشل في جلب بيانات الصفحة:`, pageData);
             pageStatus.innerHTML = `
@@ -277,7 +299,6 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log('البيانات المرسلة:', { facebookApiKey, facebookPageId });
 
       try {
-        // إرسال التوكن للـ backend
         const saveResponse = await handleApiRequest(`/api/bots/${botId}/link-social`, {
           method: "POST",
           headers: {
@@ -327,29 +348,24 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     };
 
-    function checkLoginStatusAndProceed(callback) {
-      FB.getLoginStatus(function (response) {
-        if (response.status === 'connected') {
-          console.log('المستخدم مسجّل دخوله بالفعل');
-          callback(response.authResponse.accessToken);
-        } else {
-          FB.login(function (response) {
-            if (response.authResponse) {
-              console.log('تم تسجيل الدخول!');
-              callback(response.authResponse.accessToken);
-            } else {
-              errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ';
-              errorMessage.style.display = 'block';
-            }
-          }, { 
-            scope: 'public_profile,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_engagement' 
-          });
-        }
-      });
-    }
-
     function loginWithFacebook() {
-      checkLoginStatusAndProceed(getUserPages);
+      // Force logout to ensure permission prompt appears
+      FB.logout(function(response) {
+        console.log('تم تسجيل الخروج من فيسبوك');
+        // After logout, proceed with login
+        FB.login(function (response) {
+          if (response.authResponse) {
+            console.log('تم تسجيل الدخول!');
+            getUserPages(response.authResponse.accessToken);
+          } else {
+            errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ';
+            errorMessage.style.display = 'block';
+          }
+        }, { 
+          scope: 'public_profile,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_engagement',
+          auth_type: 'reauthenticate' // Force re-authentication to show permission prompt
+        });
+      });
     }
 
     function getUserPages(accessToken) {
