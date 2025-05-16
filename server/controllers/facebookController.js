@@ -1,12 +1,11 @@
 const axios = require('axios');
 const Bot = require('../models/Bot');
-const botEngine = require('../botEngine');
-const botsController = require('./botsController');
+const { processMessage, processFeedback } = require('../botEngine');
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
 
-exports.webhook = async (req, res) => {
+const handleMessage = async (req, res) => {
   try {
     console.log('📩 Webhook POST request received:', JSON.stringify(req.body, null, 2));
 
@@ -70,15 +69,15 @@ exports.webhook = async (req, res) => {
 
           if (message.text) {
             console.log(`📝 Text message received from ${senderPsid}: ${message.text}`);
-            responseText = await botEngine.processMessage(bot._id, senderPsid, message.text, false, false, mid);
+            responseText = await processMessage(bot._id, senderPsid, message.text, false, false, mid);
           } else if (message.attachments) {
             const attachment = message.attachments[0];
             if (attachment.type === 'image') {
               console.log(`🖼️ Image received from ${senderPsid}: ${attachment.payload.url}`);
-              responseText = await botEngine.processMessage(bot._id, senderPsid, attachment.payload.url, true, false, mid);
+              responseText = await processMessage(bot._id, senderPsid, attachment.payload.url, true, false, mid);
             } else if (attachment.type === 'audio') {
               console.log(`🎙️ Audio received from ${senderPsid}: ${attachment.payload.url}`);
-              responseText = await botEngine.processMessage(bot._id, senderPsid, attachment.payload.url, false, true, mid);
+              responseText = await processMessage(bot._id, senderPsid, attachment.payload.url, false, true, mid);
             } else {
               console.log(`📎 Unsupported attachment type from ${senderPsid}: ${attachment.type}`);
               responseText = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
@@ -95,7 +94,7 @@ exports.webhook = async (req, res) => {
           const feedback = feedbackData.feedback;
 
           console.log(`📊 Feedback received from ${senderPsid}: ${feedback} for message ID: ${mid}`);
-          await botEngine.processFeedback(bot._id, senderPsid, mid, feedback);
+          await processFeedback(bot._id, senderPsid, mid, feedback);
         } else {
           console.log('❌ No message or feedback found in webhook event:', webhookEvent);
         }
@@ -130,7 +129,7 @@ exports.webhook = async (req, res) => {
 
             console.log(`💬 Comment received on post ${postId} from ${commenterName} (${commenterId}): ${message}`);
 
-            const responseText = await botEngine.processMessage(bot._id, commenterId, message, false, false, `comment_${commentId}`);
+            const responseText = await processMessage(bot._id, commenterId, message, false, false, `comment_${commentId}`);
             await replyToComment(commentId, responseText, bot.facebookApiKey);
           } else {
             console.log('❌ Not a comment event or not an "add" verb:', change);
@@ -143,24 +142,6 @@ exports.webhook = async (req, res) => {
   } catch (err) {
     console.error('❌ Error in webhook:', err.message, err.stack);
     res.sendStatus(500);
-  }
-};
-
-exports.verifyWebhook = (req, res) => {
-  const mode = req.query['hub.mode'];
-  const token = req.query['hub.verify_token'];
-  const challenge = req.query['hub.challenge'];
-
-  if (mode && token) {
-    if (mode === 'subscribe' && token === process.env.FACEBOOK_VERIFY_TOKEN) {
-      console.log(`[${getTimestamp()}] ✅ Webhook verified successfully`);
-      res.status(200).send(challenge);
-    } else {
-      console.log(`[${getTimestamp()}] ❌ Webhook verification failed`);
-      res.sendStatus(403);
-    }
-  } else {
-    res.sendStatus(403);
   }
 };
 
@@ -210,3 +191,5 @@ const replyToComment = (commentId, responseText, facebookApiKey) => {
     });
   });
 };
+
+module.exports = { handleMessage, sendMessage };
