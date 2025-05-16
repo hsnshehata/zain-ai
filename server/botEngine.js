@@ -2,10 +2,10 @@ const OpenAI = require('openai');
 const mongoose = require('mongoose');
 const axios = require('axios');
 const FormData = require('form-data');
-const Bot = require('../models/Bot');
-const Rule = require('../models/Rule');
-const Conversation = require('../models/Conversation');
-const Feedback = require('../models/Feedback');
+const Bot = require('./models/Bot');
+const Rule = require('./models/Rule');
+const Conversation = require('./models/Conversation');
+const Feedback = require('./models/Feedback');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
