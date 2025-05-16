@@ -335,7 +335,7 @@ exports.unlinkFacebookPage = async (req, res) => {
     }
 
     // التحقق من الصلاحيات: السوبر أدمن يقدر يعدل أي بوت، غير كده لازم يكون صاحب البوت
-    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId improvetoString()) {
       console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
       return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا البوت' });
     }
