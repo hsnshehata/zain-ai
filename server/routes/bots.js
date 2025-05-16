@@ -55,6 +55,9 @@ router.put('/:id', authenticate, botsController.updateBot);
 // ربط صفحة فيسبوك أو إنستجرام بالبوت
 router.post('/:id/link-social', authenticate, botsController.linkSocialPage);
 
+// إلغاء ربط صفحة فيسبوك
+router.post('/:id/unlink-facebook', authenticate, botsController.unlinkFacebookPage);
+
 // تبادل Instagram OAuth code بـ access token
 router.post('/:id/exchange-instagram-code', authenticate, (req, res) => {
   console.log(`📌 Received request for /api/bots/${req.params.id}/exchange-instagram-code`);
