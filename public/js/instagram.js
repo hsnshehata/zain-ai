@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadInstagramPage() {
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "/css/facebook.css"; // نستخدم نفس ستايل facebook.css
+    link.href = "/css/facebook.css";
     document.head.appendChild(link);
     const content = document.getElementById("content");
     const token = localStorage.getItem("token");
@@ -282,7 +282,6 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log('البيانات المرسلة:', { instagramApiKey, instagramPageId });
 
       try {
-        // إرسال التوكن للـ backend لتحويله إلى توكن طويل الأمد (إذا لزم الأمر)
         const saveResponse = await handleApiRequest(`/api/bots/${botId}/link-social`, {
           method: "POST",
           headers: {
@@ -329,7 +328,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.href = authUrl;
     }
 
-    // Check for OAuth code in URL and exchange it for access token
+    // Check for OAuth code in URL and send it to backend
     async function handleInstagramCallback() {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
@@ -337,33 +336,23 @@ document.addEventListener("DOMContentLoaded", () => {
       if (code) {
         console.log('OAuth code received:', code);
         try {
-          // Exchange code for access token
-          const response = await fetch('https://api.instagram.com/oauth/access_token', {
+          // Send the code to the backend to exchange for access token
+          const response = await handleApiRequest(`/api/bots/${selectedBotId}/exchange-instagram-code`, {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
             },
-            body: new URLSearchParams({
-              client_id: CLIENT_ID,
-              client_secret: 'YOUR_INSTAGRAM_APP_SECRET', // استبدل بـ INSTAGRAM_APP_SECRET من الـ Environment Variables
-              grant_type: 'authorization_code',
-              redirect_uri: window.location.origin + '/dashboard_new.html',
-              code: code,
-            }),
-          });
+            body: JSON.stringify({ code }),
+          }, errorMessage, "فشل في ربط حساب الإنستجرام");
 
-          const data = await response.json();
-          if (data.access_token && data.user_id) {
-            console.log('Access token received:', data.access_token);
-            console.log('User ID received:', data.user_id);
-
-            // Save the access token and user ID
-            await saveApiKeys(selectedBotId, data.access_token, data.user_id);
-
+          if (response.success) {
+            console.log('Access token exchanged successfully by backend');
             // Clear the URL parameters
             window.history.replaceState({}, document.title, '/dashboard_new.html#instagram');
+            await loadPageStatus(selectedBotId);
           } else {
-            throw new Error(data.error_message || 'فشل في جلب التوكن');
+            throw new Error(response.message || 'فشل في جلب التوكن');
           }
         } catch (err) {
           console.error('Error exchanging code for access token:', err);
