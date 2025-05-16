@@ -417,7 +417,7 @@ exports.linkSocialPage = async (req, res) => {
         'feed'
       ].join(',');
 
-      // الاشتراك في الـ Webhook Events
+      // الاشتراك في الـ Webhook Events لفيسبوك
       try {
         console.log(`[${getTimestamp()}] 🔄 Attempting to subscribe to Webhook Events for bot ${botId} | Page ID: ${pageId}`);
         const subscriptionResponse = await axios.post(
@@ -452,7 +452,7 @@ exports.linkSocialPage = async (req, res) => {
 
     console.log(`[${getTimestamp()}] ✅ تم ربط صفحة ${platform} بنجاح | Bot ID: ${botId} | Page ID: ${pageId}`);
 
-    res.status(200).json({ message: `تم ربط صفحة ${platform} بنجاح والاشتراك في Webhook Events` });
+    res.status(200).json({ message: `تم ربط صفحة ${platform} بنجاح` });
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ خطأ في ربط صفحة فيسبوك/إنستجرام:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
@@ -536,40 +536,7 @@ exports.exchangeInstagramCode = async (req, res) => {
     bot.lastInstagramTokenRefresh = new Date(); // تحديث تاريخ التجديد
     await bot.save();
 
-    // الاشتراك في الـ Webhook Events باستخدام الـ Instagram Graph API
-    const subscribedFields = [
-      'messages',
-      'messaging_postbacks',
-      'messaging_optins',
-      'messaging_referrals',
-      'message_edits',
-      'messaging_handover',
-      'message_reactions',
-      'comments'
-    ].join(',');
-
-    try {
-      console.log(`[${getTimestamp()}] 🔄 Attempting to subscribe to Webhook Events for bot ${botId} | Page ID: ${instagramPageId}`);
-      const subscriptionResponse = await axios.post(
-        `https://graph.facebook.com/v22.0/${instagramPageId}/subscribed_apps`,
-        {
-          subscribed_fields: subscribedFields,
-          access_token: accessToken,
-        }
-      );
-
-      if (subscriptionResponse.data.success) {
-        console.log(`[${getTimestamp()}] ✅ تم الاشتراك في Webhook Events بنجاح | Bot ID: ${botId} | Fields: ${subscribedFields}`);
-      } else {
-        console.error(`[${getTimestamp()}] ❌ فشل في الاشتراك في Webhook Events | Bot ID: ${botId} | Response:`, subscriptionResponse.data);
-        return res.status(400).json({ success: false, message: 'فشل في الاشتراك في Webhook Events: ' + (subscriptionResponse.data.error?.message || 'غير معروف') });
-      }
-    } catch (err) {
-      console.error(`[${getTimestamp()}] ❌ خطأ أثناء الاشتراك في Webhook Events | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
-      return res.status(500).json({ success: false, message: 'خطأ أثناء الاشتراك في Webhook Events: ' + (err.response?.data?.error?.message || err.message) });
-    }
-
-    res.status(200).json({ success: true, message: 'تم ربط حساب الإنستجرام بنجاح والاشتراك في Webhook Events' });
+    res.status(200).json({ success: true, message: 'تم ربط حساب الإنستجرام بنجاح' });
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ خطأ في تبادل OAuth code:`, err.message, err.stack);
     res.status(500).json({ success: false, message: 'خطأ في السيرفر: ' + err.message });
