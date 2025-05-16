@@ -2,8 +2,7 @@ const request = require('request');
 const Conversation = require('../models/Conversation');
 const Bot = require('../models/Bot');
 const axios = require('axios');
-const mongoose = require('mongoose');
-const { processMessage } = require('./messageProcessor');
+const { processMessage } = require('../botEngine'); // تعديل المسار ليشير إلى botEngine.js
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
@@ -136,6 +135,7 @@ exports.handleMessage = async (req, res) => {
         // معالجة الرسالة
         if (event.message) {
           const messageText = event.message.text;
+
           if (!messageText) {
             console.log(`[${getTimestamp()}] ⚠️ No text in message from ${senderId}`);
             continue;
