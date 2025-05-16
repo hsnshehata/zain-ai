@@ -7,30 +7,142 @@ const botsController = require('./botsController');
 const getTimestamp = () => new Date().toISOString();
 
 exports.webhook = async (req, res) => {
-  const body = req.body;
+  try {
+    console.log('📩 Webhook POST request received:', JSON.stringify(req.body, null, 2));
 
-  if (body.object === 'page') {
+    const body = req.body;
+
+    if (body.object !== 'page') {
+      console.log('❌ Invalid webhook event: Not a page object');
+      return res.sendStatus(404);
+    }
+
     for (const entry of body.entry) {
-      const webhookEvent = entry.messaging ? entry.messaging[0] : entry.changes[0];
+      const pageId = entry.id;
 
-      if (webhookEvent) {
-        // معالجة الرسائل
-        if (webhookEvent.message) {
-          await exports.handleMessage(webhookEvent);
+      const bot = await Bot.findOne({ facebookPageId: pageId });
+      if (!bot) {
+        console.log(`❌ No bot found for page ID: ${pageId}`);
+        continue;
+      }
+
+      // التحقق من حالة البوت
+      if (!bot.isActive) {
+        console.log(`⚠️ Bot ${bot.name} (ID: ${bot._id}) is inactive, skipping message processing.`);
+        continue;
+      }
+
+      if (entry.messaging && entry.messaging.length > 0) {
+        const webhookEvent = entry.messaging[0];
+        const senderPsid = webhookEvent.sender?.id;
+        const recipientId = webhookEvent.recipient?.id;
+
+        if (!senderPsid) {
+          console.log('❌ Sender PSID not found in webhook event:', webhookEvent);
+          continue;
         }
-        // معالجة التعليقات
-        else if (webhookEvent.field === 'feed' && webhookEvent.value && webhookEvent.value.item === 'comment') {
-          await exports.handleComment(webhookEvent);
+
+        // Validate that senderId is not the page itself
+        if (senderPsid === bot.facebookPageId) {
+          console.log(`⚠️ Skipping message because senderId (${senderPsid}) is the page itself`);
+          continue;
         }
-        // معالجة الـ feedback
-        else if (webhookEvent.field === 'response_feedback') {
-          await exports.handleFeedback(webhookEvent);
+
+        // Validate that recipientId matches the page
+        if (recipientId !== bot.facebookPageId) {
+          console.log(`⚠️ Skipping message because recipientId (${recipientId}) does not match pageId (${bot.facebookPageId})`);
+          continue;
+        }
+
+        // Check if the message is an echo (sent by the bot itself)
+        if (webhookEvent.message && webhookEvent.message.is_echo) {
+          console.log(`⚠️ Ignoring echo message from bot: ${webhookEvent.message.text}`);
+          continue;
+        }
+
+        // التعامل مع الرسائل العادية
+        if (webhookEvent.message && !webhookEvent.message_edit) {
+          const message = webhookEvent.message;
+          const mid = message.mid || `temp_${Date.now()}`;
+          const messageContent = message.text || (message.attachments ? JSON.stringify(message.attachments) : 'رسالة غير نصية');
+
+          let responseText = '';
+
+          if (message.text) {
+            console.log(`📝 Text message received from ${senderPsid}: ${message.text}`);
+            responseText = await botEngine.processMessage(bot._id, senderPsid, message.text, false, false, mid);
+          } else if (message.attachments) {
+            const attachment = message.attachments[0];
+            if (attachment.type === 'image') {
+              console.log(`🖼️ Image received from ${senderPsid}: ${attachment.payload.url}`);
+              responseText = await botEngine.processMessage(bot._id, senderPsid, attachment.payload.url, true, false, mid);
+            } else if (attachment.type === 'audio') {
+              console.log(`🎙️ Audio received from ${senderPsid}: ${attachment.payload.url}`);
+              responseText = await botEngine.processMessage(bot._id, senderPsid, attachment.payload.url, false, true, mid);
+            } else {
+              console.log(`📎 Unsupported attachment type from ${senderPsid}: ${attachment.type}`);
+              responseText = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
+            }
+          } else {
+            console.log(`❓ Unknown message type from ${senderPsid}`);
+            responseText = 'عذرًا، لا أستطيع فهم هذه الرسالة.';
+          }
+
+          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
+        } else if (webhookEvent.response_feedback) {
+          const feedbackData = webhookEvent.response_feedback;
+          const mid = feedbackData.mid;
+          const feedback = feedbackData.feedback;
+
+          console.log(`📊 Feedback received from ${senderPsid}: ${feedback} for message ID: ${mid}`);
+          await botEngine.processFeedback(bot._id, senderPsid, mid, feedback);
+        } else {
+          console.log('❌ No message or feedback found in webhook event:', webhookEvent);
+        }
+      }
+
+      if (entry.changes && entry.changes.length > 0) {
+        // التحقق من تفعيل ميزة الرد على الكومنتات
+        if (!bot.commentsRepliesEnabled) {
+          console.log(`⚠️ Comment replies disabled for bot ${bot.name} (ID: ${bot._id}), skipping comment processing.`);
+          continue;
+        }
+
+        for (const change of entry.changes) {
+          if (change.field === 'feed' && change.value.item === 'comment' && change.value.verb === 'add') {
+            const commentEvent = change.value;
+            const commentId = commentEvent.comment_id;
+            const postId = commentEvent.post_id;
+            const message = commentEvent.message;
+            const commenterId = commentEvent.from?.id;
+            const commenterName = commentEvent.from?.name;
+
+            if (!commenterId || !message) {
+              console.log('❌ Commenter ID or message not found in feed event:', commentEvent);
+              continue;
+            }
+
+            // تجاهل الكومنتات من الصفحة نفسها (ردود البوت)
+            if (commenterId === bot.facebookPageId) {
+              console.log(`⚠️ Skipping comment because commenterId (${commenterId}) is the page itself`);
+              continue;
+            }
+
+            console.log(`💬 Comment received on post ${postId} from ${commenterName} (${commenterId}): ${message}`);
+
+            const responseText = await botEngine.processMessage(bot._id, commenterId, message, false, false, `comment_${commentId}`);
+            await replyToComment(commentId, responseText, bot.facebookApiKey);
+          } else {
+            console.log('❌ Not a comment event or not an "add" verb:', change);
+          }
         }
       }
     }
+
     res.status(200).send('EVENT_RECEIVED');
-  } else {
-    res.sendStatus(404);
+  } catch (err) {
+    console.error('❌ Error in webhook:', err.message, err.stack);
+    res.sendStatus(500);
   }
 };
 
@@ -52,131 +164,49 @@ exports.verifyWebhook = (req, res) => {
   }
 };
 
-exports.handleMessage = async (event) => {
-  // التأكد إن event.sender موجود
-  if (!event.sender || !event.sender.id) {
-    console.log(`[${getTimestamp()}] ⚠️ Invalid message event: missing sender.id`);
-    return;
-  }
+const sendMessage = (senderPsid, responseText, facebookApiKey) => {
+  return new Promise((resolve, reject) => {
+    console.log(`📤 Attempting to send message to ${senderPsid} with token: ${facebookApiKey.slice(0, 10)}...`);
+    const requestBody = {
+      recipient: { id: senderPsid },
+      message: { text: responseText },
+    };
 
-  const senderId = event.sender.id;
-  const recipientId = event.recipient.id;
-  const messageText = event.message.text;
-  const messageId = event.message.mid;
-
-  if (!messageText) {
-    console.log(`[${getTimestamp()}] ⚠️ Ignoring empty message from user: ${senderId}`);
-    return;
-  }
-
-  if (event.message.is_echo) {
-    console.log(`[${getTimestamp()}] ⚠️ Ignoring echo message from bot: ${senderId}`);
-    return;
-  }
-
-  try {
-    const bot = await Bot.findOne({ facebookPageId: recipientId });
-    if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ Bot not found for page ID: ${recipientId}`);
-      return;
-    }
-
-    if (!bot.isActive) {
-      console.log(`[${getTimestamp()}] ⚠️ Bot is not active | Bot ID: ${bot._id}`);
-      return;
-    }
-
-    // استخدام botEngine لمعالجة الرسالة
-    const reply = await botEngine.processMessage(bot._id, senderId, messageText, false, false, messageId);
-
-    // إرسال الرد للمستخدم
-    await axios.post(
+    axios.post(
       `https://graph.facebook.com/v20.0/me/messages`,
+      requestBody,
       {
-        recipient: { id: senderId },
-        message: { text: reply },
-      },
-      {
-        params: { access_token: bot.facebookApiKey },
+        params: { access_token: facebookApiKey },
       }
-    );
-
-    console.log(`[${getTimestamp()}] ✅ Replied to user ${senderId}: ${reply}`);
-  } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error handling message:`, err.message, err.stack);
-  }
+    ).then(response => {
+      console.log(`✅ Message sent to ${senderPsid}: ${responseText}`);
+      resolve(response.data);
+    }).catch(err => {
+      console.error('❌ Error sending message to Facebook:', err.response?.data || err.message);
+      reject(err);
+    });
+  });
 };
 
-exports.handleComment = async (event) => {
-  // التأكد إن event.value موجود
-  if (!event.value || !event.value.comment_id || !event.value.message || !event.value.from) {
-    console.log(`[${getTimestamp()}] ⚠️ Invalid comment event: missing required fields`);
-    return;
-  }
+const replyToComment = (commentId, responseText, facebookApiKey) => {
+  return new Promise((resolve, reject) => {
+    console.log(`📤 Attempting to reply to comment ${commentId} with token: ${facebookApiKey.slice(0, 10)}...`);
+    const requestBody = {
+      message: responseText,
+    };
 
-  const commentId = event.value.comment_id;
-  const commentText = event.value.message;
-  const pageId = event.value.from.id;
-
-  if (!commentText) {
-    console.log(`[${getTimestamp()}] ⚠️ Ignoring empty comment: ${commentId}`);
-    return;
-  }
-
-  try {
-    const bot = await Bot.findOne({ facebookPageId: pageId });
-    if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ Bot not found for page ID: ${pageId}`);
-      return;
-    }
-
-    if (!bot.isActive || !bot.commentsRepliesEnabled) {
-      console.log(`[${getTimestamp()}] ⚠️ Bot is not active or comments replies disabled | Bot ID: ${bot._id}`);
-      return;
-    }
-
-    // استخدام botEngine لمعالجة التعليق
-    const reply = await botEngine.processMessage(bot._id, commentId, commentText, false, false, commentId);
-
-    // إرسال الرد على التعليق
-    await axios.post(
+    axios.post(
       `https://graph.facebook.com/v20.0/${commentId}/comments`,
+      requestBody,
       {
-        message: reply,
-      },
-      {
-        params: { access_token: bot.facebookApiKey },
+        params: { access_token: facebookApiKey },
       }
-    );
-
-    console.log(`[${getTimestamp()}] ✅ Replied to comment ${commentId}: ${reply}`);
-  } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error handling comment:`, err.message, err.stack);
-  }
-};
-
-exports.handleFeedback = async (event) => {
-  // التأكد إن event.value موجود
-  if (!event.value || !event.value.feedback_value || !event.value.message_id || !event.value.from || !event.value.recipient_id) {
-    console.log(`[${getTimestamp()}] ⚠️ Invalid feedback event: missing required fields`);
-    return;
-  }
-
-  const feedbackValue = event.value.feedback_value; // 'positive' or 'negative'
-  const messageId = event.value.message_id;
-  const userId = event.value.from.id;
-  const pageId = event.value.recipient_id;
-
-  try {
-    const bot = await Bot.findOne({ facebookPageId: pageId });
-    if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ Bot not found for page ID: ${pageId}`);
-      return;
-    }
-
-    // استخدام botEngine لتسجيل الـ feedback
-    await botEngine.processFeedback(bot._id, userId, messageId, feedbackValue);
-  } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error handling feedback:`, err.message, err.stack);
-  }
+    ).then(response => {
+      console.log(`✅ Replied to comment ${commentId}: ${responseText}`);
+      resolve(response.data);
+    }).catch(err => {
+      console.error('❌ Error replying to comment on Facebook:', err.response?.data || err.message);
+      reject(err);
+    });
+  });
 };
