@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadInstagramPage() {
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "/css/facebook.css"; // نستخدم نفس ستايل facebook.css لحد ما نحتاج تعديلات
+    link.href = "/css/facebook.css"; // نستخدم نفس ستايل facebook.css
     document.head.appendChild(link);
     const content = document.getElementById("content");
     const token = localStorage.getItem("token");
@@ -44,23 +44,19 @@ document.addEventListener("DOMContentLoaded", () => {
               <span style="display: block; margin-top: 5px;">
                 <strong>إزاي تعمل حساب مطور؟</strong><br>
                 1. ادخل على موقع <a href="https://developers.facebook.com/" target="_blank">Meta Developer</a>.<br>
-                2. اضغط على "Get Started" أو "Log In" لو عندك حساب فيسبوك.<br>
-                3. سجّل دخولك بنفس حساب فيسبوك اللي مرتبط بحساب إنستجرام بتاعك.<br>
+                2. اضغط على "Get Started" أو "Log In" لو عندك حساب إنستجرام.<br>
+                3. سجّل دخولك بحساب إنستجرام مهني (Business أو Creator).<br>
                 4. وافق على شروط المطورين (Meta Developer Terms) لو ظهرتلك، وكده هيبقى عندك حساب مطور.
               </span>
             </li>
             <li>
-              <strong>تسجيل الدخول بحساب فيسبوك:</strong> لما تضغط على زر الربط، هيفتحلك صفحة تسجيل دخول فيسبوك. سجّل دخول بحساب فيسبوك اللي مرتبط بحساب إنستجرام المهني (Business أو Creator) بتاعك.
-            </li>
-            <li>
-              <strong>اختيار حساب إنستجرام:</strong> بعد تسجيل الدخول، هتختار صفحة فيسبوك مرتبطة بحساب إنستجرام مهني، وبعد كده هتختار حساب الإنستجرام اللي عايز تربطه.
+              <strong>تسجيل الدخول بحساب إنستجرام:</strong> لما تضغط على زر الربط، هيفتحلك صفحة تسجيل دخول إنستجرام. سجّل دخول بحساب إنستجرام مهني (Business أو Creator).
             </li>
             <li>
               <strong>لو فشلت في الربط:</strong> لو ماعرفتش تربط الحساب، اتأكد إن:
               <ul>
                 <li>حساب الإنستجرام بتاعك مهني (Business أو Creator).</li>
-                <li>حساب الإنستجرام مرتبط بصفحة فيسبوك.</li>
-                <li>حساب الفيسبوك اللي بتسجل بيه هو نفس الحساب اللي بيدير صفحة الفيسبوك المرتبطة بالإنستجرام.</li>
+                <li>حساب الإنستجرام اللي بتسجل بيه هو نفس الحساب اللي عايز تربطه.</li>
               </ul>
               لو لسه في مشكلة، تواصل معانا على واتساب: <a href="https://wa.me/01279425543" target="_blank">01279425543</a>.
             </li>
@@ -145,14 +141,6 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
 
-    // Load Facebook SDK
-    const fbScript = document.createElement("script");
-    fbScript.src = "https://connect.facebook.net/en_US/sdk.js";
-    fbScript.async = true;
-    fbScript.defer = true;
-    fbScript.crossOrigin = "anonymous";
-    document.head.appendChild(fbScript);
-
     const loadingSpinner = document.getElementById("loadingSpinner");
     const errorMessage = document.getElementById("errorMessage");
     const settingsContainer = document.getElementById("instagramSettingsContainer");
@@ -163,6 +151,11 @@ document.addEventListener("DOMContentLoaded", () => {
     // Toggle elements
     const toggles = settingsContainer.querySelectorAll(".switch input[type=\"checkbox\"]");
     const togglesError = document.getElementById("togglesError");
+
+    // Instagram OAuth settings
+    const CLIENT_ID = '2288330081539329'; // معرف تطبيق الإنستجرام
+    const REDIRECT_URI = encodeURIComponent(window.location.origin + '/dashboard_new.html');
+    const SCOPES = 'instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments';
 
     // --- Functions ---
 
@@ -233,7 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Check if bot is linked to an Instagram account
         if (bot.instagramPageId && bot.instagramApiKey) {
           console.log(`جاري جلب بيانات الحساب بالـ ID: ${bot.instagramPageId}`);
-          const response = await fetch(`https://graph.facebook.com/${bot.instagramPageId}?fields=username&access_token=${bot.instagramApiKey}`);
+          const response = await fetch(`https://graph.instagram.com/${bot.instagramPageId}?fields=username&access_token=${bot.instagramApiKey}`);
           const pageData = await response.json();
 
           if (pageData.username) {
@@ -289,7 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.log('البيانات المرسلة:', { instagramApiKey, instagramPageId });
 
       try {
-        // إرسال التوكن قصير الأمد للـ backend لتحويله إلى توكن طويل الأمد
+        // إرسال التوكن للـ backend لتحويله إلى توكن طويل الأمد (إذا لزم الأمر)
         const saveResponse = await handleApiRequest(`/api/bots/${botId}/link-social`, {
           method: "POST",
           headers: {
@@ -329,123 +322,59 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Initialize Facebook SDK
-    window.fbAsyncInit = function () {
-      FB.init({
-        appId: '2288330081539329', // معرف تطبيق إنستجرام
-        cookie: true,
-        xfbml: true,
-        version: 'v20.0'
-      });
-    };
-
-    function loginWithFacebook() {
-      FB.login(function (response) {
-        if (response.authResponse) {
-          console.log('تم تسجيل الدخول!');
-          getUserInstagramAccounts(response.authResponse.accessToken);
-        } else {
-          errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ';
-          errorMessage.style.display = 'block';
-        }
-      }, { 
-        scope: 'instagram_basic,instagram_manage_messages,instagram_manage_comments,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_engagement'
-      });
+    // Handle Instagram OAuth flow
+    function loginWithInstagram() {
+      const authUrl = `https://api.instagram.com/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPES}&response_type=code`;
+      console.log('Opening Instagram OAuth URL:', authUrl);
+      window.location.href = authUrl;
     }
 
-    function getUserInstagramAccounts(accessToken) {
-      FB.api('/me/accounts', { access_token: accessToken }, function (response) {
-        if (response && !response.error) {
-          console.log('الصفحات:', response.data);
-          if (response.data.length === 0) {
-            errorMessage.textContent = 'لم يتم العثور على صفحات فيسبوك مرتبطة بحسابك. تأكد إن حسابك بيدير صفحة فيسبوك مرتبطة بحساب إنستجرام مهني.';
-            errorMessage.style.display = 'block';
-            return;
-          }
+    // Check for OAuth code in URL and exchange it for access token
+    async function handleInstagramCallback() {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
 
-          // جلب حسابات إنستجرام المرتبطة بالصفحات
-          const instagramAccounts = [];
-          let processed = 0;
-
-          response.data.forEach(page => {
-            FB.api(`/${page.id}/instagram_accounts`, { access_token: page.access_token }, function (igResponse) {
-              processed++;
-              if (igResponse && !igResponse.error && igResponse.data && igResponse.data.length > 0) {
-                igResponse.data.forEach(igAccount => {
-                  instagramAccounts.push({
-                    id: igAccount.id,
-                    username: igAccount.username,
-                    access_token: page.access_token
-                  });
-                });
-              }
-
-              if (processed === response.data.length) {
-                if (instagramAccounts.length === 0) {
-                  errorMessage.textContent = 'لم يتم العثور على حسابات إنستجرام مرتبطة بصفحاتك. تأكد إن لديك حساب إنستجرام مهني مرتبط بصفحة فيسبوك.';
-                  errorMessage.style.display = 'block';
-                  return;
-                }
-
-                showInstagramAccountSelector(instagramAccounts);
-              }
-            });
+      if (code) {
+        console.log('OAuth code received:', code);
+        try {
+          // Exchange code for access token
+          const response = await fetch('https://api.instagram.com/oauth/access_token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              client_id: CLIENT_ID,
+              client_secret: 'YOUR_INSTAGRAM_APP_SECRET', // استبدل بـ INSTAGRAM_APP_SECRET من الـ Environment Variables
+              grant_type: 'authorization_code',
+              redirect_uri: window.location.origin + '/dashboard_new.html',
+              code: code,
+            }),
           });
-        } else {
-          errorMessage.textContent = 'خطأ في جلب الصفحات: ' + (response.error.message || 'غير معروف');
+
+          const data = await response.json();
+          if (data.access_token && data.user_id) {
+            console.log('Access token received:', data.access_token);
+            console.log('User ID received:', data.user_id);
+
+            // Save the access token and user ID
+            await saveApiKeys(selectedBotId, data.access_token, data.user_id);
+
+            // Clear the URL parameters
+            window.history.replaceState({}, document.title, '/dashboard_new.html#instagram');
+          } else {
+            throw new Error(data.error_message || 'فشل في جلب التوكن');
+          }
+        } catch (err) {
+          console.error('Error exchanging code for access token:', err);
+          errorMessage.textContent = 'خطأ أثناء ربط الحساب: ' + (err.message || 'غير معروف');
           errorMessage.style.display = 'block';
         }
-      });
-    }
-
-    function showInstagramAccountSelector(accounts) {
-      const modal = document.createElement("div");
-      modal.classList.add("modal");
-      modal.innerHTML = `
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>اختر حساب إنستجرام لربطه بالبوت</h3>
-            <button class="modal-close-btn"><i class="fas fa-times"></i></button>
-          </div>
-          <div class="modal-body">
-            <select id="accountSelect" class="form-control">
-              <option value="">اختر حساب</option>
-              ${accounts.map(account => `<option value="${account.id}" data-token="${account.access_token}" data-username="${account.username}">${account.username}</option>`).join('')}
-            </select>
-          </div>
-          <div class="form-actions">
-            <button id="confirmAccountBtn" class="btn btn-primary">تأكيد</button>
-            <button class="btn btn-secondary modal-close-btn">إلغاء</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-
-      modal.querySelectorAll(".modal-close-btn").forEach(btn => {
-        btn.addEventListener("click", () => modal.remove());
-      });
-
-      document.getElementById("confirmAccountBtn").addEventListener("click", () => {
-        const accountSelect = document.getElementById("accountSelect");
-        const selectedAccountId = accountSelect.value;
-        const selectedOption = accountSelect.options[accountSelect.selectedIndex];
-        const accessToken = selectedOption.dataset.token;
-
-        if (!selectedAccountId || !accessToken) {
-          errorMessage.textContent = 'يرجى اختيار حساب إنستجرام لربطه بالبوت';
-          errorMessage.style.display = 'block';
-          modal.remove();
-          return;
-        }
-
-        console.log('بيانات الحساب المختار:', { access_token: accessToken, account_id: selectedAccountId });
-        saveApiKeys(selectedBotId, accessToken, selectedAccountId);
-        modal.remove();
-      });
+      }
     }
 
     // --- Event Listeners ---
-    connectInstagramBtn.addEventListener("click", loginWithFacebook);
+    connectInstagramBtn.addEventListener("click", loginWithInstagram);
 
     toggles.forEach(toggle => {
       toggle.addEventListener("change", (e) => {
@@ -460,6 +389,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // --- Initial Load ---
     loadBotSettings(selectedBotId);
     loadPageStatus(selectedBotId);
+    handleInstagramCallback(); // Check for OAuth callback
   }
 
   // Make loadInstagramPage globally accessible
