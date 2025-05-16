@@ -155,7 +155,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Instagram OAuth settings
     const CLIENT_ID = '2288330081539329'; // معرف تطبيق الإنستجرام
     const REDIRECT_URI = encodeURIComponent(window.location.origin + '/dashboard_new.html');
-    const SCOPES = 'instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments';
+    const SCOPES = 'instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments,pages_manage_metadata';
 
     // متغيرات عشان نمنع التكرار
     let isProcessingCode = false;
@@ -302,7 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function loginWithInstagram() {
       const authUrl = `https://www.instagram.com/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPES}&response_type=code`;
       console.log('Opening Instagram OAuth URL in same page:', authUrl);
-            window.location.href = authUrl;
+      window.location.href = authUrl;
     }
 
     // Check for OAuth code in URL and send it to backend
