@@ -57,8 +57,8 @@ const checkAutoStopBots = () => {
 
 // وظيفة دورية لتجديد توكنات إنستجرام
 const refreshInstagramTokens = () => {
-  // جدولة المهمة لتعمل كل 50 يوم الساعة 12:00 صباحًا
-  cron.schedule('0 0 1 */50 *', async () => {
+  // جدولة المهمة لتعمل كل يوم الساعة 12:00 صباحًا
+  cron.schedule('0 0 * * *', async () => {
     try {
       console.log(`[${getTimestamp()}] ⏰ Starting Instagram token refresh check...`);
 
@@ -75,9 +75,20 @@ const refreshInstagramTokens = () => {
 
       console.log(`[${getTimestamp()}] 🔄 Found ${botsWithInstagram.length} bots with Instagram tokens to refresh.`);
 
-      // تجديد التوكن لكل بوت
+      // تجديد التوكن لكل بوت لو مرّ 50 يوم
+      const fiftyDaysInMs = 50 * 24 * 60 * 60 * 1000; // 50 يوم بالمللي ثانية
+      const currentDate = new Date();
+
       for (const bot of botsWithInstagram) {
         try {
+          const lastRefresh = bot.lastInstagramTokenRefresh ? new Date(bot.lastInstagramTokenRefresh) : null;
+          const shouldRefresh = !lastRefresh || (currentDate - lastRefresh) >= fiftyDaysInMs;
+
+          if (!shouldRefresh) {
+            console.log(`[${getTimestamp()}] ⏳ Skipping token refresh for bot ${bot._id} | Last refreshed: ${lastRefresh.toISOString()}`);
+            continue;
+          }
+
           const currentToken = bot.instagramApiKey;
           console.log(`[${getTimestamp()}] 🔄 Attempting to refresh Instagram token for bot ${bot._id}...`);
 
@@ -103,8 +114,9 @@ const refreshInstagramTokens = () => {
           const newToken = refreshResponse.data.access_token;
           const expiresIn = refreshResponse.data.expires_in;
 
-          // تحديث التوكن في البوت
+          // تحديث التوكن وتاريخ التجديد في البوت
           bot.instagramApiKey = newToken;
+          bot.lastInstagramTokenRefresh = new Date();
           await bot.save();
 
           console.log(`[${getTimestamp()}] ✅ Successfully refreshed Instagram token for bot ${bot._id} | New Token: ${newToken.slice(0, 10)}... | Expires In: ${expiresIn} seconds`);
