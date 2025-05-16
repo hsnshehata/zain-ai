@@ -327,18 +327,29 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     };
 
-    function loginWithFacebook() {
-      FB.login(function (response) {
-        if (response.authResponse) {
-          console.log('تم تسجيل الدخول!');
-          getUserPages(response.authResponse.accessToken);
+    function checkLoginStatusAndProceed(callback) {
+      FB.getLoginStatus(function (response) {
+        if (response.status === 'connected') {
+          console.log('المستخدم مسجّل دخوله بالفعل');
+          callback(response.authResponse.accessToken);
         } else {
-          errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ';
-          errorMessage.style.display = 'block';
+          FB.login(function (response) {
+            if (response.authResponse) {
+              console.log('تم تسجيل الدخول!');
+              callback(response.authResponse.accessToken);
+            } else {
+              errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ';
+              errorMessage.style.display = 'block';
+            }
+          }, { 
+            scope: 'public_profile,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_engagement' 
+          });
         }
-      }, { 
-        scope: 'public_profile,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_engagement' 
       });
+    }
+
+    function loginWithFacebook() {
+      checkLoginStatusAndProceed(getUserPages);
     }
 
     function getUserPages(accessToken) {
