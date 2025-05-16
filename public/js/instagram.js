@@ -157,6 +157,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const REDIRECT_URI = encodeURIComponent(window.location.origin + '/dashboard_new.html');
     const SCOPES = 'instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments';
 
+    // متغير عشان نتأكد إن handleInstagramCallback ما تتناديش أكتر من مرة لنفس الـ code
+    let isProcessingCode = false;
+
     // --- Functions ---
 
     async function handleApiRequest(url, options, errorElement, defaultErrorMessage) {
@@ -334,7 +337,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const urlParams = new URLSearchParams(window.location.search);
       const code = urlParams.get('code');
 
-      if (code) {
+      if (code && !isProcessingCode) {
+        isProcessingCode = true; // منع التكرار
         console.log('OAuth code received:', code);
         try {
           // Send the code to the backend to exchange for access token
@@ -362,6 +366,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } finally {
           // تحديث الصفحة حتى لو حصل خطأ
           await loadPageStatus(selectedBotId);
+          isProcessingCode = false; // إعادة السماح بعد الانتهاء
         }
       }
     }
