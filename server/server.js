@@ -24,7 +24,7 @@ const { processMessage } = require('./botEngine');
 const NodeCache = require('node-cache');
 const bcrypt = require('bcryptjs');
 const request = require('request');
-const { checkAutoStopBots } = require('./cronJobs');
+const { checkAutoStopBots, refreshInstagramTokens } = require('./cronJobs');
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
@@ -345,8 +345,9 @@ app.get('/chat/:linkId', (req, res) => {
 // Connect to MongoDB
 connectDB();
 
-// تشغيل وظيفة التحقق من الإيقاف التلقائي
+// تشغيل وظايف التحقق الدورية
 checkAutoStopBots();
+refreshInstagramTokens();
 
 // Global Error Handler (معدل عشان يمنع الـ crash)
 app.use((err, req, res, next) => {
