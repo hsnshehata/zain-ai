@@ -1,6 +1,6 @@
 const axios = require('axios');
 const Bot = require('../models/Bot');
-const botEngine = require('../botEngine'); 
+const botEngine = require('../botEngine');
 const botsController = require('./botsController');
 
 // دالة مساعدة لإضافة timestamp للـ logs
@@ -16,7 +16,7 @@ exports.webhook = async (req, res) => {
       if (webhookEvent) {
         // معالجة الرسائل
         if (webhookEvent.message) {
-          await exports.handleMessage(webhookEvent); // استخدم exports.handleMessage عشان نكون متسقين
+          await exports.handleMessage(webhookEvent);
         }
         // معالجة التعليقات
         else if (webhookEvent.field === 'feed' && webhookEvent.value && webhookEvent.value.item === 'comment') {
@@ -53,6 +53,12 @@ exports.verifyWebhook = (req, res) => {
 };
 
 exports.handleMessage = async (event) => {
+  // التأكد إن event.sender موجود
+  if (!event.sender || !event.sender.id) {
+    console.log(`[${getTimestamp()}] ⚠️ Invalid message event: missing sender.id`);
+    return;
+  }
+
   const senderId = event.sender.id;
   const recipientId = event.recipient.id;
   const messageText = event.message.text;
@@ -102,6 +108,12 @@ exports.handleMessage = async (event) => {
 };
 
 exports.handleComment = async (event) => {
+  // التأكد إن event.value موجود
+  if (!event.value || !event.value.comment_id || !event.value.message || !event.value.from) {
+    console.log(`[${getTimestamp()}] ⚠️ Invalid comment event: missing required fields`);
+    return;
+  }
+
   const commentId = event.value.comment_id;
   const commentText = event.value.message;
   const pageId = event.value.from.id;
@@ -144,6 +156,12 @@ exports.handleComment = async (event) => {
 };
 
 exports.handleFeedback = async (event) => {
+  // التأكد إن event.value موجود
+  if (!event.value || !event.value.feedback_value || !event.value.message_id || !event.value.from || !event.value.recipient_id) {
+    console.log(`[${getTimestamp()}] ⚠️ Invalid feedback event: missing required fields`);
+    return;
+  }
+
   const feedbackValue = event.value.feedback_value; // 'positive' or 'negative'
   const messageId = event.value.message_id;
   const userId = event.value.from.id;
