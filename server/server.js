@@ -3,7 +3,6 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const path = require('path');
 const cors = require('cors');
-const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const facebookRoutes = require('./routes/facebook');
 const webhookRoutes = require('./routes/webhook');
