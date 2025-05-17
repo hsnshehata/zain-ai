@@ -165,6 +165,52 @@ exports.handleMessage = async (req, res) => {
             await conversation.save();
           }
 
+          // معالجة رسائل الترحيب (messaging_optins)
+          if (event.optin && bot.instagramMessagingOptinsEnabled) {
+            console.log(`📩 Processing opt-in event from ${senderId}`);
+            const welcomeMessage = bot.welcomeMessage || 'مرحبًا! كيف يمكنني مساعدتك اليوم؟';
+            await sendMessage(senderId, welcomeMessage, bot.instagramApiKey);
+            continue;
+          } else if (event.optin && !bot.instagramMessagingOptinsEnabled) {
+            console.log(`⚠️ Opt-in messages disabled for bot ${bot.name} (ID: ${bot._id}), skipping opt-in processing.`);
+            continue;
+          }
+
+          // معالجة ردود الفعل (message_reactions)
+          if (event.reaction && bot.instagramMessageReactionsEnabled) {
+            console.log(`📩 Processing reaction event from ${senderId}: ${event.reaction.reaction}`);
+            const responseText = `شكرًا على تفاعلك (${event.reaction.reaction})!`;
+            await sendMessage(senderId, responseText, bot.instagramApiKey);
+            continue;
+          } else if (event.reaction && !bot.instagramMessageReactionsEnabled) {
+            console.log(`⚠️ Message reactions disabled for bot ${bot.name} (ID: ${bot._id}), skipping reaction processing.`);
+            continue;
+          }
+
+          // معالجة تتبع المصدر (messaging_referrals)
+          if (event.referral && bot.instagramMessagingReferralsEnabled) {
+            console.log(`📩 Processing referral event from ${senderId}: ${event.referral.ref}`);
+            const responseText = `مرحبًا! وصلتني من ${event.referral.source}، كيف يمكنني مساعدتك؟`;
+            await sendMessage(senderId, responseText, bot.instagramApiKey);
+            continue;
+          } else if (event.referral && !bot.instagramMessagingReferralsEnabled) {
+            console.log(`⚠️ Messaging referrals disabled for bot ${bot.name} (ID: ${bot._id}), skipping referral processing.`);
+            continue;
+          }
+
+          // معالجة تعديلات الرسائل (message_edits)
+          if (event.message_edit && bot.instagramMessageEditsEnabled) {
+            const editedMessage = event.message_edit.message;
+            const mid = editedMessage.mid || `temp_${Date.now()}`;
+            console.log(`📩 Processing message edit event from ${senderId}: ${editedMessage.text}`);
+            const responseText = await processMessage(bot, senderId, editedMessage.text, false, false, mid);
+            await sendMessage(senderId, responseText, bot.instagramApiKey);
+            continue;
+          } else if (event.message_edit && !bot.instagramMessageEditsEnabled) {
+            console.log(`⚠️ Message edits disabled for bot ${bot.name} (ID: ${bot._id}), skipping message edit processing.`);
+            continue;
+          }
+
           // معالجة الرسالة
           if (event.message) {
             const messageId = event.message.mid || `msg_${Date.now()}`;
@@ -209,6 +255,12 @@ exports.handleMessage = async (req, res) => {
 
       // معالجة الكومنتات (Comments Events)
       if (entry.changes) {
+        // التحقق من تفعيل ميزة الرد على الكومنتات
+        if (!bot.instagramCommentsRepliesEnabled) {
+          console.log(`[${getTimestamp()}] ⚠️ Comment replies disabled for bot ${bot.name} (ID: ${bot._id}), skipping comment processing.`);
+          continue;
+        }
+
         for (const change of entry.changes) {
           if (change.field === 'comments') {
             const comment = change.value;
