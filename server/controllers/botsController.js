@@ -517,7 +517,7 @@ exports.exchangeInstagramCode = async (req, res) => {
     console.log(`[${getTimestamp()}] 📌 الـ redirect_uri المستخدم: ${redirectUri}`);
     console.log(`[${getTimestamp()}] 📌 الـ code المستخدم: ${code}`);
 
-    // تبادل الـ code بـ access token (التوكن طويل الأمد مباشرة)
+    // تبادل الـ code بـ short-lived access token
     let tokenResponse;
     try {
       console.log(`[${getTimestamp()}] 🔄 Sending OAuth token exchange request for bot ${botId}`);
@@ -542,16 +542,42 @@ exports.exchangeInstagramCode = async (req, res) => {
       return res.status(400).json({ success: false, message: 'فشل في جلب التوكن: ' + (tokenResponse.data.error_message || 'غير معروف') });
     }
 
-    let accessToken = tokenResponse.data.access_token;
+    let shortLivedToken = tokenResponse.data.access_token;
     let userId = tokenResponse.data.user_id;
 
-    console.log(`[${getTimestamp()}] ✅ تم تبادل OAuth code بنجاح | Bot ID: ${botId} | User ID: ${userId} | Long-Lived Token: ${accessToken.slice(0, 10)}...`);
+    console.log(`[${getTimestamp()}] ✅ تم تبادل OAuth code بنجاح | Bot ID: ${botId} | User ID: ${userId} | Short-Lived Token: ${shortLivedToken.slice(0, 10)}...`);
+
+    // تحويل الـ short-lived token إلى long-lived token
+    let longLivedTokenResponse;
+    try {
+      console.log(`[${getTimestamp()}] 🔄 Sending request to exchange short-lived token for long-lived token for bot ${botId}`);
+      longLivedTokenResponse = await axios.get('https://graph.instagram.com/access_token', {
+        params: {
+          grant_type: 'ig_exchange_token',
+          client_secret: process.env.INSTAGRAM_APP_SECRET,
+          access_token: shortLivedToken,
+        },
+      });
+    } catch (err) {
+      console.error(`[${getTimestamp()}] ❌ خطأ في تبادل Short-Lived Token بـ Long-Lived Token | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
+      return res.status(500).json({ success: false, message: 'خطأ في جلب توكن طويل الأمد: ' + (err.response?.data?.error?.message || err.message) });
+    }
+
+    if (!longLivedTokenResponse.data.access_token) {
+      console.log(`[${getTimestamp()}] ❌ فشل في جلب Long-Lived Token | Bot ID: ${botId} | Response:`, longLivedTokenResponse.data);
+      return res.status(400).json({ success: false, message: 'فشل في جلب توكن طويل الأمد: ' + (longLivedTokenResponse.data.error?.message || 'غير معروف') });
+    }
+
+    const longLivedToken = longLivedTokenResponse.data.access_token;
+    const expiresIn = longLivedTokenResponse.data.expires_in;
+
+    console.log(`[${getTimestamp()}] ✅ تم جلب Long-Lived Token بنجاح | Bot ID: ${botId} | Token: ${longLivedToken.slice(0, 10)}... | Expires In: ${expiresIn} seconds`);
 
     // جلب الـ user_id الصحيح باستخدام /me endpoint
     let instagramPageId;
     try {
       const userResponse = await axios.get(
-        `https://graph.instagram.com/v22.0/me?fields=user_id,username&access_token=${accessToken}`
+        `https://graph.instagram.com/v22.0/me?fields=user_id,username&access_token=${longLivedToken}`
       );
       instagramPageId = userResponse.data.user_id;
       console.log(`[${getTimestamp()}] ✅ تم جلب Instagram Page ID بنجاح | Bot ID: ${botId} | Page ID: ${instagramPageId}`);
@@ -560,10 +586,10 @@ exports.exchangeInstagramCode = async (req, res) => {
       return res.status(500).json({ success: false, message: 'خطأ في جلب معرف الصفحة: ' + (err.response?.data?.error?.message || err.message) });
     }
 
-    // تحديث البوت بالتوكن ومعرف الحساب
-    bot.instagramApiKey = accessToken;
+    // تحديث البوت بالتوكن الطويل الأمد ومعرف الحساب
+    bot.instagramApiKey = longLivedToken;
     bot.instagramPageId = instagramPageId;
-    bot.lastInstagramTokenRefresh = new Date(); // تحديث تاريخ التجديد
+    bot.lastInstagramTokenRefresh = new Date();
     await bot.save();
 
     res.status(200).json({ success: true, message: 'تم ربط حساب الإنستجرام بنجاح' });
