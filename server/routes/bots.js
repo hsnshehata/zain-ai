@@ -58,16 +58,13 @@ router.post('/:id/link-social', authenticate, botsController.linkSocialPage);
 // إلغاء ربط صفحة فيسبوك
 router.post('/:id/unlink-facebook', authenticate, botsController.unlinkFacebookPage);
 
+// إلغاء ربط حساب إنستجرام
+router.post('/:id/unlink-instagram', authenticate, botsController.unlinkInstagramAccount);
+
 // تبادل Instagram OAuth code بـ access token
 router.post('/:id/exchange-instagram-code', authenticate, (req, res) => {
   console.log(`📌 Received request for /api/bots/${req.params.id}/exchange-instagram-code`);
   botsController.exchangeInstagramCode(req, res);
-});
-
-// تجديد توكن إنستجرام يدويًا
-router.post('/:id/refresh-instagram-token', authenticate, (req, res) => {
-  console.log(`📌 Received request for /api/bots/${req.params.id}/refresh-instagram-token`);
-  botsController.refreshInstagramToken(req, res);
 });
 
 // حذف بوت
