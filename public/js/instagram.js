@@ -249,10 +249,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 <strong>معرف الحساب:</strong> ${bot.instagramPageId}
             `;
 
-            // عرض حالة التوكن (تاريخ آخر تجديد)
+            // عرض حالة التوكن (تاريخ آخر تجديد وتاريخ الانتهاء)
             if (bot.lastInstagramTokenRefresh) {
               const lastRefreshDate = new Date(bot.lastInstagramTokenRefresh).toLocaleString('ar-EG');
               statusHtml += `<br><strong>آخر تجديد للتوكن:</strong> ${lastRefreshDate}`;
+            }
+
+            // جلب مدة الصلاحية من localStorage لو موجودة
+            const tokenExpiry = localStorage.getItem(`tokenExpiry_${botId}`);
+            if (tokenExpiry) {
+              const expiryDate = new Date(parseInt(tokenExpiry)).toLocaleString('ar-EG');
+              statusHtml += `<br><strong>تاريخ انتهاء التوكن:</strong> ${expiryDate}`;
             }
 
             statusHtml += `</div>`;
@@ -376,6 +383,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (response.success) {
           console.log('Token refreshed successfully:', response);
+          // حفظ تاريخ انتهاء التوكن في localStorage
+          if (response.expires_in) {
+            const expiryDate = new Date().getTime() + response.expires_in * 1000; // تحويل الثواني لمللي ثانية
+            localStorage.setItem(`tokenExpiry_${selectedBotId}`, expiryDate);
+          }
           errorMessage.textContent = "تم تجديد التوكن بنجاح!";
           errorMessage.style.color = "green";
           errorMessage.style.display = "block";
