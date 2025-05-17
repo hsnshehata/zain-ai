@@ -523,7 +523,7 @@ exports.exchangeInstagramCode = async (req, res) => {
       console.log(`[${getTimestamp()}] 🔄 Sending OAuth token exchange request for bot ${botId}`);
       tokenResponse = await axios.post('https://api.instagram.com/oauth/access_token', new URLSearchParams({
         client_id: '2288330081539329',
-        client_secret: process.env.INSTAGRAM_APP_SECRET || '2b9ad161ae42d821095ed15d5ff94c87',
+        client_secret: process.env.INSTAGRAM_APP_SECRET,
         grant_type: 'authorization_code',
         redirect_uri: redirectUri,
         code: code,
