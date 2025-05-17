@@ -23,11 +23,7 @@ const botSchema = new mongoose.Schema({
   instagramMessageEditsEnabled: { type: Boolean, default: true },
   instagramInboxLabelsEnabled: { type: Boolean, default: true },
   instagramCommentsRepliesEnabled: { type: Boolean, default: true },
-  workingHours: {
-    start: { type: String, default: '09:00' },
-    end: { type: String, default: '17:00' },
-  },
-  lastInstagramTokenRefresh: { type: Date }, // حقل جديد لتسجيل آخر تجديد لتوكن إنستجرام
+  lastInstagramTokenRefresh: { type: Date },
   createdAt: { type: Date, default: Date.now },
 });
 
