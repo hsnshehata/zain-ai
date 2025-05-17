@@ -137,14 +137,6 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
 
-    // Load Facebook SDK
-    const fbScript = document.createElement("script");
-    fbScript.src = "https://connect.facebook.net/en_US/sdk.js";
-    fbScript.async = true;
-    fbScript.defer = true;
-    fbScript.crossOrigin = "anonymous";
-    document.head.appendChild(fbScript);
-
     const loadingSpinner = document.getElementById("loadingSpinner");
     const errorMessage = document.getElementById("errorMessage");
     const settingsContainer = document.getElementById("facebookSettingsContainer");
@@ -247,13 +239,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
           if (pageData.name) {
             console.log(`تم جلب بيانات الصفحة بنجاح:`, pageData);
+            // إضافة تاريخ الربط وتعديل زرار الإلغاء عشان يبقى زي إنستجرام
             pageStatus.innerHTML = `
               <div style="display: inline-block; color: green;">
                 <strong>حالة الربط:</strong> مربوط ✅<br>
                 <strong>اسم الصفحة:</strong> ${pageData.name}<br>
-                <strong>معرف الصفحة:</strong> ${bot.facebookPageId}
+                <strong>معرف الصفحة:</strong> ${bot.facebookPageId}<br>
+                <strong>تاريخ الربط:</strong> ${new Date(bot.lastInstagramTokenRefresh).toLocaleString('ar-EG')}
               </div>
-              <button id="unlinkFacebookBtn" class="btn btn-danger" style="margin-left: 10px;">إلغاء الربط</button>
+              <button id="unlinkFacebookBtn" class="btn btn-danger" style="margin-left: 10px; background-color: #dc3545; border-color: #dc3545;">إلغاء الربط</button>
             `;
             instructionsContainer.style.display = "none";
 
@@ -351,6 +345,14 @@ document.addEventListener("DOMContentLoaded", () => {
         version: 'v20.0'
       });
     };
+
+    // Load Facebook SDK
+    const fbScript = document.createElement("script");
+    fbScript.src = "https://connect.facebook.net/en_US/sdk.js";
+    fbScript.async = true;
+    fbScript.defer = true;
+    fbScript.crossOrigin = "anonymous";
+    document.head.appendChild(fbScript);
 
     function loginWithFacebook() {
       // First, check the login status
