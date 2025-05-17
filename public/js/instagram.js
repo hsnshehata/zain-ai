@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="header-actions">
           <button id="connectInstagramBtn" class="btn btn-primary"><i class="fab fa-instagram"></i> ربط حسابك على إنستجرام</button>
-          <button id="refreshInstagramTokenBtn" class="btn btn-secondary" style="display: none; margin-left: 10px;"><i class="fas fa-sync-alt"></i> تجديد التوكن</button>
+          <button id="unlinkInstagramBtn" class="btn btn-danger" style="display: none; margin-left: 10px;"><i class="fas fa-unlink"></i> إلغاء ربط الحساب</button>
           <div id="pageStatus" class="page-status" style="margin-left: 20px;"></div>
         </div>
       </div>
@@ -147,7 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const settingsContainer = document.getElementById("instagramSettingsContainer");
     const instructionsContainer = document.getElementById("instructionsContainer");
     const connectInstagramBtn = document.getElementById("connectInstagramBtn");
-    const refreshInstagramTokenBtn = document.getElementById("refreshInstagramTokenBtn");
+    const unlinkInstagramBtn = document.getElementById("unlinkInstagramBtn");
     const pageStatus = document.getElementById("pageStatus");
 
     // Toggle elements
@@ -228,7 +228,9 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           `;
           instructionsContainer.style.display = "block";
-          refreshInstagramTokenBtn.style.display = "none";
+          unlinkInstagramBtn.style.display = "none";
+          connectInstagramBtn.textContent = "ربط حسابك على إنستجرام";
+          connectInstagramBtn.innerHTML = '<i class="fab fa-instagram"></i> ربط حسابك على إنستجرام';
           return;
         }
 
@@ -249,23 +251,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 <strong>معرف الحساب:</strong> ${bot.instagramPageId}
             `;
 
-            // عرض حالة التوكن (تاريخ آخر تجديد وتاريخ الانتهاء)
+            // عرض حالة التوكن (تاريخ آخر تجديد)
             if (bot.lastInstagramTokenRefresh) {
               const lastRefreshDate = new Date(bot.lastInstagramTokenRefresh).toLocaleString('ar-EG');
-              statusHtml += `<br><strong>آخر تجديد للتوكن:</strong> ${lastRefreshDate}`;
-            }
-
-            // جلب مدة الصلاحية من localStorage لو موجودة
-            const tokenExpiry = localStorage.getItem(`tokenExpiry_${botId}`);
-            if (tokenExpiry) {
-              const expiryDate = new Date(parseInt(tokenExpiry)).toLocaleString('ar-EG');
-              statusHtml += `<br><strong>تاريخ انتهاء التوكن:</strong> ${expiryDate}`;
+              statusHtml += `<br><strong>آخر ربط للحساب:</strong> ${lastRefreshDate}`;
             }
 
             statusHtml += `</div>`;
             pageStatus.innerHTML = statusHtml;
             instructionsContainer.style.display = "none";
-            refreshInstagramTokenBtn.style.display = "inline-block"; // إظهار زر التجديد
+            unlinkInstagramBtn.style.display = "inline-block";
+            connectInstagramBtn.textContent = "إعادة ربط الحساب";
+            connectInstagramBtn.innerHTML = '<i class="fab fa-instagram"></i> إعادة ربط الحساب';
           } else {
             console.log(`فشل في جلب بيانات الحساب:`, pageData);
             pageStatus.innerHTML = `
@@ -275,7 +272,9 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
             `;
             instructionsContainer.style.display = "block";
-            refreshInstagramTokenBtn.style.display = "none";
+            unlinkInstagramBtn.style.display = "none";
+            connectInstagramBtn.textContent = "ربط حسابك على إنستجرام";
+            connectInstagramBtn.innerHTML = '<i class="fab fa-instagram"></i> ربط حسابك على إنستجرام';
           }
         } else {
           console.log(`البوت مش مرتبط بحساب إنستجرام`);
@@ -285,7 +284,9 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           `;
           instructionsContainer.style.display = "block";
-          refreshInstagramTokenBtn.style.display = "none";
+          unlinkInstagramBtn.style.display = "none";
+          connectInstagramBtn.textContent = "ربط حسابك على إنستجرام";
+          connectInstagramBtn.innerHTML = '<i class="fab fa-instagram"></i> ربط حسابك على إنستجرام';
         }
       } catch (err) {
         console.error('Error loading page status:', err);
@@ -296,7 +297,9 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `;
         instructionsContainer.style.display = "block";
-        refreshInstagramTokenBtn.style.display = "none";
+        unlinkInstagramBtn.style.display = "none";
+        connectInstagramBtn.textContent = "ربط حسابك على إنستجرام";
+        connectInstagramBtn.innerHTML = '<i class="fab fa-instagram"></i> ربط حسابك على إنستجرام';
       }
     }
 
@@ -325,6 +328,39 @@ document.addEventListener("DOMContentLoaded", () => {
       const authUrl = `https://www.instagram.com/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${REDIRECT_URI}&scope=${SCOPES}&response_type=code`;
       console.log('Opening Instagram OAuth URL in same page:', authUrl);
       window.location.href = authUrl;
+    }
+
+    // Handle unlinking Instagram account
+    async function unlinkInstagramAccount() {
+      loadingSpinner.style.display = "flex";
+      errorMessage.style.display = "none";
+
+      try {
+        const response = await handleApiRequest(`/api/bots/${selectedBotId}/unlink-instagram`, {
+          method: 'POST',
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }, errorMessage, "فشل في إلغاء ربط الحساب");
+
+        if (response.message) {
+          console.log('Account unlinked successfully:', response);
+          errorMessage.textContent = "تم إلغاء ربط الحساب بنجاح!";
+          errorMessage.style.color = "green";
+          errorMessage.style.display = "block";
+          await loadPageStatus(selectedBotId); // تحديث حالة الصفحة
+        } else {
+          throw new Error('فشل في إلغاء ربط الحساب');
+        }
+      } catch (err) {
+        console.error('Error unlinking account:', err);
+        errorMessage.textContent = 'خطأ أثناء إلغاء ربط الحساب: ' + (err.message || 'غير معروف');
+        errorMessage.style.color = "red";
+        errorMessage.style.display = "block";
+      } finally {
+        loadingSpinner.style.display = "none";
+      }
     }
 
     // Check for OAuth code in URL and send it to backend
@@ -367,52 +403,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // Handle manual token refresh
-    async function refreshInstagramToken() {
-      loadingSpinner.style.display = "flex";
-      errorMessage.style.display = "none";
-
-      try {
-        const response = await handleApiRequest(`/api/bots/${selectedBotId}/refresh-instagram-token`, {
-          method: 'POST',
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }, errorMessage, "فشل في تجديد التوكن");
-
-        if (response.success) {
-          console.log('Token refreshed successfully:', response);
-          // حفظ تاريخ انتهاء التوكن في localStorage لو موجود
-          if (response.expires_in) {
-            const expiryDate = new Date().getTime() + response.expires_in * 1000; // تحويل الثواني لمللي ثانية
-            localStorage.setItem(`tokenExpiry_${selectedBotId}`, expiryDate);
-          }
-          errorMessage.textContent = "تم تجديد التوكن بنجاح!";
-          errorMessage.style.color = "green";
-          errorMessage.style.display = "block";
-          await loadPageStatus(selectedBotId); // تحديث حالة التوكن
-        } else {
-          throw new Error(response.message || 'فشل في تجديد التوكن');
-        }
-      } catch (err) {
-        console.error('Error refreshing token:', err);
-        errorMessage.textContent = err.message;
-        errorMessage.style.color = "red";
-        errorMessage.style.display = "block";
-        // لو التوكن مش صالح، نعرض زر الربط
-        if (err.message.includes('يرجى إعادة ربط الحساب')) {
-          instructionsContainer.style.display = "block";
-          refreshInstagramTokenBtn.style.display = "none";
-        }
-      } finally {
-        loadingSpinner.style.display = "none";
-      }
-    }
-
     // --- Event Listeners ---
     connectInstagramBtn.addEventListener("click", loginWithInstagram);
-    refreshInstagramTokenBtn.addEventListener("click", refreshInstagramToken);
+    unlinkInstagramBtn.addEventListener("click", unlinkInstagramAccount);
 
     toggles.forEach(toggle => {
       toggle.addEventListener("change", (e) => {
