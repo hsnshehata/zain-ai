@@ -1,9 +1,11 @@
 const express = require('express');
-const cors = require('cors');
+const mongoose = require('mongoose');
+const dotenv = require('dotenv');
 const path = require('path');
+const cors = require('cors');
+const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const facebookRoutes = require('./routes/facebook');
-const instagramRoutes = require('./routes/instagram');
 const webhookRoutes = require('./routes/webhook');
 const authRoutes = require('./routes/auth');
 const botsRoutes = require('./routes/bots');
@@ -65,6 +67,7 @@ app.use((req, res, next) => {
   // للملفات الثابتة (CSS, JS, صور)، السماح بالتخزين لمدة 5 دقايق
   else if (req.path.match(/\.(css|js|png|jpg|jpeg|gif|ico|json)$/i)) {
     res.setHeader('Cache-Control', 'public, max-age=300');
+    res.setHeader('Content-Type', req.path.match(/\.css$/i) ? 'text/css' : undefined); // ضمان إن الـ MIME type بتاع CSS صح
   }
   next();
 });
@@ -88,7 +91,6 @@ app.get('/api/config', (req, res) => {
 // Routes
 app.use('/api/webhook', webhookRoutes);
 app.use('/api/bots', facebookRoutes);
-app.use('/api/bots', instagramRoutes);
 app.use('/api/bots', botsRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users', usersRoutes);
