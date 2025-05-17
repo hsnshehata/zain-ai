@@ -118,16 +118,6 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
             <div class="setting-item toggle-item">
               <div class="setting-info">
-                <h4>تصنيفات المحادثات (Labels)</h4>
-                <p>تسمح للبوت بوضع تصنيفات وتعديل حالات المحادثة.</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" id="instagramInboxLabelsToggle" data-setting-key="instagramInboxLabelsEnabled">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="setting-item toggle-item">
-              <div class="setting-info">
                 <h4>الرد على التعليقات (Comments)</h4>
                 <p>تسمح للبوت بالرد على تعليقات المستخدمين على منشورات الحساب بنفس طريقة الرد على الرسائل.</p>
               </div>
@@ -172,7 +162,6 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const response = await fetch(url, options);
         if (!response.ok) {
-          // التحقق لو الرد مش JSON
           const contentType = response.headers.get("content-type");
           if (!contentType || !contentType.includes("application/json")) {
             throw new Error("الرد غير متوقع (مش JSON). يمكن إن الـ endpoint مش موجود.");
@@ -409,17 +398,30 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // --- Event Listeners ---
-    connectInstagramBtn.addEventListener("click", loginWithInstagram);
-    unlinkInstagramBtn.addEventListener("click", unlinkInstagramAccount);
+    if (connectInstagramBtn) {
+      connectInstagramBtn.addEventListener("click", loginWithInstagram);
+    } else {
+      console.error("❌ connectInstagramBtn is not found in the DOM");
+    }
+
+    if (unlinkInstagramBtn) {
+      unlinkInstagramBtn.addEventListener("click", unlinkInstagramAccount);
+    } else {
+      console.error("❌ unlinkInstagramBtn is not found in the DOM");
+    }
 
     toggles.forEach(toggle => {
-      toggle.addEventListener("change", (e) => {
-        const key = e.target.dataset.settingKey;
-        const value = e.target.checked;
-        if (key) {
-          updateWebhookSetting(selectedBotId, key, value);
-        }
-      });
+      if (toggle) {
+        toggle.addEventListener("change", (e) => {
+          const key = e.target.dataset.settingKey;
+          const value = e.target.checked;
+          if (key) {
+            updateWebhookSetting(selectedBotId, key, value);
+          }
+        });
+      } else {
+        console.error("❌ A toggle element is not found in the DOM");
+      }
     });
 
     // --- Initial Load ---
