@@ -353,6 +353,36 @@ exports.unlinkFacebookPage = async (req, res) => {
   }
 };
 
+// إلغاء ربط حساب إنستجرام
+exports.unlinkInstagramAccount = async (req, res) => {
+  try {
+    const botId = req.params.id;
+    const bot = await Bot.findById(botId);
+    if (!bot) {
+      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      return res.status(404).json({ message: 'البوت غير موجود' });
+    }
+
+    // التحقق من الصلاحيات: السوبر أدمن يقدر يعدل أي بوت، غير كده لازم يكون صاحب البوت
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
+      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا البوت' });
+    }
+
+    // إلغاء ربط حساب إنستجرام
+    bot.instagramApiKey = '';
+    bot.instagramPageId = '';
+    bot.lastInstagramTokenRefresh = null; // إزالة تاريخ التجديد
+    await bot.save();
+
+    console.log(`[${getTimestamp()}] ✅ تم إلغاء ربط حساب إنستجرام بنجاح | Bot ID: ${botId}`);
+    res.status(200).json({ message: 'تم إلغاء ربط حساب الإنستجرام بنجاح' });
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ خطأ في إلغاء ربط حساب إنستجرام:`, err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
+  }
+};
+
 // ربط صفحة فيسبوك أو إنستجرام بالبوت
 exports.linkSocialPage = async (req, res) => {
   try {
@@ -539,79 +569,6 @@ exports.exchangeInstagramCode = async (req, res) => {
     res.status(200).json({ success: true, message: 'تم ربط حساب الإنستجرام بنجاح' });
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ خطأ في تبادل OAuth code:`, err.message, err.stack);
-    res.status(500).json({ success: false, message: 'خطأ في السيرفر: ' + err.message });
-  }
-};
-
-// تجديد Instagram Long-Lived Token
-exports.refreshInstagramToken = async (req, res) => {
-  try {
-    const botId = req.params.id;
-
-    const bot = await Bot.findById(botId);
-    if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
-      return res.status(404).json({ success: false, message: 'البوت غير موجود' });
-    }
-
-    // التحقق من الصلاحيات
-    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
-      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
-      return res.status(403).json({ success: false, message: 'غير مصرح لك بتعديل هذا البوت' });
-    }
-
-    const currentToken = bot.instagramApiKey;
-    if (!currentToken) {
-      console.log(`[${getTimestamp()}] ⚠️ لا يوجد توكن إنستجرام لتجديده | Bot ID: ${botId}`);
-      return res.status(400).json({ success: false, message: 'لا يوجد توكن إنستجرام لتجديده' });
-    }
-
-    // طلب تجديد التوكن
-    let refreshResponse;
-    try {
-      refreshResponse = await axios.get(
-        `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${currentToken}`
-      );
-    } catch (err) {
-      console.error(`[${getTimestamp()}] ❌ خطأ في تجديد توكن إنستجرام | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
-      // التحقق لو الخطأ بسبب توكن مش صالح
-      if (err.response?.data?.error?.code === 452) {
-        return res.status(400).json({ 
-          success: false, 
-          message: 'التوكن غير صالح. يرجى إعادة ربط الحساب من لوحة التحكم.' 
-        });
-      }
-      return res.status(500).json({ 
-        success: false, 
-        message: 'خطأ في تجديد التوكن: ' + (err.response?.data?.error?.message || err.message) 
-      });
-    }
-
-    if (!refreshResponse.data.access_token) {
-      console.log(`[${getTimestamp()}] ❌ فشل في تجديد توكن إنستجرام | Bot ID: ${botId} | Response:`, refreshResponse.data);
-      return res.status(400).json({ 
-        success: false, 
-        message: 'فشل في تجديد التوكن: ' + (refreshResponse.data.error?.message || 'غير معروف') 
-      });
-    }
-
-    const newToken = refreshResponse.data.access_token;
-    const expiresIn = refreshResponse.data.expires_in;
-
-    // تحديث التوكن في البوت
-    bot.instagramApiKey = newToken;
-    bot.lastInstagramTokenRefresh = new Date(); // تحديث تاريخ التجديد
-    await bot.save();
-
-    console.log(`[${getTimestamp()}] ✅ تم تجديد توكن إنستجرام بنجاح | Bot ID: ${botId} | New Token: ${newToken.slice(0, 10)}... | Expires In: ${expiresIn} seconds`);
-
-    res.status(200).json({
-      success: true,
-      message: 'تم تجديد توكن إنستجرام بنجاح',
-      expires_in: expiresIn
-    });
-  } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في تجديد توكن إنستجرام:`, err.message, err.stack);
     res.status(500).json({ success: false, message: 'خطأ في السيرفر: ' + err.message });
   }
 };
