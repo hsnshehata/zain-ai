@@ -59,8 +59,54 @@ const handleMessage = async (req, res) => {
           continue;
         }
 
+        // معالجة رسائل الترحيب (messaging_optins)
+        if (webhookEvent.optin && bot.messagingOptinsEnabled) {
+          console.log(`📩 Processing opt-in event from ${senderPsid}`);
+          const welcomeMessage = bot.welcomeMessage || 'مرحبًا! كيف يمكنني مساعدتك اليوم؟';
+          await sendMessage(senderPsid, welcomeMessage, bot.facebookApiKey);
+          continue;
+        } else if (webhookEvent.optin && !bot.messagingOptinsEnabled) {
+          console.log(`⚠️ Opt-in messages disabled for bot ${bot.name} (ID: ${bot._id}), skipping opt-in processing.`);
+          continue;
+        }
+
+        // معالجة ردود الفعل (message_reactions)
+        if (webhookEvent.reaction && bot.messageReactionsEnabled) {
+          console.log(`📩 Processing reaction event from ${senderPsid}: ${webhookEvent.reaction.reaction}`);
+          const responseText = `شكرًا على تفاعلك (${webhookEvent.reaction.reaction})!`;
+          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
+          continue;
+        } else if (webhookEvent.reaction && !bot.messageReactionsEnabled) {
+          console.log(`⚠️ Message reactions disabled for bot ${bot.name} (ID: ${bot._id}), skipping reaction processing.`);
+          continue;
+        }
+
+        // معالجة تتبع المصدر (messaging_referrals)
+        if (webhookEvent.referral && bot.messagingReferralsEnabled) {
+          console.log(`📩 Processing referral event from ${senderPsid}: ${webhookEvent.referral.ref}`);
+          const responseText = `مرحبًا! وصلتني من ${webhookEvent.referral.source}، كيف يمكنني مساعدتك؟`;
+          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
+          continue;
+        } else if (webhookEvent.referral && !bot.messagingReferralsEnabled) {
+          console.log(`⚠️ Messaging referrals disabled for bot ${bot.name} (ID: ${bot._id}), skipping referral processing.`);
+          continue;
+        }
+
+        // معالجة تعديلات الرسائل (message_edits)
+        if (webhookEvent.message_edit && bot.messageEditsEnabled) {
+          const editedMessage = webhookEvent.message_edit.message;
+          const mid = editedMessage.mid || `temp_${Date.now()}`;
+          console.log(`📩 Processing message edit event from ${senderPsid}: ${editedMessage.text}`);
+          const responseText = await processMessage(bot._id, senderPsid, editedMessage.text, false, false, mid);
+          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
+          continue;
+        } else if (webhookEvent.message_edit && !bot.messageEditsEnabled) {
+          console.log(`⚠️ Message edits disabled for bot ${bot.name} (ID: ${bot._id}), skipping message edit processing.`);
+          continue;
+        }
+
         // التعامل مع الرسائل العادية
-        if (webhookEvent.message && !webhookEvent.message_edit) {
+        if (webhookEvent.message) {
           const message = webhookEvent.message;
           const mid = message.mid || `temp_${Date.now()}`;
           const messageContent = message.text || (message.attachments ? JSON.stringify(message.attachments) : 'رسالة غير نصية');
