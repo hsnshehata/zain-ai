@@ -64,6 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="header-actions">
           <button id="connectInstagramBtn" class="btn btn-primary"><i class="fab fa-instagram"></i> ربط حسابك على إنستجرام</button>
+          <button id="refreshInstagramTokenBtn" class="btn btn-secondary" style="display: none; margin-left: 10px;"><i class="fas fa-sync-alt"></i> تجديد التوكن</button>
           <div id="pageStatus" class="page-status" style="margin-left: 20px;"></div>
         </div>
       </div>
@@ -146,6 +147,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const settingsContainer = document.getElementById("instagramSettingsContainer");
     const instructionsContainer = document.getElementById("instructionsContainer");
     const connectInstagramBtn = document.getElementById("connectInstagramBtn");
+    const refreshInstagramTokenBtn = document.getElementById("refreshInstagramTokenBtn");
     const pageStatus = document.getElementById("pageStatus");
 
     // Toggle elements
@@ -226,6 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           `;
           instructionsContainer.style.display = "block";
+          refreshInstagramTokenBtn.style.display = "none";
           return;
         }
 
@@ -239,14 +242,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
           if (pageData.username) {
             console.log(`تم جلب بيانات الحساب بنجاح:`, pageData);
-            pageStatus.innerHTML = `
+            let statusHtml = `
               <div style="display: inline-block; color: green;">
                 <strong>حالة الربط:</strong> مربوط ✅<br>
                 <strong>اسم الحساب:</strong> ${pageData.username}<br>
                 <strong>معرف الحساب:</strong> ${bot.instagramPageId}
-              </div>
             `;
+
+            // عرض حالة التوكن (تاريخ آخر تجديد)
+            if (bot.lastInstagramTokenRefresh) {
+              const lastRefreshDate = new Date(bot.lastInstagramTokenRefresh).toLocaleString('ar-EG');
+              statusHtml += `<br><strong>آخر تجديد للتوكن:</strong> ${lastRefreshDate}`;
+            }
+
+            statusHtml += `</div>`;
+            pageStatus.innerHTML = statusHtml;
             instructionsContainer.style.display = "none";
+            refreshInstagramTokenBtn.style.display = "inline-block"; // إظهار زر التجديد
           } else {
             console.log(`فشل في جلب بيانات الحساب:`, pageData);
             pageStatus.innerHTML = `
@@ -256,6 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
             `;
             instructionsContainer.style.display = "block";
+            refreshInstagramTokenBtn.style.display = "none";
           }
         } else {
           console.log(`البوت مش مرتبط بحساب إنستجرام`);
@@ -265,6 +278,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </div>
           `;
           instructionsContainer.style.display = "block";
+          refreshInstagramTokenBtn.style.display = "none";
         }
       } catch (err) {
         console.error('Error loading page status:', err);
@@ -275,6 +289,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
         `;
         instructionsContainer.style.display = "block";
+        refreshInstagramTokenBtn.style.display = "none";
       }
     }
 
@@ -345,8 +360,42 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    // Handle manual token refresh
+    async function refreshInstagramToken() {
+      loadingSpinner.style.display = "flex";
+      errorMessage.style.display = "none";
+
+      try {
+        const response = await handleApiRequest(`/api/bots/${selectedBotId}/refresh-instagram-token`, {
+          method: 'POST',
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }, errorMessage, "فشل في تجديد التوكن");
+
+        if (response.success) {
+          console.log('Token refreshed successfully:', response);
+          errorMessage.textContent = "تم تجديد التوكن بنجاح!";
+          errorMessage.style.color = "green";
+          errorMessage.style.display = "block";
+          await loadPageStatus(selectedBotId); // تحديث حالة التوكن
+        } else {
+          throw new Error(response.message || 'فشل في تجديد التوكن');
+        }
+      } catch (err) {
+        console.error('Error refreshing token:', err);
+        errorMessage.textContent = 'خطأ أثناء تجديد التوكن: ' + (err.message || 'غير معروف');
+        errorMessage.style.color = "red";
+        errorMessage.style.display = "block";
+      } finally {
+        loadingSpinner.style.display = "none";
+      }
+    }
+
     // --- Event Listeners ---
     connectInstagramBtn.addEventListener("click", loginWithInstagram);
+    refreshInstagramTokenBtn.addEventListener("click", refreshInstagramToken);
 
     toggles.forEach(toggle => {
       toggle.addEventListener("change", (e) => {
