@@ -1,3 +1,5 @@
+// public/js/facebook.js
+
 document.addEventListener("DOMContentLoaded", () => {
   async function loadFacebookPage() {
     const link = document.createElement("link");
@@ -160,13 +162,19 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const response = await fetch(url, options);
         if (!response.ok) {
+          const contentType = response.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) {
+            throw new Error("الرد غير متوقع (مش JSON). يمكن إن الـ endpoint مش موجود.");
+          }
           const errorData = await response.json();
           throw new Error(errorData.message || defaultErrorMessage);
         }
         return await response.json();
       } catch (err) {
-        errorElement.textContent = err.message;
-        errorElement.style.display = "block";
+        if (errorElement) {
+          errorElement.textContent = err.message;
+          errorElement.style.display = "block";
+        }
         throw err;
       }
     }
@@ -191,7 +199,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         settingsContainer.style.display = "grid";
       } catch (err) {
-        // الخطأ تم التعامل معه في handleApiRequest
+        errorMessage.textContent = "خطأ في تحميل الإعدادات: " + (err.message || "غير معروف");
+        errorMessage.style.display = "block";
       } finally {
         loadingSpinner.style.display = "none";
       }
@@ -212,7 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <strong>السبب:</strong> البوت غير موجود أو تم حذفه
             </div>
           `;
-          instructionsContainer.style.display = "block"; // Show instructions if bot is not linked
+          instructionsContainer.style.display = "block";
           return;
         }
 
@@ -234,28 +243,37 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
               <button id="unlinkFacebookBtn" class="btn btn-danger" style="margin-left: 10px;">إلغاء الربط</button>
             `;
-            instructionsContainer.style.display = "none"; // Hide instructions if bot is linked
+            instructionsContainer.style.display = "none";
 
             // Add event listener for unlink button
             const unlinkFacebookBtn = document.getElementById("unlinkFacebookBtn");
-            unlinkFacebookBtn.addEventListener("click", async () => {
-              if (confirm("هل أنت متأكد أنك تريد إلغاء ربط هذه الصفحة؟")) {
-                try {
-                  await handleApiRequest(`/api/bots/${botId}/unlink-facebook`, {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: `Bearer ${token}`,
-                    },
-                  }, errorMessage, "فشل في إلغاء ربط الصفحة");
+            if (unlinkFacebookBtn) {
+              unlinkFacebookBtn.addEventListener("click", async () => {
+                if (confirm("هل أنت متأكد أنك تريد إلغاء ربط هذه الصفحة؟")) {
+                  try {
+                    await handleApiRequest(`/api/bots/${botId}/unlink-facebook`, {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
+                      },
+                    }, errorMessage, "فشل في إلغاء ربط الصفحة");
 
-                  alert("تم إلغاء ربط الصفحة بنجاح!");
-                  await loadPageStatus(botId);
-                } catch (err) {
-                  console.error('❌ خطأ في إلغاء الربط:', err);
+                    errorMessage.textContent = "تم إلغاء ربط الصفحة بنجاح!";
+                    errorMessage.style.color = "green";
+                    errorMessage.style.display = "block";
+                    await loadPageStatus(botId);
+                  } catch (err) {
+                    console.error('❌ خطأ في إلغاء الربط:', err);
+                    errorMessage.textContent = 'خطأ في إلغاء الربط: ' + (err.message || 'غير معروف');
+                    errorMessage.style.color = "red";
+                    errorMessage.style.display = "block";
+                  }
                 }
-              }
-            });
+              });
+            } else {
+              console.error("❌ unlinkFacebookBtn is not found in the DOM");
+            }
           } else {
             console.log(`فشل في جلب بيانات الصفحة:`, pageData);
             pageStatus.innerHTML = `
@@ -264,16 +282,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 <strong>السبب:</strong> فشل في جلب بيانات الصفحة (التوكن قد يكون غير صالح أو منتهي)
               </div>
             `;
-            instructionsContainer.style.display = "block"; // Show instructions if bot is not linked
+            instructionsContainer.style.display = "block";
           }
         } else {
-          console.log(`البوت مش مرتبط بصفحة`);
+          console.log(`البوت مش مرتبط بصفحة فيسبوك`);
           pageStatus.innerHTML = `
             <div style="display: inline-block; color: red;">
               <strong>حالة الربط:</strong> غير مربوط ❌
             </div>
           `;
-          instructionsContainer.style.display = "block"; // Show instructions if bot is not linked
+          instructionsContainer.style.display = "block";
         }
       } catch (err) {
         console.error('Error loading page status:', err);
@@ -283,38 +301,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <strong>السبب:</strong> خطأ في جلب بيانات البوت: ${err.message || 'غير معروف'}
           </div>
         `;
-        instructionsContainer.style.display = "block"; // Show instructions if bot is not linked
-      }
-    }
-
-    async function saveApiKeys(botId, facebookApiKey, facebookPageId) {
-      errorMessage.style.display = "none";
-
-      if (!facebookApiKey || !facebookPageId) {
-        errorMessage.textContent = "فشل حفظ معلومات الربط: مفتاح API أو معرف الصفحة غير موجود";
-        errorMessage.style.display = "block";
-        return;
-      }
-
-      console.log('البيانات المرسلة:', { facebookApiKey, facebookPageId });
-
-      try {
-        const saveResponse = await handleApiRequest(`/api/bots/${botId}/link-social`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ facebookApiKey, facebookPageId }),
-        }, errorMessage, "فشل حفظ معلومات الربط");
-
-        console.log('✅ التوكن تم حفظه بنجاح:', facebookApiKey.slice(0, 10) + '...');
-        alert("تم ربط الصفحة بنجاح!");
-        await loadPageStatus(botId);
-      } catch (err) {
-        console.error('❌ خطأ في حفظ التوكن:', err);
-        errorMessage.textContent = 'خطأ في حفظ التوكن: ' + (err.message || 'غير معروف');
-        errorMessage.style.display = 'block';
+        instructionsContainer.style.display = "block";
       }
     }
 
@@ -418,23 +405,28 @@ document.addEventListener("DOMContentLoaded", () => {
             btn.addEventListener("click", () => modal.remove());
           });
 
-          document.getElementById("confirmPageBtn").addEventListener("click", () => {
-            const pageSelect = document.getElementById("pageSelect");
-            const selectedPageId = pageSelect.value;
-            const selectedOption = pageSelect.options[pageSelect.selectedIndex];
-            const accessToken = selectedOption.dataset.token;
+          const confirmPageBtn = document.getElementById("confirmPageBtn");
+          if (confirmPageBtn) {
+            confirmPageBtn.addEventListener("click", () => {
+              const pageSelect = document.getElementById("pageSelect");
+              const selectedPageId = pageSelect.value;
+              const selectedOption = pageSelect.options[pageSelect.selectedIndex];
+              const accessToken = selectedOption.dataset.token;
 
-            if (!selectedPageId || !accessToken) {
-              errorMessage.textContent = 'يرجى اختيار صفحة لربطها بالبوت';
-              errorMessage.style.display = 'block';
+              if (!selectedPageId || !accessToken) {
+                errorMessage.textContent = 'يرجى اختيار صفحة لربطها بالبوت';
+                errorMessage.style.display = 'block';
+                modal.remove();
+                return;
+              }
+
+              console.log('بيانات الصفحة المختارة:', { access_token: accessToken, page_id: selectedPageId });
+              saveApiKeys(selectedBotId, accessToken, selectedPageId);
               modal.remove();
-              return;
-            }
-
-            console.log('بيانات الصفحة المختارة:', { access_token: accessToken, page_id: selectedPageId });
-            saveApiKeys(selectedBotId, accessToken, selectedPageId);
-            modal.remove();
-          });
+            });
+          } else {
+            console.error("❌ confirmPageBtn is not found in the DOM");
+          }
         } else {
           errorMessage.textContent = 'خطأ في جلب الصفحات: ' + (response.error.message || 'غير معروف');
           errorMessage.style.display = 'block';
@@ -442,17 +434,60 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
+    async function saveApiKeys(botId, facebookApiKey, facebookPageId) {
+      errorMessage.style.display = "none";
+      loadingSpinner.style.display = "flex";
+
+      if (!facebookApiKey || !facebookPageId) {
+        loadingSpinner.style.display = "none";
+        errorMessage.textContent = "فشل حفظ معلومات الربط: مفتاح API أو معرف الصفحة غير موجود";
+        errorMessage.style.display = "block";
+        return;
+      }
+
+      console.log('البيانات المرسلة:', { facebookApiKey, facebookPageId });
+
+      try {
+        const saveResponse = await handleApiRequest(`/api/bots/${botId}/link-social`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ facebookApiKey, facebookPageId }),
+        }, errorMessage, "فشل حفظ معلومات الربط");
+
+        console.log('✅ التوكن تم حفظه بنجاح:', facebookApiKey.slice(0, 10) + '...');
+        errorMessage.textContent = "تم ربط الصفحة بنجاح!";
+        errorMessage.style.color = "green";
+        errorMessage.style.display = "block";
+        await loadPageStatus(botId);
+      } catch (err) {
+        console.error('❌ خطأ في حفظ التوكن:', err);
+      } finally {
+        loadingSpinner.style.display = "none";
+      }
+    }
+
     // --- Event Listeners ---
-    connectFacebookBtn.addEventListener("click", loginWithFacebook);
+    if (connectFacebookBtn) {
+      connectFacebookBtn.addEventListener("click", loginWithFacebook);
+    } else {
+      console.error("❌ connectFacebookBtn is not found in the DOM");
+    }
 
     toggles.forEach(toggle => {
-      toggle.addEventListener("change", (e) => {
-        const key = e.target.dataset.settingKey;
-        const value = e.target.checked;
-        if (key) {
-          updateWebhookSetting(selectedBotId, key, value);
-        }
-      });
+      if (toggle) {
+        toggle.addEventListener("change", (e) => {
+          const key = e.target.dataset.settingKey;
+          const value = e.target.checked;
+          if (key) {
+            updateWebhookSetting(selectedBotId, key, value);
+          }
+        });
+      } else {
+        console.error("❌ A toggle element is not found in the DOM");
+      }
     });
 
     // --- Initial Load ---
