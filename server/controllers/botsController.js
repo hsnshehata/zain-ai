@@ -574,12 +574,25 @@ exports.refreshInstagramToken = async (req, res) => {
       );
     } catch (err) {
       console.error(`[${getTimestamp()}] ❌ خطأ في تجديد توكن إنستجرام | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
-      return res.status(500).json({ success: false, message: 'خطأ في تجديد التوكن: ' + (err.response?.data?.error?.message || err.message) });
+      // التحقق لو الخطأ بسبب توكن مش صالح
+      if (err.response?.data?.error?.code === 452) {
+        return res.status(400).json({ 
+          success: false, 
+          message: 'التوكن غير صالح. يرجى إعادة ربط الحساب من لوحة التحكم.' 
+        });
+      }
+      return res.status(500).json({ 
+        success: false, 
+        message: 'خطأ في تجديد التوكن: ' + (err.response?.data?.error?.message || err.message) 
+      });
     }
 
     if (!refreshResponse.data.access_token) {
       console.log(`[${getTimestamp()}] ❌ فشل في تجديد توكن إنستجرام | Bot ID: ${botId} | Response:`, refreshResponse.data);
-      return res.status(400).json({ success: false, message: 'فشل في تجديد التوكن: ' + (refreshResponse.data.error?.message || 'غير معروف') });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'فشل في تجديد التوكن: ' + (refreshResponse.data.error?.message || 'غير معروف') 
+      });
     }
 
     const newToken = refreshResponse.data.access_token;
