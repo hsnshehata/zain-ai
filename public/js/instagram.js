@@ -228,13 +228,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
           if (accountData.username) {
             console.log(`تم جلب بيانات الحساب بنجاح:`, accountData);
+            // إرجاع تاريخ الربط وشكل زرار الإلغاء زي ما كان
             accountStatus.innerHTML = `
               <div style="display: inline-block; color: green;">
                 <strong>حالة الربط:</strong> مربوط ✅<br>
                 <strong>اسم الحساب:</strong> ${accountData.username}<br>
-                <strong>معرف الحساب:</strong> ${bot.instagramPageId}
+                <strong>معرف الحساب:</strong> ${bot.instagramPageId}<br>
+                <strong>تاريخ الربط:</strong> ${new Date(bot.lastInstagramTokenRefresh).toLocaleString('ar-EG')}
               </div>
-              <button id="unlinkInstagramBtn" class="btn btn-danger" style="margin-left: 10px;">إلغاء الربط</button>
+              <button id="unlinkInstagramBtn" class="btn btn-danger" style="margin-left: 10px; background-color: #dc3545; border-color: #dc3545;">إلغاء الربط</button>
             `;
             instructionsContainer.style.display = "none";
 
