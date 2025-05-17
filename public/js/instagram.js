@@ -271,7 +271,7 @@ document.addEventListener("DOMContentLoaded", () => {
             pageStatus.innerHTML = `
               <div style="display: inline-block; color: red;">
                 <strong>حالة الربط:</strong> غير مربوط ❌<br>
-                <strong>السبب:</strong> فشل في جلب بيانات الحساب (التوكن قد يكون غير صالح أو منتهي)
+                <strong>السبب:</strong> فشل في جلب بيانات الحساب (التوكن غير صالح أو منتهي الصلاحية). يرجى إعادة ربط الحساب.
               </div>
             `;
             instructionsContainer.style.display = "block";
@@ -383,7 +383,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (response.success) {
           console.log('Token refreshed successfully:', response);
-          // حفظ تاريخ انتهاء التوكن في localStorage
+          // حفظ تاريخ انتهاء التوكن في localStorage لو موجود
           if (response.expires_in) {
             const expiryDate = new Date().getTime() + response.expires_in * 1000; // تحويل الثواني لمللي ثانية
             localStorage.setItem(`tokenExpiry_${selectedBotId}`, expiryDate);
@@ -397,9 +397,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       } catch (err) {
         console.error('Error refreshing token:', err);
-        errorMessage.textContent = 'خطأ أثناء تجديد التوكن: ' + (err.message || 'غير معروف');
+        errorMessage.textContent = err.message;
         errorMessage.style.color = "red";
         errorMessage.style.display = "block";
+        // لو التوكن مش صالح، نعرض زر الربط
+        if (err.message.includes('يرجى إعادة ربط الحساب')) {
+          instructionsContainer.style.display = "block";
+          refreshInstagramTokenBtn.style.display = "none";
+        }
       } finally {
         loadingSpinner.style.display = "none";
       }
