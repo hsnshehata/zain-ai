@@ -172,6 +172,11 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         const response = await fetch(url, options);
         if (!response.ok) {
+          // التحقق لو الرد مش JSON
+          const contentType = response.headers.get("content-type");
+          if (!contentType || !contentType.includes("application/json")) {
+            throw new Error("الرد غير متوقع (مش JSON). يمكن إن الـ endpoint مش موجود.");
+          }
           const errorData = await response.json();
           throw new Error(errorData.message || defaultErrorMessage);
         }
@@ -251,7 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <strong>معرف الحساب:</strong> ${bot.instagramPageId}
             `;
 
-            // عرض حالة التوكن (تاريخ آخر تجديد)
+            // عرض حالة التوكن (تاريخ آخر ربط)
             if (bot.lastInstagramTokenRefresh) {
               const lastRefreshDate = new Date(bot.lastInstagramTokenRefresh).toLocaleString('ar-EG');
               statusHtml += `<br><strong>آخر ربط للحساب:</strong> ${lastRefreshDate}`;
