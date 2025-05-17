@@ -185,20 +185,31 @@ document.addEventListener("DOMContentLoaded", () => {
       errorMessage.style.display = "none";
 
       try {
-        const settings = await handleApiRequest(`/api/bots/${botId}/settings`, {
+        const response = await handleApiRequest(`/api/bots/${botId}/settings`, {
           headers: { Authorization: `Bearer ${token}` },
         }, errorMessage, "حدث خطأ أثناء تحميل الإعدادات");
 
-        // Populate Toggles
-        toggles.forEach(toggle => {
-          const key = toggle.dataset.settingKey;
-          if (key && settings.hasOwnProperty(key)) {
-            toggle.checked = settings[key];
-          }
-        });
+        if (response.success && response.data) {
+          const settings = response.data;
+          console.log('تم جلب الإعدادات بنجاح:', settings);
 
-        settingsContainer.style.display = "grid";
+          // Populate Toggles
+          toggles.forEach(toggle => {
+            const key = toggle.dataset.settingKey;
+            if (key && settings.hasOwnProperty(key)) {
+              toggle.checked = settings[key];
+              console.log(`Toggle ${key} set to: ${settings[key]}`);
+            } else {
+              console.warn(`Key ${key} not found in settings or undefined`);
+            }
+          });
+
+          settingsContainer.style.display = "grid";
+        } else {
+          throw new Error("فشل في جلب الإعدادات: البيانات غير متاحة");
+        }
       } catch (err) {
+        console.error('خطأ في تحميل الإعدادات:', err);
         errorMessage.textContent = "خطأ في تحميل الإعدادات: " + (err.message || "غير معروف");
         errorMessage.style.display = "block";
       } finally {
@@ -209,11 +220,11 @@ document.addEventListener("DOMContentLoaded", () => {
     async function loadPageStatus(botId) {
       console.log(`جاري جلب بيانات البوت بالـ ID: ${botId}`);
       try {
-        const bot = await handleApiRequest(`/api/bots/${botId}`, {
+        const response = await handleApiRequest(`/api/bots/${botId}`, {
           headers: { Authorization: `Bearer ${token}` },
         }, pageStatus, "فشل في جلب بيانات البوت");
 
-        if (!bot) {
+        if (!response) {
           console.log(`البوت بالـ ID ${botId} مش موجود`);
           pageStatus.innerHTML = `
             <div style="display: inline-block; color: red;">
@@ -225,6 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
+        const bot = response;
         console.log(`بيانات البوت:`, bot);
 
         // Check if bot is linked to a Facebook page
@@ -309,7 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
       togglesError.style.display = "none";
 
       try {
-        await handleApiRequest(`/api/bots/${botId}/settings`, {
+        const response = await handleApiRequest(`/api/bots/${botId}/settings`, {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
@@ -318,8 +330,13 @@ document.addEventListener("DOMContentLoaded", () => {
           body: JSON.stringify({ [key]: value }),
         }, togglesError, `فشل تحديث إعداد ${key}`);
 
-        console.log(`✅ Updated ${key} to ${value} for bot ${botId}`);
+        if (response.success) {
+          console.log(`✅ Updated ${key} to ${value} for bot ${botId}`);
+        } else {
+          throw new Error("فشل في تحديث الإعداد");
+        }
       } catch (err) {
+        console.error('خطأ في تحديث الإعداد:', err);
         const toggleInput = document.querySelector(`input[data-setting-key="${key}"]`);
         if (toggleInput) toggleInput.checked = !value;
       }
@@ -491,8 +508,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // --- Initial Load ---
-    loadBotSettings(selectedBotId);
     loadPageStatus(selectedBotId);
+    loadBotSettings(selectedBotId);
   }
 
   // Make loadFacebookPage globally accessible
