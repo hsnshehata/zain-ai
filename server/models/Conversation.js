@@ -2,7 +2,8 @@ const mongoose = require('mongoose');
 
 const conversationSchema = new mongoose.Schema({
   botId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bot', required: true },
-  userId: { type: String, required: true }, // Facebook user ID
+  userId: { type: String, required: true }, // Facebook or Instagram user ID
+  username: { type: String }, // Store the username from the event or Graph API
   messages: [
     {
       role: { type: String, enum: ['user', 'assistant'], required: true },
