@@ -5,12 +5,21 @@ const axios = require('axios');
 // دالة مساعدة لجلب اسم المستخدم من فيسبوك/إنستجرام
 async function getSocialUsername(userId, bot) {
   try {
-    const apiKey = bot.instagramPageId && userId.startsWith('instagram_') ? bot.instagramApiKey : bot.facebookApiKey;
-    if (!apiKey) return userId;
+    const isInstagram = userId.startsWith('instagram_');
+    const apiKey = isInstagram ? bot.instagramApiKey : bot.facebookApiKey;
+    if (!apiKey) {
+      console.warn(`No API key for ${isInstagram ? 'Instagram' : 'Facebook'} for bot ${bot._id}`);
+      return userId;
+    }
+    const cleanUserId = isInstagram ? userId.replace('instagram_', '') : userId;
     const response = await axios.get(
-      `https://graph.facebook.com/v22.0/${userId.replace('instagram_', '')}?fields=name&access_token=${apiKey}`
+      `https://graph.facebook.com/v22.0/${cleanUserId}?fields=name&access_token=${apiKey}`,
+      { timeout: 5000 }
     );
-    return response.data.name || userId;
+    if (response.data.name) {
+      return response.data.name;
+    }
+    return userId;
   } catch (err) {
     console.error(`Error fetching username for ${userId}:`, err.message);
     return userId;
@@ -76,7 +85,7 @@ exports.getMessages = async (req, res) => {
     }
     if (type) {
       if (type === 'facebook') {
-        query.userId = { $not: { $in: [/^web_/, /^whatsapp_/, /^instagram_/] } };
+        query.userId = { $not: { $regex: '^(web_|whatsapp_|instagram_)' } };
       } else if (type === 'web') {
         query.userId = { $in: ['anonymous', /^web_/] };
       } else if (type === 'whatsapp') {
