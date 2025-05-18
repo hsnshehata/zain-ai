@@ -1,28 +1,48 @@
 const Conversation = require('../models/Conversation');
 const Bot = require('../models/Bot');
 const axios = require('axios');
+const NodeCache = require('node-cache');
+
+// إعداد cache لتخزين أسماء المستخدمين (5 دقايق)
+const usernameCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 
 // دالة مساعدة لجلب اسم المستخدم من فيسبوك/إنستجرام
 async function getSocialUsername(userId, bot) {
+  const cacheKey = `${bot._id}-${userId}`;
+  const cachedUsername = usernameCache.get(cacheKey);
+  if (cachedUsername) {
+    return cachedUsername;
+  }
+
   try {
     const isInstagram = userId.startsWith('instagram_');
     const apiKey = isInstagram ? bot.instagramApiKey : bot.facebookApiKey;
     if (!apiKey) {
       console.warn(`No API key for ${isInstagram ? 'Instagram' : 'Facebook'} for bot ${bot._id}`);
-      return userId;
+      const fallback = isInstagram ? `إنستجرام ID: ${userId.replace('instagram_', '')}` : `فيسبوك ID: ${userId}`;
+      usernameCache.set(cacheKey, fallback);
+      return fallback;
     }
+
     const cleanUserId = isInstagram ? userId.replace('instagram_', '') : userId;
     const response = await axios.get(
       `https://graph.facebook.com/v22.0/${cleanUserId}?fields=name&access_token=${apiKey}`,
       { timeout: 5000 }
     );
+
     if (response.data.name) {
+      usernameCache.set(cacheKey, response.data.name);
       return response.data.name;
     }
-    return userId;
+
+    const fallback = isInstagram ? `إنستجرام ID: ${cleanUserId}` : `فيسبوك ID: ${cleanUserId}`;
+    usernameCache.set(cacheKey, fallback);
+    return fallback;
   } catch (err) {
     console.error(`Error fetching username for ${userId}:`, err.message);
-    return userId;
+    const fallback = userId.startsWith('instagram_') ? `إنستجرام ID: ${userId.replace('instagram_', '')}` : `فيسبوك ID: ${userId}`;
+    usernameCache.set(cacheKey, fallback);
+    return fallback;
   }
 }
 
@@ -85,7 +105,10 @@ exports.getMessages = async (req, res) => {
     }
     if (type) {
       if (type === 'facebook') {
-        query.userId = { $not: { $regex: '^(web_|whatsapp_|instagram_)' } };
+        query.userId = {
+          $not: { $regex: '^(web_|whatsapp_|instagram_)' },
+          $ne: 'anonymous'
+        };
       } else if (type === 'web') {
         query.userId = { $in: ['anonymous', /^web_/] };
       } else if (type === 'whatsapp') {
