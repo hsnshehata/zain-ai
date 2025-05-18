@@ -6,20 +6,25 @@ const { processMessage, processFeedback } = require('../botEngine');
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
 
-// دالة لجلب اسم المستخدم من إنستجرام باستخدام Graph API
-async function getInstagramUsername(userId, instagramApiKey) {
-  if (!instagramApiKey) {
-    console.log(`[${getTimestamp()}] ⚠️ No instagramApiKey provided for user ${userId}`);
+// توكن اختبار يدوي (هنشيله بعد الاختبار)
+const TEST_TOKEN = 'EAAHF2zum6zEBOZCkRIu0rePQoVije6Chvz28O27tPNU9IXXveoZCUvZC1fMtYdMB4XHXSFwG1yWr7PTZCMmH2kalZBOyQZBxvTvIoaIQZCFDd39l04wu26UYLfXjHpYslFYuTsjpZBZAXj8SEnRlj3FSYjY2MuxlWaqcsc1ewh7sJEtHgfBqx6O6MKZBtg4asTbYqqoMCdSNbnINrK8z4ZD';
+
+// دالة لجلب اسم المستخدم من فيسبوك باستخدام Graph API
+async function getFacebookUsername(userId, facebookApiKey) {
+  const apiKey = TEST_TOKEN || facebookApiKey; // استخدام توكن الاختبار إذا موجود
+  if (!apiKey) {
+    console.log(`[${getTimestamp()}] ⚠️ No facebookApiKey provided for user ${userId}`);
     return null;
   }
   try {
     const response = await axios.get(
-      `https://graph.facebook.com/v20.0/${userId}?fields=username&access_token=${instagramApiKey}`,
+      `https://graph.facebook.com/v20.0/${userId}?fields=name&access_token=${apiKey}`,
       { timeout: 5000 }
     );
-    return response.data.username || null;
+    console.log(`[${getTimestamp()}] ✅ Fetched Facebook username for ${userId}: ${response.data.name}`);
+    return response.data.name || null;
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error fetching Instagram username for ${userId}:`, err.response?.data?.error?.message || err.message);
+    console.error(`[${getTimestamp()}] ❌ Error fetching Facebook username for ${userId}:`, err.response?.data?.error?.message || err.message);
     return null;
   }
 }
@@ -63,7 +68,7 @@ const handleMessage = async (req, res) => {
           continue;
         }
 
-        // Validate that senderId is not the page itself
+        // تجاهل الرسائل من الصفحة نفسها
         if (senderPsid === bot.facebookPageId || senderPsid === bot.instagramPageId) {
           console.log(`[${getTimestamp()}] ⚠️ Skipping message because senderId (${senderPsid}) is the page itself`);
           if (webhookEvent.message && webhookEvent.message.is_echo) {
@@ -72,7 +77,7 @@ const handleMessage = async (req, res) => {
           continue;
         }
 
-        // Validate that recipientId matches the page
+        // التحقق من الـ recipientId
         if (recipientId !== bot.facebookPageId && recipientId !== bot.instagramPageId) {
           console.log(`[${getTimestamp()}] ⚠️ Skipping message because recipientId (${recipientId}) does not match pageId (${bot.facebookPageId} or ${bot.instagramPageId})`);
           continue;
@@ -82,10 +87,25 @@ const handleMessage = async (req, res) => {
         const userId = isInstagram ? `instagram_${senderPsid}` : senderPsid;
 
         // جلب اسم المستخدم
-        let username = webhookEvent.sender?.name || null;
-        if (isInstagram && !username && bot.instagramApiKey) {
-          username = await getInstagramUsername(senderPsid, bot.instagramApiKey);
+        let username = webhookEvent.sender?.name || webhookEvent.sender?.username || null;
+        if (!isInstagram && !username && bot.facebookApiKey) {
+          username = await getFacebookUsername(senderPsid, bot.facebookApiKey);
         }
+
+        // إنشاء أو تحديث المحادثة
+        let conversation = await Conversation.findOne({ botId: bot._id, userId });
+        if (!conversation) {
+          console.log(`[${getTimestamp()}] 📋 Creating new conversation for bot: ${bot._id}, user: ${userId}`);
+          conversation = new Conversation({
+            botId: bot._id,
+            userId,
+            username: username || `فيسبوك ID: ${senderPsid}`,
+            messages: []
+          });
+        } else if (!conversation.username && username) {
+          conversation.username = username; // تحديث الاسم لو موجود
+        }
+        await conversation.save();
 
         // معالجة رسائل الترحيب (messaging_optins)
         if (webhookEvent.optin && (isInstagram ? bot.instagramMessagingOptinsEnabled : bot.messagingOptinsEnabled)) {
@@ -125,18 +145,6 @@ const handleMessage = async (req, res) => {
           const editedMessage = webhookEvent.message_edit.message;
           const mid = editedMessage.mid || `temp_${Date.now()}`;
           console.log(`[${getTimestamp()}] 📩 Processing message edit event from ${userId}: ${editedMessage.text}`);
-          let conversation = await Conversation.findOne({ botId: bot._id, userId });
-          if (!conversation) {
-            console.log(`[${getTimestamp()}] 📋 Creating new conversation for bot: ${bot._id}, user: ${userId}`);
-            conversation = new Conversation({
-              botId: bot._id,
-              userId,
-              username,
-              messages: []
-            });
-          } else if (!conversation.username && username) {
-            conversation.username = username;
-          }
           conversation.messages.push({
             role: 'user',
             content: editedMessage.text,
@@ -159,20 +167,6 @@ const handleMessage = async (req, res) => {
           const messageContent = message.text || (message.attachments ? JSON.stringify(message.attachments) : 'رسالة غير نصية');
 
           let responseText = '';
-
-          // التحقق من وجود المحادثة أو إنشاء واحدة جديدة
-          let conversation = await Conversation.findOne({ botId: bot._id, userId });
-          if (!conversation) {
-            console.log(`[${getTimestamp()}] 📋 Creating new conversation for bot: ${bot._id}, user: ${userId}`);
-            conversation = new Conversation({
-              botId: bot._id,
-              userId,
-              username,
-              messages: []
-            });
-          } else if (!conversation.username && username) {
-            conversation.username = username; // تحديث الاسم لو موجود
-          }
 
           if (message.text) {
             console.log(`[${getTimestamp()}] 📝 Text message received from ${userId}: ${message.text}`);
@@ -248,7 +242,7 @@ const handleMessage = async (req, res) => {
             const postId = commentEvent.post_id;
             const message = commentEvent.message;
             const commenterId = commentEvent.from?.id;
-            const commenterName = commentEvent.from?.name;
+            const commenterName = commentEvent.from?.name || commentEvent.from?.username || null;
 
             if (!commenterId || !message) {
               console.log(`[${getTimestamp()}] ❌ Commenter ID or message not found in feed event:`, commentEvent);
@@ -266,19 +260,20 @@ const handleMessage = async (req, res) => {
 
             console.log(`[${getTimestamp()}] 💬 Comment received on post ${postId} from ${commenterName || userId} (${userId}): ${message}`);
 
-            // التحقق من وجود المحادثة أو إنشاء واحدة جديدة
+            // إنشاء أو تحديث المحادثة
             let conversation = await Conversation.findOne({ botId: bot._id, userId });
             if (!conversation) {
               console.log(`[${getTimestamp()}] 📋 Creating new conversation for bot: ${bot._id}, user: ${userId}`);
               conversation = new Conversation({
                 botId: bot._id,
                 userId,
-                username: commenterName,
+                username: commenterName || `فيسبوك ID: ${commenterId}`,
                 messages: []
               });
             } else if (!conversation.username && commenterName) {
               conversation.username = commenterName; // تحديث الاسم لو موجود
             }
+            await conversation.save();
 
             conversation.messages.push({
               role: 'user',
