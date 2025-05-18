@@ -6,20 +6,6 @@ const { processMessage, processFeedback } = require('../botEngine');
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
 
-// دالة لجلب اسم المستخدم من إنستجرام باستخدام Graph API
-async function getInstagramUsername(userId, instagramApiKey) {
-  try {
-    const response = await axios.get(
-      `https://graph.facebook.com/v20.0/${userId}?fields=username&access_token=${instagramApiKey}`,
-      { timeout: 5000 }
-    );
-    return response.data.username || null;
-  } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error fetching Instagram username for ${userId}:`, err.response?.data || err.message);
-    return null;
-  }
-}
-
 const handleMessage = async (req, res) => {
   try {
     console.log(`[${getTimestamp()}] 📩 Webhook POST request received:`, JSON.stringify(req.body, null, 2));
@@ -61,7 +47,8 @@ const handleMessage = async (req, res) => {
 
         // Validate that senderId is not the page itself
         if (senderPsid === bot.facebookPageId || senderPsid === bot.instagramPageId) {
-          console.log(`[${getTimestamp()}] ⚠️ Skipping message because senderId (${senderPsid}) is the page itself`);
+          console.log(`[${getTimestamp()}] ⚠️ Skipping message because senderId (${senderPsid}) is the page itselfF        if (webhookEvent.message && webhookEvent.message.is_echo) {
+          console.log(`[${getTimestamp()}] ⚠️ Ignoring echo message from bot: ${senderPsid}`);
           continue;
         }
 
@@ -74,11 +61,8 @@ const handleMessage = async (req, res) => {
         // تحديد userId بناءً على المنصة
         const userId = isInstagram ? `instagram_${senderPsid}` : senderPsid;
 
-        // جلب اسم المستخدم
+        // جلب اسم المستخدم من الحدث
         let username = webhookEvent.sender?.name || null;
-        if (isInstagram && !username && bot.instagramApiKey) {
-          username = await getInstagramUsername(senderPsid, bot.instagramApiKey);
-        }
 
         // معالجة رسائل الترحيب (messaging_optins)
         if (webhookEvent.optin && (isInstagram ? bot.instagramMessagingOptinsEnabled : bot.messagingOptinsEnabled)) {
@@ -183,10 +167,14 @@ const handleMessage = async (req, res) => {
             } else {
               console.log(`[${getTimestamp()}] 📎 Unsupported attachment type from ${userId}: ${attachment.type}`);
               responseText = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
+              await sendMessage(senderPsid, responseText, isInstagram ? bot.instagramApiKey : bot.facebookApiKey);
+              continue; // نقف هنا وما نكملش المعالجة
             }
           } else {
             console.log(`[${getTimestamp()}] ❓ Unknown message type from ${userId}`);
             responseText = 'عذرًا، لا أستطيع فهم هذه الرسالة.';
+            await sendMessage(senderPsid, responseText, isInstagram ? bot.instagramApiKey : bot.facebookApiKey);
+            continue; // نقف هنا وما نكملش المعالجة
           }
 
           await sendMessage(senderPsid, responseText, isInstagram ? bot.instagramApiKey : bot.facebookApiKey);
