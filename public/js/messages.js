@@ -172,14 +172,14 @@ document.addEventListener("DOMContentLoaded", () => {
       let userName = conv.username || 'مستخدم غير معروف';
       let userIdentifier = conv.userId;
 
-      if (currentChannel === "web" && conv.userId.startsWith('web_')) {
+      if (currentChannel === "web" && (conv.userId === 'anonymous' || conv.userId.startsWith('web_'))) {
         userName = `زائر ويب ${webUserCounter++}`;
         userIdentifier = `web-${webUserCounter - 1}`;
       } else if (currentChannel === "instagram") {
-        userName = conv.username || `إنستجرام ${conv.userId.replace('instagram_', '')}`;
+        userName = conv.username || `إنستجرام ID: ${conv.userId.replace('instagram_', '')}`;
         userIdentifier = conv.userId;
       } else if (currentChannel === "facebook") {
-        userName = conv.username || `فيسبوك ${conv.userId}`;
+        userName = conv.username || `فيسبوك ID: ${conv.userId}`;
         userIdentifier = conv.userId;
       }
 
