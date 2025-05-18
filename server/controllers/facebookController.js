@@ -1,33 +1,51 @@
 const axios = require('axios');
 const Bot = require('../models/Bot');
+const Conversation = require('../models/Conversation');
 const { processMessage, processFeedback } = require('../botEngine');
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
 
+// دالة لجلب اسم المستخدم من إنستجرام باستخدام Graph API
+async function getInstagramUsername(userId, instagramApiKey) {
+  try {
+    const response = await axios.get(
+      `https://graph.facebook.com/v20.0/${userId}?fields=username&access_token=${instagramApiKey}`,
+      { timeout: 5000 }
+    );
+    return response.data.username || null;
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Error fetching Instagram username for ${userId}:`, err.response?.data || err.message);
+    return null;
+  }
+}
+
 const handleMessage = async (req, res) => {
   try {
-    console.log('📩 Webhook POST request received:', JSON.stringify(req.body, null, 2));
+    console.log(`[${getTimestamp()}] 📩 Webhook POST request received:`, JSON.stringify(req.body, null, 2));
 
     const body = req.body;
 
-    if (body.object !== 'page') {
-      console.log('❌ Invalid webhook event: Not a page object');
+    if (body.object !== 'page' && body.object !== 'instagram') {
+      console.log(`[${getTimestamp()}] ❌ Invalid webhook event: Not a page or instagram object`);
       return res.sendStatus(404);
     }
 
     for (const entry of body.entry) {
       const pageId = entry.id;
 
-      const bot = await Bot.findOne({ facebookPageId: pageId });
+      const bot = await Bot.findOne({ $or: [{ facebookPageId: pageId }, { instagramPageId: pageId }] });
       if (!bot) {
-        console.log(`❌ No bot found for page ID: ${pageId}`);
+        console.log(`[${getTimestamp()}] ❌ No bot found for page ID: ${pageId}`);
         continue;
       }
 
+      // تحديد إذا كان الحدث من إنستجرام أو فيسبوك
+      const isInstagram = bot.instagramPageId === pageId || body.object === 'instagram';
+
       // التحقق من حالة البوت
       if (!bot.isActive) {
-        console.log(`⚠️ Bot ${bot.name} (ID: ${bot._id}) is inactive, skipping message processing.`);
+        console.log(`[${getTimestamp()}] ⚠️ Bot ${bot.name} (ID: ${bot._id}) is inactive, skipping message processing.`);
         continue;
       }
 
@@ -37,71 +55,74 @@ const handleMessage = async (req, res) => {
         const recipientId = webhookEvent.recipient?.id;
 
         if (!senderPsid) {
-          console.log('❌ Sender PSID not found in webhook event:', webhookEvent);
+          console.log(`[${getTimestamp()}] ❌ Sender PSID not found in webhook event:`, webhookEvent);
           continue;
         }
 
         // Validate that senderId is not the page itself
-        if (senderPsid === bot.facebookPageId) {
-          console.log(`⚠️ Skipping message because senderId (${senderPsid}) is the page itself`);
+        if (senderPsid === bot.facebookPageId || senderPsid === bot.instagramPageId) {
+          console.log(`[${getTimestamp()}] ⚠️ Skipping message because senderId (${senderPsid}) is the page itself`);
           continue;
         }
 
         // Validate that recipientId matches the page
-        if (recipientId !== bot.facebookPageId) {
-          console.log(`⚠️ Skipping message because recipientId (${recipientId}) does not match pageId (${bot.facebookPageId})`);
+        if (recipientId !== bot.facebookPageId && recipientId !== bot.instagramPageId) {
+          console.log(`[${getTimestamp()}] ⚠️ Skipping message because recipientId (${recipientId}) does not match pageId (${bot.facebookPageId} or ${bot.instagramPageId})`);
           continue;
         }
 
-        // Check if the message is an echo (sent by the bot itself)
-        if (webhookEvent.message && webhookEvent.message.is_echo) {
-          console.log(`⚠️ Ignoring echo message from bot: ${webhookEvent.message.text}`);
-          continue;
+        // تحديد userId بناءً على المنصة
+        const userId = isInstagram ? `instagram_${senderPsid}` : senderPsid;
+
+        // جلب اسم المستخدم
+        let username = webhookEvent.sender?.name || null;
+        if (isInstagram && !username && bot.instagramApiKey) {
+          username = await getInstagramUsername(senderPsid, bot.instagramApiKey);
         }
 
         // معالجة رسائل الترحيب (messaging_optins)
-        if (webhookEvent.optin && bot.messagingOptinsEnabled) {
-          console.log(`📩 Processing opt-in event from ${senderPsid}`);
+        if (webhookEvent.optin && (isInstagram ? bot.instagramMessagingOptinsEnabled : bot.messagingOptinsEnabled)) {
+          console.log(`[${getTimestamp()}] 📩 Processing opt-in event from ${userId}`);
           const welcomeMessage = bot.welcomeMessage || 'مرحبًا! كيف يمكنني مساعدتك اليوم؟';
-          await sendMessage(senderPsid, welcomeMessage, bot.facebookApiKey);
+          await sendMessage(senderPsid, welcomeMessage, isInstagram ? bot.instagramApiKey : bot.facebookApiKey);
           continue;
-        } else if (webhookEvent.optin && !bot.messagingOptinsEnabled) {
-          console.log(`⚠️ Opt-in messages disabled for bot ${bot.name} (ID: ${bot._id}), skipping opt-in processing.`);
+        } else if (webhookEvent.optin) {
+          console.log(`[${getTimestamp()}] ⚠️ Opt-in messages disabled for bot ${bot.name} (ID: ${bot._id}), skipping opt-in processing.`);
           continue;
         }
 
         // معالجة ردود الفعل (message_reactions)
-        if (webhookEvent.reaction && bot.messageReactionsEnabled) {
-          console.log(`📩 Processing reaction event from ${senderPsid}: ${webhookEvent.reaction.reaction}`);
+        if (webhookEvent.reaction && (isInstagram ? bot.instagramMessageReactionsEnabled : bot.messageReactionsEnabled)) {
+          console.log(`[${getTimestamp()}] 📩 Processing reaction event from ${userId}: ${webhookEvent.reaction.reaction}`);
           const responseText = `شكرًا على تفاعلك (${webhookEvent.reaction.reaction})!`;
-          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
+          await sendMessage(senderPsid, responseText, isInstagram ? bot.instagramApiKey : bot.facebookApiKey);
           continue;
-        } else if (webhookEvent.reaction && !bot.messageReactionsEnabled) {
-          console.log(`⚠️ Message reactions disabled for bot ${bot.name} (ID: ${bot._id}), skipping reaction processing.`);
+        } else if (webhookEvent.reaction) {
+          console.log(`[${getTimestamp()}] ⚠️ Message reactions disabled for bot ${bot.name} (ID: ${bot._id}), skipping reaction processing.`);
           continue;
         }
 
         // معالجة تتبع المصدر (messaging_referrals)
-        if (webhookEvent.referral && bot.messagingReferralsEnabled) {
-          console.log(`📩 Processing referral event from ${senderPsid}: ${webhookEvent.referral.ref}`);
+        if (webhookEvent.referral && (isInstagram ? bot.instagramMessagingReferralsEnabled : bot.messagingReferralsEnabled)) {
+          console.log(`[${getTimestamp()}] 📩 Processing referral event from ${userId}: ${webhookEvent.referral.ref}`);
           const responseText = `مرحبًا! وصلتني من ${webhookEvent.referral.source}، كيف يمكنني مساعدتك؟`;
-          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
+          await sendMessage(senderPsid, responseText, isInstagram ? bot.instagramApiKey : bot.facebookApiKey);
           continue;
-        } else if (webhookEvent.referral && !bot.messagingReferralsEnabled) {
-          console.log(`⚠️ Messaging referrals disabled for bot ${bot.name} (ID: ${bot._id}), skipping referral processing.`);
+        } else if (webhookEvent.referral) {
+          console.log(`[${getTimestamp()}] ⚠️ Messaging referrals disabled for bot ${bot.name} (ID: ${bot._id}), skipping referral processing.`);
           continue;
         }
 
         // معالجة تعديلات الرسائل (message_edits)
-        if (webhookEvent.message_edit && bot.messageEditsEnabled) {
+        if (webhookEvent.message_edit && (isInstagram ? bot.instagramMessageEditsEnabled : bot.messageEditsEnabled)) {
           const editedMessage = webhookEvent.message_edit.message;
           const mid = editedMessage.mid || `temp_${Date.now()}`;
-          console.log(`📩 Processing message edit event from ${senderPsid}: ${editedMessage.text}`);
-          const responseText = await processMessage(bot._id, senderPsid, editedMessage.text, false, false, mid);
-          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
+          console.log(`[${getTimestamp()}] 📩 Processing message edit event from ${userId}: ${editedMessage.text}`);
+          const responseText = await processMessage(bot._id, userId, editedMessage.text, false, false, mid);
+          await sendMessage(senderPsid, responseText, isInstagram ? bot.instagramApiKey : bot.facebookApiKey);
           continue;
-        } else if (webhookEvent.message_edit && !bot.messageEditsEnabled) {
-          console.log(`⚠️ Message edits disabled for bot ${bot.name} (ID: ${bot._id}), skipping message edit processing.`);
+        } else if (webhookEvent.message_edit) {
+          console.log(`[${getTimestamp()}] ⚠️ Message edits disabled for bot ${bot.name} (ID: ${bot._id}), skipping message edit processing.`);
           continue;
         }
 
@@ -113,43 +134,80 @@ const handleMessage = async (req, res) => {
 
           let responseText = '';
 
+          // التحقق من وجود المحادثة أو إنشاء واحدة جديدة
+          let conversation = await Conversation.findOne({ botId: bot._id, userId });
+          if (!conversation) {
+            console.log(`[${getTimestamp()}] 📋 Creating new conversation for bot: ${bot._id}, user: ${userId}`);
+            conversation = new Conversation({
+              botId: bot._id,
+              userId,
+              username,
+              messages: []
+            });
+          } else if (!conversation.username && username) {
+            conversation.username = username; // تحديث الاسم لو موجود
+          }
+
           if (message.text) {
-            console.log(`📝 Text message received from ${senderPsid}: ${message.text}`);
-            responseText = await processMessage(bot._id, senderPsid, message.text, false, false, mid);
+            console.log(`[${getTimestamp()}] 📝 Text message received from ${userId}: ${message.text}`);
+            conversation.messages.push({
+              role: 'user',
+              content: message.text,
+              messageId: mid,
+              timestamp: new Date()
+            });
+            await conversation.save();
+            responseText = await processMessage(bot._id, userId, message.text, false, false, mid);
           } else if (message.attachments) {
             const attachment = message.attachments[0];
             if (attachment.type === 'image') {
-              console.log(`🖼️ Image received from ${senderPsid}: ${attachment.payload.url}`);
-              responseText = await processMessage(bot._id, senderPsid, attachment.payload.url, true, false, mid);
+              console.log(`[${getTimestamp()}] 🖼️ Image received from ${userId}: ${attachment.payload.url}`);
+              conversation.messages.push({
+                role: 'user',
+                content: attachment.payload.url,
+                messageId: mid,
+                timestamp: new Date()
+              });
+              await conversation.save();
+              responseText = await processMessage(bot._id, userId, attachment.payload.url, true, false, mid);
             } else if (attachment.type === 'audio') {
-              console.log(`🎙️ Audio received from ${senderPsid}: ${attachment.payload.url}`);
-              responseText = await processMessage(bot._id, senderPsid, attachment.payload.url, false, true, mid);
+              console.log(`[${getTimestamp()}] 🎙️ Audio received from ${userId}: ${attachment.payload.url}`);
+              conversation.messages.push({
+                role: 'user',
+                content: attachment.payload.url,
+                messageId: mid,
+                timestamp: new Date()
+              });
+              await conversation.save();
+              responseText = await processMessage(bot._id, userId, attachment.payload.url, false, true, mid);
             } else {
-              console.log(`📎 Unsupported attachment type from ${senderPsid}: ${attachment.type}`);
+              console.log(`[${getTimestamp()}] 📎 Unsupported attachment type from ${userId}: ${attachment.type}`);
               responseText = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
             }
           } else {
-            console.log(`❓ Unknown message type from ${senderPsid}`);
+            console.log(`[${getTimestamp()}] ❓ Unknown message type from ${userId}`);
             responseText = 'عذرًا، لا أستطيع فهم هذه الرسالة.';
           }
 
-          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
+          await sendMessage(senderPsid, responseText, isInstagram ? bot.instagramApiKey : bot.facebookApiKey);
         } else if (webhookEvent.response_feedback) {
           const feedbackData = webhookEvent.response_feedback;
           const mid = feedbackData.mid;
           const feedback = feedbackData.feedback;
 
-          console.log(`📊 Feedback received from ${senderPsid}: ${feedback} for message ID: ${mid}`);
-          await processFeedback(bot._id, senderPsid, mid, feedback);
+          console.log(`[${getTimestamp()}] 📊 Feedback received from ${userId}: ${feedback} for message ID: ${mid}`);
+          await processFeedback(bot._id, userId, mid, feedback);
+        } else if (webhookEvent.read) {
+          console.log(`[${getTimestamp()}] 📖 Read receipt received from ${userId} for message ID: ${webhookEvent.read.mid}`);
         } else {
-          console.log('❌ No message or feedback found in webhook event:', webhookEvent);
+          console.log(`[${getTimestamp()}] ⚠️ Unhandled event type from ${userId}`);
         }
       }
 
       if (entry.changes && entry.changes.length > 0) {
         // التحقق من تفعيل ميزة الرد على الكومنتات
-        if (!bot.commentsRepliesEnabled) {
-          console.log(`⚠️ Comment replies disabled for bot ${bot.name} (ID: ${bot._id}), skipping comment processing.`);
+        if (!(isInstagram ? bot.instagramCommentsRepliesEnabled : bot.commentsRepliesEnabled)) {
+          console.log(`[${getTimestamp()}] ⚠️ Comment replies disabled for bot ${bot.name} (ID: ${bot._id}), skipping comment processing.`);
           continue;
         }
 
@@ -163,22 +221,47 @@ const handleMessage = async (req, res) => {
             const commenterName = commentEvent.from?.name;
 
             if (!commenterId || !message) {
-              console.log('❌ Commenter ID or message not found in feed event:', commentEvent);
+              console.log(`[${getTimestamp()}] ❌ Commenter ID or message not found in feed event:`, commentEvent);
               continue;
             }
 
             // تجاهل الكومنتات من الصفحة نفسها (ردود البوت)
-            if (commenterId === bot.facebookPageId) {
-              console.log(`⚠️ Skipping comment because commenterId (${commenterId}) is the page itself`);
+            if (commenterId === bot.facebookPageId || commenterId === bot.instagramPageId) {
+              console.log(`[${getTimestamp()}] ⚠️ Skipping comment because commenterId (${commenterId}) is the page itself`);
               continue;
             }
 
-            console.log(`💬 Comment received on post ${postId} from ${commenterName} (${commenterId}): ${message}`);
+            // تحديد userId بناءً على المنصة
+            const userId = isInstagram ? `instagram_${commenterId}` : commenterId;
 
-            const responseText = await processMessage(bot._id, commenterId, message, false, false, `comment_${commentId}`);
-            await replyToComment(commentId, responseText, bot.facebookApiKey);
+            console.log(`[${getTimestamp()}] 💬 Comment received on post ${postId} from ${commenterName || userId} (${userId}): ${message}`);
+
+            // التحقق من وجود المحادثة أو إنشاء واحدة جديدة
+            let conversation = await Conversation.findOne({ botId: bot._id, userId });
+            if (!conversation) {
+              console.log(`[${getTimestamp()}] 📋 Creating new conversation for bot: ${bot._id}, user: ${userId}`);
+              conversation = new Conversation({
+                botId: bot._id,
+                userId,
+                username: commenterName,
+                messages: []
+              });
+            } else if (!conversation.username && commenterName) {
+              conversation.username = commenterName; // تحديث الاسم لو موجود
+            }
+
+            conversation.messages.push({
+              role: 'user',
+              content: message,
+              messageId: `comment_${commentId}`,
+              timestamp: new Date()
+            });
+            await conversation.save();
+
+            const responseText = await processMessage(bot._id, userId, message, false, false, `comment_${commentId}`);
+            await replyToComment(commentId, responseText, isInstagram ? bot.instagramApiKey : bot.facebookApiKey);
           } else {
-            console.log('❌ Not a comment event or not an "add" verb:', change);
+            console.log(`[${getTimestamp()}] ❌ Not a comment event or not an "add" verb:`, change);
           }
         }
       }
@@ -186,14 +269,14 @@ const handleMessage = async (req, res) => {
 
     res.status(200).send('EVENT_RECEIVED');
   } catch (err) {
-    console.error('❌ Error in webhook:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ Error in webhook:`, err.message, err.stack);
     res.sendStatus(500);
   }
 };
 
-const sendMessage = (senderPsid, responseText, facebookApiKey) => {
+const sendMessage = (senderPsid, responseText, apiKey) => {
   return new Promise((resolve, reject) => {
-    console.log(`📤 Attempting to send message to ${senderPsid} with token: ${facebookApiKey.slice(0, 10)}...`);
+    console.log(`[${getTimestamp()}] 📤 Attempting to send message to ${senderPsid} with token: ${apiKey.slice(0, 10)}...`);
     const requestBody = {
       recipient: { id: senderPsid },
       message: { text: responseText },
@@ -203,21 +286,21 @@ const sendMessage = (senderPsid, responseText, facebookApiKey) => {
       `https://graph.facebook.com/v20.0/me/messages`,
       requestBody,
       {
-        params: { access_token: facebookApiKey },
+        params: { access_token: apiKey },
       }
     ).then(response => {
-      console.log(`✅ Message sent to ${senderPsid}: ${responseText}`);
+      console.log(`[${getTimestamp()}] ✅ Message sent to ${senderPsid}: ${responseText}`);
       resolve(response.data);
     }).catch(err => {
-      console.error('❌ Error sending message to Facebook:', err.response?.data || err.message);
+      console.error(`[${getTimestamp()}] ❌ Error sending message:`, err.response?.data || err.message);
       reject(err);
     });
   });
 };
 
-const replyToComment = (commentId, responseText, facebookApiKey) => {
+const replyToComment = (commentId, responseText, apiKey) => {
   return new Promise((resolve, reject) => {
-    console.log(`📤 Attempting to reply to comment ${commentId} with token: ${facebookApiKey.slice(0, 10)}...`);
+    console.log(`[${getTimestamp()}] 📤 Attempting to reply to comment ${commentId} with token: ${apiKey.slice(0, 10)}...`);
     const requestBody = {
       message: responseText,
     };
@@ -226,13 +309,13 @@ const replyToComment = (commentId, responseText, facebookApiKey) => {
       `https://graph.facebook.com/v20.0/${commentId}/comments`,
       requestBody,
       {
-        params: { access_token: facebookApiKey },
+        params: { access_token: apiKey },
       }
     ).then(response => {
-      console.log(`✅ Replied to comment ${commentId}: ${responseText}`);
+      console.log(`[${getTimestamp()}] ✅ Replied to comment ${commentId}: ${responseText}`);
       resolve(response.data);
     }).catch(err => {
-      console.error('❌ Error replying to comment on Facebook:', err.response?.data || err.message);
+      console.error(`[${getTimestamp()}] ❌ Error replying to comment:`, err.response?.data || err.message);
       reject(err);
     });
   });
