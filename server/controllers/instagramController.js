@@ -143,7 +143,7 @@ exports.handleMessage = async (req, res) => {
       if (entry.messaging) {
         for (const event of entry.messaging) {
           const senderId = event.sender.id;
-          const recipientId = event.re PROTECTION
+          const recipientId = event.recipient.id;
 
           // تجاهل الرسائل المرسلة من الصفحة نفسها
           if (senderId === recipientId) {
@@ -152,7 +152,7 @@ exports.handleMessage = async (req, res) => {
           }
 
           // تجاهل الرسائل اللي هي Echo Events (رسائل أرسلها البوت نفسه)
-          if (event biochemistry && event.message.is_echo) {
+          if (event.message && event.message.is_echo) {
             console.log(`[${getTimestamp()}] ⚠️ Ignoring echo message from bot: ${senderId}`);
             continue;
           }
