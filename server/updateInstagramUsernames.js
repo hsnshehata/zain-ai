@@ -21,12 +21,34 @@ const connectDB = async () => {
   }
 };
 
+// دالة لجلب اسم المستخدم من Graph API
+async function getUsername(userId, instagramApiKey, facebookApiKey) {
+  const apiKeys = [instagramApiKey, facebookApiKey].filter(key => key);
+  for (const apiKey of apiKeys) {
+    try {
+      const response = await axios.get(
+        `https://graph.facebook.com/v20.0/${userId}?fields=username,name&access_token=${apiKey}`,
+        { timeout: 5000 }
+      );
+      return response.data.username || response.data.name || null;
+    } catch (err) {
+      console.error(`❌ خطأ في جلب اسم المستخدم لـ ${userId} باستخدام ${apiKey.slice(0, 10)}...:`, err.response?.data?.error?.message || err.message);
+    }
+  }
+  return null;
+}
+
 // دالة لتحديث أسماء المستخدمين
 async function updateInstagramUsernames() {
   try {
-    // جلب البوتات اللي عندها instagramApiKey
-    const bots = await Bot.find({ instagramApiKey: { $ne: null } });
-    console.log(`🔍 لقينا ${bots.length} بوت عندهم instagramApiKey`);
+    // جلب البوتات اللي عندها instagramApiKey أو facebookApiKey
+    const bots = await Bot.find({
+      $or: [
+        { instagramApiKey: { $ne: null } },
+        { facebookApiKey: { $ne: null } },
+      ],
+    });
+    console.log(`🔍 لقينا ${bots.length} بوت عندهم instagramApiKey أو facebookApiKey`);
 
     for (const bot of bots) {
       // جلب كل المحادثات للبوت
@@ -43,24 +65,17 @@ async function updateInstagramUsernames() {
       // تحديث المحادثات اللي userId بيبدأ بـ instagram_
       for (const conv of instagramConversations) {
         const userId = conv.userId.replace('instagram_', '');
-        try {
-          const response = await axios.get(
-            `https://graph.facebook.com/v20.0/${userId}?fields=username&access_token=${bot.instagramApiKey}`,
-            { timeout: 5000 }
-          );
-          if (response.data.username) {
-            conv.username = response.data.username;
-            await conv.save();
-            console.log(`✅ تم تحديث اسم المستخدم للمحادثة ${conv._id}: ${conv.username}`);
-          } else {
-            console.log(`⚠️ مفيش username في الـ response لـ ${userId}`);
-          }
-        } catch (err) {
-          console.error(`❌ خطأ في تحديث اسم المستخدم لـ ${conv.userId}:`, err.response?.data?.error?.message || err.message);
+        const username = await getUsername(userId, bot.instagramApiKey, bot.facebookApiKey);
+        if (username) {
+          conv.username = username;
+          await conv.save();
+          console.log(`✅ تم تحديث اسم المستخدم للمحادثة ${conv._id}: ${conv.username}`);
+        } else {
+          console.log(`⚠️ مفيش username لـ ${conv.userId}`);
         }
       }
 
-      // جلب المحادثات اللي userId ممكن تكون خام (بدون instagram_)
+      // جلب المحادثات اللي userId خام (محتمل إنستجرام أو فيسبوك)
       const rawConversations = await Conversation.find({
         botId: bot._id,
         userId: { $not: { $regex: '^(web_|whatsapp_|instagram_)' }, $ne: 'anonymous' },
@@ -69,21 +84,15 @@ async function updateInstagramUsernames() {
 
       // تحديث المحادثات اللي userId خام
       for (const conv of rawConversations) {
-        try {
-          const response = await axios.get(
-            `https://graph.facebook.com/v20.0/${conv.userId}?fields=username&access_token=${bot.instagramApiKey}`,
-            { timeout: 5000 }
-          );
-          if (response.data.username) {
-            conv.username = response.data.username;
-            conv.userId = `instagram_${conv.userId}`; // إضافة البادئة
-            await conv.save();
-            console.log(`✅ تم تحديث اسم المستخدم و userId للمحادثة ${conv._id}: ${conv.username} (userId: ${conv.userId})`);
-          } else {
-            console.log(`⚠️ مفيش username في الـ response لـ ${conv.userId}`);
-          }
-        } catch (err) {
-          console.error(`❌ خطأ في تحديث اسم المستخدم لـ ${conv.userId}:`, err.response?.data?.error?.message || err.message);
+        const username = await getUsername(conv.userId, bot.instagramApiKey, bot.facebookApiKey);
+        if (username) {
+          // نفترض إن الـ userId ده إنستجرام لو جاب username
+          conv.username = username;
+          conv.userId = `instagram_${conv.userId}`; // إضافة البادئة
+          await conv.save();
+          console.log(`✅ تم تحديث اسم المستخدم و userId للمحادثة ${conv._id}: ${conv.username} (userId: ${conv.userId})`);
+        } else {
+          console.log(`⚠️ مفيش username لـ ${conv.userId}`);
         }
       }
     }
