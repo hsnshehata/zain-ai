@@ -1,50 +1,5 @@
 const Conversation = require('../models/Conversation');
 const Bot = require('../models/Bot');
-const axios = require('axios');
-const NodeCache = require('node-cache');
-
-// إعداد cache لتخزين أسماء المستخدمين (5 دقايق)
-const usernameCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
-
-// دالة مساعدة لجلب اسم المستخدم من فيسبوك/إنستجرام
-async function getSocialUsername(userId, bot) {
-  const cacheKey = `${bot._id}-${userId}`;
-  const cachedUsername = usernameCache.get(cacheKey);
-  if (cachedUsername) {
-    return cachedUsername;
-  }
-
-  try {
-    const isInstagram = userId.startsWith('instagram_');
-    const apiKey = isInstagram ? bot.instagramApiKey : bot.facebookApiKey;
-    if (!apiKey) {
-      console.warn(`No API key for ${isInstagram ? 'Instagram' : 'Facebook'} for bot ${bot._id}`);
-      const fallback = isInstagram ? `إنستجرام ID: ${userId.replace('instagram_', '')}` : `فيسبوك ID: ${userId}`;
-      usernameCache.set(cacheKey, fallback);
-      return fallback;
-    }
-
-    const cleanUserId = isInstagram ? userId.replace('instagram_', '') : userId;
-    const response = await axios.get(
-      `https://graph.facebook.com/v22.0/${cleanUserId}?fields=name&access_token=${apiKey}`,
-      { timeout: 5000 }
-    );
-
-    if (response.data.name) {
-      usernameCache.set(cacheKey, response.data.name);
-      return response.data.name;
-    }
-
-    const fallback = isInstagram ? `إنستجرام ID: ${cleanUserId}` : `فيسبوك ID: ${cleanUserId}`;
-    usernameCache.set(cacheKey, fallback);
-    return fallback;
-  } catch (err) {
-    console.error(`Error fetching username for ${userId}:`, err.message);
-    const fallback = userId.startsWith('instagram_') ? `إنستجرام ID: ${userId.replace('instagram_', '')}` : `فيسبوك ID: ${userId}`;
-    usernameCache.set(cacheKey, fallback);
-    return fallback;
-  }
-}
 
 // Get daily messages for a bot
 exports.getDailyMessages = async (req, res) => {
@@ -124,24 +79,24 @@ exports.getMessages = async (req, res) => {
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
-    const conversationsWithUsernames = await Promise.all(
-      conversations.map(async (conv) => {
-        let username = conv.userId;
-        let messageType = 'message';
-        if (conv.userId.startsWith('instagram_') || (!conv.userId.startsWith('web_') && !conv.userId.startsWith('whatsapp_') && conv.userId !== 'anonymous')) {
-          username = await getSocialUsername(conv.userId, bot);
-        } else if (conv.userId === 'anonymous') {
-          username = 'زائر ويب';
-        } else if (conv.userId.startsWith('whatsapp_')) {
-          const phoneMatch = conv.userId.match(/whatsapp_(\d+)/);
-          username = phoneMatch ? `واتساب ${phoneMatch[1]}` : 'مستخدم واتساب';
-        }
-        if (conv.messages.some(msg => msg.messageId && msg.messageId.startsWith('comment_'))) {
-          messageType = 'comment';
-        }
-        return { ...conv, username, messageType };
-      })
-    );
+    const conversationsWithUsernames = conversations.map(conv => {
+      let username = conv.username || 'مستخدم غير معروف';
+      let messageType = 'message';
+      if (conv.userId === 'anonymous') {
+        username = 'زائر ويب';
+      } else if (conv.userId.startsWith('whatsapp_')) {
+        const phoneMatch = conv.userId.match(/whatsapp_(\d+)/);
+        username = conv.username || (phoneMatch ? `واتساب ${phoneMatch[1]}` : 'مستخدم واتساب');
+      } else if (conv.userId.startsWith('instagram_')) {
+        username = conv.username || `إنستجرام ID: ${conv.userId.replace('instagram_', '')}`;
+      } else {
+        username = conv.username || `فيسبوك ID: ${conv.userId}`;
+      }
+      if (conv.messages.some(msg => msg.messageId && msg.messageId.startsWith('comment_'))) {
+        messageType = 'comment';
+      }
+      return { ...conv, username, messageType };
+    });
 
     const seenConversations = new Set();
     const uniqueConversations = conversationsWithUsernames.filter(conv => {
