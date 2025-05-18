@@ -1,5 +1,3 @@
-// public/js/messages.js (Updated for new dashboard design and unified error handling)
-
 document.addEventListener("DOMContentLoaded", () => {
   async function loadMessagesPage() {
     const content = document.getElementById("content");
@@ -26,7 +24,6 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Main structure for the messages page
     content.innerHTML = `
       <div class="page-header">
         <h2><i class="fas fa-envelope"></i> سجل الرسائل</h2>
@@ -44,11 +41,11 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="tabs">
           <button id="facebookMessagesTab" class="tab-button active" data-channel="facebook"><i class="fab fa-facebook-square"></i> فيسبوك</button>
           <button id="webMessagesTab" class="tab-button" data-channel="web"><i class="fas fa-globe"></i> ويب</button>
-          <button id="whatsappMessagesTab" class="tab-button" data-channel="whatsapp"><i class="fab fa-whatsapp"></i> واتساب</button>
+          <button id="instagramMessagesTab" class="tab-button" data-channel="instagram"><i class="fab fa-instagram"></i> إنستجرام</button>
         </div>
         <div class="tab-actions">
-           <button id="downloadMessagesBtn" class="btn btn-secondary btn-sm" title="تنزيل رسائل القناة الحالية (TXT)"><i class="fas fa-download"></i> تنزيل</button>
-           <button id="deleteAllConversationsBtn" class="btn btn-danger btn-sm" title="حذف كل محادثات القناة الحالية"><i class="fas fa-trash-alt"></i> حذف الكل</button>
+          <button id="downloadMessagesBtn" class="btn btn-secondary btn-sm" title="تنزيل رسائل القناة الحالية (TXT)"><i class="fas fa-download"></i> تنزيل</button>
+          <button id="deleteAllConversationsBtn" class="btn btn-danger btn-sm" title="حذف كل محادثات القناة الحالية"><i class="fas fa-trash-alt"></i> حذف الكل</button>
         </div>
       </div>
 
@@ -58,7 +55,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <div id="conversationsContainer" class="conversations-grid"></div>
       <div id="pagination" class="pagination"></div>
 
-      <!-- Chat Modal Structure (initially hidden) -->
       <div id="chatModal" class="modal" style="display: none;">
         <div class="modal-content chat-modal-content">
           <div class="modal-header chat-header">
@@ -73,7 +69,6 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
 
-    // --- Element References ---
     const loadingSpinner = document.getElementById("loadingSpinner");
     const errorMessage = document.getElementById("errorMessage");
     const conversationsContainer = document.getElementById("conversationsContainer");
@@ -85,15 +80,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const resetFilterBtn = document.getElementById("resetFilterBtn");
     const downloadMessagesBtn = document.getElementById("downloadMessagesBtn");
     const deleteAllConversationsBtn = document.getElementById("deleteAllConversationsBtn");
-
-    // Chat Modal Elements
     const chatModal = document.getElementById("chatModal");
     const chatModalTitle = document.getElementById("chatModalTitle");
     const chatModalBody = document.getElementById("chatModalBody");
     const closeChatModalBtn = document.getElementById("closeChatModalBtn");
     const deleteSingleConversationBtn = document.getElementById("deleteSingleConversationBtn");
 
-    // --- State Variables ---
     let currentChannel = "facebook";
     let allConversations = [];
     let userNamesCache = {};
@@ -101,8 +93,6 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentPage = 1;
     const itemsPerPage = 20;
     let currentOpenConversationId = null;
-
-    // --- Functions ---
 
     function showLoading() {
       loadingSpinner.style.display = "flex";
@@ -140,7 +130,6 @@ document.addEventListener("DOMContentLoaded", () => {
         renderConversations();
         showContent();
       } catch (err) {
-        // الخطأ تم التعامل معه في handleApiRequest
         showError(err.message || "حدث خطأ أثناء جلب المحادثات.");
       }
     }
@@ -183,12 +172,11 @@ document.addEventListener("DOMContentLoaded", () => {
       let userName = conv.username || conv.userId;
       let userIdentifier = conv.userId;
 
-      if (currentChannel === "web" && conv.userId === "anonymous") {
+      if (currentChannel === "web" && conv.userId.startsWith('web_')) {
         userName = `زائر ويب ${webUserCounter++}`;
         userIdentifier = `web-${webUserCounter - 1}`;
-      } else if (currentChannel === "whatsapp") {
-        const phoneMatch = conv.userId.match(/whatsapp_(\d+)/);
-        userName = phoneMatch ? `واتساب ${phoneMatch[1]}` : `مستخدم واتساب`;
+      } else if (currentChannel === "instagram") {
+        userName = conv.username || `إنستجرام ${conv.userId.replace('instagram_', '')}`;
         userIdentifier = conv.userId;
       } else if (currentChannel === "facebook") {
         userName = conv.username || `فيسبوك ${conv.userId}`;
@@ -199,12 +187,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const lastMessage = conv.messages[conv.messages.length - 1];
       const lastMessageTimestamp = lastMessage ? new Date(lastMessage.timestamp).toLocaleString("ar-EG") : "لا يوجد";
-      // احسب عدد ردود البوت بس
       const messageCount = conv.messages.filter(msg => msg.role === 'assistant').length;
+      const messageTypeIcon = conv.messageType === 'comment' ? '<i class="fas fa-comment-dots"></i>' : '<i class="fas fa-comment"></i>';
 
       card.innerHTML = `
         <div class="card-body">
-          <h4 class="card-title"><i class="fas fa-user"></i> ${escapeHtml(userName)}</h4>
+          <h4 class="card-title">${messageTypeIcon} ${escapeHtml(userName)}</h4>
           <p class="card-text"><small>المعرف: ${escapeHtml(userIdentifier)}</small></p>
           <p class="card-text">عدد الرسائل: ${messageCount}</p>
           <p class="card-text">آخر رسالة: ${lastMessageTimestamp}</p>
@@ -236,10 +224,8 @@ document.addEventListener("DOMContentLoaded", () => {
         return button;
       };
 
-      // Previous Button
       paginationContainer.appendChild(createPageButton(currentPage - 1, 'السابق', false, currentPage === 1));
 
-      // Dynamic page numbers with ellipsis
       const maxButtons = 5;
       let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
       let endPage = Math.min(totalPages, startPage + maxButtons - 1);
@@ -270,7 +256,6 @@ document.addEventListener("DOMContentLoaded", () => {
         paginationContainer.appendChild(createPageButton(totalPages));
       }
 
-      // Next Button
       paginationContainer.appendChild(createPageButton(currentPage + 1, 'التالي', false, currentPage === totalPages));
     }
 
@@ -358,7 +343,6 @@ document.addEventListener("DOMContentLoaded", () => {
         allConversations = allConversations.filter(conv => conv._id !== currentOpenConversationId);
         renderConversations();
       } catch (err) {
-        // الخطأ تم التعامل معه في handleApiRequest
       } finally {
         deleteSingleConversationBtn.disabled = false;
         deleteSingleConversationBtn.innerHTML = '<i class="fas fa-trash-alt"></i> حذف هذه المحادثة';
@@ -380,7 +364,6 @@ document.addEventListener("DOMContentLoaded", () => {
         allConversations = [];
         renderConversations();
       } catch (err) {
-        // الخطأ تم التعامل معه في handleApiRequest
       } finally {
         deleteAllConversationsBtn.disabled = false;
         deleteAllConversationsBtn.innerHTML = '<i class="fas fa-trash-alt"></i> حذف الكل';
@@ -431,7 +414,6 @@ document.addEventListener("DOMContentLoaded", () => {
         link.click();
         document.body.removeChild(link);
       } catch (err) {
-        // الخطأ تم التعامل معه في handleApiRequest
       } finally {
         downloadMessagesBtn.disabled = false;
         downloadMessagesBtn.innerHTML = '<i class="fas fa-download"></i> تنزيل';
@@ -505,7 +487,6 @@ document.addEventListener("DOMContentLoaded", () => {
         editArea.style.display = "none";
         if (messageActions) messageActions.style.display = "block";
       } catch (err) {
-        // الخطأ تم التعامل معه في handleApiRequest
       } finally {
         saveButton.disabled = false;
         saveButton.innerHTML = '<i class="fas fa-save"></i> حفظ كقاعدة جديدة';
@@ -513,7 +494,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
-    // --- Event Listeners Setup ---
     tabs.forEach(tab => {
       tab.addEventListener("click", () => {
         tabs.forEach(t => t.classList.remove("active"));
@@ -544,11 +524,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // --- Initial Load ---
     fetchConversations(selectedBotId, currentChannel, null, null);
   }
 
-  // Helper function to escape HTML
   function escapeHtml(unsafe) {
     if (typeof unsafe !== "string") return unsafe;
     return unsafe
@@ -559,6 +537,5 @@ document.addEventListener("DOMContentLoaded", () => {
          .replace(/\n/g, "<br>");
   }
 
-  // Make loadMessagesPage globally accessible
   window.loadMessagesPage = loadMessagesPage;
 });
