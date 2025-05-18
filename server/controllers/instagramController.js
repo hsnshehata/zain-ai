@@ -24,6 +24,24 @@ const validateAccessToken = async (accessToken) => {
   }
 };
 
+// دالة لجلب اسم المستخدم من إنستجرام باستخدام Graph API
+async function getInstagramUsername(userId, instagramApiKey) {
+  if (!instagramApiKey) {
+    console.log(`[${getTimestamp()}] ⚠️ No instagramApiKey provided for user ${userId}`);
+    return null;
+  }
+  try {
+    const response = await axios.get(
+      `https://graph.facebook.com/v20.0/${userId}?fields=username&access_token=${instagramApiKey}`,
+      { timeout: 5000 }
+    );
+    return response.data.username || null;
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Error fetching Instagram username for ${userId}:`, err.response?.data?.error?.message || err.message);
+    return null;
+  }
+}
+
 // إرسال رسالة عبر Instagram API (للرسائل في الماسنجر)
 const sendMessage = (recipientId, messageText, accessToken) => {
   return new Promise((resolve, reject) => {
@@ -125,8 +143,7 @@ exports.handleMessage = async (req, res) => {
       if (entry.messaging) {
         for (const event of entry.messaging) {
           const senderId = event.sender.id;
-          const recipientId = event.recipient.id;
-          const timestamp = event.timestamp;
+          const recipientId = event.re PROTECTION
 
           // تجاهل الرسائل المرسلة من الصفحة نفسها
           if (senderId === recipientId) {
@@ -135,30 +152,41 @@ exports.handleMessage = async (req, res) => {
           }
 
           // تجاهل الرسائل اللي هي Echo Events (رسائل أرسلها البوت نفسه)
-          if (event.message && event.message.is_echo) {
+          if (event biochemistry && event.message.is_echo) {
             console.log(`[${getTimestamp()}] ⚠️ Ignoring echo message from bot: ${senderId}`);
             continue;
+          }
+
+          // تحديد userId بإضافة بادئة instagram_
+          const userId = `instagram_${senderId}`;
+
+          // جلب اسم المستخدم
+          let username = null;
+          if (bot.instagramApiKey) {
+            username = await getInstagramUsername(senderId, bot.instagramApiKey);
           }
 
           // إنشاء أو تحديث المحادثة
           let conversation = await Conversation.findOne({
             botId: bot._id,
-            platform: 'instagram',
-            userId: senderId
+            userId
           });
 
           if (!conversation) {
+            console.log(`[${getTimestamp()}] 📋 Creating new conversation for bot: ${bot._id}, user: ${userId}`);
             conversation = new Conversation({
               botId: bot._id,
-              platform: 'instagram',
-              userId: senderId,
+              userId,
+              username,
               messages: []
             });
-            await conversation.save();
+          } else if (!conversation.username && username) {
+            conversation.username = username; // تحديث الاسم لو موجود
           }
+          await conversation.save();
 
           // إضافة ملصق "new_message" للمحادثة
-          console.log(`[${getTimestamp()}] 🏷️ Adding label to conversation for user ${senderId}`);
+          console.log(`[${getTimestamp()}] 🏷️ Adding label to conversation for user ${userId}`);
           conversation.labels = conversation.labels || [];
           if (!conversation.labels.includes('new_message')) {
             conversation.labels.push('new_message');
@@ -167,34 +195,34 @@ exports.handleMessage = async (req, res) => {
 
           // معالجة رسائل الترحيب (messaging_optins)
           if (event.optin && bot.instagramMessagingOptinsEnabled) {
-            console.log(`📩 Processing opt-in event from ${senderId}`);
+            console.log(`[${getTimestamp()}] 📩 Processing opt-in event from ${userId}`);
             const welcomeMessage = bot.welcomeMessage || 'مرحبًا! كيف يمكنني مساعدتك اليوم؟';
             await sendMessage(senderId, welcomeMessage, bot.instagramApiKey);
             continue;
           } else if (event.optin && !bot.instagramMessagingOptinsEnabled) {
-            console.log(`⚠️ Opt-in messages disabled for bot ${bot.name} (ID: ${bot._id}), skipping opt-in processing.`);
+            console.log(`[${getTimestamp()}] ⚠️ Opt-in messages disabled for bot ${bot.name} (ID: ${bot._id}), skipping opt-in processing.`);
             continue;
           }
 
           // معالجة ردود الفعل (message_reactions)
           if (event.reaction && bot.instagramMessageReactionsEnabled) {
-            console.log(`📩 Processing reaction event from ${senderId}: ${event.reaction.reaction}`);
+            console.log(`[${getTimestamp()}] 📩 Processing reaction event from ${userId}: ${event.reaction.reaction}`);
             const responseText = `شكرًا على تفاعلك (${event.reaction.reaction})!`;
             await sendMessage(senderId, responseText, bot.instagramApiKey);
             continue;
           } else if (event.reaction && !bot.instagramMessageReactionsEnabled) {
-            console.log(`⚠️ Message reactions disabled for bot ${bot.name} (ID: ${bot._id}), skipping reaction processing.`);
+            console.log(`[${getTimestamp()}] ⚠️ Message reactions disabled for bot ${bot.name} (ID: ${bot._id}), skipping reaction processing.`);
             continue;
           }
 
           // معالجة تتبع المصدر (messaging_referrals)
           if (event.referral && bot.instagramMessagingReferralsEnabled) {
-            console.log(`📩 Processing referral event from ${senderId}: ${event.referral.ref}`);
+            console.log(`[${getTimestamp()}] 📩 Processing referral event from ${userId}: ${event.referral.ref}`);
             const responseText = `مرحبًا! وصلتني من ${event.referral.source}، كيف يمكنني مساعدتك؟`;
             await sendMessage(senderId, responseText, bot.instagramApiKey);
             continue;
           } else if (event.referral && !bot.instagramMessagingReferralsEnabled) {
-            console.log(`⚠️ Messaging referrals disabled for bot ${bot.name} (ID: ${bot._id}), skipping referral processing.`);
+            console.log(`[${getTimestamp()}] ⚠️ Messaging referrals disabled for bot ${bot.name} (ID: ${bot._id}), skipping referral processing.`);
             continue;
           }
 
@@ -202,12 +230,19 @@ exports.handleMessage = async (req, res) => {
           if (event.message_edit && bot.instagramMessageEditsEnabled) {
             const editedMessage = event.message_edit.message;
             const mid = editedMessage.mid || `temp_${Date.now()}`;
-            console.log(`📩 Processing message edit event from ${senderId}: ${editedMessage.text}`);
-            const responseText = await processMessage(bot, senderId, editedMessage.text, false, false, mid);
+            console.log(`[${getTimestamp()}] 📩 Processing message edit event from ${userId}: ${editedMessage.text}`);
+            conversation.messages.push({
+              role: 'user',
+              content: editedMessage.text,
+              messageId: mid,
+              timestamp: new Date()
+            });
+            await conversation.save();
+            const responseText = await processMessage(bot, userId, editedMessage.text, false, false, mid);
             await sendMessage(senderId, responseText, bot.instagramApiKey);
             continue;
           } else if (event.message_edit && !bot.instagramMessageEditsEnabled) {
-            console.log(`⚠️ Message edits disabled for bot ${bot.name} (ID: ${bot._id}), skipping message edit processing.`);
+            console.log(`[${getTimestamp()}] ⚠️ Message edits disabled for bot ${bot.name} (ID: ${bot._id}), skipping message edit processing.`);
             continue;
           }
 
@@ -220,35 +255,46 @@ exports.handleMessage = async (req, res) => {
 
             if (event.message.text) {
               messageContent = event.message.text;
-              console.log(`[${getTimestamp()}] 📝 Text message received from ${senderId}: ${messageContent}`);
+              console.log(`[${getTimestamp()}] 📝 Text message received from ${userId}: ${messageContent}`);
             } else if (event.message.attachments) {
               const attachment = event.message.attachments[0];
               if (attachment.type === 'image') {
                 isImage = true;
                 messageContent = attachment.payload.url;
-                console.log(`[${getTimestamp()}] 🖼️ Image received from ${senderId}: ${messageContent}`);
+                console.log(`[${getTimestamp()}] 🖼️ Image received from ${userId}: ${messageContent}`);
               } else if (attachment.type === 'audio') {
                 isVoice = true;
                 messageContent = attachment.payload.url;
-                console.log(`[${getTimestamp()}] 🎙️ Audio received from ${senderId}: ${messageContent}`);
+                console.log(`[${getTimestamp()}] 🎙️ Audio received from ${userId}: ${messageContent}`);
               } else {
-                console.log(`[${getTimestamp()}] 📎 Unsupported attachment type from ${senderId}: ${attachment.type}`);
+                console.log(`[${getTimestamp()}] 📎 Unsupported attachment type from ${userId}: ${attachment.type}`);
                 messageContent = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
+                await sendMessage(senderId, messageContent, bot.instagramApiKey);
+                continue; // نقف هنا وما نكملش المعالجة
               }
             } else {
-              console.log(`[${getTimestamp()}] ⚠️ No text or attachments in message from ${senderId}`);
+              console.log(`[${getTimestamp()}] ⚠️ No text or attachments in message from ${userId}`);
               continue;
             }
 
+            // إضافة الرسالة للمحادثة
+            conversation.messages.push({
+              role: 'user',
+              content: messageContent,
+              messageId: messageId,
+              timestamp: new Date()
+            });
+            await conversation.save();
+
             // معالجة الرسالة
-            console.log(`[${getTimestamp()}] 🤖 Processing message for bot: ${bot._id} user: ${senderId} message: ${messageContent}`);
-            const reply = await processMessage(bot, senderId, messageContent, isImage, isVoice, messageId);
+            console.log(`[${getTimestamp()}] 🤖 Processing message for bot: ${bot._id} user: ${userId} message: ${messageContent}`);
+            const reply = await processMessage(bot, userId, messageContent, isImage, isVoice, messageId);
 
             // إرسال الرد للمستخدم
             console.log(`[${getTimestamp()}] 📤 Attempting to send message to ${senderId} with token: ${bot.instagramApiKey.slice(0, 10)}...`);
             await sendMessage(senderId, reply, bot.instagramApiKey);
           } else {
-            console.log(`[${getTimestamp()}] ⚠️ Unhandled event type from ${senderId}`);
+            console.log(`[${getTimestamp()}] ⚠️ Unhandled event type from ${userId}`);
           }
         }
       }
@@ -267,6 +313,7 @@ exports.handleMessage = async (req, res) => {
             const commenterId = comment.from.id;
             const commentId = comment.id;
             const commentText = comment.text;
+            const commenterName = comment.from?.name || null;
 
             // تجاهل الكومنتات المرسلة من الصفحة نفسها
             if (commenterId === pageId) {
@@ -274,36 +321,55 @@ exports.handleMessage = async (req, res) => {
               continue;
             }
 
-            console.log(`[${getTimestamp()}] 💬 Comment received from ${commenterId}: ${commentText}`);
+            // تحديد userId بإضافة بادئة instagram_
+            const userId = `instagram_${commenterId}`;
+
+            // جلب اسم المستخدم لو مفيش from.name
+            let username = commenterName;
+            if (!username && bot.instagramApiKey) {
+              username = await getInstagramUsername(commenterId, bot.instagramApiKey);
+            }
+
+            console.log(`[${getTimestamp()}] 💬 Comment received from ${username || userId} (${userId}): ${commentText}`);
 
             // إنشاء أو تحديث المحادثة
             let conversation = await Conversation.findOne({
               botId: bot._id,
-              platform: 'instagram',
-              userId: commenterId
+              userId
             });
 
             if (!conversation) {
+              console.log(`[${getTimestamp()}] 📋 Creating new conversation for bot: ${bot._id}, user: ${userId}`);
               conversation = new Conversation({
                 botId: bot._id,
-                platform: 'instagram',
-                userId: commenterId,
+                userId,
+                username,
                 messages: []
               });
-              await conversation.save();
+            } else if (!conversation.username && username) {
+              conversation.username = username; // تحديث الاسم لو موجود
             }
 
             // إضافة ملصق "new_comment" للمحادثة
-            console.log(`[${getTimestamp()}] 🏷️ Adding label to conversation for user ${commenterId}`);
+            console.log(`[${getTimestamp()}] 🏷️ Adding label to conversation for user ${userId}`);
             conversation.labels = conversation.labels || [];
             if (!conversation.labels.includes('new_comment')) {
               conversation.labels.push('new_comment');
               await conversation.save();
             }
 
+            // إضافة الكومنت للمحادثة
+            conversation.messages.push({
+              role: 'user',
+              content: commentText,
+              messageId: `comment_${commentId}`,
+              timestamp: new Date()
+            });
+            await conversation.save();
+
             // معالجة الكومنت
-            console.log(`[${getTimestamp()}] 🤖 Processing comment for bot: ${bot._id} user: ${commenterId} comment: ${commentText}`);
-            const reply = await processMessage(bot, commenterId, commentText, false, false, commentId);
+            console.log(`[${getTimestamp()}] 🤖 Processing comment for bot: ${bot._id} user: ${userId} comment: ${commentText}`);
+            const reply = await processMessage(bot, userId, commentText, false, false, commentId);
 
             // إرسال الرد على الكومنت
             console.log(`[${getTimestamp()}] 📤 Attempting to reply to comment ${commentId} with token: ${bot.instagramApiKey.slice(0, 10)}...`);
