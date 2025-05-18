@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="modal-content chat-modal-content">
           <div class="modal-header chat-header">
             <h3 id="chatModalTitle">محادثة</h3>
-            <button id="closeChatModalBtn" class="close-button">&times;</button>
+            <button id="closeChatModalBtn" class="close-button">×</button>
           </div>
           <div id="chatModalBody" class="modal-body chat-messages"></div>
           <div class="modal-footer chat-footer">
@@ -169,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
       card.className = "card conversation-card";
       card.dataset.conversationId = conv._id;
 
-      let userName = conv.username || conv.userId;
+      let userName = conv.username || 'مستخدم غير معروف';
       let userIdentifier = conv.userId;
 
       if (currentChannel === "web" && conv.userId.startsWith('web_')) {
