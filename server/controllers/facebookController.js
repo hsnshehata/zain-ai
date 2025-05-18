@@ -6,6 +6,24 @@ const { processMessage, processFeedback } = require('../botEngine');
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
 
+// دالة لجلب اسم المستخدم من إنستجرام باستخدام Graph API
+async function getInstagramUsername(userId, instagramApiKey) {
+  if (!instagramApiKey) {
+    console.log(`[${getTimestamp()}] ⚠️ No instagramApiKey provided for user ${userId}`);
+    return null;
+  }
+  try {
+    const response = await axios.get(
+      `https://graph.facebook.com/v20.0/${userId}?fields=username&access_token=${instagramApiKey}`,
+      { timeout: 5000 }
+    );
+    return response.data.username || null;
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Error fetching Instagram username for ${userId}:`, err.response?.data?.error?.message || err.message);
+    return null;
+  }
+}
+
 const handleMessage = async (req, res) => {
   try {
     console.log(`[${getTimestamp()}] 📩 Webhook POST request received:`, JSON.stringify(req.body, null, 2));
@@ -47,8 +65,10 @@ const handleMessage = async (req, res) => {
 
         // Validate that senderId is not the page itself
         if (senderPsid === bot.facebookPageId || senderPsid === bot.instagramPageId) {
-          console.log(`[${getTimestamp()}] ⚠️ Skipping message because senderId (${senderPsid}) is the page itselfF        if (webhookEvent.message && webhookEvent.message.is_echo) {
-          console.log(`[${getTimestamp()}] ⚠️ Ignoring echo message from bot: ${senderPsid}`);
+          console.log(`[${getTimestamp()}] ⚠️ Skipping message because senderId (${senderPsid}) is the page itself`);
+          if (webhookEvent.message && webhookEvent.message.is_echo) {
+            console.log(`[${getTimestamp()}] ⚠️ Ignoring echo message from bot: ${senderPsid}`);
+          }
           continue;
         }
 
@@ -61,8 +81,11 @@ const handleMessage = async (req, res) => {
         // تحديد userId بناءً على المنصة
         const userId = isInstagram ? `instagram_${senderPsid}` : senderPsid;
 
-        // جلب اسم المستخدم من الحدث
+        // جلب اسم المستخدم
         let username = webhookEvent.sender?.name || null;
+        if (isInstagram && !username && bot.instagramApiKey) {
+          username = await getInstagramUsername(senderPsid, bot.instagramApiKey);
+        }
 
         // معالجة رسائل الترحيب (messaging_optins)
         if (webhookEvent.optin && (isInstagram ? bot.instagramMessagingOptinsEnabled : bot.messagingOptinsEnabled)) {
@@ -102,6 +125,25 @@ const handleMessage = async (req, res) => {
           const editedMessage = webhookEvent.message_edit.message;
           const mid = editedMessage.mid || `temp_${Date.now()}`;
           console.log(`[${getTimestamp()}] 📩 Processing message edit event from ${userId}: ${editedMessage.text}`);
+          let conversation = await Conversation.findOne({ botId: bot._id, userId });
+          if (!conversation) {
+            console.log(`[${getTimestamp()}] 📋 Creating new conversation for bot: ${bot._id}, user: ${userId}`);
+            conversation = new Conversation({
+              botId: bot._id,
+              userId,
+              username,
+              messages: []
+            });
+          } else if (!conversation.username && username) {
+            conversation.username = username;
+          }
+          conversation.messages.push({
+            role: 'user',
+            content: editedMessage.text,
+            messageId: mid,
+            timestamp: new Date()
+          });
+          await conversation.save();
           const responseText = await processMessage(bot._id, userId, editedMessage.text, false, false, mid);
           await sendMessage(senderPsid, responseText, isInstagram ? bot.instagramApiKey : bot.facebookApiKey);
           continue;
