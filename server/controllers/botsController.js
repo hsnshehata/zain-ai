@@ -40,7 +40,7 @@ exports.getBots = async (req, res) => {
   }
 };
 
-// جلب التقييمات بناءً على botId مع اسم المستخدم من فيسبوك/إنستجرام (التقييمات المرئية فقط)
+// جلب التقييمات بناءً على botId مع اسم المستخدم من فيسبوك/إنستجرام
 exports.getFeedback = async (req, res) => {
   try {
     const botId = req.params.id;
@@ -77,9 +77,11 @@ exports.getFeedback = async (req, res) => {
           console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم ${item.userId} من فيسبوك/إنستجرام:`, err.message);
         }
 
+        // تحويل type إلى feedback للتوافق مع الفرونت
         return {
           ...item._doc,
           username,
+          feedback: item.type === 'like' ? 'positive' : 'negative' // توافق مع الفرونت
         };
       })
     );
@@ -97,7 +99,7 @@ exports.getTopNegativeReplies = async (req, res) => {
     const { botId } = req.params;
     const { startDate, endDate } = req.query;
 
-    let query = { botId, feedback: 'negative', isVisible: true };
+    let query = { botId, type: 'dislike', isVisible: true };
     if (startDate || endDate) {
       query.timestamp = {};
       if (startDate) query.timestamp.$gte = new Date(startDate);
@@ -159,8 +161,11 @@ exports.clearFeedbackByType = async (req, res) => {
     const botId = req.params.id;
     const type = req.params.type; // 'positive' or 'negative'
 
+    // تحويل type من positive/negative إلى like/dislike
+    const feedbackType = type === 'positive' ? 'like' : 'dislike';
+
     const updated = await Feedback.updateMany(
-      { botId, feedback: type, isVisible: true },
+      { botId, type: feedbackType, isVisible: true },
       { $set: { isVisible: false } }
     );
 
