@@ -139,11 +139,11 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error('عناصر إحصائيات الرسائل غير موجودة');
         }
 
-        const channels = ['facebook', 'web', 'whatsapp'];
+        const channels = ['facebook', 'web', 'instagram'];
         const messagesByChannelData = {
           facebook: { userMessages: 0, botMessages: 0 },
           web: { userMessages: 0, botMessages: 0 },
-          whatsapp: { userMessages: 0, botMessages: 0 }
+          instagram: { userMessages: 0, botMessages: 0 }
         };
 
         for (const channel of channels) {
@@ -168,8 +168,8 @@ document.addEventListener('DOMContentLoaded', () => {
           console.log(`Messages for ${channel}: user=${userMessageCount}, bot=${botMessageCount}`);
         }
 
-        const totalUserMessages = messagesByChannelData.facebook.userMessages + messagesByChannelData.web.userMessages + messagesByChannelData.whatsapp.userMessages;
-        const totalBotMessages = messagesByChannelData.facebook.botMessages + messagesByChannelData.web.botMessages + messagesByChannelData.whatsapp.botMessages;
+        const totalUserMessages = messagesByChannelData.facebook.userMessages + messagesByChannelData.web.userMessages + messagesByChannelData.instagram.userMessages;
+        const totalBotMessages = messagesByChannelData.facebook.botMessages + messagesByChannelData.web.botMessages + messagesByChannelData.instagram.botMessages;
         const totalMessages = totalUserMessages + totalBotMessages;
 
         // عرض الإحصائيات النصية لتوزيع الرسائل
@@ -192,11 +192,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <li>الإجمالي: ${messagesByChannelData.web.userMessages + messagesByChannelData.web.botMessages}</li>
               </ul>
             </li>
-            <li>رسائل واتساب:
+            <li>رسائل إنستجرام:
               <ul>
-                <li>رسائل المستخدمين: ${messagesByChannelData.whatsapp.userMessages}</li>
-                <li>ردود البوت: ${messagesByChannelData.whatsapp.botMessages}</li>
-                <li>الإجمالي: ${messagesByChannelData.whatsapp.userMessages + messagesByChannelData.whatsapp.botMessages}</li>
+                <li>رسائل المستخدمين: ${messagesByChannelData.instagram.userMessages}</li>
+                <li>ردود البوت: ${messagesByChannelData.instagram.botMessages}</li>
+                <li>الإجمالي: ${messagesByChannelData.instagram.userMessages + messagesByChannelData.instagram.botMessages}</li>
               </ul>
             </li>
           </ul>
@@ -293,15 +293,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const feedbackByChannel = {
           facebook: { positive: 0, negative: 0 },
           web: { positive: 0, negative: 0 },
-          whatsapp: { positive: 0, negative: 0 }
+          instagram: { positive: 0, negative: 0 }
         };
 
         feedbackData.forEach(feedback => {
           let channel = 'unknown';
           if (feedback.userId.startsWith('web_') || feedback.userId === 'anonymous') {
             channel = 'web';
-          } else if (feedback.userId.startsWith('whatsapp_')) {
-            channel = 'whatsapp';
+          } else if (feedback.userId.startsWith('instagram_')) {
+            channel = 'instagram';
           } else {
             channel = 'facebook'; // افتراضي لفيسبوك
           }
@@ -339,11 +339,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 <li>الإجمالي: ${feedbackByChannel.web.positive + feedbackByChannel.web.negative}</li>
               </ul>
             </li>
-            <li>تقييمات واتساب:
+            <li>تقييمات إنستجرام:
               <ul>
-                <li>إيجابية: ${feedbackByChannel.whatsapp.positive}</li>
-                <li>سلبية: ${feedbackByChannel.whatsapp.negative}</li>
-                <li>الإجمالي: ${feedbackByChannel.whatsapp.positive + feedbackByChannel.whatsapp.negative}</li>
+                <li>إيجابية: ${feedbackByChannel.instagram.positive}</li>
+                <li>سلبية: ${feedbackByChannel.instagram.negative}</li>
+                <li>الإجمالي: ${feedbackByChannel.instagram.positive + feedbackByChannel.instagram.negative}</li>
               </ul>
             </li>
           </ul>
@@ -387,99 +387,70 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const rulesTypesCount = {
           general: 0,
-          global: 0,
           products: 0,
           qa: 0,
+          channels: 0,
           api: 0
         };
 
         const rulesByChannel = {
-          facebook: { general: 0, products: 0, qa: 0, channels: 0 },
-          web: { general: 0, products: 0, qa: 0, channels: 0 },
-          whatsapp: { general: 0, products: 0, qa: 0, channels: 0 }
+          facebook: { channels: 0 },
+          web: { channels: 0 },
+          instagram: { channels: 0 },
+          other: { channels: 0 }
         };
 
         rulesData.rules.forEach(rule => {
+          // تجاهل القواعد الموحدة (global)
+          if (rule.type === 'global') return;
+
           if (rulesTypesCount[rule.type] !== undefined) {
             rulesTypesCount[rule.type]++;
           }
 
-          // تحديد القناة بناءً على وجود channel في القاعدة
-          let channel = rule.channel || 'unknown';
-          if (channel === 'unknown') {
-            if (rule.type === 'global') {
-              // القواعد الموحدة مش مرتبطة بقناة معينة
-              return;
-            }
-            // افتراض القناة بناءً على القاعدة
+          // تحديد القناة بناءً على rule.content.platform لقواعد نوع channels
+          if (rule.type === 'channels') {
+            let channel = 'other';
             if (rule.content?.platform) {
               if (rule.content.platform.toLowerCase().includes('facebook')) {
                 channel = 'facebook';
-              } else if (rule.content.platform.toLowerCase().includes('whatsapp')) {
-                channel = 'whatsapp';
+              } else if (rule.content.platform.toLowerCase().includes('instagram')) {
+                channel = 'instagram';
               } else if (rule.content.platform.toLowerCase().includes('web')) {
                 channel = 'web';
               }
             }
-          }
-
-          if (['facebook', 'web', 'whatsapp'].includes(channel) && rule.type !== 'global') {
-            if (['general', 'products', 'qa', 'channels'].includes(rule.type)) {
-              rulesByChannel[channel][rule.type]++;
-            }
+            rulesByChannel[channel].channels++;
           }
         });
 
         const totalRules = Object.values(rulesTypesCount).reduce((sum, count) => sum + count, 0);
         const generalPercentage = totalRules > 0 ? ((rulesTypesCount.general / totalRules) * 100).toFixed(1) : 0;
-        const globalPercentage = totalRules > 0 ? ((rulesTypesCount.global / totalRules) * 100).toFixed(1) : 0;
         const productsPercentage = totalRules > 0 ? ((rulesTypesCount.products / totalRules) * 100).toFixed(1) : 0;
         const qaPercentage = totalRules > 0 ? ((rulesTypesCount.qa / totalRules) * 100).toFixed(1) : 0;
+        const channelsPercentage = totalRules > 0 ? ((rulesTypesCount.channels / totalRules) * 100).toFixed(1) : 0;
         const apiPercentage = totalRules > 0 ? ((rulesTypesCount.api / totalRules) * 100).toFixed(1) : 0;
 
         // عرض الإحصائيات النصية لتوزيع أنواع القواعد
         rulesTypeStats.innerHTML = `
+          <p>إجمالي القواعد: ${totalRules}</p>
+          <p>قواعد عامة: ${rulesTypesCount.general} (${generalPercentage}%)</p>
+          <p>قواعد أسعار: ${rulesTypesCount.products} (${productsPercentage}%)</p>
+          <p>قواعد سؤال وجواب: ${rulesTypesCount.qa} (${qaPercentage}%)</p>
+          <p>قواعد قنوات التواصل: ${rulesTypesCount.channels} (${channelsPercentage}%)</p>
+          <p>قواعد API: ${rulesTypesCount.api} (${apiPercentage}%)</p>
+          <p>قواعد قنوات التواصل:</p>
           <ul>
-            <li>إجمالي القواعد: ${totalRules}</li>
-            <li>قواعد عامة: ${rulesTypesCount.general} (${generalPercentage}%)</li>
-            <li>قواعد موحدة: ${rulesTypesCount.global} (${globalPercentage}%)</li>
-            <li>قواعد أسعار: ${rulesTypesCount.products} (${productsPercentage}%)</li>
-            <li>قواعد سؤال وجواب: ${rulesTypesCount.qa} (${qaPercentage}%)</li>
-            <li>قواعد API: ${rulesTypesCount.api} (${apiPercentage}%)</li>
-            <li>توزيع القواعد حسب القناة:
-              <ul>
-                <li>قواعد فيسبوك:
-                  <ul>
-                    <li>عامة: ${rulesByChannel.facebook.general}</li>
-                    <li>أسعار: ${rulesByChannel.facebook.products}</li>
-                    <li>سؤال وجواب: ${rulesByChannel.facebook.qa}</li>
-                    <li>قنوات: ${rulesByChannel.facebook.channels}</li>
-                  </ul>
-                </li>
-                <li>قواعد الويب:
-                  <ul>
-                    <li>عامة: ${rulesByChannel.web.general}</li>
-                    <li>أسعار: ${rulesByChannel.web.products}</li>
-                    <li>سؤال وجواب: ${rulesByChannel.web.qa}</li>
-                    <li>قنوات: ${rulesByChannel.web.channels}</li>
-                  </ul>
-                </li>
-                <li>قواعد واتساب:
-                  <ul>
-                    <li>عامة: ${rulesByChannel.whatsapp.general}</li>
-                    <li>أسعار: ${rulesByChannel.whatsapp.products}</li>
-                    <li>سؤال وجواب: ${rulesByChannel.whatsapp.qa}</li>
-                    <li>قنوات: ${rulesByChannel.whatsapp.channels}</li>
-                  </ul>
-                </li>
-              </ul>
-            </li>
+            <li>فيسبوك: ${rulesByChannel.facebook.channels}</li>
+            <li>إنستجرام: ${rulesByChannel.instagram.channels}</li>
+            <li>ويب: ${rulesByChannel.web.channels}</li>
+            <li>أخرى: ${rulesByChannel.other.channels}</li>
           </ul>
         `;
 
         // إخفاء السبينر وإظهار المحتوى
-        rulesTypeSpinner.style.display = 'none';
         rulesTypeStats.style.display = 'block';
+        rulesTypeSpinner.style.display = 'none';
         rulesTypeError.style.display = 'none';
 
       } catch (err) {
