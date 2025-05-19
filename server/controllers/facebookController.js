@@ -139,6 +139,11 @@ const handleMessage = async (req, res) => {
           const mid = feedbackData.mid;
           const feedback = feedbackData.feedback;
 
+          if (!mid || !feedback) {
+            console.log(`❌ Invalid feedback data: mid=${mid}, feedback=${feedback}`);
+            continue;
+          }
+
           console.log(`📊 Feedback received from ${senderPsid}: ${feedback} for message ID: ${mid}`);
           await processFeedback(bot._id, senderPsid, mid, feedback);
         } else {
