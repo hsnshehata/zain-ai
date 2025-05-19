@@ -1,20 +1,16 @@
 const mongoose = require('mongoose');
 
-const conversationSchema = new mongoose.Schema({
+const feedbackSchema = new mongoose.Schema({
   botId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bot', required: true },
-  userId: { type: String, required: true }, // Facebook user ID
-  messages: [
-    {
-      role: { type: String, enum: ['user', 'assistant'], required: true },
-      content: { type: String, required: true },
-      messageId: { type: String }, // Unique message ID from webhook
-      timestamp: { type: Date, default: Date.now },
-    },
-  ],
+  userId: { type: String, required: true }, // معرف المستخدم (فيسبوك أو ويب)
+  messageId: { type: String, required: true }, // معرف رد البوت (mid)
+  type: { type: String, enum: ['like', 'dislike'], required: true }, // نوع التقييم
+  messageContent: { type: String, required: true }, // محتوى رد البوت
+  timestamp: { type: Date, default: Date.now }, // تاريخ التقييم
+  isVisible: { type: Boolean, default: true } // حالة الظهور
 });
 
-// إضافة unique index على messageId داخل messages
-conversationSchema.index({ 'messages.messageId': 1 }, { unique: true, sparse: true });
+// ضمان إن كل مستخدم يقيم نفس الرسالة مرة واحدة بس
+feedbackSchema.index({ userId: 1, messageId: 1 }, { unique: true });
 
-// التأكد إن المودل ما يتعرفش أكتر من مرة
-module.exports = mongoose.models.Conversation || mongoose.model('Conversation', conversationSchema);
+module.exports = mongoose.models.Feedback || mongoose.model('Feedback', feedbackSchema);
