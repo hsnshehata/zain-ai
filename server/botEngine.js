@@ -206,14 +206,32 @@ async function processFeedback(botId, userId, messageId, feedback) {
     // جلب المحادثة
     const conversation = await Conversation.findOne({ botId, userId });
     let messageContent = 'غير معروف';
+    let userMessage = 'غير معروف';
+    let feedbackTimestamp = new Date();
 
     if (conversation) {
-      // البحث عن رد البوت بناءً على messageId مباشرة
-      const botMessage = conversation.messages.find(msg => msg.messageId === messageId && msg.role === 'assistant');
+      // نبحث عن آخر رد بوت قبل تاريخ التقييم
+      const botMessages = conversation.messages
+        .filter(msg => msg.role === 'assistant' && new Date(msg.timestamp) <= feedbackTimestamp)
+        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      const botMessage = botMessages.length > 0 ? botMessages[0] : null;
+
       if (botMessage) {
         messageContent = botMessage.content;
+        // نبحث عن رسالة المستخدم اللي قبل رد البوت مباشرة
+        const botMessageIndex = conversation.messages.findIndex(msg => msg === botMessage);
+        let userMessageIndex = botMessageIndex - 1;
+        while (userMessageIndex >= 0 && conversation.messages[userMessageIndex].role !== 'user') {
+          userMessageIndex--;
+        }
+        if (userMessageIndex >= 0) {
+          userMessage = conversation.messages[userMessageIndex].content;
+        } else {
+          console.log(`⚠️ No user message found before bot message for userId: ${userId}`);
+        }
       } else {
-        console.log(`⚠️ No bot message found for messageId: ${messageId}`);
+        console.log(`⚠️ No bot message found for userId: ${userId} before timestamp: ${feedbackTimestamp}`);
       }
     } else {
       console.log(`⚠️ No conversation found for bot: ${botId}, user: ${userId}`);
@@ -228,13 +246,14 @@ async function processFeedback(botId, userId, messageId, feedback) {
         messageId,
         type,
         messageContent,
-        timestamp: new Date(),
+        userMessage, // حفظ رسالة المستخدم
+        timestamp: feedbackTimestamp,
         isVisible: true
       },
       { upsert: true, new: true }
     );
 
-    console.log(`✅ Feedback saved: ${type} for message ID: ${messageId} with content: ${messageContent}`);
+    console.log(`✅ Feedback saved: ${type} for message ID: ${messageId} with content: ${messageContent}, user message: ${userMessage}`);
   } catch (err) {
     console.error('❌ Error processing feedback:', err.message, err.stack);
   }
