@@ -81,7 +81,8 @@ exports.getFeedback = async (req, res) => {
         return {
           ...item._doc,
           username,
-          feedback: item.type === 'like' ? 'positive' : 'negative' // توافق مع الفرونت
+          feedback: item.type === 'like' ? 'positive' : 'negative', // توافق مع الفرونت
+          userMessage: item.userMessage // إضافة رسالة المستخدم للرد
         };
       })
     );
