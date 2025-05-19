@@ -21,11 +21,13 @@ const connectDB = require('./db');
 const Conversation = require('./models/Conversation');
 const Bot = require('./models/Bot');
 const User = require('./models/User');
+const Feedback = require('./models/Feedback'); // استيراد موديل Feedback
 const { processMessage } = require('./botEngine');
 const NodeCache = require('node-cache');
 const bcrypt = require('bcryptjs');
 const request = require('request');
 const { checkAutoStopBots, refreshInstagramTokens } = require('./cronJobs');
+const authenticate = require('./middleware/authenticate'); // استيراد middleware للتحقق
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
@@ -101,6 +103,50 @@ app.use('/api/messages', messagesRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/', indexRoutes);
+
+// Route جديد لإدارة التقييمات
+app.post('/api/feedback', async (req, res) => {
+  try {
+    const { userId, botId, messageId, type, messageContent } = req.body;
+    if (!userId || !botId || !messageId || !type || !messageContent) {
+      return res.status(400).json({ message: 'userId, botId, messageId, type, and messageContent are required.' });
+    }
+    if (!['like', 'dislike'].includes(type)) {
+      return res.status(400).json({ message: 'type must be like or dislike.' });
+    }
+
+    const feedback = await Feedback.findOneAndUpdate(
+      { userId, messageId },
+      { botId, userId, messageId, type, messageContent, timestamp: new Date(), isVisible: true },
+      { upsert: true, new: true }
+    );
+
+    console.log(`[${getTimestamp()}] ✅ Feedback saved: ${type} for bot: ${botId}, user: ${userId}, message: ${messageId}`);
+    res.status(200).json(feedback);
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Error saving feedback:`, err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر' });
+  }
+});
+
+app.get('/api/feedback/:botId', authenticate, async (req, res) => {
+  try {
+    const { botId } = req.params;
+    const feedback = await Feedback.find({ botId, isVisible: true }).sort({ timestamp: -1 });
+    
+    // تحويل type إلى feedback للتوافق مع الفرونت
+    const feedbackWithCompat = feedback.map(item => ({
+      ...item._doc,
+      feedback: item.type === 'like' ? 'positive' : 'negative'
+    }));
+
+    console.log(`[${getTimestamp()}] ✅ Feedback retrieved for bot: ${botId}`);
+    res.status(200).json(feedbackWithCompat);
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Error fetching feedback:`, err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في السيرفر' });
+  }
+});
 
 // Route لجلب المحادثات بتاعت المستخدم مع البوت
 app.get('/api/conversations/:botId/:userId', async (req, res) => {
