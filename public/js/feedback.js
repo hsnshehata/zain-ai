@@ -116,6 +116,17 @@ async function loadFeedback(botId, token) {
       negativeFeedback.forEach(item => negativeList.appendChild(createFeedbackCard(item, botId)));
     }
 
+    // إضافة Event Listeners لأزرار التعديل
+    document.querySelectorAll(".edit-rule-btn").forEach(button => {
+      button.addEventListener("click", handleEditRuleClick);
+    });
+    document.querySelectorAll(".save-edited-rule-btn").forEach(button => {
+      button.addEventListener("click", handleSaveEditedRuleClick);
+    });
+    document.querySelectorAll(".cancel-edit-btn").forEach(button => {
+      button.addEventListener("click", handleCancelEditClick);
+    });
+
   } catch (err) {
     negativeError.textContent = positiveError.textContent; // Sync error messages
     negativeError.style.display = "block";
@@ -129,11 +140,30 @@ async function loadFeedback(botId, token) {
 function createFeedbackCard(item, botId) {
   const card = document.createElement("div");
   card.className = "card feedback-card";
+  const userMessageDisplay = item.userMessage === "غير معروف" ? "لم يتم العثور على رسالة المستخدم" : item.userMessage;
   card.innerHTML = `
     <div class="card-body">
         <p><strong><i class="fas fa-user"></i> المستخدم:</strong> ${escapeHtml(item.username || item.userId || "غير معروف")}</p>
+        <p><strong><i class="fas fa-comment"></i> رسالة المستخدم:</strong> ${escapeHtml(userMessageDisplay)}</p>
         <p><strong><i class="fas fa-robot"></i> رد البوت:</strong> ${escapeHtml(item.messageContent || "غير متوفر")}</p>
         <p><strong><i class="fas fa-clock"></i> التاريخ:</strong> ${new Date(item.timestamp).toLocaleString("ar-EG")}</p>
+        <div class="message-actions">
+          <button class="btn btn-sm btn-outline-secondary edit-rule-btn" 
+                  data-feedback-id="${item._id}"
+                  data-question="${escapeHtml(item.userMessage)}" 
+                  data-answer="${escapeHtml(item.messageContent)}">
+            <i class="fas fa-edit"></i> تعديل
+          </button>
+        </div>
+        <div class="edit-area" id="edit-area-${item._id}" style="display: none;">
+          <textarea class="form-control edit-textarea" rows="3"></textarea>
+          <button class="btn btn-sm btn-primary save-edited-rule-btn">
+            <i class="fas fa-save"></i> حفظ كقاعدة جديدة
+          </button>
+          <button class="btn btn-sm btn-secondary cancel-edit-btn">
+            <i class="fas fa-times"></i> إلغاء
+          </button>
+        </div>
     </div>
     <div class="card-footer">
         <button class="btn-icon btn-delete" onclick="deleteFeedback('${item._id}', '${botId}')" title="حذف التقييم">
@@ -224,13 +254,14 @@ async function downloadFeedback(type) {
     }
 
     // Generate CSV content
-    const csvHeader = "\ufeffالمستخدم,رد البوت,التقييم,التاريخ\n";
+    const csvHeader = "\ufeffالمستخدم,رسالة المستخدم,رد البوت,التقييم,التاريخ\n";
     const csvRows = feedback.map(item => {
       const user = escapeCsvField(item.username || item.userId || "غير معروف");
+      const userMessage = escapeCsvField(item.userMessage || "غير معروف");
       const message = escapeCsvField(item.messageContent || "غير متوفر");
       const rating = type === "positive" ? "إيجابي" : "سلبي";
       const date = new Date(item.timestamp).toLocaleString("ar-EG");
-      return `${user},${message},${rating},${date}`;
+      return `${user},${userMessage},${message},${rating},${date}`;
     });
     const csvContent = csvHeader + csvRows.join("\n");
 
@@ -248,6 +279,84 @@ async function downloadFeedback(type) {
     console.error("خطأ في تنزيل التقييمات:", err);
   } finally {
     document.getElementById(spinnerId).style.display = "none";
+  }
+}
+
+// دوال لمعالجة تعديل ردود البوت
+function handleEditRuleClick(event) {
+  const button = event.currentTarget;
+  const feedbackId = button.dataset.feedbackId;
+  const answer = button.dataset.answer;
+  const editArea = document.getElementById(`edit-area-${feedbackId}`);
+  const textarea = editArea.querySelector(".edit-textarea");
+
+  button.closest(".message-actions").style.display = "none";
+  editArea.style.display = "block";
+  textarea.value = answer;
+  textarea.focus();
+}
+
+function handleCancelEditClick(event) {
+  const button = event.currentTarget;
+  const editArea = button.closest(".edit-area");
+  const messageActions = editArea.previousElementSibling;
+
+  editArea.style.display = "none";
+  if (messageActions && messageActions.classList.contains("message-actions")) {
+    messageActions.style.display = "block";
+  }
+}
+
+async function handleSaveEditedRuleClick(event) {
+  const saveButton = event.currentTarget;
+  const editArea = saveButton.closest(".edit-area");
+  const textarea = editArea.querySelector(".edit-textarea");
+  const messageActions = editArea.previousElementSibling;
+  const editButton = messageActions ? messageActions.querySelector(".edit-rule-btn") : null;
+
+  if (!editButton) {
+    alert("خطأ: لم يتم العثور على زر التعديل الأصلي.");
+    return;
+  }
+
+  const question = editButton.dataset.question;
+  const editedAnswer = textarea.value.trim();
+  const botId = localStorage.getItem("selectedBotId");
+  const token = localStorage.getItem("token");
+
+  if (!question || !editedAnswer) {
+    alert("خطأ: السؤال أو الجواب المعدل فارغ.");
+    return;
+  }
+
+  saveButton.disabled = true;
+  saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جار الحفظ...';
+  const cancelButton = editArea.querySelector(".cancel-edit-btn");
+  if (cancelButton) cancelButton.disabled = true;
+
+  try {
+    await handleApiRequest("/api/rules", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        botId: botId,
+        type: "qa",
+        content: { question: question, answer: editedAnswer },
+        channel: "web" // افتراضي، ممكن تعدل حسب القناة
+      }),
+    }, document.getElementById("positiveError"), "فشل حفظ القاعدة");
+    alert("تم حفظ القاعدة الجديدة بنجاح!");
+    editArea.style.display = "none";
+    if (messageActions) messageActions.style.display = "block";
+  } catch (err) {
+    console.error("خطأ في حفظ القاعدة:", err);
+  } finally {
+    saveButton.disabled = false;
+    saveButton.innerHTML = '<i class="fas fa-save"></i> حفظ كقاعدة جديدة';
+    if (cancelButton) cancelButton.disabled = false;
   }
 }
 
