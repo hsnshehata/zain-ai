@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="tabs">
           <button id="facebookMessagesTab" class="tab-button active" data-channel="facebook"><i class="fab fa-facebook-square"></i> فيسبوك</button>
           <button id="webMessagesTab" class="tab-button" data-channel="web"><i class="fas fa-globe"></i> ويب</button>
-          <button id="instagramMessagesTab" class="tab-button" data-channel="instagram"><i class="fab fa-instagram"></i> إنستجرام</button>
+          <button id="whatsappMessagesTab" class="tab-button" data-channel="whatsapp"><i class="fab fa-whatsapp"></i> واتساب</button>
         </div>
         <div class="tab-actions">
            <button id="downloadMessagesBtn" class="btn btn-secondary btn-sm" title="تنزيل رسائل القناة الحالية (TXT)"><i class="fas fa-download"></i> تنزيل</button>
@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="modal-content chat-modal-content">
           <div class="modal-header chat-header">
             <h3 id="chatModalTitle">محادثة</h3>
-            <button id="closeChatModalBtn" class="close-button">×</button>
+            <button id="closeChatModalBtn" class="close-button">&times;</button>
           </div>
           <div id="chatModalBody" class="modal-body chat-messages"></div>
           <div class="modal-footer chat-footer">
@@ -186,8 +186,9 @@ document.addEventListener("DOMContentLoaded", () => {
       if (currentChannel === "web" && conv.userId === "anonymous") {
         userName = `زائر ويب ${webUserCounter++}`;
         userIdentifier = `web-${webUserCounter - 1}`;
-      } else if (currentChannel === "instagram") {
-        userName = conv.username || `إنستجرام ${conv.userId}`;
+      } else if (currentChannel === "whatsapp") {
+        const phoneMatch = conv.userId.match(/whatsapp_(\d+)/);
+        userName = phoneMatch ? `واتساب ${phoneMatch[1]}` : `مستخدم واتساب`;
         userIdentifier = conv.userId;
       } else if (currentChannel === "facebook") {
         userName = conv.username || `فيسبوك ${conv.userId}`;
@@ -551,10 +552,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function escapeHtml(unsafe) {
     if (typeof unsafe !== "string") return unsafe;
     return unsafe
-         .replace(/&/g, "&")
-         .replace(/</g, "<")
-         .replace(/>/g, ">")
-         .replace(/"/g, """)
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
          .replace(/\n/g, "<br>");
   }
 
