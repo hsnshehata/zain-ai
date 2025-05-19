@@ -192,37 +192,49 @@ async function processFeedback(botId, userId, messageId, feedback) {
   try {
     console.log(`📊 Processing feedback for bot: ${botId}, user: ${userId}, messageId: ${messageId}, feedback: ${feedback}`);
 
+    // تحويل feedback إلى type
+    let type = '';
+    if (feedback === 'Good response') {
+      type = 'like';
+    } else if (feedback === 'Bad response') {
+      type = 'dislike';
+    } else {
+      console.log(`⚠️ Unknown feedback type: ${feedback}, skipping...`);
+      return;
+    }
+
     // جلب المحادثة
     const conversation = await Conversation.findOne({ botId, userId });
     let messageContent = 'غير معروف';
 
     if (conversation) {
-      // ابحث عن رد البوت بناءً على response_${messageId}
-      const botMessage = conversation.messages.find(msg => msg.messageId === `response_${messageId}` && msg.role === 'assistant');
+      // البحث عن رد البوت بناءً على messageId مباشرة
+      const botMessage = conversation.messages.find(msg => msg.messageId === messageId && msg.role === 'assistant');
       if (botMessage) {
         messageContent = botMessage.content;
       } else {
-        // لو مش لاقي رد البوت، جرب رسالة المستخدم
-        const userMessage = conversation.messages.find(msg => msg.messageId === messageId && msg.role === 'user');
-        if (userMessage) {
-          messageContent = userMessage.content;
-        }
+        console.log(`⚠️ No bot message found for messageId: ${messageId}`);
       }
+    } else {
+      console.log(`⚠️ No conversation found for bot: ${botId}, user: ${userId}`);
     }
 
-    // حفظ الـ feedback
-    const feedbackEntry = new Feedback({
-      botId,
-      userId,
-      messageId,
-      feedback: feedback === 'Good response' ? 'positive' : 'negative',
-      messageContent,
-      timestamp: new Date(),
-      isVisible: true
-    });
+    // حفظ التقييم باستخدام الموديل الجديد
+    const feedbackEntry = await Feedback.findOneAndUpdate(
+      { userId, messageId },
+      {
+        botId,
+        userId,
+        messageId,
+        type,
+        messageContent,
+        timestamp: new Date(),
+        isVisible: true
+      },
+      { upsert: true, new: true }
+    );
 
-    await feedbackEntry.save();
-    console.log(`✅ Feedback saved: ${feedback} for message ID: ${messageId} with content: ${messageContent}`);
+    console.log(`✅ Feedback saved: ${type} for message ID: ${messageId} with content: ${messageContent}`);
   } catch (err) {
     console.error('❌ Error processing feedback:', err.message, err.stack);
   }
