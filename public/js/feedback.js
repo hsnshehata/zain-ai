@@ -81,6 +81,7 @@ async function loadFeedback(botId, token) {
 
   if (!positiveList || !negativeList || !positiveSpinner || !negativeSpinner || !positiveError || !negativeError) {
     console.error("Feedback elements not found in DOM");
+    alert("خطأ في تحميل واجهة التقييمات، حاول مرة أخرى.");
     return;
   }
 
@@ -118,6 +119,7 @@ async function loadFeedback(botId, token) {
   } catch (err) {
     negativeError.textContent = positiveError.textContent; // Sync error messages
     negativeError.style.display = "block";
+    console.error("خطأ في تحميل التقييمات:", err);
   } finally {
     positiveSpinner.style.display = "none";
     negativeSpinner.style.display = "none";
@@ -159,7 +161,7 @@ async function deleteFeedback(feedbackId, botId) {
       alert("تم حذف التقييم بنجاح");
       await loadFeedback(botId, token);
     } catch (err) {
-      // الخطأ تم التعامل معه في handleApiRequest
+      console.error("خطأ في حذف التقييم:", err);
     }
   }
 }
@@ -191,7 +193,7 @@ async function clearFeedback(type) {
       document.getElementById(listId).innerHTML = 
         `<div class="card placeholder-card"><p>لا توجد تقييمات ${typeName}.</p></div>`;
     } catch (err) {
-      // الخطأ تم التعامل معه في handleApiRequest
+      console.error("خطأ في حذف التقييمات:", err);
     } finally {
       document.getElementById(spinnerId).style.display = "none";
     }
@@ -243,7 +245,7 @@ async function downloadFeedback(type) {
     link.click();
     document.body.removeChild(link);
   } catch (err) {
-    // الخطأ تم التعامل معه في handleApiRequest
+    console.error("خطأ في تنزيل التقييمات:", err);
   } finally {
     document.getElementById(spinnerId).style.display = "none";
   }
