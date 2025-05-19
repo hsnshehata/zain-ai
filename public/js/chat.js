@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         background-color: ${settings?.colors?.header || '#2D3436'};
       }
       #chatTitle {
-        color: ${settings?.titleColor || '#ffffff'};
+        color: ${settings?.colors?.titleColor || '#ffffff'};
       }
       #chatMessages {
         background-color: ${settings?.colors?.chatAreaBackground || '#3B4A4E'};
@@ -167,27 +167,34 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   async function submitFeedback(messageId, messageContent, feedback) {
     try {
-      const response = await fetch('/api/chat-page/feedback', {
+      // تحويل feedback إلى type
+      const type = feedback === 'positive' ? 'like' : 'dislike';
+      const userId = `web_${linkId}`; // userId ثابت لتتبع المستخدم
+
+      const response = await fetch('/api/feedback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           botId,
-          userId: `web_${linkId}_${Date.now()}`,
+          userId,
           messageId,
-          feedback,
+          type,
           messageContent,
         }),
       });
 
       if (!response.ok) {
-        throw new Error(`فشل في إرسال التقييم: ${response.status} ${response.statusText}`);
+        const errorData = await response.json();
+        throw new Error(`فشل في إرسال التقييم: ${errorData.message || response.statusText}`);
       }
 
-      console.log(`✅ Feedback submitted: ${feedback} for message ID: ${messageId}`);
+      console.log(`✅ Feedback submitted: ${type} for message ID: ${messageId}`);
+      alert(`تم تسجيل التقييم بنجاح: ${type === 'like' ? 'لايك' : 'ديسلايك'}`);
     } catch (err) {
       console.error('خطأ في إرسال التقييم:', err);
+      alert('فشل في تسجيل التقييم، حاول مرة أخرى.');
     }
   }
 
@@ -205,7 +212,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       (trimmedText.startsWith('<') && trimmedText.includes('>') && trimmedText.match(/<[a-zA-Z][^>]*>/)) ||
       trimmedText.match(/\b(function|const|let|var|=>|class)\b/i) ||
       (trimmedText.match(/{[^{}]*}/) && trimmedText.match(/:/)) ||
-      (trimmedText.match(/[{}$$          $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
+      (trimmedText.match(/[{}$$              $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
     );
   }
 
