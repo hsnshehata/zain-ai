@@ -6,6 +6,7 @@ const feedbackSchema = new mongoose.Schema({
   messageId: { type: String, required: true }, // معرف رد البوت (mid)
   type: { type: String, enum: ['like', 'dislike'], required: true }, // نوع التقييم
   messageContent: { type: String, required: true }, // محتوى رد البوت
+  userMessage: { type: String, required: true }, // رسالة المستخدم اللي البوت رد عليها
   timestamp: { type: Date, default: Date.now }, // تاريخ التقييم
   isVisible: { type: Boolean, default: true } // حالة الظهور
 });
