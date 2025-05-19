@@ -11,8 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     console.log('Analytics CSS loaded');
 
     const content = document.getElementById('content');
-    const token = localStorage.getItem('token');
-    const selectedBotId = localStorage.getItem('selectedBotId');
+    const token = localStorage.getItem("token");
+    const selectedBotId = localStorage.getItem("selectedBotId");
 
     console.log('loadAnalyticsPage: selectedBotId:', selectedBotId);
     console.log('loadAnalyticsPage: token:', token);
@@ -59,7 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="section-spinner" id="messagesByChannelSpinner">
                 <div class="loader"></div>
               </div>
-              <div id="messagesByChannelChart" class="ct-chart" style="display: none;"></div>
               <div id="messagesByChannelStats" class="stats-text" style="display: none;"></div>
               <div id="messagesByChannelError" class="error-message" style="display: none;"></div>
             </div>
@@ -68,7 +67,6 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="section-spinner" id="dailyMessagesSpinner">
                 <div class="loader"></div>
               </div>
-              <div id="dailyMessagesChart" class="ct-chart" style="display: none;"></div>
               <div id="dailyMessagesStats" class="stats-text" style="display: none;"></div>
               <div id="dailyMessagesError" class="error-message" style="display: none;"></div>
             </div>
@@ -80,17 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="section-spinner" id="feedbackRatioSpinner">
                 <div class="loader"></div>
               </div>
-              <div id="feedbackRatioChart" class="ct-chart" style="display: none;"></div>
               <div id="feedbackRatioStats" class="stats-text" style="display: none;"></div>
               <div id="feedbackRatioError" class="error-message" style="display: none;"></div>
-            </div>
-            <div id="topNegativeReplies">
-              <h4>أكثر الردود السلبية</h4>
-              <div class="section-spinner" id="topNegativeRepliesSpinner">
-                <div class="loader"></div>
-              </div>
-              <ul id="negativeRepliesList" style="display: none;"></ul>
-              <div id="topNegativeRepliesError" class="error-message" style="display: none;"></div>
             </div>
           </div>
           <div id="rulesAnalytics">
@@ -100,7 +89,6 @@ document.addEventListener('DOMContentLoaded', () => {
               <div class="section-spinner" id="rulesTypeSpinner">
                 <div class="loader"></div>
               </div>
-              <div id="rulesTypeChart" class="ct-chart" style="display: none;"></div>
               <div id="rulesTypeStats" class="stats-text" style="display: none;"></div>
               <div id="rulesTypeError" class="error-message" style="display: none;"></div>
             </div>
@@ -141,29 +129,22 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadMessagesAnalytics(botId, token, startDate, endDate) {
       console.log('Loading messages analytics for botId:', botId);
       try {
-        // 1. عدد الرسائل حسب القناة
+        // 1. توزيع الرسائل حسب القناة
         const messagesByChannelSpinner = document.getElementById('messagesByChannelSpinner');
-        const messagesByChannelChart = document.getElementById('messagesByChannelChart');
         const messagesByChannelStats = document.getElementById('messagesByChannelStats');
         const messagesByChannelError = document.getElementById('messagesByChannelError');
 
-        if (!messagesByChannelSpinner || !messagesByChannelChart || !messagesByChannelStats || !messagesByChannelError) {
+        if (!messagesByChannelSpinner || !messagesByChannelStats || !messagesByChannelError) {
           console.error('Messages analytics elements missing');
           throw new Error('عناصر إحصائيات الرسائل غير موجودة');
         }
 
-        // Check if Chartist is available
-        if (typeof Chartist === 'undefined') {
-          console.error('Chartist library is not loaded');
-          messagesByChannelError.textContent = 'فشل في تحميل الرسوم البيانية: مكتبة Chartist غير متوفرة';
-          messagesByChannelError.style.display = 'block';
-          messagesByChannelSpinner.style.display = 'none';
-          return;
-        }
-        console.log('Chartist library loaded successfully');
-
         const channels = ['facebook', 'web', 'whatsapp'];
-        const messagesByChannelData = { facebook: 0, web: 0, whatsapp: 0 };
+        const messagesByChannelData = {
+          facebook: { userMessages: 0, botMessages: 0 },
+          web: { userMessages: 0, botMessages: 0 },
+          whatsapp: { userMessages: 0, botMessages: 0 }
+        };
 
         for (const channel of channels) {
           const query = new URLSearchParams({
@@ -176,55 +157,62 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { Authorization: `Bearer ${token}` },
           }, messagesByChannelError, `فشل في جلب رسائل ${channel}`);
 
-          let messageCount = 0;
+          let userMessageCount = 0;
+          let botMessageCount = 0;
           conversations.forEach(conv => {
-            // احسب بس ردود البوت (role: 'assistant')
-            messageCount += conv.messages.filter(msg => msg.role === 'assistant').length;
+            userMessageCount += conv.messages.filter(msg => msg.role === 'user').length;
+            botMessageCount += conv.messages.filter(msg => msg.role === 'assistant').length;
           });
-          messagesByChannelData[channel] = messageCount;
-          console.log(`Messages for ${channel}: ${messageCount}`);
+          messagesByChannelData[channel].userMessages = userMessageCount;
+          messagesByChannelData[channel].botMessages = botMessageCount;
+          console.log(`Messages for ${channel}: user=${userMessageCount}, bot=${botMessageCount}`);
         }
 
-        const totalMessages = messagesByChannelData.facebook + messagesByChannelData.web + messagesByChannelData.whatsapp;
+        const totalUserMessages = messagesByChannelData.facebook.userMessages + messagesByChannelData.web.userMessages + messagesByChannelData.whatsapp.userMessages;
+        const totalBotMessages = messagesByChannelData.facebook.botMessages + messagesByChannelData.web.botMessages + messagesByChannelData.whatsapp.botMessages;
+        const totalMessages = totalUserMessages + totalBotMessages;
 
-        // رسم Pie Chart لتوزيع الرسائل حسب القناة
-        new Chartist.Pie('#messagesByChannelChart', {
-          series: [
-            messagesByChannelData.facebook,
-            messagesByChannelData.web,
-            messagesByChannelData.whatsapp
-          ],
-          labels: ['فيسبوك', 'ويب', 'واتساب']
-        }, {
-          donut: true,
-          donutWidth: 60,
-          startAngle: 270,
-          total: totalMessages,
-          showLabel: true
-        });
-        console.log('Messages by channel chart rendered');
-
-        // إضافة الإحصائيات النصية للرسائل
+        // عرض الإحصائيات النصية لتوزيع الرسائل
         messagesByChannelStats.innerHTML = `
-          <p>إجمالي الرسائل: ${totalMessages}</p>
-          <p>رسائل فيسبوك: ${messagesByChannelData.facebook}</p>
-          <p>رسائل الويب: ${messagesByChannelData.web}</p>
-          <p>رسائل واتساب: ${messagesByChannelData.whatsapp}</p>
+          <ul>
+            <li>إجمالي الرسائل: ${totalMessages}</li>
+            <li>إجمالي رسائل المستخدمين: ${totalUserMessages}</li>
+            <li>إجمالي ردود البوت: ${totalBotMessages}</li>
+            <li>رسائل فيسبوك:
+              <ul>
+                <li>رسائل المستخدمين: ${messagesByChannelData.facebook.userMessages}</li>
+                <li>ردود البوت: ${messagesByChannelData.facebook.botMessages}</li>
+                <li>الإجمالي: ${messagesByChannelData.facebook.userMessages + messagesByChannelData.facebook.botMessages}</li>
+              </ul>
+            </li>
+            <li>رسائل الويب:
+              <ul>
+                <li>رسائل المستخدمين: ${messagesByChannelData.web.userMessages}</li>
+                <li>ردود البوت: ${messagesByChannelData.web.botMessages}</li>
+                <li>الإجمالي: ${messagesByChannelData.web.userMessages + messagesByChannelData.web.botMessages}</li>
+              </ul>
+            </li>
+            <li>رسائل واتساب:
+              <ul>
+                <li>رسائل المستخدمين: ${messagesByChannelData.whatsapp.userMessages}</li>
+                <li>ردود البوت: ${messagesByChannelData.whatsapp.botMessages}</li>
+                <li>الإجمالي: ${messagesByChannelData.whatsapp.userMessages + messagesByChannelData.whatsapp.botMessages}</li>
+              </ul>
+            </li>
+          </ul>
         `;
 
         // إخفاء السبينر وإظهار المحتوى
         messagesByChannelSpinner.style.display = 'none';
-        messagesByChannelChart.style.display = 'block';
         messagesByChannelStats.style.display = 'block';
         messagesByChannelError.style.display = 'none';
 
         // 2. معدل الرسائل يوميًا
         const dailyMessagesSpinner = document.getElementById('dailyMessagesSpinner');
-        const dailyMessagesChart = document.getElementById('dailyMessagesChart');
         const dailyMessagesStats = document.getElementById('dailyMessagesStats');
         const dailyMessagesError = document.getElementById('dailyMessagesError');
 
-        if (!dailyMessagesSpinner || !dailyMessagesChart || !dailyMessagesStats || !dailyMessagesError) {
+        if (!dailyMessagesSpinner || !dailyMessagesStats || !dailyMessagesError) {
           console.error('Daily messages analytics elements missing');
           throw new Error('عناصر معدل الرسائل يوميًا غير موجودة');
         }
@@ -244,45 +232,24 @@ document.addEventListener('DOMContentLoaded', () => {
           filteredData = dailyData.slice(-20);
         }
 
-        const labels = filteredData.map(item => new Date(item.date).getDate());
-        const series = filteredData.map(item => item.count);
-        console.log('Daily messages data:', { labels, series });
-
-        // رسم Bar Chart لمعدل الرسائل يوميًا
-        new Chartist.Bar('#dailyMessagesChart', {
-          labels: labels,
-          series: [series]
-        }, {
-          fullWidth: true,
-          chartPadding: {
-            right: 40,
-            top: 20,
-            bottom: 20
-          },
-          axisX: {
-            labelOffset: {
-              x: 0,
-              y: 5
-            },
-            labelInterpolationFnc: function(value) {
-              return value; // عرض اليوم فقط
-            }
-          },
-          axisY: {
-            onlyInteger: true // عشان نضمن إن الأرقام على المحور Y تكون أعداد صحيحة
-          }
+        // عرض الإحصائيات النصية لمعدل الرسائل
+        let dailyStatsHTML = '<ul>';
+        filteredData.forEach(item => {
+          const date = new Date(item.date).toLocaleDateString("ar-EG");
+          dailyStatsHTML += `<li>${date}: ${item.count} رد من البوت</li>`;
         });
-        console.log('Daily messages chart rendered');
+        dailyStatsHTML += '</ul>';
 
-        // إضافة الإحصائيات النصية لمعدل الرسائل
-        const totalDailyMessages = series.reduce((sum, count) => sum + count, 0);
-        dailyMessagesStats.innerHTML = `
-          <p>إجمالي الرسائل في الفترة: ${totalDailyMessages}</p>
+        const totalDailyMessages = filteredData.reduce((sum, item) => sum + item.count, 0);
+        dailyStatsHTML = `
+          <p>إجمالي ردود البوت في الفترة: ${totalDailyMessages}</p>
+          ${dailyStatsHTML}
         `;
+
+        dailyMessagesStats.innerHTML = dailyStatsHTML;
 
         // إخفاء السبينر وإظهار المحتوى
         dailyMessagesSpinner.style.display = 'none';
-        dailyMessagesChart.style.display = 'block';
         dailyMessagesStats.style.display = 'block';
         dailyMessagesError.style.display = 'none';
 
@@ -304,24 +271,13 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         // 1. نسبة التقييمات الإيجابية مقابل السلبية
         const feedbackRatioSpinner = document.getElementById('feedbackRatioSpinner');
-        const feedbackRatioChart = document.getElementById('feedbackRatioChart');
         const feedbackRatioStats = document.getElementById('feedbackRatioStats');
         const feedbackRatioError = document.getElementById('feedbackRatioError');
 
-        if (!feedbackRatioSpinner || !feedbackRatioChart || !feedbackRatioStats || !feedbackRatioError) {
+        if (!feedbackRatioSpinner || !feedbackRatioStats || !feedbackRatioError) {
           console.error('Feedback analytics elements missing');
           throw new Error('عناصر إحصائيات التقييمات غير موجودة');
         }
-
-        // Check if Chartist is available
-        if (typeof Chartist === 'undefined') {
-          console.error('Chartist library is not loaded');
-          feedbackRatioError.textContent = 'فشل في تحميل الرسوم البيانية: مكتبة Chartist غير متوفرة';
-          feedbackRatioError.style.display = 'block';
-          feedbackRatioSpinner.style.display = 'none';
-          return;
-        }
-        console.log('Chartist library loaded successfully for feedback analytics');
 
         const feedbackQuery = new URLSearchParams({
           ...(startDate && { startDate }),
@@ -334,12 +290,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let positiveCount = 0;
         let negativeCount = 0;
+        const feedbackByChannel = {
+          facebook: { positive: 0, negative: 0 },
+          web: { positive: 0, negative: 0 },
+          whatsapp: { positive: 0, negative: 0 }
+        };
 
         feedbackData.forEach(feedback => {
+          let channel = 'unknown';
+          if (feedback.userId.startsWith('web_') || feedback.userId === 'anonymous') {
+            channel = 'web';
+          } else if (feedback.userId.startsWith('whatsapp_')) {
+            channel = 'whatsapp';
+          } else {
+            channel = 'facebook'; // افتراضي لفيسبوك
+          }
+
           if (feedback.feedback === 'positive') {
             positiveCount++;
+            feedbackByChannel[channel].positive++;
           } else if (feedback.feedback === 'negative') {
             negativeCount++;
+            feedbackByChannel[channel].negative++;
           }
         });
 
@@ -347,69 +319,45 @@ document.addEventListener('DOMContentLoaded', () => {
         const positivePercentage = totalFeedback > 0 ? ((positiveCount / totalFeedback) * 100).toFixed(1) : 0;
         const negativePercentage = totalFeedback > 0 ? ((negativeCount / totalFeedback) * 100).toFixed(1) : 0;
 
-        // رسم Pie Chart لنسبة التقييمات
-        new Chartist.Pie('#feedbackRatioChart', {
-          series: [positiveCount, negativeCount],
-          labels: ['إيجابية', 'سلبية']
-        }, {
-          donut: true,
-          donutWidth: 60,
-          startAngle: 270,
-          total: totalFeedback,
-          showLabel: true
-        });
-        console.log('Feedback ratio chart rendered');
-
-        // إضافة الإحصائيات النصية للتقييمات
+        // عرض الإحصائيات النصية للتقييمات
         feedbackRatioStats.innerHTML = `
-          <p>إجمالي التقييمات: ${totalFeedback}</p>
-          <p>التقييمات الإيجابية: ${positiveCount} (${positivePercentage}%)</p>
-          <p>التقييمات السلبية: ${negativeCount} (${negativePercentage}%)</p>
+          <ul>
+            <li>إجمالي التقييمات: ${totalFeedback}</li>
+            <li>التقييمات الإيجابية: ${positiveCount} (${positivePercentage}%)</li>
+            <li>التقييمات السلبية: ${negativeCount} (${negativePercentage}%)</li>
+            <li>تقييمات فيسبوك:
+              <ul>
+                <li>إيجابية: ${feedbackByChannel.facebook.positive}</li>
+                <li>سلبية: ${feedbackByChannel.facebook.negative}</li>
+                <li>الإجمالي: ${feedbackByChannel.facebook.positive + feedbackByChannel.facebook.negative}</li>
+              </ul>
+            </li>
+            <li>تقييمات الويب:
+              <ul>
+                <li>إيجابية: ${feedbackByChannel.web.positive}</li>
+                <li>سلبية: ${feedbackByChannel.web.negative}</li>
+                <li>الإجمالي: ${feedbackByChannel.web.positive + feedbackByChannel.web.negative}</li>
+              </ul>
+            </li>
+            <li>تقييمات واتساب:
+              <ul>
+                <li>إيجابية: ${feedbackByChannel.whatsapp.positive}</li>
+                <li>سلبية: ${feedbackByChannel.whatsapp.negative}</li>
+                <li>الإجمالي: ${feedbackByChannel.whatsapp.positive + feedbackByChannel.whatsapp.negative}</li>
+              </ul>
+            </li>
+          </ul>
         `;
 
         // إخفاء السبينر وإظهار المحتوى
         feedbackRatioSpinner.style.display = 'none';
-        feedbackRatioChart.style.display = 'block';
         feedbackRatioStats.style.display = 'block';
         feedbackRatioError.style.display = 'none';
-
-        // 2. أكثر الردود السلبية
-        const negativeRepliesSpinner = document.getElementById('topNegativeRepliesSpinner');
-        const negativeRepliesList = document.getElementById('negativeRepliesList');
-        const negativeRepliesError = document.getElementById('topNegativeRepliesError');
-
-        if (!negativeRepliesSpinner || !negativeRepliesList || !negativeRepliesError) {
-          console.error('Negative replies analytics elements missing');
-          throw new Error('عناصر الردود السلبية غير موجودة');
-        }
-
-        console.log(`Fetching negative replies with query: ${feedbackQuery.toString()}`);
-        const negativeRepliesData = await handleApiRequest(`/api/bots/feedback/negative-replies/${botId}?${feedbackQuery}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }, negativeRepliesError, 'فشل في جلب الردود السلبية');
-
-        negativeRepliesList.innerHTML = '';
-
-        if (negativeRepliesData.length === 0) {
-          negativeRepliesList.innerHTML = '<li>لا توجد ردود سلبية حاليًا.</li>';
-        } else {
-          negativeRepliesData.slice(0, 3).forEach(reply => {
-            const li = document.createElement('li');
-            li.textContent = `${reply.messageContent} (عدد التقييمات السلبية: ${reply.count})`;
-            negativeRepliesList.appendChild(li);
-          });
-        }
-
-        // إخفاء السبينر وإظهار المحتوى
-        negativeRepliesSpinner.style.display = 'none';
-        negativeRepliesList.style.display = 'block';
-        negativeRepliesError.style.display = 'none';
 
       } catch (err) {
         console.error('Error in loadFeedbackAnalytics:', err);
         // التأكد إن السبينر يختفي حتى لو حصل خطأ
         document.getElementById('feedbackRatioSpinner').style.display = 'none';
-        document.getElementById('topNegativeRepliesSpinner').style.display = 'none';
         const feedbackRatioError = document.getElementById('feedbackRatioError');
         if (feedbackRatioError) {
           feedbackRatioError.textContent = err.message || 'فشل في تحميل إحصائيات التقييمات';
@@ -423,24 +371,13 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         // 1. توزيع أنواع القواعد
         const rulesTypeSpinner = document.getElementById('rulesTypeSpinner');
-        const rulesTypeChart = document.getElementById('rulesTypeChart');
         const rulesTypeStats = document.getElementById('rulesTypeStats');
         const rulesTypeError = document.getElementById('rulesTypeError');
 
-        if (!rulesTypeSpinner || !rulesTypeChart || !rulesTypeStats || !rulesTypeError) {
+        if (!rulesTypeSpinner || !rulesTypeStats || !rulesTypeError) {
           console.error('Rules analytics elements missing');
           throw new Error('عناصر إحصائيات القواعد غير موجودة');
         }
-
-        // Check if Chartist is available
-        if (typeof Chartist === 'undefined') {
-          console.error('Chartist library is not loaded');
-          rulesTypeError.textContent = 'فشل في تحميل الرسوم البيانية: مكتبة Chartist غير متوفرة';
-          rulesTypeError.style.display = 'block';
-          rulesTypeSpinner.style.display = 'none';
-          return;
-        }
-        console.log('Chartist library loaded successfully for rules analytics');
 
         const rulesQuery = new URLSearchParams({ botId });
         console.log(`Fetching rules with query: ${rulesQuery.toString()}`);
@@ -456,9 +393,40 @@ document.addEventListener('DOMContentLoaded', () => {
           api: 0
         };
 
+        const rulesByChannel = {
+          facebook: { general: 0, products: 0, qa: 0, channels: 0 },
+          web: { general: 0, products: 0, qa: 0, channels: 0 },
+          whatsapp: { general: 0, products: 0, qa: 0, channels: 0 }
+        };
+
         rulesData.rules.forEach(rule => {
           if (rulesTypesCount[rule.type] !== undefined) {
             rulesTypesCount[rule.type]++;
+          }
+
+          // تحديد القناة بناءً على وجود channel في القاعدة
+          let channel = rule.channel || 'unknown';
+          if (channel === 'unknown') {
+            if (rule.type === 'global') {
+              // القواعد الموحدة مش مرتبطة بقناة معينة
+              return;
+            }
+            // افتراض القناة بناءً على القاعدة
+            if (rule.content?.platform) {
+              if (rule.content.platform.toLowerCase().includes('facebook')) {
+                channel = 'facebook';
+              } else if (rule.content.platform.toLowerCase().includes('whatsapp')) {
+                channel = 'whatsapp';
+              } else if (rule.content.platform.toLowerCase().includes('web')) {
+                channel = 'web';
+              }
+            }
+          }
+
+          if (['facebook', 'web', 'whatsapp'].includes(channel) && rule.type !== 'global') {
+            if (['general', 'products', 'qa', 'channels'].includes(rule.type)) {
+              rulesByChannel[channel][rule.type]++;
+            }
           }
         });
 
@@ -469,38 +437,48 @@ document.addEventListener('DOMContentLoaded', () => {
         const qaPercentage = totalRules > 0 ? ((rulesTypesCount.qa / totalRules) * 100).toFixed(1) : 0;
         const apiPercentage = totalRules > 0 ? ((rulesTypesCount.api / totalRules) * 100).toFixed(1) : 0;
 
-        // رسم Pie Chart لتوزيع أنواع القواعد
-        new Chartist.Pie('#rulesTypeChart', {
-          series: [
-            rulesTypesCount.general,
-            rulesTypesCount.global,
-            rulesTypesCount.products,
-            rulesTypesCount.qa,
-            rulesTypesCount.api
-          ],
-          labels: ['عامة', 'موحدة', 'أسعار', 'سؤال وجواب', 'API']
-        }, {
-          donut: true,
-          donutWidth: 60,
-          startAngle: 270,
-          total: totalRules,
-          showLabel: true
-        });
-        console.log('Rules type chart rendered');
-
-        // إضافة الإحصائيات النصية لتوزيع أنواع القواعد
+        // عرض الإحصائيات النصية لتوزيع أنواع القواعد
         rulesTypeStats.innerHTML = `
-          <p>إجمالي القواعد: ${totalRules}</p>
-          <p>قواعد عامة: ${rulesTypesCount.general} (${generalPercentage}%)</p>
-          <p>قواعد موحدة: ${rulesTypesCount.global} (${globalPercentage}%)</p>
-          <p>قواعد أسعار: ${rulesTypesCount.products} (${productsPercentage}%)</p>
-          <p>قواعد سؤال وجواب: ${rulesTypesCount.qa} (${qaPercentage}%)</p>
-          <p>قواعد API: ${rulesTypesCount.api} (${apiPercentage}%)</p>
+          <ul>
+            <li>إجمالي القواعد: ${totalRules}</li>
+            <li>قواعد عامة: ${rulesTypesCount.general} (${generalPercentage}%)</li>
+            <li>قواعد موحدة: ${rulesTypesCount.global} (${globalPercentage}%)</li>
+            <li>قواعد أسعار: ${rulesTypesCount.products} (${productsPercentage}%)</li>
+            <li>قواعد سؤال وجواب: ${rulesTypesCount.qa} (${qaPercentage}%)</li>
+            <li>قواعد API: ${rulesTypesCount.api} (${apiPercentage}%)</li>
+            <li>توزيع القواعد حسب القناة:
+              <ul>
+                <li>قواعد فيسبوك:
+                  <ul>
+                    <li>عامة: ${rulesByChannel.facebook.general}</li>
+                    <li>أسعار: ${rulesByChannel.facebook.products}</li>
+                    <li>سؤال وجواب: ${rulesByChannel.facebook.qa}</li>
+                    <li>قنوات: ${rulesByChannel.facebook.channels}</li>
+                  </ul>
+                </li>
+                <li>قواعد الويب:
+                  <ul>
+                    <li>عامة: ${rulesByChannel.web.general}</li>
+                    <li>أسعار: ${rulesByChannel.web.products}</li>
+                    <li>سؤال وجواب: ${rulesByChannel.web.qa}</li>
+                    <li>قنوات: ${rulesByChannel.web.channels}</li>
+                  </ul>
+                </li>
+                <li>قواعد واتساب:
+                  <ul>
+                    <li>عامة: ${rulesByChannel.whatsapp.general}</li>
+                    <li>أسعار: ${rulesByChannel.whatsapp.products}</li>
+                    <li>سؤال وجواب: ${rulesByChannel.whatsapp.qa}</li>
+                    <li>قنوات: ${rulesByChannel.whatsapp.channels}</li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
         `;
 
         // إخفاء السبينر وإظهار المحتوى
         rulesTypeSpinner.style.display = 'none';
-        rulesTypeChart.style.display = 'block';
         rulesTypeStats.style.display = 'block';
         rulesTypeError.style.display = 'none';
 
