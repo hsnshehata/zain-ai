@@ -326,6 +326,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
   };
 
+  // دالة مساعدة للانتظار حتى تتعرف الدالة المطلوبة
+  async function waitForFunction(funcName, maxAttempts = 50, interval = 100) {
+    let attempts = 0;
+    while (attempts < maxAttempts) {
+      if (typeof window[funcName] === "function") {
+        console.log(`${funcName} is now defined after ${attempts * interval}ms`);
+        return window[funcName];
+      }
+      await new Promise(resolve => setTimeout(resolve, interval));
+      attempts++;
+    }
+    throw new Error(`${funcName} function not found after ${maxAttempts * interval}ms. Ensure the corresponding script is loaded and the function is defined.`);
+  }
+
   const loadPageContent = async (page) => {
     if (!validPages.includes(page)) {
       console.warn(`⚠️ Attempted to load invalid page: ${page}, ignoring`);
@@ -358,76 +372,52 @@ document.addEventListener("DOMContentLoaded", async () => {
       switch (page) {
         case "bots":
           if (role === "superadmin") {
-            if (typeof window.loadBotsPage === "function") {
-              console.log(`Loading bots page for superadmin`);
-              await window.loadBotsPage();
-            } else {
-              throw new Error("loadBotsPage function not found. Ensure bots.js is loaded and the function is defined.");
-            }
+            const loadBotsPage = await waitForFunction("loadBotsPage");
+            console.log(`Loading bots page for superadmin`);
+            await loadBotsPage();
           } else {
             throw new Error("غير مصرح لك بالوصول لهذه الصفحة.");
           }
           break;
         case "rules":
-          if (typeof window.loadRulesPage === "function") {
-            console.log(`Loading rules page`);
-            await window.loadRulesPage();
-          } else {
-            throw new Error("loadRulesPage function not found. Ensure rules.js is loaded and the function is defined.");
-          }
+          const loadRulesPage = await waitForFunction("loadRulesPage");
+          console.log(`Loading rules page`);
+          await loadRulesPage();
           break;
         case "chat-page":
-          if (typeof window.loadChatPage === "function") {
-            console.log(`Loading chat-page`);
-            await window.loadChatPage();
-          } else {
-            throw new Error("loadChatPage function not found. Ensure chatPage.js is loaded and the function is defined.");
-          }
+          const loadChatPage = await waitForFunction("loadChatPage");
+          console.log(`Loading chat-page`);
+          await loadChatPage();
           break;
         case "analytics":
-          if (typeof window.loadAnalyticsPage === "function") {
-            console.log(`Loading analytics page`);
-            try {
-              await window.loadAnalyticsPage();
-            } catch (analyticsErr) {
-              console.error('Error executing loadAnalyticsPage:', analyticsErr);
-              throw new Error(`Failed to load analytics page: ${analyticsErr.message}`);
-            }
-          } else {
-            throw new Error("loadAnalyticsPage function not found. Ensure analytics.js is loaded and the function is defined.");
+          const loadAnalyticsPage = await waitForFunction("loadAnalyticsPage");
+          console.log(`Loading analytics page`);
+          try {
+            await loadAnalyticsPage();
+          } catch (analyticsErr) {
+            console.error('Error executing loadAnalyticsPage:', analyticsErr);
+            throw new Error(`Failed to load analytics page: ${analyticsErr.message}`);
           }
           break;
         case "messages":
-          if (typeof window.loadMessagesPage === "function") {
-            console.log(`Loading messages page`);
-            await window.loadMessagesPage();
-          } else {
-            throw new Error("loadMessagesPage function not found. Ensure messages.js is loaded and the function is defined.");
-          }
+          const loadMessagesPage = await waitForFunction("loadMessagesPage");
+          console.log(`Loading messages page`);
+          await loadMessagesPage();
           break;
         case "feedback":
-          if (typeof window.loadFeedbackPage === "function") {
-            console.log(`Loading feedback page`);
-            await window.loadFeedbackPage();
-          } else {
-            throw new Error("loadFeedbackPage function not found. Ensure feedback.js is loaded and the function is defined.");
-          }
+          const loadFeedbackPage = await waitForFunction("loadFeedbackPage");
+          console.log(`Loading feedback page`);
+          await loadFeedbackPage();
           break;
         case "facebook":
-          if (typeof window.loadFacebookPage === "function") {
-            console.log(`Loading facebook page`);
-            await window.loadFacebookPage();
-          } else {
-            throw new Error("loadFacebookPage function not found. Ensure facebook.js is loaded and the function is defined.");
-          }
+          const loadFacebookPage = await waitForFunction("loadFacebookPage");
+          console.log(`Loading facebook page`);
+          await loadFacebookPage();
           break;
         case "instagram":
-          if (typeof window.loadInstagramPage === "function") {
-            console.log(`Loading instagram page`);
-            await window.loadInstagramPage();
-          } else {
-            throw new Error("loadInstagramPage function not found. Ensure instagram.js is loaded and the function is defined.");
-          }
+          const loadInstagramPage = await waitForFunction("loadInstagramPage");
+          console.log(`Loading instagram page`);
+          await loadInstagramPage();
           break;
         default:
           throw new Error("الصفحة المطلوبة غير متوفرة.");
@@ -509,13 +499,9 @@ document.addEventListener("DOMContentLoaded", async () => {
     content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`;
     loadPageCss("settings");
     try {
-      if (typeof window.loadSettingsPage === "function") {
-        await window.loadSettingsPage();
-        console.log("loadSettingsPage executed successfully");
-      } else {
-        console.error("loadSettingsPage function not found");
-        throw new Error("loadSettingsPage function not found. Ensure settings.js is loaded and the function is defined.");
-      }
+      const loadSettingsPage = await waitForFunction("loadSettingsPage");
+      await loadSettingsPage();
+      console.log("loadSettingsPage executed successfully");
     } catch (error) {
       console.error("Error loading settings page:", error.message);
       content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>${error.message || "حدث خطأ أثناء تحميل إعدادات المستخدم."}</p></div>`;
