@@ -182,16 +182,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
       let userName = conv.username || conv.userId;
       let userIdentifier = conv.userId;
+      let iconClass = 'fas fa-envelope'; // افتراضي للرسايل
 
+      // تحديد نوع المحادثة (رسالة أو تعليق) واختيار الأيقونة
       if (currentChannel === "web" && conv.userId === "anonymous") {
         userName = `زائر ويب ${webUserCounter++}`;
         userIdentifier = `web-${webUserCounter - 1}`;
       } else if (currentChannel === "instagram") {
-        userName = conv.username || `إنستجرام ${conv.userId}`;
-        userIdentifier = conv.userId;
+        if (conv.userId.startsWith('instagram_comment_')) {
+          userName = conv.username || `تعليق إنستجرام ${conv.userId.replace('instagram_comment_', '')}`;
+          userIdentifier = conv.userId;
+          iconClass = 'fas fa-comment'; // أيقونة تعليق
+        } else {
+          userName = conv.username || `إنستجرام ${conv.userId.replace('instagram_', '')}`;
+          userIdentifier = conv.userId;
+        }
       } else if (currentChannel === "facebook") {
-        userName = conv.username || `فيسبوك ${conv.userId}`;
-        userIdentifier = conv.userId;
+        if (conv.userId.startsWith('facebook_comment_')) {
+          userName = conv.username || `تعليق فيسبوك ${conv.userId.replace('facebook_comment_', '')}`;
+          userIdentifier = conv.userId;
+          iconClass = 'fas fa-comment'; // أيقونة تعليق
+        } else {
+          userName = conv.username || `فيسبوك ${conv.userId.replace('facebook_', '')}`;
+          userIdentifier = conv.userId;
+        }
       }
 
       userNamesCache[conv._id] = userName;
@@ -203,7 +217,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       card.innerHTML = `
         <div class="card-body">
-          <h4 class="card-title"><i class="fas fa-user"></i> ${escapeHtml(userName)}</h4>
+          <h4 class="card-title"><i class="${iconClass}"></i> ${escapeHtml(userName)}</h4>
           <p class="card-text"><small>المعرف: ${escapeHtml(userIdentifier)}</small></p>
           <p class="card-text">عدد الرسائل: ${messageCount}</p>
           <p class="card-text">آخر رسالة: ${lastMessageTimestamp}</p>
@@ -509,6 +523,23 @@ document.addEventListener("DOMContentLoaded", () => {
         saveButton.disabled = false;
         saveButton.innerHTML = '<i class="fas fa-save"></i> حفظ كقاعدة جديدة';
         if (cancelButton) cancelButton.disabled = false;
+      }
+    }
+
+    // --- Helper Function for API Requests ---
+    async function handleApiRequest(url, options, errorElement, defaultErrorMessage) {
+      try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || defaultErrorMessage);
+        }
+        return await response.json();
+      } catch (err) {
+        console.error(`Error in API request to ${url}:`, err);
+        errorElement.textContent = err.message || defaultErrorMessage;
+        errorElement.style.display = "block";
+        throw err;
       }
     }
 
