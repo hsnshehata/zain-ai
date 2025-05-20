@@ -41,6 +41,9 @@ const handleMessage = async (req, res) => {
           continue;
         }
 
+        // إضافة بادئة facebook_ لمعرف المستخدم
+        const prefixedSenderId = `facebook_${senderPsid}`;
+
         // Validate that senderId is not the page itself
         if (senderPsid === bot.facebookPageId) {
           console.log(`⚠️ Skipping message because senderId (${senderPsid}) is the page itself`);
@@ -61,7 +64,7 @@ const handleMessage = async (req, res) => {
 
         // معالجة رسائل الترحيب (messaging_optins)
         if (webhookEvent.optin && bot.messagingOptinsEnabled) {
-          console.log(`📩 Processing opt-in event from ${senderPsid}`);
+          console.log(`📩 Processing opt-in event from ${prefixedSenderId}`);
           const welcomeMessage = bot.welcomeMessage || 'مرحبًا! كيف يمكنني مساعدتك اليوم؟';
           await sendMessage(senderPsid, welcomeMessage, bot.facebookApiKey);
           continue;
@@ -72,7 +75,7 @@ const handleMessage = async (req, res) => {
 
         // معالجة ردود الفعل (message_reactions)
         if (webhookEvent.reaction && bot.messageReactionsEnabled) {
-          console.log(`📩 Processing reaction event from ${senderPsid}: ${webhookEvent.reaction.reaction}`);
+          console.log(`📩 Processing reaction event from ${prefixedSenderId}: ${webhookEvent.reaction.reaction}`);
           const responseText = `شكرًا على تفاعلك (${webhookEvent.reaction.reaction})!`;
           await sendMessage(senderPsid, responseText, bot.facebookApiKey);
           continue;
@@ -83,7 +86,7 @@ const handleMessage = async (req, res) => {
 
         // معالجة تتبع المصدر (messaging_referrals)
         if (webhookEvent.referral && bot.messagingReferralsEnabled) {
-          console.log(`📩 Processing referral event from ${senderPsid}: ${webhookEvent.referral.ref}`);
+          console.log(`📩 Processing referral event from ${prefixedSenderId}: ${webhookEvent.referral.ref}`);
           const responseText = `مرحبًا! وصلتني من ${webhookEvent.referral.source}، كيف يمكنني مساعدتك؟`;
           await sendMessage(senderPsid, responseText, bot.facebookApiKey);
           continue;
@@ -96,8 +99,8 @@ const handleMessage = async (req, res) => {
         if (webhookEvent.message_edit && bot.messageEditsEnabled) {
           const editedMessage = webhookEvent.message_edit.message;
           const mid = editedMessage.mid || `temp_${Date.now()}`;
-          console.log(`📩 Processing message edit event from ${senderPsid}: ${editedMessage.text}`);
-          const responseText = await processMessage(bot._id, senderPsid, editedMessage.text, false, false, mid);
+          console.log(`📩 Processing message edit event from ${prefixedSenderId}: ${editedMessage.text}`);
+          const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid);
           await sendMessage(senderPsid, responseText, bot.facebookApiKey);
           continue;
         } else if (webhookEvent.message_edit && !bot.messageEditsEnabled) {
@@ -114,22 +117,22 @@ const handleMessage = async (req, res) => {
           let responseText = '';
 
           if (message.text) {
-            console.log(`📝 Text message received from ${senderPsid}: ${message.text}`);
-            responseText = await processMessage(bot._id, senderPsid, message.text, false, false, mid);
+            console.log(`📝 Text message received from ${prefixedSenderId}: ${message.text}`);
+            responseText = await processMessage(bot._id, prefixedSenderId, message.text, false, false, mid);
           } else if (message.attachments) {
             const attachment = message.attachments[0];
             if (attachment.type === 'image') {
-              console.log(`🖼️ Image received from ${senderPsid}: ${attachment.payload.url}`);
-              responseText = await processMessage(bot._id, senderPsid, attachment.payload.url, true, false, mid);
+              console.log(`🖼️ Image received from ${prefixedSenderId}: ${attachment.payload.url}`);
+              responseText = await processMessage(bot._id, prefixedSenderId, attachment.payload.url, true, false, mid);
             } else if (attachment.type === 'audio') {
-              console.log(`🎙️ Audio received from ${senderPsid}: ${attachment.payload.url}`);
-              responseText = await processMessage(bot._id, senderPsid, attachment.payload.url, false, true, mid);
+              console.log(`🎙️ Audio received from ${prefixedSenderId}: ${attachment.payload.url}`);
+              responseText = await processMessage(bot._id, prefixedSenderId, attachment.payload.url, false, true, mid);
             } else {
-              console.log(`📎 Unsupported attachment type from ${senderPsid}: ${attachment.type}`);
+              console.log(`📎 Unsupported attachment type from ${prefixedSenderId}: ${attachment.type}`);
               responseText = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
             }
           } else {
-            console.log(`❓ Unknown message type from ${senderPsid}`);
+            console.log(`❓ Unknown message type from ${prefixedSenderId}`);
             responseText = 'عذرًا، لا أستطيع فهم هذه الرسالة.';
           }
 
@@ -144,8 +147,8 @@ const handleMessage = async (req, res) => {
             continue;
           }
 
-          console.log(`📊 Feedback received from ${senderPsid}: ${feedback} for message ID: ${mid}`);
-          await processFeedback(bot._id, senderPsid, mid, feedback);
+          console.log(`📊 Feedback received from ${prefixedSenderId}: ${feedback} for message ID: ${mid}`);
+          await processFeedback(bot._id, prefixedSenderId, mid, feedback);
         } else {
           console.log('❌ No message or feedback found in webhook event:', webhookEvent);
         }
@@ -172,15 +175,18 @@ const handleMessage = async (req, res) => {
               continue;
             }
 
+            // إضافة بادئة facebook_ لمعرف المستخدم
+            const prefixedCommenterId = `facebook_${commenterId}`;
+
             // تجاهل الكومنتات من الصفحة نفسها (ردود البوت)
             if (commenterId === bot.facebookPageId) {
               console.log(`⚠️ Skipping comment because commenterId (${commenterId}) is the page itself`);
               continue;
             }
 
-            console.log(`💬 Comment received on post ${postId} from ${commenterName} (${commenterId}): ${message}`);
+            console.log(`💬 Comment received on post ${postId} from ${commenterName} (${prefixedCommenterId}): ${message}`);
 
-            const responseText = await processMessage(bot._id, commenterId, message, false, false, `comment_${commentId}`);
+            const responseText = await processMessage(bot._id, prefixedCommenterId, message, false, false, `comment_${commentId}`);
             await replyToComment(commentId, responseText, bot.facebookApiKey);
           } else {
             console.log('❌ Not a comment event or not an "add" verb:', change);
