@@ -210,24 +210,24 @@ try {
         // Wait for the script to load
         await new Promise((resolve, reject) => {
           script.onload = () => {
-            console.log(`${pageJsMap[page]} loaded successfully`);
+            console.log(`${pageJsMap[page]} loaded successfully at`, new Date().toISOString());
             resolve();
           };
           script.onerror = () => {
-            console.error(`Failed to load script ${pageJsMap[page]}`);
+            console.error(`Failed to load script ${pageJsMap[page]} at`, new Date().toISOString());
             reject(new Error(`Failed to load script ${pageJsMap[page]}`));
           };
         });
       } else {
-        console.log(`${pageJsMap[page]} already loaded`);
+        console.log(`${pageJsMap[page]} already loaded at`, new Date().toISOString());
       }
 
       // Additional check to see if the function is defined after loading
       const funcName = `load${page.charAt(0).toUpperCase() + page.slice(1).replace(/-([a-z])/g, (g) => g[1].toUpperCase())}Page`;
       if (typeof window[funcName] !== "function") {
-        console.error(`${funcName} still not defined after loading ${pageJsMap[page]}`);
+        console.error(`${funcName} still not defined after loading ${pageJsMap[page]} at`, new Date().toISOString());
       } else {
-        console.log(`${funcName} is now available after loading ${pageJsMap[page]}`);
+        console.log(`${funcName} is now available after loading ${pageJsMap[page]} at`, new Date().toISOString());
       }
     }
 
