@@ -15,8 +15,10 @@ async function getSocialUsername(userId, bot, platform) {
       throw new Error(`لم يتم العثور على access token لـ ${platform} لهذا البوت`);
     }
 
-    // نزيل البادئة بشكل صحيح (facebook_, facebook_comment_, instagram_, instagram_comment_)
-    const cleanUserId = userId.replace(/^(facebook_|facebook_comment_|instagram_|instagram_comment_)/, '');
+    // نزيل البادئة الأساسية (facebook_, facebook_comment_, instagram_, instagram_comment_)
+    let cleanUserId = userId.replace(/^(facebook_|facebook_comment_|instagram_|instagram_comment_)/, '');
+    // نتأكد إن البادئة comment_ تتزال لو موجودة
+    cleanUserId = cleanUserId.replace(/^comment_/, '');
     console.log(`📋 جلب اسم المستخدم لـ ${userId}, بعد التنظيف: ${cleanUserId}, المنصة: ${platform}`);
 
     const apiUrl = platform === 'facebook' 
@@ -127,7 +129,8 @@ router.get('/social-user/:userId', authenticate, async (req, res) => {
     }
 
     // نزيل البادئة بشكل صحيح
-    const cleanUserId = userId.replace(/^(facebook_|facebook_comment_|instagram_|instagram_comment_)/, '');
+    let cleanUserId = userId.replace(/^(facebook_|facebook_comment_|instagram_|instagram_comment_)/, '');
+    cleanUserId = cleanUserId.replace(/^comment_/, '');
     const response = await new Promise((resolve, reject) => {
       request(
         {
