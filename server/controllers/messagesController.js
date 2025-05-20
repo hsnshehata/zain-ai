@@ -56,11 +56,11 @@ exports.getMessages = async (req, res) => {
     }
     if (type) {
       if (type === 'facebook') {
-        query.userId = { $regex: '^facebook_' };
+        query.userId = { $regex: '^(facebook_|facebook_comment_)' };
       } else if (type === 'web') {
         query.userId = { $in: ['anonymous', /^web_/] };
       } else if (type === 'instagram') {
-        query.userId = { $regex: '^instagram_' };
+        query.userId = { $regex: '^(instagram_|instagram_comment_)' };
       }
     }
 
