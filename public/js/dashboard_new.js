@@ -57,6 +57,7 @@ try {
 
     // Load username
     async function loadUsername() {
+      console.log("loadUsername called...");
       const welcomeUsername = document.getElementById("welcome-username");
       try {
         const user = await handleApiRequest('/api/users/me', {
@@ -71,6 +72,7 @@ try {
 
     // Load bot info
     async function loadBotInfo() {
+      console.log("loadBotInfo called...");
       const subscriptionTypeEl = document.getElementById("subscription-type");
       const subscriptionEndEl = document.getElementById("subscription-end");
       const remainingDaysEl = document.getElementById("remaining-days");
@@ -133,6 +135,7 @@ try {
 
     // Load welcome bar (username and bot info)
     async function loadWelcomeBar() {
+      console.log("loadWelcomeBar called...");
       await loadUsername();
       await loadBotInfo();
     }
@@ -184,6 +187,7 @@ try {
 
     // Load CSS dynamically
     function loadPageCss(page) {
+      console.log(`loadPageCss called for page: ${page}`);
       document.querySelectorAll('link[data-page-css]').forEach(link => link.remove());
       if (pageCssMap[page]) {
         const link = document.createElement("link");
@@ -196,6 +200,7 @@ try {
 
     // Load JS dynamically if not already loaded
     async function loadPageJs(page) {
+      console.log(`loadPageJs called for page: ${page}`);
       if (!pageJsMap[page]) return;
 
       // Check if the script is already loaded
@@ -226,6 +231,7 @@ try {
       const funcName = `load${page.charAt(0).toUpperCase() + page.slice(1).replace(/-([a-z])/g, (g) => g[1].toUpperCase())}Page`;
       if (typeof window[funcName] !== "function") {
         console.error(`${funcName} still not defined after loading ${pageJsMap[page]} at`, new Date().toISOString());
+        console.log("Available properties on window:", Object.keys(window).filter(key => key.startsWith('load')));
       } else {
         console.log(`${funcName} is now available after loading ${pageJsMap[page]} at`, new Date().toISOString());
       }
@@ -233,6 +239,7 @@ try {
 
     // Load assistantBot.css when assistant modal is shown
     function loadAssistantCss() {
+      console.log("loadAssistantCss called...");
       if (!document.querySelector('link[href="/css/assistantBot.css"]')) {
         const link = document.createElement("link");
         link.rel = "stylesheet";
@@ -243,6 +250,7 @@ try {
 
     // Load notifications.css
     function loadNotificationsCss() {
+      console.log("loadNotificationsCss called...");
       if (!document.querySelector('link[href="/css/notifications.css"]')) {
         const link = document.createElement("link");
         link.rel = "stylesheet";
@@ -253,6 +261,7 @@ try {
 
     // Theme Handling
     const applyTheme = (theme) => {
+      console.log(`applyTheme called with theme: ${theme}`);
       if (theme === "light") {
         document.body.classList.remove("dark-mode");
         document.body.classList.add("light-mode");
@@ -267,12 +276,14 @@ try {
     applyTheme(currentTheme);
 
     themeToggleButton.addEventListener("click", () => {
+      console.log("themeToggleButton clicked...");
       const newTheme = document.body.classList.contains("dark-mode") ? "light" : "dark";
       applyTheme(newTheme);
     });
 
     // Sidebar Toggle for Desktop
     sidebarToggleBtn.addEventListener("click", () => {
+      console.log("sidebarToggleBtn clicked...");
       sidebar.classList.toggle("collapsed");
       mainContent.classList.toggle("collapsed");
     });
@@ -280,12 +291,14 @@ try {
     // Mobile Navigation Toggle
     if (mobileNavToggle) {
       mobileNavToggle.addEventListener("click", () => {
+        console.log("mobileNavToggle clicked...");
         mobileNav.classList.toggle("collapsed");
       });
     }
 
     // Bot Selector
     async function populateBotSelect() {
+      console.log("populateBotSelect called...");
       try {
         content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`; // Show loader until bots are fetched
         const bots = await handleApiRequest("/api/bots", {
@@ -350,6 +363,7 @@ try {
     }
 
     botSelect.addEventListener("change", async () => {
+      console.log("botSelect change event triggered...");
       const selectedBotId = botSelect.value;
       console.log('Bot selection changed to:', selectedBotId);
       if (selectedBotId) {
@@ -365,6 +379,7 @@ try {
 
     // Navigation Helpers
     const setActiveButton = (page) => {
+      console.log(`setActiveButton called for page: ${page}`);
       navItems.forEach(item => {
         item.classList.remove("active");
         if (item.dataset.page === page) {
@@ -381,6 +396,7 @@ try {
 
     // دالة مساعدة للانتظار حتى تتعرف الدالة المطلوبة
     async function waitForFunction(funcName, maxAttempts = 100, interval = 100) {
+      console.log(`waitForFunction called for ${funcName} with maxAttempts: ${maxAttempts}`);
       let attempts = 0;
       while (attempts < maxAttempts) {
         if (typeof window[funcName] === "function") {
@@ -394,6 +410,7 @@ try {
     }
 
     const loadPageContent = async (page) => {
+      console.log(`Attempting to load page: ${page}`);
       if (!validPages.includes(page)) {
         console.warn(`⚠️ Attempted to load invalid page: ${page}, ignoring`);
         return;
@@ -491,6 +508,7 @@ try {
 
     // Debounce function to prevent rapid hashchange events
     function debounce(func, wait) {
+      console.log(`debounce called with wait: ${wait}`);
       let timeout;
       return function executedFunction(...args) {
         const later = () => {
@@ -504,6 +522,7 @@ try {
 
     // Initial Page Load
     const loadInitialPage = async () => {
+      console.log("loadInitialPage called...");
       // Check if there's a hash in the URL (e.g., #rules, #analytics)
       let pageToLoad = initialHash || (role === "superadmin" ? "bots" : "rules");
 
@@ -571,6 +590,7 @@ try {
 
     // Logout
     async function logoutUser() {
+      console.log("logoutUser called...");
       const username = localStorage.getItem("username");
       localStorage.removeItem("token");
       localStorage.removeItem("role");
@@ -602,6 +622,7 @@ try {
     let showAllNotifications = false;
 
     async function fetchNotifications() {
+      console.log("fetchNotifications called...");
       try {
         const response = await fetch('/api/notifications', {
           headers: { 'Authorization': `Bearer ${token}` }
@@ -661,6 +682,7 @@ try {
     }
 
     async function markNotificationAsRead(notificationId) {
+      console.log(`markNotificationAsRead called for notificationId: ${notificationId}`);
       try {
         await fetch(`/api/notifications/${notificationId}/read`, {
           method: 'PUT',
@@ -673,6 +695,7 @@ try {
     }
 
     function showNotificationModal(notification) {
+      console.log("showNotificationModal called...");
       const modal = document.createElement("div");
       modal.classList.add("modal");
       modal.innerHTML = `
@@ -698,6 +721,7 @@ try {
     }
 
     notificationsBtn.addEventListener("click", () => {
+      console.log("notificationsBtn clicked...");
       loadNotificationsCss();
       notificationsModal.style.display = 'block';
       showAllNotifications = false;
@@ -705,6 +729,7 @@ try {
     });
 
     closeNotificationsBtn.addEventListener("click", () => {
+      console.log("closeNotificationsBtn clicked...");
       notificationsModal.style.display = 'none';
     });
 
@@ -718,12 +743,14 @@ try {
     }
 
     // Initialize
+    console.log("Initializing dashboard...");
     await fetchNotifications(); // Load notifications first
     await populateBotSelect(); // Load bots and select bot before any page load
   });
 
   // Simple JWT decode function
   function jwtDecode(token) {
+    console.log("jwtDecode called...");
     try {
       const base64Url = token.split('.')[1];
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
