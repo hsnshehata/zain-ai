@@ -128,7 +128,7 @@ const handleMessage = async (req, res) => {
           const recipientId = event.recipient.id;
           const timestamp = event.timestamp;
 
-          // إضافة بادئة instagram_ لمعرف المستخدم
+          // إضافة بادئة instagram_ لمعرف المستخدم (للرسايل)
           const prefixedSenderId = `instagram_${senderId}`;
 
           // تجاهل الرسائل المرسلة من الصفحة نفسها
@@ -271,8 +271,8 @@ const handleMessage = async (req, res) => {
             const commentId = comment.id;
             const commentText = comment.text;
 
-            // إضافة بادئة instagram_ لمعرف المستخدم
-            const prefixedCommenterId = `instagram_${commenterId}`;
+            // إضافة بادئة instagram_comment_ لمعرف المستخدم (للتعليقات)
+            const prefixedCommenterId = `instagram_comment_${commenterId}`;
 
             // تجاهل الكومنتات المرسلة من الصفحة نفسها
             if (commenterId === pageId) {
