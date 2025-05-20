@@ -4,8 +4,9 @@ console.log("messages.js script started loading at", new Date().toISOString());
 
 // تعريف الدالة مباشرة في النطاق العالمي عشان تكون متاحة حتى لو حصل تأخير في DOMContentLoaded
 try {
+  console.log("Defining loadMessagesPage function...");
   window.loadMessagesPage = async function() {
-    console.log("loadMessagesPage function defined and called");
+    console.log("loadMessagesPage function defined and called at", new Date().toISOString());
 
     const content = document.getElementById("content");
     const token = localStorage.getItem("token");
@@ -623,6 +624,7 @@ try {
   console.log("loadMessagesPage is defined:", typeof window.loadMessagesPage);
 } catch (error) {
   console.error("Error in messages.js:", error.message);
+  throw error; // Re-throw to catch in dashboard_new.js
 }
 
 // Helper function to escape HTML
