@@ -296,15 +296,10 @@ window.loadMessagesPage = async function() {
 
   function openChatModal(conversationId, userId) {
     const conversation = allConversations.find(conv => conv._id === conversationId);
-    if (!conversation) {
-      console.error(`Conversation with ID ${conversationId} not found`);
-      return;
-    }
+    if (!conversation) return;
 
     currentOpenConversationId = conversationId;
     currentOpenUserId = userId; // حفظ userId للمحادثة المفتوحة
-    console.log(`Opening chat modal for conversation ${conversationId}, user ${currentOpenUserId}`);
-
     const userName = userNamesCache[conversationId] || "مستخدم";
     chatModalTitle.textContent = `محادثة مع ${escapeHtml(userName)}`;
     chatModalBody.innerHTML = "";
@@ -366,26 +361,16 @@ window.loadMessagesPage = async function() {
     chatModal.style.display = "none";
     currentOpenConversationId = null;
     currentOpenUserId = null;
-    console.log("Chat modal closed, cleared currentOpenConversationId and currentOpenUserId");
   }
 
   async function deleteSingleConversation() {
-    console.log("deleteSingleConversation called");
-    console.log(`currentOpenConversationId: ${currentOpenConversationId}, currentOpenUserId: ${currentOpenUserId}`);
-
-    if (!currentOpenConversationId || !currentOpenUserId) {
-      console.error("Cannot delete conversation: currentOpenConversationId or currentOpenUserId is not set");
-      alert("خطأ: لا يمكن حذف المحادثة، يرجى فتح المحادثة أولاً.");
-      return;
-    }
-
+    if (!currentOpenConversationId || !currentOpenUserId) return;
     if (!confirm("هل أنت متأكد من حذف هذه المحادثة؟ لا يمكن التراجع عن هذا الإجراء.")) return;
 
     deleteSingleConversationBtn.disabled = true;
     deleteSingleConversationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جار الحذف...';
 
     try {
-      console.log(`Attempting to delete conversation for bot ${selectedBotId}, user ${currentOpenUserId}, channel ${currentChannel}`);
       await handleApiRequest(`/api/messages/delete-user/${selectedBotId}/${currentOpenUserId}?type=${currentChannel}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -395,8 +380,7 @@ window.loadMessagesPage = async function() {
       allConversations = allConversations.filter(conv => conv._id !== currentOpenConversationId);
       renderConversations();
     } catch (err) {
-      console.error("Error deleting single conversation:", err.message);
-      alert(`خطأ في حذف المحادثة: ${err.message}`);
+      // الخطأ تم التعامل معه في handleApiRequest
     } finally {
       deleteSingleConversationBtn.disabled = false;
       deleteSingleConversationBtn.innerHTML = '<i class="fas fa-trash-alt"></i> حذف هذه المحادثة';
@@ -404,15 +388,12 @@ window.loadMessagesPage = async function() {
   }
 
   async function deleteAllConversationsForChannel() {
-    console.log("deleteAllConversationsForChannel called");
-
     if (!confirm(`هل أنت متأكد من حذف جميع محادثات قناة ${currentChannel}؟ لا يمكن التراجع عن هذا الإجراء.`)) return;
 
     deleteAllConversationsBtn.disabled = true;
     deleteAllConversationsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جار الحذف...';
 
     try {
-      console.log(`Attempting to delete all conversations for bot ${selectedBotId}, channel ${currentChannel}`);
       await handleApiRequest(`/api/messages/delete-all/${selectedBotId}?type=${currentChannel}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -421,8 +402,7 @@ window.loadMessagesPage = async function() {
       allConversations = [];
       renderConversations();
     } catch (err) {
-      console.error("Error deleting all conversations:", err.message);
-      alert(`خطأ في حذف المحادثات: ${err.message}`);
+      // الخطأ تم التعامل معه في handleApiRequest
     } finally {
       deleteAllConversationsBtn.disabled = false;
       deleteAllConversationsBtn.innerHTML = '<i class="fas fa-trash-alt"></i> حذف الكل';
@@ -430,8 +410,6 @@ window.loadMessagesPage = async function() {
   }
 
   async function downloadMessagesForChannel() {
-    console.log("downloadMessagesForChannel called");
-
     downloadMessagesBtn.disabled = true;
     downloadMessagesBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جار التنزيل...';
 
@@ -475,8 +453,7 @@ window.loadMessagesPage = async function() {
       link.click();
       document.body.removeChild(link);
     } catch (err) {
-      console.error("Error downloading messages:", err.message);
-      alert(`خطأ في تنزيل المحادثات: ${err.message}`);
+      // الخطأ تم التعامل معه في handleApiRequest
     } finally {
       downloadMessagesBtn.disabled = false;
       downloadMessagesBtn.innerHTML = '<i class="fas fa-download"></i> تنزيل';
@@ -550,8 +527,7 @@ window.loadMessagesPage = async function() {
       editArea.style.display = "none";
       if (messageActions) messageActions.style.display = "block";
     } catch (err) {
-      console.error("Error saving edited rule:", err.message);
-      alert(`خطأ في حفظ القاعدة: ${err.message}`);
+      // الخطأ تم التعامل معه في handleApiRequest
     } finally {
       saveButton.disabled = false;
       saveButton.innerHTML = '<i class="fas fa-save"></i> حفظ كقاعدة جديدة';
@@ -597,18 +573,9 @@ window.loadMessagesPage = async function() {
   });
 
   closeChatModalBtn.addEventListener("click", closeChatModal);
-  deleteSingleConversationBtn.addEventListener("click", () => {
-    console.log("Delete single conversation button clicked");
-    deleteSingleConversation();
-  });
-  deleteAllConversationsBtn.addEventListener("click", () => {
-    console.log("Delete all conversations button clicked");
-    deleteAllConversationsForChannel();
-  });
-  downloadMessagesBtn.addEventListener("click", () => {
-    console.log("Download messages button clicked");
-    downloadMessagesForChannel();
-  });
+  deleteSingleConversationBtn.addEventListener("click", deleteSingleConversation);
+  deleteAllConversationsBtn.addEventListener("click", deleteAllConversationsForChannel);
+  downloadMessagesBtn.addEventListener("click", downloadMessagesForChannel);
 
   chatModal.addEventListener("click", (event) => {
     if (event.target === chatModal) {
