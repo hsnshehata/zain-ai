@@ -74,7 +74,7 @@ const replyToComment = (commentId, messageText, accessToken) => {
 };
 
 // التحقق من الـ Webhook
-exports.verifyWebhook = (req, res) => {
+const verifyWebhook = (req, res) => {
   const mode = req.query['hub.mode'];
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
@@ -93,7 +93,7 @@ exports.verifyWebhook = (req, res) => {
 };
 
 // معالجة الرسائل والكومنتات القادمة من Instagram
-exports.handleMessage = async (req, res) => {
+const handleMessage = async (req, res) => {
   try {
     const body = req.body;
 
