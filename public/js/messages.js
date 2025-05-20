@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="modal-content chat-modal-content">
           <div class="modal-header chat-header">
             <h3 id="chatModalTitle">محادثة</h3>
-            <button id="closeChatModalBtn" class="close-button">&times;</button>
+            <button id="closeChatModalBtn" class="close-button">×</button>
           </div>
           <div id="chatModalBody" class="modal-body chat-messages"></div>
           <div class="modal-footer chat-footer">
@@ -101,6 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentPage = 1;
     const itemsPerPage = 20;
     let currentOpenConversationId = null;
+    let currentOpenUserId = null; // متغير جديد لحفظ userId للمحادثة المفتوحة
 
     // --- Functions ---
 
@@ -179,6 +180,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const card = document.createElement("div");
       card.className = "card conversation-card";
       card.dataset.conversationId = conv._id;
+      card.dataset.userId = conv.userId; // إضافة userId للكارد عشان نستخدمه في الحذف
 
       let userName = conv.username || conv.userId;
       let userIdentifier = conv.userId;
@@ -227,7 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
 
-      card.querySelector(".view-chat-btn").addEventListener("click", () => openChatModal(conv._id));
+      card.querySelector(".view-chat-btn").addEventListener("click", () => openChatModal(conv._id, conv.userId));
       return card;
     }
 
@@ -287,11 +289,12 @@ document.addEventListener("DOMContentLoaded", () => {
       paginationContainer.appendChild(createPageButton(currentPage + 1, 'التالي', false, currentPage === totalPages));
     }
 
-    function openChatModal(conversationId) {
+    function openChatModal(conversationId, userId) {
       const conversation = allConversations.find(conv => conv._id === conversationId);
       if (!conversation) return;
 
       currentOpenConversationId = conversationId;
+      currentOpenUserId = userId; // حفظ userId للمحادثة المفتوحة
       const userName = userNamesCache[conversationId] || "مستخدم";
       chatModalTitle.textContent = `محادثة مع ${escapeHtml(userName)}`;
       chatModalBody.innerHTML = "";
@@ -352,17 +355,18 @@ document.addEventListener("DOMContentLoaded", () => {
     function closeChatModal() {
       chatModal.style.display = "none";
       currentOpenConversationId = null;
+      currentOpenUserId = null;
     }
 
     async function deleteSingleConversation() {
-      if (!currentOpenConversationId) return;
+      if (!currentOpenConversationId || !currentOpenUserId) return;
       if (!confirm("هل أنت متأكد من حذف هذه المحادثة؟ لا يمكن التراجع عن هذا الإجراء.")) return;
 
       deleteSingleConversationBtn.disabled = true;
       deleteSingleConversationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جار الحذف...';
 
       try {
-        await handleApiRequest(`/api/messages/conversation/${currentOpenConversationId}`, {
+        await handleApiRequest(`/api/messages/delete-user/${selectedBotId}/${currentOpenUserId}?type=${currentChannel}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         }, errorMessage, "فشل حذف المحادثة");
@@ -385,7 +389,7 @@ document.addEventListener("DOMContentLoaded", () => {
       deleteAllConversationsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جار الحذف...';
 
       try {
-        await handleApiRequest(`/api/messages/${selectedBotId}/channel/${currentChannel}`, {
+        await handleApiRequest(`/api/messages/delete-all/${selectedBotId}?type=${currentChannel}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         }, errorMessage, "فشل حذف المحادثات");
@@ -582,10 +586,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function escapeHtml(unsafe) {
     if (typeof unsafe !== "string") return unsafe;
     return unsafe
-         .replace(/&/g, "&amp;")
-         .replace(/</g, "&lt;")
-         .replace(/>/g, "&gt;")
-         .replace(/"/g, "&quot;")
+         .replace(/&/g, "&")
+         .replace(/</g, "<")
+         .replace(/>/g, ">")
+         .replace(/"/g, """)
          .replace(/\n/g, "<br>");
   }
 
