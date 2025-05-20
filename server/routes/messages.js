@@ -1,19 +1,27 @@
 const express = require('express');
 const router = express.Router();
 const Conversation = require('../models/Conversation');
-const Bot = require('../models/Bot'); // استيراد موديل Bot
+const Bot = require('../models/Bot');
 const authenticate = require('../middleware/authenticate');
 const request = require('request');
 const messagesController = require('../controllers/messagesController');
 
-// دالة لجلب اسم المستخدم من فيسبوك
-async function getFacebookUsername(userId, accessToken) {
+// دالة لجلب اسم المستخدم من فيسبوك أو إنستجرام
+async function getSocialUsername(userId, bot, platform) {
   try {
+    const accessToken = platform === 'facebook' ? bot.facebookApiKey : bot.instagramApiKey;
+    if (!accessToken) {
+      throw new Error(`لم يتم العثور على access token لـ ${platform} لهذا البوت`);
+    }
+
+    const apiUrl = platform === 'facebook' 
+      ? `https://graph.facebook.com/v22.0/${userId.replace('facebook_', '')}`
+      : `https://graph.instagram.com/v22.0/${userId.replace('instagram_', '')}`;
     const response = await new Promise((resolve, reject) => {
       request(
         {
-          uri: `https://graph.facebook.com/v22.0/${userId}`,
-          qs: { access_token: accessToken, fields: 'name' }, // استخدام الـ access_token اللي بييجي كمعامل
+          uri: apiUrl,
+          qs: { access_token: accessToken, fields: 'name' },
           method: 'GET',
         },
         (err, res, body) => {
@@ -27,10 +35,10 @@ async function getFacebookUsername(userId, accessToken) {
       throw new Error(response.error.message);
     }
 
-    return response.name || userId; // لو الاسم مش موجود، نرجع الـ userId كحل احتياطي
+    return response.name || userId;
   } catch (err) {
-    console.error(`❌ خطأ في جلب اسم المستخدم ${userId} من فيسبوك:`, err.message);
-    return userId; // لو حصل خطأ، نرجع الـ userId
+    console.error(`❌ خطأ في جلب اسم المستخدم ${userId} من ${platform}:`, err.message);
+    return userId;
   }
 }
 
@@ -42,11 +50,11 @@ router.get('/:botId', authenticate, async (req, res) => {
 
     let query = { botId };
     if (type === 'facebook') {
-      query.userId = { $nin: ['anonymous', /^whatsapp_/] }; // Exclude anonymous and WhatsApp users
+      query.userId = { $regex: '^facebook_' };
     } else if (type === 'web') {
-      query.userId = 'anonymous'; // Only include anonymous users
-    } else if (type === 'whatsapp') {
-      query.userId = { $regex: '^whatsapp_' }; // Only include WhatsApp users
+      query.userId = { $in: ['anonymous', /^web_/] };
+    } else if (type === 'instagram') {
+      query.userId = { $regex: '^instagram_' };
     }
 
     if (startDate || endDate) {
@@ -57,23 +65,21 @@ router.get('/:botId', authenticate, async (req, res) => {
 
     const conversations = await Conversation.find(query);
 
-    // جلب الـ access_token بتاع البوت من قاعدة البيانات
+    // جلب البوت من قاعدة البيانات
     const bot = await Bot.findById(botId);
     if (!bot) {
       throw new Error('البوت غير موجود');
     }
-    const facebookAccessToken = bot.facebookApiKey;
-    if (!facebookAccessToken) {
-      throw new Error('لم يتم العثور على access token لفيسبوك لهذا البوت');
-    }
 
     // إضافة الـ username لكل محادثة
     const conversationsWithUsernames = await Promise.all(conversations.map(async (conv) => {
-      let username = conv.userId; // افتراضي
-      if (type === 'facebook') {
-        username = await getFacebookUsername(conv.userId, facebookAccessToken);
+      let username = conv.userId;
+      if (type === 'facebook' && bot.facebookApiKey) {
+        username = await getSocialUsername(conv.userId, bot, 'facebook');
+      } else if (type === 'instagram' && bot.instagramApiKey) {
+        username = await getSocialUsername(conv.userId, bot, 'instagram');
       }
-      return { ...conv._doc, username }; // إضافة الـ username للبيانات
+      return { ...conv._doc, username };
     }));
 
     res.status(200).json(conversationsWithUsernames);
@@ -86,31 +92,37 @@ router.get('/:botId', authenticate, async (req, res) => {
 // Get daily messages for a bot
 router.get('/daily/:botId', authenticate, messagesController.getDailyMessages);
 
-// Get Facebook user name
-router.get('/facebook-user/:userId', authenticate, async (req, res) => {
+// Get social user name
+router.get('/social-user/:userId', authenticate, async (req, res) => {
   try {
     const { userId } = req.params;
+    const { botId, platform } = req.query;
 
-    // جلب الـ botId من الـ query (لأن ده endpoint منفصل)
-    const { botId } = req.query;
-    if (!botId) {
-      throw new Error('يرجى تحديد botId في الطلب');
+    if (!botId || !platform) {
+      throw new Error('يرجى تحديد botId وplatform في الطلب');
+    }
+
+    if (!['facebook', 'instagram'].includes(platform)) {
+      throw new Error('المنصة يجب أن تكون facebook أو instagram');
     }
 
     const bot = await Bot.findById(botId);
     if (!bot) {
       throw new Error('البوت غير موجود');
     }
-    const facebookAccessToken = bot.facebookApiKey;
-    if (!facebookAccessToken) {
-      throw new Error('لم يتم العثور على access token لفيسبوك لهذا البوت');
+
+    const accessToken = platform === 'facebook' ? bot.facebookApiKey : bot.instagramApiKey;
+    if (!accessToken) {
+      throw new Error(`لم يتم العثور على access token لـ ${platform} لهذا البوت`);
     }
 
     const response = await new Promise((resolve, reject) => {
       request(
         {
-          uri: `https://graph.facebook.com/v22.0/${userId}`,
-          qs: { access_token: facebookAccessToken, fields: 'name' },
+          uri: platform === 'facebook' 
+            ? `https://graph.facebook.com/v22.0/${userId.replace('facebook_', '')}`
+            : `https://graph.instagram.com/v22.0/${userId.replace('instagram_', '')}`,
+          qs: { access_token: accessToken, fields: 'name' },
           method: 'GET',
         },
         (err, res, body) => {
@@ -126,7 +138,7 @@ router.get('/facebook-user/:userId', authenticate, async (req, res) => {
 
     res.status(200).json({ name: response.name });
   } catch (err) {
-    console.error('Error fetching Facebook user:', err);
+    console.error('Error fetching social user:', err);
     res.status(500).json({ message: 'خطأ في جلب اسم المستخدم' });
   }
 });
@@ -139,11 +151,11 @@ router.delete('/delete-message/:botId/:userId/:messageId', authenticate, async (
 
     let query = { botId, userId };
     if (type === 'facebook') {
-      query.userId = { $nin: ['anonymous', /^whatsapp_/] };
+      query.userId = { $regex: '^facebook_' };
     } else if (type === 'web') {
-      query.userId = 'anonymous';
-    } else if (type === 'whatsapp') {
-      query.userId = { $regex: '^whatsapp_' };
+      query.userId = { $in: ['anonymous', /^web_/] };
+    } else if (type === 'instagram') {
+      query.userId = { $regex: '^instagram_' };
     }
 
     const conversation = await Conversation.findOne(query);
@@ -169,11 +181,11 @@ router.delete('/delete-user/:botId/:userId', authenticate, async (req, res) => {
 
     let query = { botId, userId };
     if (type === 'facebook') {
-      query.userId = { $nin: ['anonymous', /^whatsapp_/] };
+      query.userId = { $regex: '^facebook_' };
     } else if (type === 'web') {
-      query.userId = 'anonymous';
-    } else if (type === 'whatsapp') {
-      query.userId = { $regex: '^whatsapp_' };
+      query.userId = { $in: ['anonymous', /^web_/] };
+    } else if (type === 'instagram') {
+      query.userId = { $regex: '^instagram_' };
     }
 
     await Conversation.deleteMany(query);
@@ -192,11 +204,11 @@ router.delete('/delete-all/:botId', authenticate, async (req, res) => {
 
     let query = { botId };
     if (type === 'facebook') {
-      query.userId = { $nin: ['anonymous', /^whatsapp_/] };
+      query.userId = { $regex: '^facebook_' };
     } else if (type === 'web') {
-      query.userId = 'anonymous';
-    } else if (type === 'whatsapp') {
-      query.userId = { $regex: '^whatsapp_' };
+      query.userId = { $in: ['anonymous', /^web_/] };
+    } else if (type === 'instagram') {
+      query.userId = { $regex: '^instagram_' };
     }
 
     await Conversation.deleteMany(query);
@@ -215,11 +227,11 @@ router.get('/download/:botId', authenticate, async (req, res) => {
 
     let query = { botId };
     if (type === 'facebook') {
-      query.userId = { $nin: ['anonymous', /^whatsapp_/] };
+      query.userId = { $regex: '^facebook_' };
     } else if (type === 'web') {
-      query.userId = 'anonymous';
-    } else if (type === 'whatsapp') {
-      query.userId = { $regex: '^whatsapp_' };
+      query.userId = { $in: ['anonymous', /^web_/] };
+    } else if (type === 'instagram') {
+      query.userId = { $regex: '^instagram_' };
     }
 
     const conversations = await Conversation.find(query);
