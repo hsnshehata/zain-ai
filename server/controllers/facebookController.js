@@ -41,7 +41,7 @@ const handleMessage = async (req, res) => {
           continue;
         }
 
-        // إضافة بادئة facebook_ لمعرف المستخدم
+        // إضافة بادئة facebook_ لمعرف المستخدم (للرسايل)
         const prefixedSenderId = `facebook_${senderPsid}`;
 
         // Validate that senderId is not the page itself
@@ -175,8 +175,8 @@ const handleMessage = async (req, res) => {
               continue;
             }
 
-            // إضافة بادئة facebook_ لمعرف المستخدم
-            const prefixedCommenterId = `facebook_${commenterId}`;
+            // إضافة بادئة facebook_comment_ لمعرف المستخدم (للتعليقات)
+            const prefixedCommenterId = `facebook_comment_${commenterId}`;
 
             // تجاهل الكومنتات من الصفحة نفسها (ردود البوت)
             if (commenterId === bot.facebookPageId) {
