@@ -11,11 +11,14 @@ async function getSocialUsername(userId, bot, platform) {
   try {
     const accessToken = platform === 'facebook' ? bot.facebookApiKey : bot.instagramApiKey;
     if (!accessToken) {
+      console.error(`❌ لم يتم العثور على access token لـ ${platform} لهذا البوت ${bot._id}`);
       throw new Error(`لم يتم العثور على access token لـ ${platform} لهذا البوت`);
     }
 
     // نزيل البادئة (facebook_, facebook_comment_, instagram_, instagram_comment_)
     const cleanUserId = userId.replace(/^(facebook_|facebook_comment_|instagram_|instagram_comment_)/, '');
+    console.log(`📋 جلب اسم المستخدم لـ ${userId}, بعد التنظيف: ${cleanUserId}, المنصة: ${platform}`);
+
     const apiUrl = platform === 'facebook' 
       ? `https://graph.facebook.com/v22.0/${cleanUserId}`
       : `https://graph.instagram.com/v22.0/${cleanUserId}`;
@@ -27,20 +30,25 @@ async function getSocialUsername(userId, bot, platform) {
           method: 'GET',
         },
         (err, res, body) => {
-          if (err) return reject(err);
+          if (err) {
+            console.error(`❌ خطأ في طلب API لجلب الاسم لـ ${cleanUserId}:`, err.message);
+            return reject(err);
+          }
           resolve(JSON.parse(body));
         }
       );
     });
 
     if (response.error) {
+      console.error(`❌ خطأ في استجابة API لجلب الاسم لـ ${cleanUserId}:`, response.error.message);
       throw new Error(response.error.message);
     }
 
+    console.log(`✅ تم جلب الاسم بنجاح لـ ${cleanUserId}: ${response.name}`);
     return response.name || userId;
   } catch (err) {
     console.error(`❌ خطأ في جلب اسم المستخدم ${userId} من ${platform}:`, err.message);
-    return userId;
+    return userId; // لو حصل خطأ، نرجع الـ userId كما هو
   }
 }
 
