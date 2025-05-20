@@ -166,6 +166,19 @@ document.addEventListener("DOMContentLoaded", async () => {
     settings: "/css/settings.css",
   };
 
+  // Map of pages to their respective JS files
+  const pageJsMap = {
+    bots: "/js/bots.js",
+    rules: "/js/rules.js",
+    "chat-page": "/js/chatPage.js",
+    analytics: "/js/analytics.js",
+    messages: "/js/messages.js",
+    feedback: "/js/feedback.js",
+    facebook: "/js/facebook.js",
+    instagram: "/js/instagram.js",
+    settings: "/js/settings.js",
+  };
+
   // Load CSS dynamically
   function loadPageCss(page) {
     document.querySelectorAll('link[data-page-css]').forEach(link => link.remove());
@@ -175,6 +188,34 @@ document.addEventListener("DOMContentLoaded", async () => {
       link.href = pageCssMap[page];
       link.dataset.pageCss = page;
       document.head.appendChild(link);
+    }
+  }
+
+  // Load JS dynamically if not already loaded
+  async function loadPageJs(page) {
+    if (!pageJsMap[page]) return;
+
+    // Check if the script is already loaded
+    if (!document.querySelector(`script[src="${pageJsMap[page]}"]`)) {
+      console.log(`Loading script for page ${page}: ${pageJsMap[page]}`);
+      const script = document.createElement("script");
+      script.src = pageJsMap[page];
+      script.async = true;
+      document.body.appendChild(script);
+
+      // Wait for the script to load
+      await new Promise((resolve, reject) => {
+        script.onload = () => {
+          console.log(`${pageJsMap[page]} loaded successfully`);
+          resolve();
+        };
+        script.onerror = () => {
+          console.error(`Failed to load script ${pageJsMap[page]}`);
+          reject(new Error(`Failed to load script ${pageJsMap[page]}`));
+        };
+      });
+    } else {
+      console.log(`${pageJsMap[page]} already loaded`);
     }
   }
 
@@ -327,7 +368,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   };
 
   // دالة مساعدة للانتظار حتى تتعرف الدالة المطلوبة
-  async function waitForFunction(funcName, maxAttempts = 50, interval = 100) {
+  async function waitForFunction(funcName, maxAttempts = 100, interval = 100) {
     let attempts = 0;
     while (attempts < maxAttempts) {
       if (typeof window[funcName] === "function") {
@@ -356,7 +397,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`;
     const selectedBotId = localStorage.getItem("selectedBotId");
 
+    // Load the corresponding CSS and JS for the page
     loadPageCss(page);
+    try {
+      await loadPageJs(page);
+    } catch (err) {
+      console.error(`Failed to load JS for page ${page}:`, err.message);
+      content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>فشل في تحميل الصفحة: ${err.message}</p></div>`;
+      return;
+    }
 
     if (!selectedBotId && !(role === "superadmin" && page === "bots")) {
       content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض هذا القسم.</p></div>`;
