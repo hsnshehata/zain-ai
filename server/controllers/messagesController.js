@@ -56,14 +56,11 @@ exports.getMessages = async (req, res) => {
     }
     if (type) {
       if (type === 'facebook') {
-        // جلب محادثات فيسبوك فقط (مش ويب ولا إنستجرام)
-        query.userId = { $not: { $in: [/^web_/, /^instagram_/, 'anonymous'] } };
+        query.userId = { $regex: '^facebook_' };
       } else if (type === 'web') {
-        // جلب محادثات الويب
         query.userId = { $in: ['anonymous', /^web_/] };
       } else if (type === 'instagram') {
-        // جلب محادثات إنستجرام
-        query.userId = /^instagram_/;
+        query.userId = { $regex: '^instagram_' };
       }
     }
 
