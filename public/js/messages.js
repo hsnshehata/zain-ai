@@ -12,7 +12,9 @@ try {
     const token = localStorage.getItem("token");
     const selectedBotId = localStorage.getItem("selectedBotId");
 
+    console.log("Checking selectedBotId and token...");
     if (!selectedBotId) {
+      console.log("No selectedBotId found, rendering error message...");
       content.innerHTML = `
         <div class="placeholder error">
           <h2><i class="fas fa-exclamation-triangle"></i> لم يتم اختيار بوت</h2>
@@ -23,6 +25,7 @@ try {
     }
 
     if (!token) {
+      console.log("No token found, rendering error message...");
       content.innerHTML = `
         <div class="placeholder error">
           <h2><i class="fas fa-exclamation-triangle"></i> تسجيل الدخول مطلوب</h2>
@@ -32,6 +35,7 @@ try {
       return;
     }
 
+    console.log("Rendering main structure for messages page...");
     // Main structure for the messages page
     content.innerHTML = `
       <div class="page-header">
@@ -79,6 +83,7 @@ try {
       </div>
     `;
 
+    console.log("Getting element references...");
     // --- Element References ---
     const loadingSpinner = document.getElementById("loadingSpinner");
     const errorMessage = document.getElementById("errorMessage");
@@ -99,6 +104,7 @@ try {
     const closeChatModalBtn = document.getElementById("closeChatModalBtn");
     const deleteSingleConversationBtn = document.getElementById("deleteSingleConversationBtn");
 
+    console.log("Defining state variables...");
     // --- State Variables ---
     let currentChannel = "facebook";
     let allConversations = [];
@@ -109,9 +115,11 @@ try {
     let currentOpenConversationId = null;
     let currentOpenUserId = null; // متغير جديد لحفظ userId للمحادثة المفتوحة
 
+    console.log("Defining helper functions...");
     // --- Functions ---
 
     function showLoading() {
+      console.log("showLoading called...");
       loadingSpinner.style.display = "flex";
       conversationsContainer.style.display = "none";
       paginationContainer.style.display = "none";
@@ -119,12 +127,14 @@ try {
     }
 
     function showError(message) {
+      console.log("showError called with message:", message);
       loadingSpinner.style.display = "none";
       errorMessage.textContent = message;
       errorMessage.style.display = "block";
     }
 
     function showContent() {
+      console.log("showContent called...");
       loadingSpinner.style.display = "none";
       errorMessage.style.display = "none";
       conversationsContainer.style.display = "grid";
@@ -132,6 +142,7 @@ try {
     }
 
     async function fetchConversations(botId, channel, startDate, endDate) {
+      console.log("fetchConversations called with botId:", botId, "channel:", channel);
       showLoading();
       try {
         const params = new URLSearchParams({ type: channel });
@@ -153,6 +164,7 @@ try {
     }
 
     function renderConversations() {
+      console.log("renderConversations called...");
       conversationsContainer.innerHTML = "";
       webUserCounter = 1;
 
@@ -183,6 +195,7 @@ try {
     }
 
     function createConversationCard(conv) {
+      console.log("createConversationCard called for conversation:", conv._id);
       const card = document.createElement("div");
       card.className = "card conversation-card";
       card.dataset.conversationId = conv._id;
@@ -240,6 +253,7 @@ try {
     }
 
     function renderPagination(totalPages) {
+      console.log("renderPagination called with totalPages:", totalPages);
       paginationContainer.innerHTML = "";
       if (totalPages <= 1) return;
 
@@ -296,6 +310,7 @@ try {
     }
 
     function openChatModal(conversationId, userId) {
+      console.log("openChatModal called with conversationId:", conversationId, "userId:", userId);
       const conversation = allConversations.find(conv => conv._id === conversationId);
       if (!conversation) {
         console.error(`Conversation with ID ${conversationId} not found`);
@@ -364,6 +379,7 @@ try {
     }
 
     function closeChatModal() {
+      console.log("closeChatModal called...");
       chatModal.style.display = "none";
       currentOpenConversationId = null;
       currentOpenUserId = null;
@@ -371,7 +387,7 @@ try {
     }
 
     async function deleteSingleConversation() {
-      console.log("deleteSingleConversation called");
+      console.log("deleteSingleConversation called...");
       console.log(`currentOpenConversationId: ${currentOpenConversationId}, currentOpenUserId: ${currentOpenUserId}`);
 
       if (!currentOpenConversationId || !currentOpenUserId) {
@@ -405,8 +421,7 @@ try {
     }
 
     async function deleteAllConversationsForChannel() {
-      console.log("deleteAllConversationsForChannel called");
-
+      console.log("deleteAllConversationsForChannel called...");
       if (!confirm(`هل أنت متأكد من حذف جميع محادثات قناة ${currentChannel}؟ لا يمكن التراجع عن هذا الإجراء.`)) return;
 
       deleteAllConversationsBtn.disabled = true;
@@ -431,8 +446,7 @@ try {
     }
 
     async function downloadMessagesForChannel() {
-      console.log("downloadMessagesForChannel called");
-
+      console.log("downloadMessagesForChannel called...");
       downloadMessagesBtn.disabled = true;
       downloadMessagesBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جار التنزيل...';
 
@@ -485,6 +499,7 @@ try {
     }
 
     function handleEditRuleClick(event) {
+      console.log("handleEditRuleClick called...");
       const button = event.currentTarget;
       const messageIndex = button.dataset.messageIndex;
       const answer = button.dataset.answer;
@@ -498,6 +513,7 @@ try {
     }
 
     function handleCancelEditClick(event) {
+      console.log("handleCancelEditClick called...");
       const button = event.currentTarget;
       const editArea = button.closest(".edit-area");
       const messageActions = editArea.previousElementSibling;
@@ -509,6 +525,7 @@ try {
     }
 
     async function handleSaveEditedRuleClick(event) {
+      console.log("handleSaveEditedRuleClick called...");
       const saveButton = event.currentTarget;
       const editArea = saveButton.closest(".edit-area");
       const textarea = editArea.querySelector(".edit-textarea");
@@ -562,6 +579,7 @@ try {
 
     // --- Helper Function for API Requests ---
     async function handleApiRequest(url, options, errorElement, defaultErrorMessage) {
+      console.log("handleApiRequest called for URL:", url);
       try {
         const response = await fetch(url, options);
         if (!response.ok) {
@@ -577,9 +595,11 @@ try {
       }
     }
 
+    console.log("Setting up event listeners...");
     // --- Event Listeners Setup ---
     tabs.forEach(tab => {
       tab.addEventListener("click", () => {
+        console.log("Tab clicked, channel:", tab.dataset.channel);
         tabs.forEach(t => t.classList.remove("active"));
         tab.classList.add("active");
         currentChannel = tab.dataset.channel;
@@ -588,10 +608,12 @@ try {
     });
 
     applyFilterBtn.addEventListener("click", () => {
+      console.log("applyFilterBtn clicked...");
       fetchConversations(selectedBotId, currentChannel, startDateFilter.value, endDateFilter.value);
     });
 
     resetFilterBtn.addEventListener("click", () => {
+      console.log("resetFilterBtn clicked...");
       startDateFilter.value = "";
       endDateFilter.value = "";
       fetchConversations(selectedBotId, currentChannel, null, null);
@@ -617,6 +639,7 @@ try {
       }
     });
 
+    console.log("Calling fetchConversations for initial load...");
     // --- Initial Load ---
     fetchConversations(selectedBotId, currentChannel, null, null);
   };
@@ -629,6 +652,7 @@ try {
 
 // Helper function to escape HTML
 function escapeHtml(unsafe) {
+  console.log("escapeHtml called...");
   if (typeof unsafe !== "string") return unsafe;
   return unsafe
        .replace(/&/g, "&")
