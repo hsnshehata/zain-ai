@@ -14,9 +14,11 @@ async function getSocialUsername(userId, bot, platform) {
       throw new Error(`لم يتم العثور على access token لـ ${platform} لهذا البوت`);
     }
 
+    // نزيل البادئة (facebook_, facebook_comment_, instagram_, instagram_comment_)
+    const cleanUserId = userId.replace(/^(facebook_|facebook_comment_|instagram_|instagram_comment_)/, '');
     const apiUrl = platform === 'facebook' 
-      ? `https://graph.facebook.com/v22.0/${userId.replace('facebook_', '')}`
-      : `https://graph.instagram.com/v22.0/${userId.replace('instagram_', '')}`;
+      ? `https://graph.facebook.com/v22.0/${cleanUserId}`
+      : `https://graph.instagram.com/v22.0/${cleanUserId}`;
     const response = await new Promise((resolve, reject) => {
       request(
         {
@@ -50,11 +52,11 @@ router.get('/:botId', authenticate, async (req, res) => {
 
     let query = { botId };
     if (type === 'facebook') {
-      query.userId = { $regex: '^facebook_' };
+      query.userId = { $regex: '^(facebook_|facebook_comment_)' };
     } else if (type === 'web') {
       query.userId = { $in: ['anonymous', /^web_/] };
     } else if (type === 'instagram') {
-      query.userId = { $regex: '^instagram_' };
+      query.userId = { $regex: '^(instagram_|instagram_comment_)' };
     }
 
     if (startDate || endDate) {
@@ -116,12 +118,14 @@ router.get('/social-user/:userId', authenticate, async (req, res) => {
       throw new Error(`لم يتم العثور على access token لـ ${platform} لهذا البوت`);
     }
 
+    // نزيل البادئة (facebook_, facebook_comment_, instagram_, instagram_comment_)
+    const cleanUserId = userId.replace(/^(facebook_|facebook_comment_|instagram_|instagram_comment_)/, '');
     const response = await new Promise((resolve, reject) => {
       request(
         {
           uri: platform === 'facebook' 
-            ? `https://graph.facebook.com/v22.0/${userId.replace('facebook_', '')}`
-            : `https://graph.instagram.com/v22.0/${userId.replace('instagram_', '')}`,
+            ? `https://graph.facebook.com/v22.0/${cleanUserId}`
+            : `https://graph.instagram.com/v22.0/${cleanUserId}`,
           qs: { access_token: accessToken, fields: 'name' },
           method: 'GET',
         },
@@ -151,11 +155,11 @@ router.delete('/delete-message/:botId/:userId/:messageId', authenticate, async (
 
     let query = { botId, userId };
     if (type === 'facebook') {
-      query.userId = { $regex: '^facebook_' };
+      query.userId = { $regex: '^(facebook_|facebook_comment_)' };
     } else if (type === 'web') {
       query.userId = { $in: ['anonymous', /^web_/] };
     } else if (type === 'instagram') {
-      query.userId = { $regex: '^instagram_' };
+      query.userId = { $regex: '^(instagram_|instagram_comment_)' };
     }
 
     const conversation = await Conversation.findOne(query);
@@ -181,11 +185,11 @@ router.delete('/delete-user/:botId/:userId', authenticate, async (req, res) => {
 
     let query = { botId, userId };
     if (type === 'facebook') {
-      query.userId = { $regex: '^facebook_' };
+      query.userId = { $regex: '^(facebook_|facebook_comment_)' };
     } else if (type === 'web') {
       query.userId = { $in: ['anonymous', /^web_/] };
     } else if (type === 'instagram') {
-      query.userId = { $regex: '^instagram_' };
+      query.userId = { $regex: '^(instagram_|instagram_comment_)' };
     }
 
     await Conversation.deleteMany(query);
@@ -204,11 +208,11 @@ router.delete('/delete-all/:botId', authenticate, async (req, res) => {
 
     let query = { botId };
     if (type === 'facebook') {
-      query.userId = { $regex: '^facebook_' };
+      query.userId = { $regex: '^(facebook_|facebook_comment_)' };
     } else if (type === 'web') {
       query.userId = { $in: ['anonymous', /^web_/] };
     } else if (type === 'instagram') {
-      query.userId = { $regex: '^instagram_' };
+      query.userId = { $regex: '^(instagram_|instagram_comment_)' };
     }
 
     await Conversation.deleteMany(query);
@@ -227,11 +231,11 @@ router.get('/download/:botId', authenticate, async (req, res) => {
 
     let query = { botId };
     if (type === 'facebook') {
-      query.userId = { $regex: '^facebook_' };
+      query.userId = { $regex: '^(facebook_|facebook_comment_)' };
     } else if (type === 'web') {
       query.userId = { $in: ['anonymous', /^web_/] };
     } else if (type === 'instagram') {
-      query.userId = { $regex: '^instagram_' };
+      query.userId = { $regex: '^(instagram_|instagram_comment_)' };
     }
 
     const conversations = await Conversation.find(query);
