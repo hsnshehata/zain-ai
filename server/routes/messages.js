@@ -9,63 +9,45 @@ const messagesController = require('../controllers/messagesController');
 // دالة لجلب اسم المستخدم من فيسبوك أو إنستجرام
 async function getSocialUsername(userId, bot, platform) {
   try {
-    const accessToken = platform === 'facebook' ? bot.facebookApiKey : bot.instagramApiKey;
-    console.log(`📋 جلب التوكن لـ ${platform} | Bot ID: ${bot._id} | Token: ${accessToken ? accessToken.slice(0, 10) + '...' : 'غير موجود'}`);
+    let accessToken = platform === 'facebook' ? bot.facebookApiKey : bot.instagramApiKey;
+    let apiUrl = platform === 'facebook' ? 'https://graph.facebook.com/v22.0' : 'https://graph.instagram.com/v22.0';
+    let attempt = platform === 'facebook' ? 'فيسبوك (المحاولة الأولى)' : 'إنستجرام';
+
+    console.log(`📋 جلب التوكن لـ ${attempt} | Bot ID: ${bot._id} | Token: ${accessToken ? accessToken.slice(0, 10) + '...' : 'غير موجود'}`);
 
     if (!accessToken) {
-      console.error(`❌ لم يتم العثور على access token لـ ${platform} لهذا البوت ${bot._id}`);
-      throw new Error(`لم يتم العثور على access token لـ ${platform} لهذا البوت`);
+      console.error(`❌ لم يتم العثور على access token لـ ${attempt} لهذا البوت ${bot._id}`);
+      if (platform === 'facebook') {
+        // جرب إنستجرام كمحاولة ثانية
+        console.log(`📋 محاولة جلب الاسم باستخدام توكن إنستجرام كبديل...`);
+        accessToken = bot.instagramApiKey;
+        apiUrl = 'https://graph.instagram.com/v22.0';
+        attempt = 'إنستجرام (المحاولة الثانية)';
+        if (!accessToken) {
+          console.error(`❌ لم يتم العثور على توكن إنستجرام أيضاً لهذا البوت ${bot._id}`);
+          return 'مستخدم فيسبوك';
+        }
+      } else {
+        return 'مستخدم فيسبوك';
+      }
     }
 
-    // نزيل البادئة الأساسية
+    // تنظيف المعرف
     let cleanUserId = userId.replace(/^(facebook_|facebook_comment_|instagram_|instagram_comment_)/, '');
     cleanUserId = cleanUserId.replace(/^comment_/, '');
-    console.log(`📋 جلب اسم المستخدم لـ ${userId}, بعد التنظيف: ${cleanUserId}, المنصة: ${platform}`);
+    console.log(`📋 جلب اسم المستخدم لـ ${userId}, بعد التنظيف: ${cleanUserId}, المحاولة: ${attempt}`);
 
-    let finalUserId = cleanUserId;
-
-    // لو فيسبوك ومعرف تعليق، نجيب معرف المستخدم من التعليق
-    if (platform === 'facebook' && userId.startsWith('facebook_comment_')) {
-      const commentResponse = await new Promise((resolve, reject) => {
-        request(
-          {
-            uri: `https://graph.facebook.com/v22.0/${cleanUserId}`,
-            qs: { access_token: accessToken, fields: 'from' },
-            method: 'GET',
-          },
-          (err, res, body) => {
-            if (err) {
-              console.error(`❌ خطأ في طلب API لجلب بيانات التعليق ${cleanUserId}:`, err.message);
-              return reject(err);
-            }
-            resolve(JSON.parse(body));
-          }
-        );
-      });
-
-      if (commentResponse.error || !commentResponse.from) {
-        console.error(`❌ خطأ في جلب بيانات التعليق ${cleanUserId}:`, commentResponse.error?.message || 'لا يوجد from');
-        throw new Error(commentResponse.error?.message || 'فشل في جلب بيانات التعليق');
-      }
-
-      finalUserId = commentResponse.from.id;
-      console.log(`📋 معرف المستخدم المستخرج من التعليق ${cleanUserId}: ${finalUserId}`);
-    }
-
-    // نجيب اسم المستخدم باستخدام finalUserId
-    const apiUrl = platform === 'facebook'
-      ? `https://graph.facebook.com/v22.0/${finalUserId}`
-      : `https://graph.instagram.com/v22.0/${cleanUserId}`;
+    // طلب جلب الاسم
     const response = await new Promise((resolve, reject) => {
       request(
         {
-          uri: apiUrl,
+          uri: `${apiUrl}/${cleanUserId}`,
           qs: { access_token: accessToken, fields: 'name' },
           method: 'GET',
         },
         (err, res, body) => {
           if (err) {
-            console.error(`❌ خطأ في طلب API لجلب الاسم لـ ${finalUserId}:`, err.message);
+            console.error(`❌ خطأ في طلب API لجلب الاسم لـ ${cleanUserId} في ${attempt}:`, err.message);
             return reject(err);
           }
           resolve(JSON.parse(body));
@@ -74,15 +56,51 @@ async function getSocialUsername(userId, bot, platform) {
     });
 
     if (response.error) {
-      console.error(`❌ خطأ في استجابة API لجلب الاسم لـ ${finalUserId}:`, response.error.message);
-      throw new Error(response.error.message);
+      console.error(`❌ خطأ في استجابة API لجلب الاسم لـ ${cleanUserId} في ${attempt}:`, response.error.message);
+      if (platform === 'facebook' && attempt === 'فيسبوك (المحاولة الأولى)') {
+        // جرب إنستجرام كمحاولة ثانية
+        console.log(`📋 محاولة جلب الاسم باستخدام توكن إنستجرام كبديل...`);
+        accessToken = bot.instagramApiKey;
+        apiUrl = 'https://graph.instagram.com/v22.0';
+        attempt = 'إنستجرام (المحاولة الثانية)';
+        if (!accessToken) {
+          console.error(`❌ لم يتم العثور على توكن إنستجرام لهذا البوت ${bot._id}`);
+          return 'مستخدم فيسبوك';
+        }
+
+        const retryResponse = await new Promise((resolve, reject) => {
+          request(
+            {
+              uri: `${apiUrl}/${cleanUserId}`,
+              qs: { access_token: accessToken, fields: 'name' },
+              method: 'GET',
+            },
+            (err, res, body) => {
+              if (err) {
+                console.error(`❌ خطأ في طلب API لجلب الاسم لـ ${cleanUserId} في ${attempt}:`, err.message);
+                return reject(err);
+              }
+              resolve(JSON.parse(body));
+            }
+          );
+        });
+
+        if (retryResponse.error) {
+          console.error(`❌ خطأ في استجابة API لجلب الاسم لـ ${cleanUserId} في ${attempt}:`, retryResponse.error.message);
+          return 'مستخدم فيسبوك';
+        }
+
+        console.log(`✅ تم جلب الاسم بنجاح لـ ${cleanUserId} في ${attempt}: ${retryResponse.name}`);
+        return retryResponse.name || 'مستخدم فيسبوك';
+      }
+      return 'مستخدم فيسبوك';
     }
 
-    console.log(`✅ تم جلب الاسم بنجاح لـ ${finalUserId}: ${response.name}`);
-    return response.name || userId;
+    console.log(`✅ تم جلب الاسم بنجاح لـ ${cleanUserId} في ${attempt}: ${response.name}`);
+    return response.name || 'مستخدم فيسبوك';
   } catch (err) {
     console.error(`❌ خطأ في جلب اسم المستخدم ${userId} من ${platform}:`, err.message);
-    return userId; // لو حصل خطأ، نرجع الـ userId كما هو
+    return 'مستخدم فيسبوك';
   }
 }
 
