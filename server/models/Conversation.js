@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const conversationSchema = new mongoose.Schema({
   botId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bot', required: true },
   userId: { type: String, required: true }, // Facebook user ID
+  username: { type: String, default: 'مستخدم فيسبوك' }, // اسم المستخدم (من Webhook أو API)
   messages: [
     {
       role: { type: String, enum: ['user', 'assistant'], required: true },
