@@ -44,20 +44,15 @@ async function transcribeAudio(audioUrl) {
   }
 }
 
-async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, username = 'مستخدم فيسبوك') {
+async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null) {
   try {
-    console.log('🤖 Processing message for bot:', botId, 'user:', userId, 'message:', message, 'username:', username);
+    console.log('🤖 Processing message for bot:', botId, 'user:', userId, 'message:', message);
 
     let conversation = await Conversation.findOne({ botId, userId });
     if (!conversation) {
       console.log('📋 Creating new conversation for bot:', botId, 'user:', userId);
-      conversation = await Conversation.create({ botId, userId, username, messages: [] });
+      conversation = await Conversation.create({ botId, userId, messages: [] });
     } else {
-      // تحديث username لو مش موجود أو مختلف
-      if (!conversation.username || conversation.username === 'مستخدم فيسبوك') {
-        conversation.username = username;
-        await conversation.save();
-      }
       console.log('📋 Found existing conversation:', conversation._id);
     }
 

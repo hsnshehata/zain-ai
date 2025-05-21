@@ -6,7 +6,7 @@ const authenticate = require('../middleware/authenticate');
 const request = require('request');
 const messagesController = require('../controllers/messagesController');
 
-// دالة لجلب اسم المستخدم من فيسبوك أو إنستجرام (كبديل)
+// دالة لجلب اسم المستخدم من فيسبوك أو إنستجرام
 async function getSocialUsername(userId, bot, platform) {
   try {
     let accessToken = platform === 'facebook' ? bot.facebookApiKey : bot.instagramApiKey;
@@ -135,18 +135,13 @@ router.get('/:botId', authenticate, async (req, res) => {
 
     // إضافة الـ username لكل محادثة
     const conversationsWithUsernames = await Promise.all(conversations.map(async (conv) => {
-      let username = conv.username || 'مستخدم فيسبوك';
-      if (type === 'facebook' && bot.facebookApiKey && !conv.username) {
+      let username = conv.userId;
+      if (type === 'facebook' && bot.facebookApiKey) {
         console.log(`📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من فيسبوك`);
         username = await getSocialUsername(conv.userId, bot, 'facebook');
-        // تحديث username في المحادثة
-        conv.username = username;
-        await conv.save();
-      } else if (type === 'instagram' && bot.instagramApiKey && !conv.username) {
+      } else if (type === 'instagram' && bot.instagramApiKey) {
         console.log(`📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من إنستجرام`);
         username = await getSocialUsername(conv.userId, bot, 'instagram');
-        conv.username = username;
-        await conv.save();
       }
       return { ...conv._doc, username };
     }));
@@ -283,7 +278,7 @@ router.get('/download/:botId', authenticate, async (req, res) => {
     let textContent = '';
 
     for (const conv of conversations) {
-      textContent += `User: ${conv.username || conv.userId}\n`;
+      textContent += `User ID: ${conv.userId}\n`;
       conv.messages.forEach(msg => {
         textContent += `${msg.role === 'user' ? 'User' : 'Bot'} (${new Date(msg.timestamp).toLocaleString('ar-EG')}): ${msg.content}\n`;
       });

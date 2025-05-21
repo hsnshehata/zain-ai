@@ -43,20 +43,6 @@ const handleMessage = async (req, res) => {
 
         // إضافة بادئة facebook_ لمعرف المستخدم (للرسايل)
         const prefixedSenderId = `facebook_${senderPsid}`;
-        let senderName = 'مستخدم فيسبوك'; // القيمة الافتراضية
-
-        // محاولة جلب اسم المستخدم من Graph API
-        try {
-          const response = await axios.get(
-            `https://graph.facebook.com/v22.0/${senderPsid}?fields=name&access_token=${bot.facebookApiKey}`
-          );
-          if (response.data.name) {
-            senderName = response.data.name;
-            console.log(`✅ تم جلب اسم المستخدم ${senderName} لـ ${prefixedSenderId}`);
-          }
-        } catch (err) {
-          console.error(`❌ خطأ في جلب اسم المستخدم ${prefixedSenderId}:`, err.response?.data?.error?.message || err.message);
-        }
 
         // Validate that senderId is not the page itself
         if (senderPsid === bot.facebookPageId) {
@@ -114,7 +100,7 @@ const handleMessage = async (req, res) => {
           const editedMessage = webhookEvent.message_edit.message;
           const mid = editedMessage.mid || `temp_${Date.now()}`;
           console.log(`📩 Processing message edit event from ${prefixedSenderId}: ${editedMessage.text}`);
-          const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid, senderName);
+          const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid);
           await sendMessage(senderPsid, responseText, bot.facebookApiKey);
           continue;
         } else if (webhookEvent.message_edit && !bot.messageEditsEnabled) {
@@ -132,15 +118,15 @@ const handleMessage = async (req, res) => {
 
           if (message.text) {
             console.log(`📝 Text message received from ${prefixedSenderId}: ${message.text}`);
-            responseText = await processMessage(bot._id, prefixedSenderId, message.text, false, false, mid, senderName);
+            responseText = await processMessage(bot._id, prefixedSenderId, message.text, false, false, mid);
           } else if (message.attachments) {
             const attachment = message.attachments[0];
             if (attachment.type === 'image') {
               console.log(`🖼️ Image received from ${prefixedSenderId}: ${attachment.payload.url}`);
-              responseText = await processMessage(bot._id, prefixedSenderId, attachment.payload.url, true, false, mid, senderName);
+              responseText = await processMessage(bot._id, prefixedSenderId, attachment.payload.url, true, false, mid);
             } else if (attachment.type === 'audio') {
               console.log(`🎙️ Audio received from ${prefixedSenderId}: ${attachment.payload.url}`);
-              responseText = await processMessage(bot._id, prefixedSenderId, attachment.payload.url, false, true, mid, senderName);
+              responseText = await processMessage(bot._id, prefixedSenderId, attachment.payload.url, false, true, mid);
             } else {
               console.log(`📎 Unsupported attachment type from ${prefixedSenderId}: ${attachment.type}`);
               responseText = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
@@ -182,15 +168,15 @@ const handleMessage = async (req, res) => {
             const postId = commentEvent.post_id;
             const message = commentEvent.message;
             const commenterId = commentEvent.from?.id;
-            const commenterName = commentEvent.from?.name || 'مستخدم فيسبوك';
+            const commenterName = commentEvent.from?.name;
 
             if (!commenterId || !message) {
               console.log('❌ Commenter ID or message not found in feed event:', commentEvent);
               continue;
             }
 
-            // إضافة بادئة facebook_ لمعرف المستخدم (للتعليقات)
-            const prefixedCommenterId = `facebook_${commenterId}`;
+            // إضافة بادئة facebook_comment_ لمعرف المستخدم (للتعليقات)
+            const prefixedCommenterId = `facebook_comment_${commenterId}`;
 
             // تجاهل الكومنتات من الصفحة نفسها (ردود البوت)
             if (commenterId === bot.facebookPageId) {
@@ -200,7 +186,7 @@ const handleMessage = async (req, res) => {
 
             console.log(`💬 Comment received on post ${postId} from ${commenterName} (${prefixedCommenterId}): ${message}`);
 
-            const responseText = await processMessage(bot._id, prefixedCommenterId, message, false, false, `comment_${commentId}`, commenterName);
+            const responseText = await processMessage(bot._id, prefixedCommenterId, message, false, false, `comment_${commentId}`);
             await replyToComment(commentId, responseText, bot.facebookApiKey);
           } else {
             console.log('❌ Not a comment event or not an "add" verb:', change);
@@ -230,15 +216,13 @@ const sendMessage = (senderPsid, responseText, facebookApiKey) => {
       {
         params: { access_token: facebookApiKey },
       }
-    )
-      .then(response => {
-        console.log(`✅ Message sent to ${senderPsid}: ${responseText}`);
-        resolve(response.data);
-      })
-      .catch(err => {
-        console.error('❌ Error sending message to Facebook:', err.response?.data || err.message);
-        reject(err);
-      });
+    ).then(response => {
+      console.log(`✅ Message sent to ${senderPsid}: ${responseText}`);
+      resolve(response.data);
+    }).catch(err => {
+      console.error('❌ Error sending message to Facebook:', err.response?.data || err.message);
+      reject(err);
+    });
   });
 };
 
@@ -255,15 +239,13 @@ const replyToComment = (commentId, responseText, facebookApiKey) => {
       {
         params: { access_token: facebookApiKey },
       }
-    )
-      .then(response => {
-        console.log(`✅ Replied to comment ${commentId}: ${responseText}`);
-        resolve(response.data);
-      })
-      .catch(err => {
-        console.error('❌ Error replying to comment on Facebook:', err.response?.data || err.message);
-        reject(err);
-      });
+    ).then(response => {
+      console.log(`✅ Replied to comment ${commentId}: ${responseText}`);
+      resolve(response.data);
+    }).catch(err => {
+      console.error('❌ Error replying to comment on Facebook:', err.response?.data || err.message);
+      reject(err);
+    });
   });
 };
 
