@@ -10,6 +10,8 @@ const messagesController = require('../controllers/messagesController');
 async function getSocialUsername(userId, bot, platform) {
   try {
     const accessToken = platform === 'facebook' ? bot.facebookApiKey : bot.instagramApiKey;
+    console.log(`📋 جلب التوكن لـ ${platform} | Bot ID: ${bot._id} | Token: ${accessToken ? accessToken.slice(0, 10) + '...' : 'غير موجود'}`);
+
     if (!accessToken) {
       console.error(`❌ لم يتم العثور على access token لـ ${platform} لهذا البوت ${bot._id}`);
       throw new Error(`لم يتم العثور على access token لـ ${platform} لهذا البوت`);
@@ -117,8 +119,10 @@ router.get('/:botId', authenticate, async (req, res) => {
     const conversationsWithUsernames = await Promise.all(conversations.map(async (conv) => {
       let username = conv.userId;
       if (type === 'facebook' && bot.facebookApiKey) {
+        console.log(`📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من فيسبوك`);
         username = await getSocialUsername(conv.userId, bot, 'facebook');
       } else if (type === 'instagram' && bot.instagramApiKey) {
+        console.log(`📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من إنستجرام`);
         username = await getSocialUsername(conv.userId, bot, 'instagram');
       }
       return { ...conv._doc, username };
