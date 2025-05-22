@@ -213,6 +213,23 @@ router.delete('/delete-message/:botId/:userId/:messageId', authenticate, async (
   }
 });
 
+// Delete a single conversation by conversationId
+router.delete('/delete-conversation/:botId/:conversationId', authenticate, async (req, res) => {
+  try {
+    const { botId, conversationId } = req.params;
+
+    const result = await Conversation.deleteOne({ botId, _id: conversationId });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: 'المحادثة غير موجودة' });
+    }
+
+    res.status(200).json({ message: 'تم حذف المحادثة بنجاح' });
+  } catch (err) {
+    console.error('Error deleting conversation:', err);
+    res.status(500).json({ message: 'خطأ في السيرفر' });
+  }
+});
+
 // Delete a user's conversations
 router.delete('/delete-user/:botId/:userId', authenticate, async (req, res) => {
   try {
