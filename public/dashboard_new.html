@@ -168,9 +168,23 @@
       </div>
     </div>
 
-    <script src="/js/dashboard_new.js"></script>
-    <script src="/js/utils.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
+    <!-- Load utils.js first for shared functions -->
+    <script defer src="/js/utils.js"></script>
+    <!-- Load dashboard_new.js second to control navigation and bot selection -->
+    <script defer src="/js/dashboard_new.js"></script>
+    <!-- Load other page-specific scripts after dashboard_new.js -->
+    <script defer src="/js/bots.js"></script>
+    <script defer src="/js/rules.js"></script>
+    <script defer src="/js/chatPage.js"></script>
+    <script defer src="/js/analytics.js"></script>
+    <script defer src="/js/messages.js"></script>
+    <script defer src="/js/feedback.js"></script>
+    <script defer src="/js/facebook.js"></script>
+    <script defer src="/js/instagram.js"></script>
+    <script defer src="/js/settings.js"></script>
+    <script defer src="/js/assistantBot.js"></script>
+    <!-- External libraries -->
+    <script defer src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/jwt-decode@3.1.2/build/jwt-decode.min.js"></script>
   </body>
 </html>
