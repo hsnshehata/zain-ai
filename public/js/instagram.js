@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadInstagramPage() {
     const link = document.createElement("link");
     link.rel = "stylesheet";
-    link.href = "/css/instagram.css";
+    link.href = "/css/facebook.css";
     document.head.appendChild(link);
     const content = document.getElementById("content");
     const token = localStorage.getItem("token");
@@ -228,47 +228,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
           if (accountData.username) {
             console.log(`تم جلب بيانات الحساب بنجاح:`, accountData);
-            // إرجاع تاريخ الربط وشكل زرار الإلغاء زي ما كان
-            accountStatus.innerHTML = `
-              <div style="display: inline-block; color: green;">
-                <strong>حالة الربط:</strong> مربوط ✅<br>
-                <strong>اسم الحساب:</strong> ${accountData.username}<br>
-                <strong>معرف الحساب:</strong> ${bot.instagramPageId}<br>
-                <strong>تاريخ الربط:</strong> ${new Date(bot.lastInstagramTokenRefresh).toLocaleString('ar-EG')}
-              </div>
-              <button id="unlinkInstagramBtn" class="btn btn-danger" style="margin-left: 10px; background-color: #dc3545; border-color: #dc3545;">إلغاء الربط</button>
+
+            // Create status container
+            const statusDiv = document.createElement("div");
+            statusDiv.style.display = "inline-block";
+            statusDiv.style.color = "green";
+            statusDiv.innerHTML = `
+              <strong>حالة الربط:</strong> مربوط ✅<br>
+              <strong>اسم الحساب:</strong> ${accountData.username}<br>
+              <strong>معرف الحساب:</strong> ${bot.instagramPageId}<br>
+              <strong>تاريخ الربط:</strong> ${new Date(bot.lastInstagramTokenRefresh).toLocaleString('ar-EG')}
             `;
-            instructionsContainer.style.display = "none";
+
+            // Create unlink button
+            const unlinkInstagramBtn = document.createElement("button");
+            unlinkInstagramBtn.id = "unlinkInstagramBtn";
+            unlinkInstagramBtn.className = "btn btn-danger";
+            unlinkInstagramBtn.style.marginLeft = "10px";
+            unlinkInstagramBtn.style.backgroundColor = "#dc3545";
+            unlinkInstagramBtn.style.borderColor = "#dc3545";
+            unlinkInstagramBtn.textContent = "إلغاء الربط";
 
             // Add event listener for unlink button
-            const unlinkInstagramBtn = document.getElementById("unlinkInstagramBtn");
-            if (unlinkInstagramBtn) {
-              unlinkInstagramBtn.addEventListener("click", async () => {
-                if (confirm("هل أنت متأكد أنك تريد إلغاء ربط هذا الحساب؟")) {
-                  try {
-                    await handleApiRequest(`/api/bots/${botId}/unlink-instagram`, {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                      },
-                    }, errorMessage, "فشل في إلغاء ربط الحساب");
+            unlinkInstagramBtn.addEventListener("click", async () => {
+              if (confirm("هل أنت متأكد أنك تريد إلغاء ربط هذا الحساب؟")) {
+                try {
+                  await handleApiRequest(`/api/bots/${botId}/unlink-instagram`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }, errorMessage, "فشل في إلغاء ربط الحساب");
 
-                    errorMessage.textContent = "تم إلغاء ربط الحساب بنجاح!";
-                    errorMessage.style.color = "green";
-                    errorMessage.style.display = "block";
-                    await loadAccountStatus(botId);
-                  } catch (err) {
-                    console.error('❌ خطأ في إلغاء الربط:', err);
-                    errorMessage.textContent = 'خطأ في إلغاء الربط: ' + (err.message || 'غير معروف');
-                    errorMessage.style.color = "red";
-                    errorMessage.style.display = "block";
-                  }
+                  errorMessage.textContent = "تم إلغاء ربط الحساب بنجاح!";
+                  errorMessage.style.color = "green";
+                  errorMessage.style.display = "block";
+                  await loadAccountStatus(botId);
+                } catch (err) {
+                  console.error('❌ خطأ في إلغاء الربط:', err);
+                  errorMessage.textContent = 'خطأ في إلغاء الربط: ' + (err.message || 'غير معروف');
+                  errorMessage.style.color = "red";
+                  errorMessage.style.display = "block";
                 }
-              });
-            } else {
-              console.error("❌ unlinkInstagramBtn is not found in the DOM");
-            }
+              }
+            });
+
+            // Append status and button to accountStatus
+            accountStatus.innerHTML = "";
+            accountStatus.appendChild(statusDiv);
+            accountStatus.appendChild(unlinkInstagramBtn);
+
+            instructionsContainer.style.display = "none";
           } else {
             console.log(`فشل في جلب بيانات الحساب:`, accountData);
             accountStatus.innerHTML = `
