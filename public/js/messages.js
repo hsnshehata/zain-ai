@@ -1,10 +1,7 @@
-// public/js/messages.js (Updated for new dashboard design and unified error handling)
-
+// public/js/messages.js
 console.log("messages.js script started loading at", new Date().toISOString());
 
-// تعريف الدالة مباشرة في النطاق العالمي عشان تكون متاحة حتى لو حصل تأخير في DOMContentLoaded
 try {
-  console.log("Defining loadMessagesPage function...");
   window.loadMessagesPage = async function() {
     console.log("loadMessagesPage function defined and called at", new Date().toISOString());
 
@@ -12,7 +9,6 @@ try {
     const token = localStorage.getItem("token");
     const selectedBotId = localStorage.getItem("selectedBotId");
 
-    console.log("Checking selectedBotId and token...");
     if (!selectedBotId) {
       console.log("No selectedBotId found, rendering error message...");
       content.innerHTML = `
@@ -35,8 +31,6 @@ try {
       return;
     }
 
-    console.log("Rendering main structure for messages page...");
-    // Main structure for the messages page
     content.innerHTML = `
       <div class="page-header">
         <h2><i class="fas fa-envelope"></i> سجل الرسائل</h2>
@@ -55,10 +49,11 @@ try {
           <button id="facebookMessagesTab" class="tab-button active" data-channel="facebook"><i class="fab fa-facebook-square"></i> فيسبوك</button>
           <button id="webMessagesTab" class="tab-button" data-channel="web"><i class="fas fa-globe"></i> ويب</button>
           <button id="instagramMessagesTab" class="tab-button" data-channel="instagram"><i class="fab fa-instagram"></i> إنستجرام</button>
+          <button id="whatsappMessagesTab" class="tab-button" data-channel="whatsapp"><i class="fab fa-whatsapp"></i> واتساب</button>
         </div>
         <div class="tab-actions">
-           <button id="downloadMessagesBtn" class="btn btn-secondary btn-sm" title="تنزيل رسائل القناة الحالية (TXT)"><i class="fas fa-download"></i> تنزيل</button>
-           <button id="deleteAllConversationsBtn" class="btn btn-danger btn-sm" title="حذف كل محادثات القناة الحالية"><i class="fas fa-trash-alt"></i> حذف الكل</button>
+          <button id="downloadMessagesBtn" class="btn btn-secondary btn-sm" title="تنزيل رسائل القناة الحالية (TXT)"><i class="fas fa-download"></i> تنزيل</button>
+          <button id="deleteAllConversationsBtn" class="btn btn-danger btn-sm" title="حذف كل محادثات القناة الحالية"><i class="fas fa-trash-alt"></i> حذف الكل</button>
         </div>
       </div>
 
@@ -83,8 +78,6 @@ try {
       </div>
     `;
 
-    console.log("Getting element references...");
-    // --- Element References ---
     const loadingSpinner = document.getElementById("loadingSpinner");
     const errorMessage = document.getElementById("errorMessage");
     const conversationsContainer = document.getElementById("conversationsContainer");
@@ -96,16 +89,12 @@ try {
     const resetFilterBtn = document.getElementById("resetFilterBtn");
     const downloadMessagesBtn = document.getElementById("downloadMessagesBtn");
     const deleteAllConversationsBtn = document.getElementById("deleteAllConversationsBtn");
-
-    // Chat Modal Elements
     const chatModal = document.getElementById("chatModal");
     const chatModalTitle = document.getElementById("chatModalTitle");
     const chatModalBody = document.getElementById("chatModalBody");
     const closeChatModalBtn = document.getElementById("closeChatModalBtn");
     const deleteSingleConversationBtn = document.getElementById("deleteSingleConversationBtn");
 
-    console.log("Defining state variables...");
-    // --- State Variables ---
     let currentChannel = "facebook";
     let allConversations = [];
     let userNamesCache = {};
@@ -113,10 +102,7 @@ try {
     let currentPage = 1;
     const itemsPerPage = 20;
     let currentOpenConversationId = null;
-    let currentOpenUserId = null; // متغير جديد لحفظ userId للمحادثة المفتوحة
-
-    console.log("Defining helper functions...");
-    // --- Functions ---
+    let currentOpenUserId = null;
 
     function showLoading() {
       console.log("showLoading called...");
@@ -158,7 +144,6 @@ try {
         renderConversations();
         showContent();
       } catch (err) {
-        // الخطأ تم التعامل معه في handleApiRequest
         showError(err.message || "حدث خطأ أثناء جلب المحادثات.");
       }
     }
@@ -199,13 +184,12 @@ try {
       const card = document.createElement("div");
       card.className = "card conversation-card";
       card.dataset.conversationId = conv._id;
-      card.dataset.userId = conv.userId; // إضافة userId للكارد عشان نستخدمه في الحذف
+      card.dataset.userId = conv.userId;
 
       let userName = conv.username || conv.userId;
       let userIdentifier = conv.userId;
-      let iconClass = 'fas fa-envelope'; // افتراضي للرسايل
+      let iconClass = 'fas fa-envelope';
 
-      // تحديد نوع المحادثة (رسالة أو تعليق) واختيار الأيقونة
       if (currentChannel === "web" && conv.userId === "anonymous") {
         userName = `زائر ويب ${webUserCounter++}`;
         userIdentifier = `web-${webUserCounter - 1}`;
@@ -213,7 +197,7 @@ try {
         if (conv.userId.startsWith('instagram_comment_')) {
           userName = conv.username || `تعليق إنستجرام ${conv.userId.replace('instagram_comment_', '')}`;
           userIdentifier = conv.userId;
-          iconClass = 'fas fa-comment'; // أيقونة تعليق
+          iconClass = 'fas fa-comment';
         } else {
           userName = conv.username || `إنستجرام ${conv.userId.replace('instagram_', '')}`;
           userIdentifier = conv.userId;
@@ -222,18 +206,21 @@ try {
         if (conv.userId.startsWith('facebook_comment_')) {
           userName = conv.username || `تعليق فيسبوك ${conv.userId.replace('facebook_comment_', '')}`;
           userIdentifier = conv.userId;
-          iconClass = 'fas fa-comment'; // أيقونة تعليق
+          iconClass = 'fas fa-comment';
         } else {
           userName = conv.username || `فيسبوك ${conv.userId.replace('facebook_', '')}`;
           userIdentifier = conv.userId;
         }
+      } else if (currentChannel === "whatsapp") {
+        userName = conv.username || `واتساب ${conv.userId.replace('whatsapp_', '')}`;
+        userIdentifier = conv.userId;
+        iconClass = 'fab fa-whatsapp';
       }
 
       userNamesCache[conv._id] = userName;
 
       const lastMessage = conv.messages[conv.messages.length - 1];
       const lastMessageTimestamp = lastMessage ? new Date(lastMessage.timestamp).toLocaleString("ar-EG") : "لا يوجد";
-      // احسب عدد ردود البوت بس
       const messageCount = conv.messages.filter(msg => msg.role === 'assistant').length;
 
       card.innerHTML = `
@@ -271,10 +258,8 @@ try {
         return button;
       };
 
-      // Previous Button
       paginationContainer.appendChild(createPageButton(currentPage - 1, 'السابق', false, currentPage === 1));
 
-      // Dynamic page numbers with ellipsis
       const maxButtons = 5;
       let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
       let endPage = Math.min(totalPages, startPage + maxButtons - 1);
@@ -305,7 +290,6 @@ try {
         paginationContainer.appendChild(createPageButton(totalPages));
       }
 
-      // Next Button
       paginationContainer.appendChild(createPageButton(currentPage + 1, 'التالي', false, currentPage === totalPages));
     }
 
@@ -318,7 +302,7 @@ try {
       }
 
       currentOpenConversationId = conversationId;
-      currentOpenUserId = userId; // حفظ userId للمحادثة المفتوحة
+      currentOpenUserId = userId;
       console.log(`Opening chat modal for conversation ${conversationId}, user ${currentOpenUserId}`);
 
       const userName = userNamesCache[conversationId] || "مستخدم";
@@ -390,8 +374,8 @@ try {
       console.log("deleteSingleConversation called...");
       console.log(`currentOpenConversationId: ${currentOpenConversationId}, currentOpenUserId: ${currentOpenUserId}`);
 
-      if (!currentOpenConversationId) {
-        console.error("Cannot delete conversation: currentOpenConversationId is not set");
+      if (!currentOpenConversationId || !currentOpenUserId) {
+        console.error("Cannot delete conversation: currentOpenConversationId or currentOpenUserId is not set");
         alert("خطأ: لا يمكن حذف المحادثة، يرجى فتح المحادثة أولاً.");
         return;
       }
@@ -402,8 +386,8 @@ try {
       deleteSingleConversationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جار الحذف...';
 
       try {
-        console.log(`Attempting to delete conversation for bot ${selectedBotId}, conversation ${currentOpenConversationId}`);
-        await handleApiRequest(`/api/messages/delete-conversation/${selectedBotId}/${currentOpenConversationId}`, {
+        console.log(`Attempting to delete conversation for bot ${selectedBotId}, user ${currentOpenUserId}, channel ${currentChannel}`);
+        await handleApiRequest(`/api/messages/delete-user/${selectedBotId}/${currentOpenUserId}?type=${currentChannel}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         }, errorMessage, "فشل حذف المحادثة");
@@ -577,7 +561,6 @@ try {
       }
     }
 
-    // --- Helper Function for API Requests ---
     async function handleApiRequest(url, options, errorElement, defaultErrorMessage) {
       console.log("handleApiRequest called for URL:", url);
       try {
@@ -595,8 +578,6 @@ try {
       }
     }
 
-    console.log("Setting up event listeners...");
-    // --- Event Listeners Setup ---
     tabs.forEach(tab => {
       tab.addEventListener("click", () => {
         console.log("Tab clicked, channel:", tab.dataset.channel);
@@ -640,17 +621,15 @@ try {
     });
 
     console.log("Calling fetchConversations for initial load...");
-    // --- Initial Load ---
     fetchConversations(selectedBotId, currentChannel, null, null);
   };
 
   console.log("loadMessagesPage is defined:", typeof window.loadMessagesPage);
 } catch (error) {
   console.error("Error in messages.js:", error.message);
-  throw error; // Re-throw to catch in dashboard_new.js
+  throw error;
 }
 
-// Helper function to escape HTML
 function escapeHtml(unsafe) {
   console.log("escapeHtml called...");
   if (typeof unsafe !== "string") return unsafe;
