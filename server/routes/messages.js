@@ -1,3 +1,4 @@
+// server/routes/messages.js
 const express = require('express');
 const router = express.Router();
 const Conversation = require('../models/Conversation');
@@ -6,12 +7,18 @@ const authenticate = require('../middleware/authenticate');
 const request = require('request');
 const messagesController = require('../controllers/messagesController');
 
-// دالة لجلب اسم المستخدم من فيسبوك أو إنستجرام
+// دالة لجلب اسم المستخدم من فيسبوك، إنستجرام، أو واتساب
 async function getSocialUsername(userId, bot, platform) {
   try {
-    let accessToken = platform === 'facebook' ? bot.facebookApiKey : bot.instagramApiKey;
-    let apiUrl = platform === 'facebook' ? 'https://graph.facebook.com/v22.0' : 'https://graph.instagram.com/v22.0';
-    let attempt = platform === 'facebook' ? 'فيسبوك (المحاولة الأولى)' : 'إنستجرام';
+    let accessToken = platform === 'facebook' ? bot.facebookApiKey : 
+                      platform === 'instagram' ? bot.instagramApiKey : 
+                      bot.whatsappApiKey;
+    let apiUrl = platform === 'facebook' ? 'https://graph.facebook.com/v22.0' : 
+                 platform === 'instagram' ? 'https://graph.instagram.com/v22.0' : 
+                 'https://graph.whatsapp.com/v22.0';
+    let attempt = platform === 'facebook' ? 'فيسبوك (المحاولة الأولى)' : 
+                  platform === 'instagram' ? 'إنستجرام' : 
+                  'واتساب';
 
     console.log(`📋 جلب التوكن لـ ${attempt} | Bot ID: ${bot._id} | Token: ${accessToken ? accessToken.slice(0, 10) + '...' : 'غير موجود'}`);
 
@@ -25,15 +32,15 @@ async function getSocialUsername(userId, bot, platform) {
         attempt = 'إنستجرام (المحاولة الثانية)';
         if (!accessToken) {
           console.error(`❌ لم يتم العثور على توكن إنستجرام أيضاً لهذا البوت ${bot._id}`);
-          return 'مستخدم فيسبوك';
+          return platform === 'whatsapp' ? userId.replace('whatsapp_', '') : 'مستخدم فيسبوك';
         }
       } else {
-        return 'مستخدم فيسبوك';
+        return platform === 'whatsapp' ? userId.replace('whatsapp_', '') : 'مستخدم فيسبوك';
       }
     }
 
     // تنظيف المعرف
-    let cleanUserId = userId.replace(/^(facebook_|facebook_comment_|instagram_|instagram_comment_)/, '');
+    let cleanUserId = userId.replace(/^(facebook_|facebook_comment_|instagram_|instagram_comment_|whatsapp_)/, '');
     cleanUserId = cleanUserId.replace(/^comment_/, '');
     console.log(`📋 جلب اسم المستخدم لـ ${userId}, بعد التنظيف: ${cleanUserId}, المحاولة: ${attempt}`);
 
@@ -41,8 +48,8 @@ async function getSocialUsername(userId, bot, platform) {
     const response = await new Promise((resolve, reject) => {
       request(
         {
-          uri: `${apiUrl}/${cleanUserId}`,
-          qs: { access_token: accessToken, fields: 'name' },
+          uri: platform === 'whatsapp' ? `${apiUrl}/${bot.whatsappBusinessAccountId}/contacts` : `${apiUrl}/${cleanUserId}`,
+          qs: platform === 'whatsapp' ? { phone_numbers: cleanUserId, access_token: accessToken } : { access_token: accessToken, fields: platform === 'whatsapp' ? 'phone_number' : 'name' },
           method: 'GET',
         },
         (err, res, body) => {
@@ -93,14 +100,14 @@ async function getSocialUsername(userId, bot, platform) {
         console.log(`✅ تم جلب الاسم بنجاح لـ ${cleanUserId} في ${attempt}: ${retryResponse.name}`);
         return retryResponse.name || 'مستخدم فيسبوك';
       }
-      return 'مستخدم فيسبوك';
+      return platform === 'whatsapp' ? cleanUserId : 'مستخدم فيسبوك';
     }
 
-    console.log(`✅ تم جلب الاسم بنجاح لـ ${cleanUserId} في ${attempt}: ${response.name}`);
-    return response.name || 'مستخدم فيسبوك';
+    console.log(`✅ تم جلب الاسم بنجاح لـ ${cleanUserId} في ${attempt}: ${platform === 'whatsapp' ? response.data[0]?.phone_number : response.name}`);
+    return platform === 'whatsapp' ? response.data[0]?.phone_number || cleanUserId : response.name || 'مستخدم فيسبوك';
   } catch (err) {
     console.error(`❌ خطأ في جلب اسم المستخدم ${userId} من ${platform}:`, err.message);
-    return 'مستخدم فيسبوك';
+    return platform === 'whatsapp' ? userId.replace('whatsapp_', '') : 'مستخدم فيسبوك';
   }
 }
 
@@ -117,6 +124,8 @@ router.get('/:botId', authenticate, async (req, res) => {
       query.userId = { $in: ['anonymous', /^web_/] };
     } else if (type === 'instagram') {
       query.userId = { $regex: '^(instagram_|instagram_comment_)' };
+    } else if (type === 'whatsapp') {
+      query.userId = { $regex: '^whatsapp_' };
     }
 
     if (startDate || endDate) {
@@ -142,6 +151,9 @@ router.get('/:botId', authenticate, async (req, res) => {
       } else if (type === 'instagram' && bot.instagramApiKey) {
         console.log(`📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من إنستجرام`);
         username = await getSocialUsername(conv.userId, bot, 'instagram');
+      } else if (type === 'whatsapp' && bot.whatsappApiKey) {
+        console.log(`📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من واتساب`);
+        username = await getSocialUsername(conv.userId, bot, 'whatsapp');
       }
       return { ...conv._doc, username };
     }));
@@ -166,8 +178,8 @@ router.get('/social-user/:userId', authenticate, async (req, res) => {
       throw new Error('يرجى تحديد botId وplatform في الطلب');
     }
 
-    if (!['facebook', 'instagram'].includes(platform)) {
-      throw new Error('المنصة يجب أن تكون facebook أو instagram');
+    if (!['facebook', 'instagram', 'whatsapp'].includes(platform)) {
+      throw new Error('المنصة يجب أن تكون facebook، instagram، أو whatsapp');
     }
 
     const bot = await Bot.findById(botId);
@@ -196,6 +208,8 @@ router.delete('/delete-message/:botId/:userId/:messageId', authenticate, async (
       query.userId = { $in: ['anonymous', /^web_/] };
     } else if (type === 'instagram') {
       query.userId = { $regex: '^(instagram_|instagram_comment_)' };
+    } else if (type === 'whatsapp') {
+      query.userId = { $regex: '^whatsapp_' };
     }
 
     const conversation = await Conversation.findOne(query);
@@ -243,6 +257,8 @@ router.delete('/delete-user/:botId/:userId', authenticate, async (req, res) => {
       query.userId = { $in: ['anonymous', /^web_/] };
     } else if (type === 'instagram') {
       query.userId = { $regex: '^(instagram_|instagram_comment_)' };
+    } else if (type === 'whatsapp') {
+      query.userId = { $regex: '^whatsapp_' };
     }
 
     await Conversation.deleteMany(query);
@@ -266,6 +282,8 @@ router.delete('/delete-all/:botId', authenticate, async (req, res) => {
       query.userId = { $in: ['anonymous', /^web_/] };
     } else if (type === 'instagram') {
       query.userId = { $regex: '^(instagram_|instagram_comment_)' };
+    } else if (type === 'whatsapp') {
+      query.userId = { $regex: '^whatsapp_' };
     }
 
     await Conversation.deleteMany(query);
@@ -289,6 +307,8 @@ router.get('/download/:botId', authenticate, async (req, res) => {
       query.userId = { $in: ['anonymous', /^web_/] };
     } else if (type === 'instagram') {
       query.userId = { $regex: '^(instagram_|instagram_comment_)' };
+    } else if (type === 'whatsapp') {
+      query.userId = { $regex: '^whatsapp_' };
     }
 
     const conversations = await Conversation.find(query);
