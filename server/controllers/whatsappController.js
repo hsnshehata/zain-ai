@@ -1,223 +1,183 @@
-const mongoose = require('mongoose');
-const WhatsAppSession = require('../models/WhatsAppSession');
-const Rule = require('../models/Rule');
-const { makeWASocket, useMultiFileAuthState, DisconnectReason } = require('@whiskeysockets/baileys');
-const QRCode = require('qrcode');
-const path = require('path');
-const pino = require('pino');
+// server/controllers/whatsappController.js
+const axios = require('axios');
+const Bot = require('../models/Bot');
+const Conversation = require('../models/Conversation');
+const { processMessage } = require('../botEngine');
 
-let clients = new Map();
+// دالة مساعدة لإضافة timestamp للـ logs
+const getTimestamp = () => new Date().toISOString();
 
-const createClient = async (botId) => {
-  // إعداد التخزين باستخدام MongoDB
-  const authState = await useMongoDBAuthState(botId);
+// التحقق من الـ Webhook
+const verifyWebhook = (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
 
-  // إعداد تسجيل الأخطاء باستخدام pino
-  const logger = pino({ level: 'silent' }); // تعطيل التسجيل الافتراضي لتجنب الرسائل غير الضرورية
-
-  const sock = makeWASocket({
-    auth: authState.state,
-    logger,
-    printQRInTerminal: false,
-    syncFullHistory: false, // تقليل استهلاك الموارد
-    connectTimeoutMs: 30000, // مهلة الاتصال 30 ثانية
-    keepAliveIntervalMs: 30000, // الحفاظ على الاتصال
-  });
-
-  sock.ev.on('connection.update', async (update) => {
-    const { connection, lastDisconnect, qr } = update;
-
-    if (connection === 'close') {
-      const shouldReconnect = lastDisconnect?.error?.output?.statusCode !== DisconnectReason.loggedOut;
-      console.log(`❌ تم قطع الاتصال للبوت ${botId}:`, lastDisconnect?.error?.message);
-
-      await WhatsAppSession.findOneAndUpdate(
-        { botId },
-        { connected: false }
-      );
-      clients.delete(botId);
-
-      if (shouldReconnect) {
-        createClient(botId);
-      }
-    } else if (connection === 'open') {
-      console.log(`✅ تم الاتصال بنجاح للبوت ${botId}`);
-      await WhatsAppSession.findOneAndUpdate(
-        { botId },
-        { connected: true, startTime: new Date() },
-        { upsert: true }
-      );
-    } else if (qr) {
-      console.log(`🔗 تم إنشاء رمز QR للبوت ${botId}`);
-    }
-  });
-
-  sock.ev.on('messages.upsert', async ({ messages }) => {
-    const message = messages[0];
-    if (!message.message) return;
-
-    const from = message.key.remoteJid;
-    const text = message.message.conversation || message.message.extendedTextMessage?.text;
-
-    const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
-    let response = '';
-
-    for (const rule of rules) {
-      if (rule.type === 'general' || rule.type === 'global') {
-        if (!response) response = rule.content;
-      } else if (rule.type === 'qa') {
-        if (text.toLowerCase().includes(rule.content.question.toLowerCase())) {
-          response = rule.content.answer;
-          break;
-        }
-      } else if (rule.type === 'products') {
-        if (text.toLowerCase().includes(rule.content.product.toLowerCase())) {
-          response = `المنتج: ${rule.content.product} | السعر: ${rule.content.price} ${rule.content.currency}`;
-          break;
-        }
-      }
-    }
-
-    if (response) {
-      await sock.sendMessage(from, { text: response });
+  if (mode && token) {
+    if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+      console.log(`[${getTimestamp()}] ✅ WhatsApp Webhook verified successfully`);
+      return res.status(200).send(challenge);
     } else {
-      await sock.sendMessage(from, { text: 'آسف، لا أعرف كيف أرد على هذا السؤال.' });
+      console.log(`[${getTimestamp()}] ⚠️ Webhook verification failed: Invalid token`);
+      return res.sendStatus(403);
     }
-  });
-
-  clients.set(botId, { sock, authState });
-  return { sock, authState };
+  }
+  console.log(`[${getTimestamp()}] ⚠️ Webhook verification failed: Missing parameters`);
+  res.sendStatus(400);
 };
 
-// دالة مخصصة لحفظ الجلسات في MongoDB
-const useMongoDBAuthState = async (botId) => {
-  const session = await WhatsAppSession.findOne({ botId });
-  let creds = {};
-  let keys = {};
+// معالجة الرسائل القادمة من واتساب
+const handleMessage = async (req, res) => {
+  try {
+    const body = req.body;
+    console.log(`[${getTimestamp()}] 📩 WhatsApp Webhook POST request received:`, JSON.stringify(body, null, 2));
 
-  if (session && session.sessionData) {
-    creds = session.sessionData.creds || {};
-    keys = session.sessionData.keys || {};
-  }
+    if (body.object !== 'whatsapp_business_account') {
+      console.log(`[${getTimestamp()}] ⚠️ Ignored non-WhatsApp webhook event:`, body.object);
+      return res.sendStatus(400);
+    }
 
-  const state = { creds, keys };
-
-  return {
-    state,
-    saveCreds: async () => {
-      try {
-        const sessionData = {
-          creds: state.creds || {},
-          keys: state.keys || {},
-        };
-
-        await WhatsAppSession.findOneAndUpdate(
-          { botId },
-          { sessionData },
-          { upsert: true }
-        );
-        console.log(`✅ تم حفظ بيانات الجلسة للبوت ${botId}`);
-      } catch (err) {
-        console.error(`❌ خطأ في حفظ بيانات الجلسة للبوت ${botId}:`, err);
-        throw err;
+    for (const entry of body.entry) {
+      const wabaId = entry.id;
+      const bot = await Bot.findOne({ whatsappBusinessAccountId: wabaId });
+      if (!bot) {
+        console.log(`[${getTimestamp()}] ❌ No bot found for WhatsApp Business Account ID: ${wabaId}`);
+        continue;
       }
-    },
-  };
-};
 
-exports.getSession = async (req, res) => {
-  const botId = req.query.botId;
-  if (!botId) {
-    return res.status(400).json({ message: 'معرف البوت (botId) مطلوب' });
-  }
-
-  try {
-    const session = await WhatsAppSession.findOne({ botId });
-    res.status(200).json(session || { connected: false });
-  } catch (err) {
-    console.error('❌ خطأ في جلب حالة الجلسة:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر أثناء جلب حالة الجلسة', error: err.message });
-  }
-};
-
-exports.connect = async (req, res) => {
-  const { botId, whatsappNumber } = req.body;
-
-  if (!botId || !whatsappNumber) {
-    return res.status(400).json({ message: 'معرف البوت ورقم واتساب مطلوبان' });
-  }
-
-  try {
-    let client = clients.get(botId);
-    if (!client) {
-      client = await createClient(botId);
-    }
-
-    await client.sock.sendMessage(`${whatsappNumber}@s.whatsapp.net`, {
-      text: 'مرحبًا! تم ربط البوت بنجاح.',
-    });
-
-    res.status(200).json({ message: 'تم بدء الاتصال بنجاح، تم إرسال رسالة ترحيبية!' });
-  } catch (err) {
-    console.error('❌ خطأ في بدء الاتصال:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر أثناء بدء الاتصال', error: err.message });
-  }
-};
-
-exports.connectWithQR = async (req, res) => {
-  const botId = req.query.botId;
-
-  if (!botId) {
-    return res.status(400).json({ message: 'معرف البوت (botId) مطلوب' });
-  }
-
-  try {
-    let client = clients.get(botId);
-    if (!client) {
-      client = await createClient(botId);
-    }
-
-    let qrCode = null;
-    const qrTimeout = setTimeout(() => {
-      if (!qrCode) {
-        res.status(500).json({ message: 'تعذر إنشاء رمز QR، حاول مرة أخرى.' });
+      if (!bot.isActive) {
+        console.log(`[${getTimestamp()}] ⚠️ Bot ${bot.name} (ID: ${bot._id}) is inactive`);
+        continue;
       }
-    }, 30000);
 
-    client.sock.ev.on('connection.update', async (update) => {
-      const { qr } = update;
-      if (qr) {
-        clearTimeout(qrTimeout);
-        qrCode = await QRCode.toDataURL(qr);
-        res.status(200).json({ qrCode });
+      for (const change of entry.changes) {
+        if (change.field !== 'messages') {
+          console.log(`[${getTimestamp()}] ⚠️ Ignored non-message event: ${change.field}`);
+          continue;
+        }
+
+        const messageEvent = change.value;
+        if (messageEvent.messaging_product !== 'whatsapp') {
+          console.log(`[${getTimestamp()}] ⚠️ Ignored non-WhatsApp messaging product`);
+          continue;
+        }
+
+        const messages = messageEvent.messages || [];
+
+        for (const message of messages) {
+          const senderId = message.from;
+          const phoneNumberId = messageEvent.metadata.phone_number_id;
+          const prefixedSenderId = `whatsapp_${senderId}`;
+
+          // تجاهل الرسائل المرسلة من الحساب نفسه
+          if (senderId === messageEvent.metadata.display_phone_number) {
+            console.log(`[${getTimestamp()}] ⚠️ Ignoring message sent by the account itself: ${senderId}`);
+            continue;
+          }
+
+          // إنشاء أو تحديث المحادثة
+          let conversation = await Conversation.findOne({
+            botId: bot._id,
+            platform: 'whatsapp',
+            userId: prefixedSenderId
+          });
+
+          if (!conversation) {
+            conversation = new Conversation({
+              botId: bot._id,
+              platform: 'whatsapp',
+              userId: prefixedSenderId,
+              messages: []
+            });
+            await conversation.save();
+          }
+
+          // إضافة ملصق "new_message" للمحادثة
+          conversation.labels = conversation.labels || [];
+          if (!conversation.labels.includes('new_message')) {
+            conversation.labels.push('new_message');
+            await conversation.save();
+          }
+
+          // معالجة رسائل الترحيب (opt-ins)
+          if (message.type === 'text' && bot.whatsappMessagingOptinsEnabled && !conversation.messages.length) {
+            console.log(`[${getTimestamp()}] 📩 Processing opt-in event for ${prefixedSenderId}`);
+            const welcomeMessage = bot.welcomeMessage || 'مرحبًا! كيف يمكنني مساعدتك اليوم؟';
+            await sendMessage(senderId, welcomeMessage, bot.whatsappApiKey, phoneNumberId);
+            continue;
+          }
+
+          // معالجة ردود الفعل (reactions)
+          if (message.type === 'reaction' && bot.whatsappMessageReactionsEnabled) {
+            console.log(`[${getTimestamp()}] 📩 Processing reaction event from ${prefixedSenderId}: ${message.reaction.emoji}`);
+            const responseText = `شكرًا على تفاعلك (${message.reaction.emoji})!`;
+            await sendMessage(senderId, responseText, bot.whatsappApiKey, phoneNumberId);
+            continue;
+          }
+
+          // معالجة تتبع المصدر (referrals)
+          if (message.referral && bot.whatsappMessagingReferralsEnabled) {
+            console.log(`[${getTimestamp()}] 📩 Processing referral event from ${prefixedSenderId}: ${message.referral.source}`);
+            const responseText = `مرحبًا! وصلتني من ${message.referral.source}، كيف يمكنني مساعدتك؟`;
+            await sendMessage(senderId, responseText, bot.whatsappApiKey, phoneNumberId);
+            continue;
+          }
+
+          // معالجة الرسائل (نصوص، صور، صوت)
+          if (message.type === 'text') {
+            const messageId = message.id || `msg_${Date.now()}`;
+            console.log(`[${getTimestamp()}] 📝 Text message received from ${prefixedSenderId}: ${message.text.body}`);
+            const reply = await processMessage(bot._id, prefixedSenderId, message.text.body, false, false, messageId);
+            await sendMessage(senderId, reply, bot.whatsappApiKey, phoneNumberId);
+          } else if (message.type === 'image') {
+            const messageId = message.id || `msg_${Date.now()}`;
+            console.log(`[${getTimestamp()}] 🖼️ Image received from ${prefixedSenderId}: ${message.image.url}`);
+            const reply = await processMessage(bot._id, prefixedSenderId, message.image.url, true, false, messageId);
+            await sendMessage(senderId, reply, bot.whatsappApiKey, phoneNumberId);
+          } else if (message.type === 'audio') {
+            const messageId = message.id || `msg_${Date.now()}`;
+            console.log(`[${getTimestamp()}] 🎙️ Audio received from ${prefixedSenderId}: ${message.audio.url}`);
+            const reply = await processMessage(bot._id, prefixedSenderId, message.audio.url, false, true, messageId);
+            await sendMessage(senderId, reply, bot.whatsappApiKey, phoneNumberId);
+          } else {
+            console.log(`[${getTimestamp()}] 📎 Unsupported message type from ${prefixedSenderId}: ${message.type}`);
+            await sendMessage(senderId, 'عذرًا، لا أستطيع معالجة هذا النوع من الرسائل حاليًا.', bot.whatsappApiKey, phoneNumberId);
+          }
+        }
       }
-    });
+    }
+
+    res.status(200).send('EVENT_RECEIVED');
   } catch (err) {
-    console.error('❌ خطأ في إنشاء كود QR:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر أثناء إنشاء كود QR', error: err.message });
+    console.error(`[${getTimestamp()}] ❌ Error in handleMessage:`, err.message, err.stack);
+    res.sendStatus(500);
   }
 };
 
-exports.disconnect = async (req, res) => {
-  const botId = req.query.botId;
-
-  if (!botId) {
-    return res.status(400).json({ message: 'معرف البوت (botId) مطلوب' });
-  }
-
+// إرسال رسالة عبر WhatsApp API
+const sendMessage = async (recipientId, messageText, accessToken, phoneNumberId) => {
   try {
-    const client = clients.get(botId);
-    if (client) {
-      await client.sock.logout();
-      clients.delete(botId);
-    }
-    await WhatsAppSession.findOneAndUpdate(
-      { botId },
-      { connected: false }
+    const response = await axios.post(
+      `https://graph.whatsapp.com/v22.0/${phoneNumberId}/messages`,
+      {
+        messaging_product: 'whatsapp',
+        to: recipientId,
+        type: 'text',
+        text: { body: messageText }
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        }
+      }
     );
-    res.status(200).json({ message: 'تم إنهاء الجلسة بنجاح' });
+    console.log(`[${getTimestamp()}] ✅ Message sent to ${recipientId}: ${messageText}`);
+    return response.data;
   } catch (err) {
-    console.error('❌ خطأ في إنهاء الجلسة:', err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر أثناء إنهاء الجلسة', error: err.message });
+    console.error(`[${getTimestamp()}] ❌ Error sending message to WhatsApp:`, err.response?.data || err.message);
+    throw err;
   }
 };
+
+module.exports = { verifyWebhook, handleMessage, sendMessage };
