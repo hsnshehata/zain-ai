@@ -9,7 +9,7 @@ try {
     let isInitialLoad = true; // Flag to control initial page load
 
     // Valid pages to prevent unexpected page loads
-    const validPages = ['bots', 'rules', 'chat-page', 'analytics', 'messages', 'feedback', 'facebook', 'instagram', 'settings'];
+    const validPages = ['bots', 'rules', 'chat-page', 'analytics', 'messages', 'feedback', 'facebook', 'instagram', 'whatsapp', 'settings'];
 
     // Check for token in URL (from /verify/:token redirect)
     const urlParams = new URLSearchParams(window.location.search);
@@ -169,6 +169,7 @@ try {
       feedback: "/css/feedback.css",
       facebook: "/css/facebook.css",
       instagram: "/css/facebook.css", // نستخدم نفس ستايل facebook.css
+      whatsapp: "/css/facebook.css", // نستخدم نفس ستايل facebook.css
       settings: "/css/settings.css",
     };
 
@@ -182,6 +183,7 @@ try {
       feedback: "/js/feedback.js",
       facebook: "/js/facebook.js",
       instagram: "/js/instagram.js",
+      whatsapp: "/js/whatsapp.js",
       settings: "/js/settings.js",
     };
 
@@ -228,7 +230,7 @@ try {
       }
 
       // Additional check to see if the function is defined after loading
-      const funcName = page === 'chat-page' ? 'loadChatPage' : `load${page.charAt(0).toUpperCase() + page.slice(1).replace(/-([a-z])/g, (g) => g[1].toUpperCase())}Page`;
+      const funcName = `load${page.charAt(0).toUpperCase() + page.slice(1).replace(/-([a-z])/g, (g) => g[1].toUpperCase())}Page`;
       if (typeof window[funcName] !== "function") {
         console.error(`${funcName} still not defined after loading ${pageJsMap[page]} at`, new Date().toISOString());
         console.log("Available properties on window:", Object.keys(window).filter(key => key.startsWith('load')));
@@ -496,6 +498,11 @@ try {
             const loadInstagramPage = await waitForFunction("loadInstagramPage");
             console.log(`Loading instagram page`);
             await loadInstagramPage();
+            break;
+          case "whatsapp":
+            const loadWhatsAppPage = await waitForFunction("loadWhatsAppPage");
+            console.log(`Loading whatsapp page`);
+            await loadWhatsAppPage();
             break;
           default:
             throw new Error("الصفحة المطلوبة غير متوفرة.");
