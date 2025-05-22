@@ -390,8 +390,8 @@ try {
       console.log("deleteSingleConversation called...");
       console.log(`currentOpenConversationId: ${currentOpenConversationId}, currentOpenUserId: ${currentOpenUserId}`);
 
-      if (!currentOpenConversationId || !currentOpenUserId) {
-        console.error("Cannot delete conversation: currentOpenConversationId or currentOpenUserId is not set");
+      if (!currentOpenConversationId) {
+        console.error("Cannot delete conversation: currentOpenConversationId is not set");
         alert("خطأ: لا يمكن حذف المحادثة، يرجى فتح المحادثة أولاً.");
         return;
       }
@@ -402,8 +402,8 @@ try {
       deleteSingleConversationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جار الحذف...';
 
       try {
-        console.log(`Attempting to delete conversation for bot ${selectedBotId}, user ${currentOpenUserId}, channel ${currentChannel}`);
-        await handleApiRequest(`/api/messages/delete-user/${selectedBotId}/${currentOpenUserId}?type=${currentChannel}`, {
+        console.log(`Attempting to delete conversation for bot ${selectedBotId}, conversation ${currentOpenConversationId}`);
+        await handleApiRequest(`/api/messages/delete-conversation/${selectedBotId}/${currentOpenConversationId}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         }, errorMessage, "فشل حذف المحادثة");
