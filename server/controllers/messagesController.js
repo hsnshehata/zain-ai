@@ -1,3 +1,4 @@
+// server/controllers/messagesController.js
 const Conversation = require('../models/Conversation');
 
 // Get daily messages for a bot
@@ -61,6 +62,8 @@ exports.getMessages = async (req, res) => {
         query.userId = { $in: ['anonymous', /^web_/] };
       } else if (type === 'instagram') {
         query.userId = { $regex: '^(instagram_|instagram_comment_)' };
+      } else if (type === 'whatsapp') {
+        query.userId = { $regex: '^whatsapp_' };
       }
     }
 
