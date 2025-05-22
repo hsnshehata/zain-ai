@@ -288,7 +288,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     window.fbAsyncInit = function () {
       FB.init({
-        appId: 'YOUR_WHATSAPP_APP_ID', // استبدل بـ App ID الخاص بتطبيق واتساب
+        appId: '2617452011929231', // استبدل بـ App ID الخاص بتطبيق واتساب
         cookie: true,
         xfbml: true,
         version: 'v22.0'
