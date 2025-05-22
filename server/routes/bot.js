@@ -15,7 +15,7 @@ const apiCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 router.get('/:id/settings', authenticate, getSettings);
 router.patch('/:id/settings', authenticate, updateSettings);
 
-// Route جديد لإعدادات واتساب
+// Routes جديدة لإعدادات واتساب
 router.get('/:botId/whatsapp-settings', authenticate, getWhatsAppSettings);
 router.patch('/:botId/whatsapp-settings', authenticate, updateWhatsAppSettings);
 
