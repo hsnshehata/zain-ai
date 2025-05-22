@@ -1,6 +1,7 @@
+// server/routes/bot.js
 const express = require('express');
 const router = express.Router();
-const { getSettings, updateSettings } = require('../controllers/botController');
+const { getSettings, updateSettings, getWhatsAppSettings, updateWhatsAppSettings } = require('../controllers/botController');
 const authenticate = require('../middleware/authenticate');
 const Bot = require('../models/Bot');
 const Conversation = require('../models/Conversation');
@@ -13,6 +14,10 @@ const apiCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 // Routes for settings with botId in the URL
 router.get('/:id/settings', authenticate, getSettings);
 router.patch('/:id/settings', authenticate, updateSettings);
+
+// Route جديد لإعدادات واتساب
+router.get('/:botId/whatsapp-settings', authenticate, getWhatsAppSettings);
+router.patch('/:botId/whatsapp-settings', authenticate, updateWhatsAppSettings);
 
 // معالجة رسايل الدردشة
 router.post('/', async (req, res) => {
