@@ -239,47 +239,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
           if (pageData.name) {
             console.log(`تم جلب بيانات الصفحة بنجاح:`, pageData);
-            // إضافة تاريخ الربط وتعديل زرار الإلغاء عشان يبقى زي إنستجرام
-            pageStatus.innerHTML = `
-              <div style="display: inline-block; color: green;">
-                <strong>حالة الربط:</strong> مربوط ✅<br>
-                <strong>اسم الصفحة:</strong> ${pageData.name}<br>
-                <strong>معرف الصفحة:</strong> ${bot.facebookPageId}<br>
-                <strong>تاريخ الربط:</strong> ${new Date(bot.lastInstagramTokenRefresh).toLocaleString('ar-EG')}
-              </div>
-              <button id="unlinkFacebookBtn" class="btn btn-danger" style="margin-left: 10px; background-color: #dc3545; border-color: #dc3545;">إلغاء الربط</button>
+
+            // Create status container
+            const statusDiv = document.createElement("div");
+            statusDiv.style.display = "inline-block";
+            statusDiv.style.color = "green";
+            statusDiv.innerHTML = `
+              <strong>حالة الربط:</strong> مربوط ✅<br>
+              <strong>اسم الصفحة:</strong> ${pageData.name}<br>
+              <strong>معرف الصفحة:</strong> ${bot.facebookPageId}<br>
+              <strong>تاريخ الربط:</strong> ${new Date(bot.lastInstagramTokenRefresh).toLocaleString('ar-EG')}
             `;
-            instructionsContainer.style.display = "none";
+
+            // Create unlink button
+            const unlinkFacebookBtn = document.createElement("button");
+            unlinkFacebookBtn.id = "unlinkFacebookBtn";
+            unlinkFacebookBtn.className = "btn btn-danger";
+            unlinkFacebookBtn.style.marginLeft = "10px";
+            unlinkFacebookBtn.style.backgroundColor = "#dc3545";
+            unlinkFacebookBtn.style.borderColor = "#dc3545";
+            unlinkFacebookBtn.textContent = "إلغاء الربط";
 
             // Add event listener for unlink button
-            const unlinkFacebookBtn = document.getElementById("unlinkFacebookBtn");
-            if (unlinkFacebookBtn) {
-              unlinkFacebookBtn.addEventListener("click", async () => {
-                if (confirm("هل أنت متأكد أنك تريد إلغاء ربط هذه الصفحة؟")) {
-                  try {
-                    await handleApiRequest(`/api/bots/${botId}/unlink-facebook`, {
-                      method: "POST",
-                      headers: {
-                        "Content-Type": "application/json",
-                        Authorization: `Bearer ${token}`,
-                      },
-                    }, errorMessage, "فشل في إلغاء ربط الصفحة");
+            unlinkFacebookBtn.addEventListener("click", async () => {
+              if (confirm("هل أنت متأكد أنك تريد إلغاء ربط هذه الصفحة؟")) {
+                try {
+                  await handleApiRequest(`/api/bots/${botId}/unlink-facebook`, {
+                    method: "POST",
+                    headers: {
+                      "Content-Type": "application/json",
+                      Authorization: `Bearer ${token}`,
+                    },
+                  }, errorMessage, "فشل في إلغاء ربط الصفحة");
 
-                    errorMessage.textContent = "تم إلغاء ربط الصفحة بنجاح!";
-                    errorMessage.style.color = "green";
-                    errorMessage.style.display = "block";
-                    await loadPageStatus(botId);
-                  } catch (err) {
-                    console.error('❌ خطأ في إلغاء الربط:', err);
-                    errorMessage.textContent = 'خطأ في إلغاء الربط: ' + (err.message || 'غير معروف');
-                    errorMessage.style.color = "red";
-                    errorMessage.style.display = "block";
-                  }
+                  errorMessage.textContent = "تم إلغاء ربط الصفحة بنجاح!";
+                  errorMessage.style.color = "green";
+                  errorMessage.style.display = "block";
+                  await loadPageStatus(botId);
+                } catch (err) {
+                  console.error('❌ خطأ في إلغاء الربط:', err);
+                  errorMessage.textContent = 'خطأ في إلغاء الربط: ' + (err.message || 'غير معروف');
+                  errorMessage.style.color = "red";
+                  errorMessage.style.display = "block";
                 }
-              });
-            } else {
-              console.error("❌ unlinkFacebookBtn is not found in the DOM");
-            }
+              }
+            });
+
+            // Append status and button to pageStatus
+            pageStatus.innerHTML = "";
+            pageStatus.appendChild(statusDiv);
+            pageStatus.appendChild(unlinkFacebookBtn);
+
+            instructionsContainer.style.display = "none";
           } else {
             console.log(`فشل في جلب بيانات الصفحة:`, pageData);
             pageStatus.innerHTML = `
