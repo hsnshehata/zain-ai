@@ -213,7 +213,7 @@ exports.updateInstagramSettings = async (req, res) => {
 // جلب إعدادات واتساب
 exports.getWhatsAppSettings = async (req, res) => {
   try {
-    const botId = req.params.id;
+    const botId = req.params.botId;
     console.log(`[${getTimestamp()}] جاري جلب إعدادات واتساب | Bot ID: ${botId}`);
 
     const bot = await Bot.findById(botId);
@@ -240,7 +240,7 @@ exports.getWhatsAppSettings = async (req, res) => {
 // تحديث إعدادات واتساب
 exports.updateWhatsAppSettings = async (req, res) => {
   try {
-    const botId = req.params.id;
+    const botId = req.params.botId;
     const { whatsappMessagingOptinsEnabled, whatsappMessageReactionsEnabled, whatsappMessagingReferralsEnabled, whatsappMessageEditsEnabled } = req.body;
 
     console.log(`[${getTimestamp()}] 📝 محاولة تحديث إعدادات واتساب | Bot ID: ${botId} | Data:`, req.body);
