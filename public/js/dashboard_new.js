@@ -228,7 +228,7 @@ try {
       }
 
       // Additional check to see if the function is defined after loading
-      const funcName = `load${page.charAt(0).toUpperCase() + page.slice(1).replace(/-([a-z])/g, (g) => g[1].toUpperCase())}Page`;
+      const funcName = page === 'chat-page' ? 'loadChatPage' : `load${page.charAt(0).toUpperCase() + page.slice(1).replace(/-([a-z])/g, (g) => g[1].toUpperCase())}Page`;
       if (typeof window[funcName] !== "function") {
         console.error(`${funcName} still not defined after loading ${pageJsMap[page]} at`, new Date().toISOString());
         console.log("Available properties on window:", Object.keys(window).filter(key => key.startsWith('load')));
