@@ -239,7 +239,7 @@ async function loadWhatsAppPage() {
           });
 
           accountStatus.innerHTML = "";
-          accountStatus.appendChild(statusDiv);
+          accountStatus.appendChild(statusDiv * Today's date and time is 05:26 AM EEST on Friday, May 23, 2025. statusDiv);
           accountStatus.appendChild(unlinkWhatsAppBtn);
           instructionsContainer.style.display = "none";
         } else {
@@ -290,7 +290,7 @@ async function loadWhatsAppPage() {
 
   window.fbAsyncInit = function () {
     FB.init({
-      appId: '499020366015281', // معرف التكوين لواتساب
+      appId: '499020366015281', // معرف التطبيق لفيسبوك وواتساب
       cookie: true,
       xfbml: true,
       version: 'v22.0'
@@ -306,6 +306,7 @@ async function loadWhatsAppPage() {
 
   function loginWithWhatsApp() {
     FB.getLoginStatus(function(response) {
+      console.log('حالة تسجيل الدخول:', response);
       if (response.status === 'connected') {
         FB.logout(function(logoutResponse) {
           console.log('تم تسجيل الخروج من فيسبوك:', logoutResponse);
@@ -320,10 +321,12 @@ async function loadWhatsAppPage() {
 
   function performWhatsAppLogin() {
     FB.login(function (response) {
+      console.log('رد تسجيل الدخول:', response);
       if (response.authResponse) {
-        console.log('تم تسجيل الدخول!');
+        console.log('تم تسجيل الدخول! توكن:', response.authResponse.accessToken);
         getWhatsAppAccounts(response.authResponse.accessToken);
       } else {
+        console.error('فشل تسجيل الدخول:', response);
         errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ';
         errorMessage.style.display = 'block';
       }
@@ -334,10 +337,14 @@ async function loadWhatsAppPage() {
   }
 
   function getWhatsAppAccounts(accessToken) {
+    console.log('جاري جلب حسابات الأعمال باستخدام التوكن:', accessToken);
     FB.api('/me/businesses', { access_token: accessToken }, function (response) {
+      console.log('رد جلب حسابات الأعمال:', response);
       if (response && !response.error) {
         const businesses = response.data;
+        console.log('حسابات الأعمال الموجودة:', businesses);
         if (businesses.length === 0) {
+          console.error('لم يتم العثور على حسابات أعمال');
           errorMessage.textContent = 'لم يتم العثور على حسابات بيزنس مرتبطة';
           errorMessage.style.display = 'block';
           return;
@@ -347,20 +354,27 @@ async function loadWhatsAppPage() {
         let processedCount = 0;
 
         businesses.forEach(business => {
+          console.log(`جاري جلب حسابات واتساب بيزنس للأعمال ID: ${business.id}`);
           FB.api(`/${business.id}/whatsapp_business_accounts`, { access_token: accessToken }, function (waResponse) {
+            console.log(`رد جلب حسابات واتساب بيزنس للأعمال ${business.id}:`, waResponse);
             processedCount++;
             if (waResponse && !waResponse.error && waResponse.data) {
               waResponse.data.forEach(account => {
+                console.log(`تم العثور على حساب واتساب بيزنس:`, account);
                 accountsWithWhatsApp.push({
                   id: account.id,
                   phone_number: account.phone_number || 'رقم واتساب',
                   access_token: accessToken
                 });
               });
+            } else {
+              console.error(`خطأ في جلب حسابات واتساب بيزنس للأعمال ${business.id}:`, waResponse.error || 'رد غير متوقع');
             }
 
             if (processedCount === businesses.length) {
+              console.log('حسابات واتساب بيزنس المجمعة:', accountsWithWhatsApp);
               if (accountsWithWhatsApp.length === 0) {
+                console.error('لم يتم العثور على أي حسابات واتساب بيزنس');
                 errorMessage.textContent = 'لم يتم العثور على حسابات واتساب بيزنس مرتبطة';
                 errorMessage.style.display = 'block';
                 return;
@@ -370,6 +384,7 @@ async function loadWhatsAppPage() {
           });
         });
       } else {
+        console.error('خطأ في جلب حسابات الأعمال:', response.error);
         errorMessage.textContent = 'خطأ في جلب الحسابات: ' + (response.error.message || 'غير معروف');
         errorMessage.style.display = 'block';
       }
@@ -377,6 +392,7 @@ async function loadWhatsAppPage() {
   }
 
   function displayAccountSelectionModal(accounts) {
+    console.log('عرض نافذة اختيار حساب واتساب:', accounts);
     const modal = document.createElement("div");
     modal.classList.add("modal");
     modal.innerHTML = `
@@ -411,6 +427,7 @@ async function loadWhatsAppPage() {
       const accessToken = selectedOption.dataset.token;
 
       if (!selectedAccountId || !accessToken) {
+        console.error('لم يتم اختيار حساب واتساب');
         errorMessage.textContent = 'يرجى اختيار حساب لربطه بالبوت';
         errorMessage.style.display = 'block';
         modal.remove();
@@ -424,6 +441,7 @@ async function loadWhatsAppPage() {
   }
 
   async function saveApiKeys(botId, whatsappApiKey, whatsappBusinessAccountId) {
+    console.log(`حفظ بيانات الربط للبوت ${botId}:`, { whatsappApiKey, whatsappBusinessAccountId });
     errorMessage.style.display = "none";
     loadingSpinner.style.display = "flex";
 
@@ -436,11 +454,13 @@ async function loadWhatsAppPage() {
         },
         body: JSON.stringify({ whatsappApiKey, whatsappBusinessAccountId }),
       }, errorMessage, "فشل حفظ معلومات الربط");
+      console.log('تم حفظ بيانات الربط بنجاح:', saveResponse);
       errorMessage.textContent = "تم ربط الحساب بنجاح!";
       errorMessage.style.color = "green";
       errorMessage.style.display = "block";
       await loadAccountStatus(botId);
     } catch (err) {
+      console.error('خطأ في حفظ بيانات الربط:', err);
       errorMessage.textContent = "فشل حفظ معلومات الربط: " + (err.message || "غير معروف");
       errorMessage.style.display = "block";
     } finally {
@@ -460,6 +480,7 @@ async function loadWhatsAppPage() {
         const key = e.target.dataset.settingKey;
         const value = e.target.checked;
         if (key) {
+          console.log(`تحديث إعداد ${key} إلى ${value} للبوت ${selectedBotId}`);
           updateWebhookSetting(selectedBotId, key, value);
         }
       });
