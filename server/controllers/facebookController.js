@@ -1,3 +1,4 @@
+// server/controllers/facebookController.js
 const axios = require('axios');
 const Bot = require('../models/Bot');
 const { processMessage, processFeedback } = require('../botEngine');
@@ -12,8 +13,8 @@ const handleMessage = async (req, res) => {
     const body = req.body;
 
     if (body.object !== 'page') {
-      console.log('❌ Invalid webhook event: Not a page object');
-      return res.sendStatus(404);
+      console.log('⚠️ Ignored non-page webhook event:', body.object);
+      return res.status(200).send('EVENT_RECEIVED'); // تجاهل الطلب من غير خطأ
     }
 
     for (const entry of body.entry) {
