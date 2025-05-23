@@ -378,33 +378,24 @@ async function loadWhatsAppPage() {
 
               if (waResponse && !waResponse.error && waResponse.data && waResponse.data.length > 0) {
                 waResponse.data.forEach(account => {
-                  if (!account.phone_number) {
-                    FB.api(`/${account.id}`, { fields: 'phone_number', access_token: accessToken }, function (phoneResponse) {
-                      if (phoneResponse && !phoneResponse.error && phoneResponse.phone_number) {
-                        account.phone_number = phoneResponse.phone_number;
-                      } else {
-                        console.warn(`فشل جلب رقم الهاتف للحساب ${account.id}:`, phoneResponse?.error || 'لا يوجد رقم');
-                        account.phone_number = 'رقم واتساب غير متاح';
-                      }
-                      accountsWithWhatsApp.push({
-                        id: account.id,
-                        phone_number: account.phone_number || 'رقم واتساب غير متاح',
-                        access_token: accessToken
-                      });
-                      if (processedCount === businesses.length) {
-                        finalizeAccounts(accountsWithWhatsApp);
-                      }
-                    });
-                  } else {
+                  // جلب أرقام التليفون المرتبطة بالحساب
+                  FB.api(`/${account.id}/phone_numbers`, { access_token: accessToken }, function (phoneResponse) {
+                    if (phoneResponse && !phoneResponse.error && phoneResponse.data && phoneResponse.data.length > 0) {
+                      // نأخد أول رقم متاح
+                      account.phone_number = phoneResponse.data[0].verified_name + ' (' + phoneResponse.data[0].display_phone_number + ')';
+                    } else {
+                      console.warn(`فشل جلب رقم الهاتف للحساب ${account.id}:`, phoneResponse?.error || 'لا يوجد رقم');
+                      account.phone_number = 'رقم واتساب غير متاح';
+                    }
                     accountsWithWhatsApp.push({
                       id: account.id,
-                      phone_number: account.phone_number || 'رقم واتساب',
+                      phone_number: account.phone_number || 'رقم واتساب غير متاح',
                       access_token: accessToken
                     });
                     if (processedCount === businesses.length) {
                       finalizeAccounts(accountsWithWhatsApp);
                     }
-                  }
+                  });
                 });
               } else {
                 console.warn(`فشل جلب حسابات واتساب بيزنس لـ Business ID ${business.id}:`, waResponse?.error || 'لا توجد بيانات');
