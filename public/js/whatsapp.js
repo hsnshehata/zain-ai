@@ -343,12 +343,14 @@ async function loadWhatsAppPage() {
         return;
       }
 
-      const hasWhatsAppPermissions = permissionsResponse.data.some(perm => 
-        (perm.permission === 'whatsapp_business_management' && perm.status === 'granted') &&
-        (perm.permission === 'whatsapp_business_messaging' && perm.status === 'granted')
+      const hasWhatsAppManagement = permissionsResponse.data.some(perm => 
+        perm.permission === 'whatsapp_business_management' && perm.status === 'granted'
+      );
+      const hasWhatsAppMessaging = permissionsResponse.data.some(perm => 
+        perm.permission === 'whatsapp_business_messaging' && perm.status === 'granted'
       );
 
-      if (!hasWhatsAppPermissions) {
+      if (!hasWhatsAppManagement || !hasWhatsAppMessaging) {
         errorMessage.textContent = 'التوكن لا يحتوي على الصلاحيات المطلوبة لإدارة واتساب بيزنس. تأكد من إعدادات التطبيق.';
         errorMessage.style.display = 'block';
         return;
