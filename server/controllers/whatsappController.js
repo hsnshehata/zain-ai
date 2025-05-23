@@ -2,6 +2,7 @@
 const axios = require('axios');
 const Bot = require('../models/Bot');
 const Conversation = require('../models/Conversation');
+const Notification = require('../models/Notification');
 const { processMessage } = require('../botEngine');
 
 // دالة مساعدة لإضافة timestamp للـ logs
@@ -9,6 +10,11 @@ const getTimestamp = () => new Date().toISOString();
 
 // التحقق من صلاحية التوكن
 const validateAccessToken = async (accessToken) => {
+  if (!accessToken) {
+    console.error(`[${getTimestamp()}] ❌ No WhatsApp access token provided`);
+    return false;
+  }
+
   try {
     const response = await axios.get(
       `https://graph.whatsapp.com/v22.0/me?access_token=${accessToken}`
@@ -24,6 +30,36 @@ const validateAccessToken = async (accessToken) => {
   }
 };
 
+// محاولة تجديد التوكن
+const refreshWhatsAppToken = async (bot) => {
+  try {
+    // هنا هنستخدم Meta API لتجديد التوكن
+    // ملحوظة: لازم يكون عندك client_id و client_secret في الـ environment variables
+    const response = await axios.post(
+      'https://graph.facebook.com/v22.0/oauth/access_token',
+      {
+        grant_type: 'fb_exchange_token',
+        client_id: process.env.FACEBOOK_APP_ID,
+        client_secret: process.env.FACEBOOK_APP_SECRET,
+        fb_exchange_token: bot.whatsappApiKey
+      }
+    );
+
+    const newToken = response.data.access_token;
+    if (newToken) {
+      bot.whatsappApiKey = newToken;
+      bot.lastWhatsappTokenRefresh = new Date();
+      await bot.save();
+      console.log(`[${getTimestamp()}] ✅ WhatsApp access token refreshed for bot ${bot._id}`);
+      return newToken;
+    }
+    return null;
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Failed to refresh WhatsApp token:`, err.response?.data || err.message);
+    return null;
+  }
+};
+
 // التحقق من الـ Webhook
 const verifyWebhook = (req, res) => {
   const mode = req.query['hub.mode'];
@@ -31,7 +67,7 @@ const verifyWebhook = (req, res) => {
   const challenge = req.query['hub.challenge'];
 
   if (mode && token) {
-    if (mode === 'subscribe' && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+    if (mode === 'subscribe' && token === 'hassanshehata') {
       console.log(`[${getTimestamp()}] ✅ WhatsApp Webhook verified successfully`);
       return res.status(200).send(challenge);
     } else {
@@ -62,11 +98,36 @@ const handleMessage = async (req, res) => {
         continue;
       }
 
-      // التحقق من صلاحية التوكن
-      const isTokenValid = await validateAccessToken(bot.whatsappApiKey);
-      if (!isTokenValid) {
-        console.error(`[${getTimestamp()}] ❌ Access token for bot ${bot._id} is invalid. Please refresh the token.`);
+      if (!bot.whatsappApiKey || !bot.whatsappBusinessAccountId) {
+        console.log(`[${getTimestamp()}] ❌ Bot ${bot.name} (ID: ${bot._id}) is missing whatsappApiKey or whatsappBusinessAccountId`);
+        // إرسال إشعار لصاحب البوت
+        await new Notification({
+          user: bot.userId,
+          title: 'خطأ في إعدادات واتساب',
+          message: `البوت "${bot.name}" غير مربوط بحساب واتساب صالح. برجاء إعادة ربط الحساب.`,
+          isRead: false
+        }).save();
         continue;
+      }
+
+      // التحقق من صلاحية التوكن
+      let isTokenValid = await validateAccessToken(bot.whatsappApiKey);
+      if (!isTokenValid) {
+        console.log(`[${getTimestamp()}] ⚠️ Attempting to refresh WhatsApp token for bot ${bot._id}`);
+        const newToken = await refreshWhatsAppToken(bot);
+        if (newToken) {
+          isTokenValid = true;
+        } else {
+          console.error(`[${getTimestamp()}] ❌ Access token for bot ${bot._id} is invalid and could not be refreshed.`);
+          // إرسال إشعار لصاحب البوت
+          await new Notification({
+            user: bot.userId,
+            title: 'خطأ في توكن واتساب',
+            message: `التوكن بتاع واتساب للبوت "${bot.name}" مش صالح. برجاء إعادة ربط الحساب.`,
+            isRead: false
+          }).save();
+          continue;
+        }
       }
 
       // التحقق من حالة البوت
@@ -225,4 +286,4 @@ const sendMessage = async (recipientId, messageText, accessToken, phoneNumberId)
   }
 };
 
-module.exports = { verifyWebhook, handleMessage, sendMessage, validateAccessToken };
+module.exports = { verifyWebhook, handleMessage, sendMessage, validateAccessToken, refreshWhatsAppToken };
