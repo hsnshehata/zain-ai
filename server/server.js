@@ -104,8 +104,15 @@ app.use('/api/upload', uploadRoutes);
 app.use('/', indexRoutes);
 
 // Route جديد لـ WhatsApp Webhook
-app.get('/api/whatsapp-webhook', whatsappController.verifyWebhook);
-app.post('/api/whatsapp-webhook', whatsappController.handleMessage);
+app.get('/api/whatsapp-webhook', (req, res) => {
+  console.log(`[${getTimestamp()}] 📡 WhatsApp Webhook GET request received at /api/whatsapp-webhook`);
+  whatsappController.verifyWebhook(req, res);
+});
+
+app.post('/api/whatsapp-webhook', (req, res) => {
+  console.log(`[${getTimestamp()}] 📡 WhatsApp Webhook POST request received at /api/whatsapp-webhook:`, JSON.stringify(req.body, null, 2));
+  whatsappController.handleMessage(req, res);
+});
 
 // Route لإدارة التقييمات
 app.post('/api/feedback', async (req, res) => {
