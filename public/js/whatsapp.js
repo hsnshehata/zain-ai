@@ -372,7 +372,7 @@ async function loadWhatsAppPage() {
 
           businesses.forEach(business => {
             // جلب الـ WhatsApp Business Accounts من كل Business
-            FB.api(`/${business.id}/whatsapp_business_accounts`, { access_token: accessToken }, function (waResponse) {
+            FB.api(`/${business.id}/owned_whatsapp_business_accounts`, { access_token: accessToken }, function (waResponse) {
               processedCount++;
               console.log(`استجابة جلب حسابات واتساب بيزنس لـ Business ID ${business.id}:`, waResponse);
 
