@@ -1,3 +1,4 @@
+// server/routes/bots.js (الملف الكامل)
 const express = require('express');
 const router = express.Router();
 const botsController = require('../controllers/botsController');
@@ -52,8 +53,53 @@ router.post('/', authenticate, botsController.createBot);
 // تعديل بوت
 router.put('/:id', authenticate, botsController.updateBot);
 
-// ربط صفحة فيسبوك أو إنستجرام بالبوت
-router.post('/:id/link-social', authenticate, botsController.linkSocialPage);
+// ربط صفحة فيسبوك أو إنستجرام أو واتساب بالبوت
+router.post('/:id/link-social', authenticate, async (req, res) => {
+  const { id: botId } = req.params;
+  const { facebookApiKey, facebookPageId, instagramApiKey, instagramPageId, whatsappApiKey, whatsappBusinessAccountId } = req.body;
+
+  try {
+    const bot = await Bot.findOne({ _id: botId, userId: req.user.userId });
+    if (!bot) {
+      return res.status(404).json({ success: false, message: 'البوت غير موجود أو لا يخصك' });
+    }
+
+    // التحقق من البيانات بناءً على نوع الربط
+    let updateData = {};
+
+    // لو فيسبوك
+    if (facebookApiKey && facebookPageId) {
+      updateData.facebookApiKey = facebookApiKey;
+      updateData.facebookPageId = facebookPageId;
+    }
+
+    // لو إنستجرام
+    if (instagramApiKey && instagramPageId) {
+      updateData.instagramApiKey = instagramApiKey;
+      updateData.instagramPageId = instagramPageId;
+      updateData.lastInstagramTokenRefresh = new Date();
+    }
+
+    // لو واتساب
+    if (whatsappApiKey && whatsappBusinessAccountId) {
+      updateData.whatsappApiKey = whatsappApiKey;
+      updateData.whatsappBusinessAccountId = whatsappBusinessAccountId;
+      updateData.lastWhatsappTokenRefresh = new Date();
+    }
+
+    // التحقق إن فيه بيانات للتحديث
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({ success: false, message: 'لا توجد بيانات لربط الحساب' });
+    }
+
+    // تحديث البوت
+    const updatedBot = await Bot.findByIdAndUpdate(botId, { $set: updateData }, { new: true });
+    res.status(200).json({ success: true, message: 'تم ربط الحساب بنجاح', data: updatedBot });
+  } catch (error) {
+    console.error('خطأ في ربط الحساب:', error);
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر: ' + error.message });
+  }
+});
 
 // إلغاء ربط صفحة فيسبوك
 router.post('/:id/unlink-facebook', authenticate, botsController.unlinkFacebookPage);
