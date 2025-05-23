@@ -290,7 +290,7 @@ async function loadWhatsAppPage() {
 
   window.fbAsyncInit = function () {
     FB.init({
-      appId: '673733448765594', // معرف التكوين لواتساب
+      appId: '499020366015281', // معرف التكوين لواتساب
       cookie: true,
       xfbml: true,
       version: 'v22.0'
