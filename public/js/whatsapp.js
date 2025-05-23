@@ -334,68 +334,73 @@ async function loadWhatsAppPage() {
   }
 
   function getWhatsAppAccounts(accessToken) {
-    FB.api('/me/businesses', { access_token: accessToken }, function (response) {
-      if (response && !response.error) {
-        const businesses = response.data;
-        if (businesses.length === 0) {
-          errorMessage.textContent = 'لم يتم العثور على حسابات بيزنس مرتبطة';
-          errorMessage.style.display = 'block';
-          return;
-        }
+    // التحقق من الصلاحيات أولاً
+    FB.api('/me/permissions', { access_token: accessToken }, function (permissionsResponse) {
+      console.log('الصلاحيات المتاحة:', permissionsResponse);
+      if (permissionsResponse.error) {
+        errorMessage.textContent = 'خطأ في التحقق من الصلاحيات: ' + (permissionsResponse.error.message || 'غير معروف');
+        errorMessage.style.display = 'block';
+        return;
+      }
 
-        const accountsWithWhatsApp = [];
-        let processedCount = 0;
+      const hasWhatsAppPermissions = permissionsResponse.data.some(perm => 
+        (perm.permission === 'whatsapp_business_management' && perm.status === 'granted') &&
+        (perm.permission === 'whatsapp_business_messaging' && perm.status === 'granted')
+      );
 
-        businesses.forEach(business => {
-          FB.api(`/${business.id}/whatsapp_business_accounts`, { access_token: accessToken }, function (waResponse) {
+      if (!hasWhatsAppPermissions) {
+        errorMessage.textContent = 'التوكن لا يحتوي على الصلاحيات المطلوبة لإدارة واتساب بيزنس. تأكد من إعدادات التطبيق.';
+        errorMessage.style.display = 'block';
+        return;
+      }
+
+      // جلب حسابات واتساب بيزنس مباشرة
+      FB.api('/me/whatsapp_business_accounts', { access_token: accessToken }, function (waResponse) {
+        console.log('استجابة جلب حسابات واتساب بيزنس:', waResponse);
+
+        if (waResponse && !waResponse.error && waResponse.data && waResponse.data.length > 0) {
+          const accountsWithWhatsApp = [];
+          let processedCount = 0;
+
+          waResponse.data.forEach(account => {
             processedCount++;
-            console.log(`استجابة واتساب للحساب ${business.id}:`, waResponse); // لوج لفهم الاستجابة
-
-            if (waResponse && !waResponse.error && waResponse.data && waResponse.data.length > 0) {
-              waResponse.data.forEach(account => {
-                // إذا لم يكن phone_number موجود، نجيبه بشكل منفصل
-                if (!account.phone_number) {
-                  FB.api(`/${account.id}`, { fields: 'phone_number', access_token: accessToken }, function (phoneResponse) {
-                    if (phoneResponse && !phoneResponse.error && phoneResponse.phone_number) {
-                      account.phone_number = phoneResponse.phone_number;
-                    } else {
-                      console.warn(`فشل جلب رقم الهاتف للحساب ${account.id}:`, phoneResponse.error || 'لا يوجد رقم');
-                      account.phone_number = 'رقم واتساب غير متاح';
-                    }
-                    accountsWithWhatsApp.push({
-                      id: account.id,
-                      phone_number: account.phone_number || 'رقم واتساب غير متاح',
-                      access_token: accessToken
-                    });
-                    // تحقق من اكتمال المعالجة بعد تحديث الحسابات
-                    if (processedCount === businesses.length) {
-                      finalizeAccounts(accountsWithWhatsApp);
-                    }
-                  });
+            if (!account.phone_number) {
+              FB.api(`/${account.id}`, { fields: 'phone_number', access_token: accessToken }, function (phoneResponse) {
+                if (phoneResponse && !phoneResponse.error && phoneResponse.phone_number) {
+                  account.phone_number = phoneResponse.phone_number;
                 } else {
-                  accountsWithWhatsApp.push({
-                    id: account.id,
-                    phone_number: account.phone_number || 'رقم واتساب',
-                    access_token: accessToken
-                  });
-                  if (processedCount === businesses.length) {
-                    finalizeAccounts(accountsWithWhatsApp);
-                  }
+                  console.warn(`فشل جلب رقم الهاتف للحساب ${account.id}:`, phoneResponse?.error || 'لا يوجد رقم');
+                  account.phone_number = 'رقم واتساب غير متاح';
+                }
+                accountsWithWhatsApp.push({
+                  id: account.id,
+                  phone_number: account.phone_number || 'رقم واتساب غير متاح',
+                  access_token: accessToken
+                });
+                if (processedCount === waResponse.data.length) {
+                  finalizeAccounts(accountsWithWhatsApp);
                 }
               });
             } else {
-              // لوج للأخطاء لو حصلت
-              console.warn(`فشل جلب حسابات واتساب بيزنس لـ ${business.id}:`, waResponse.error || 'لا توجد بيانات');
-              if (processedCount === businesses.length) {
+              accountsWithWhatsApp.push({
+                id: account.id,
+                phone_number: account.phone_number || 'رقم واتساب',
+                access_token: accessToken
+              });
+              if (processedCount === waResponse.data.length) {
                 finalizeAccounts(accountsWithWhatsApp);
               }
             }
           });
-        });
-      } else {
-        errorMessage.textContent = 'خطأ في جلب الحسابات: ' + (response.error?.message || 'غير معروف');
-        errorMessage.style.display = 'block';
-      }
+        } else {
+          const errorMsg = waResponse.error
+            ? `خطأ في جلب حسابات واتساب: ${waResponse.error.message || 'غير معروف'}`
+            : 'لم يتم العثور على حسابات واتساب بيزنس مرتبطة. تأكد من إعدادات حسابك في Meta Business Manager.';
+          errorMessage.textContent = errorMsg;
+          errorMessage.style.display = 'block';
+          console.warn('فشل جلب حسابات واتساب بيزنس:', waResponse.error || 'لا توجد بيانات');
+        }
+      });
     });
   }
 
