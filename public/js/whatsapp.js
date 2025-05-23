@@ -150,7 +150,7 @@ async function loadWhatsAppPage() {
     errorMessage.style.display = "none";
 
     try {
-      const response = await handleApiRequest(`/api/bots/${botId}/whatsapp-settings`, {
+      const response = await handleApiRequest(`/api/bot/${botId}/whatsapp-settings`, {
         headers: { Authorization: `Bearer ${token}` },
       }, errorMessage, "حدث خطأ أثناء تحميل الإعدادات");
 
@@ -273,7 +273,7 @@ async function loadWhatsAppPage() {
   async function updateWebhookSetting(botId, key, value) {
     togglesError.style.display = "none";
     try {
-      const response = await handleApiRequest(`/api/bots/${botId}/whatsapp-settings`, {
+      const response = await handleApiRequest(`/api/bot/${botId}/whatsapp-settings`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
