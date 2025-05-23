@@ -11,6 +11,10 @@ async function loadWhatsAppPage() {
   const token = localStorage.getItem("token");
   const selectedBotId = localStorage.getItem("selectedBotId");
 
+  // Log the token and selectedBotId for debugging
+  console.log('Token:', token ? token.slice(0, 10) + '...' : 'No token found');
+  console.log('Selected Bot ID:', selectedBotId || 'No bot selected');
+
   if (!selectedBotId) {
     content.innerHTML = `
       <div class="placeholder error">
@@ -194,16 +198,20 @@ async function loadWhatsAppPage() {
       }
 
       if (bot.whatsappBusinessAccountId && bot.whatsappApiKey) {
-        const response = await fetch(`https://graph.whatsapp.com/v22.0/${bot.whatsappBusinessAccountId}?fields=phone_number&access_token=${bot.whatsappApiKey}`);
+        // جلب بيانات الحساب باستخدام /phone_numbers بدل /phone_number
+        const response = await fetch(`https://graph.whatsapp.com/v22.0/${bot.whatsappBusinessAccountId}/phone_numbers?access_token=${bot.whatsappApiKey}`);
         const accountData = await response.json();
 
-        if (accountData.phone_number) {
+        if (accountData.data && accountData.data.length > 0) {
+          const phoneNumber = accountData.data[0].display_phone_number;
+          const verifiedName = accountData.data[0].verified_name;
           const statusDiv = document.createElement("div");
           statusDiv.style.display = "inline-block";
           statusDiv.style.color = "green";
           statusDiv.innerHTML = `
             <strong>حالة الربط:</strong> مربوط ✅<br>
-            <strong>رقم واتساب:</strong> ${accountData.phone_number}<br>
+            <strong>رقم واتساب:</strong> ${phoneNumber}<br>
+            <strong>اسم الحساب:</strong> ${verifiedName}<br>
             <strong>معرف الحساب:</strong> ${bot.whatsappBusinessAccountId}<br>
             <strong>تاريخ الربط:</strong> ${new Date(bot.lastWhatsappTokenRefresh).toLocaleString('ar-EG')}
           `;
@@ -474,6 +482,9 @@ async function loadWhatsAppPage() {
     loadingSpinner.style.display = "flex";
 
     try {
+      // Log the data being sent for debugging
+      console.log('البيانات المرسلة:', { whatsappApiKey, whatsappBusinessAccountId });
+
       const saveResponse = await handleApiRequest(`/api/bots/${botId}/link-social`, {
         method: "POST",
         headers: {
@@ -482,6 +493,7 @@ async function loadWhatsAppPage() {
         },
         body: JSON.stringify({ whatsappApiKey, whatsappBusinessAccountId }),
       }, errorMessage, "فشل حفظ معلومات الربط");
+
       errorMessage.textContent = "تم ربط الحساب بنجاح!";
       errorMessage.style.color = "green";
       errorMessage.style.display = "block";
