@@ -33,20 +33,33 @@ const validateAccessToken = async (accessToken) => {
 // محاولة تجديد التوكن
 const refreshWhatsAppToken = async (bot) => {
   try {
-    // هنا هنستخدم Meta API لتجديد التوكن
-    // ملحوظة: لازم يكون عندك client_id و client_secret في الـ environment variables
-    const response = await axios.post(
-      'https://graph.facebook.com/v22.0/oauth/access_token',
+    if (!bot.whatsappApiKey) {
+      console.error(`[${getTimestamp()}] ❌ No existing WhatsApp token to refresh for bot ${bot._id}`);
+      return null;
+    }
+
+    // تجديد التوكن باستخدام Meta API
+    const response = await axios.get(
+      `https://graph.facebook.com/v22.0/${bot.whatsappBusinessAccountId}/access_token`,
       {
-        grant_type: 'fb_exchange_token',
-        client_id: process.env.FACEBOOK_APP_ID,
-        client_secret: process.env.FACEBOOK_APP_SECRET,
-        fb_exchange_token: bot.whatsappApiKey
+        params: {
+          grant_type: 'fb_exchange_token',
+          client_id: process.env.FACEBOOK_APP_ID,
+          client_secret: process.env.FACEBOOK_APP_SECRET,
+          fb_exchange_token: bot.whatsappApiKey
+        }
       }
     );
 
     const newToken = response.data.access_token;
     if (newToken) {
+      // التحقق من صلاحية التوكن الجديد
+      const isValid = await validateAccessToken(newToken);
+      if (!isValid) {
+        console.error(`[${getTimestamp()}] ❌ Refreshed WhatsApp token is invalid for bot ${bot._id}`);
+        return null;
+      }
+
       bot.whatsappApiKey = newToken;
       bot.lastWhatsappTokenRefresh = new Date();
       await bot.save();
@@ -100,7 +113,6 @@ const handleMessage = async (req, res) => {
 
       if (!bot.whatsappApiKey || !bot.whatsappBusinessAccountId) {
         console.log(`[${getTimestamp()}] ❌ Bot ${bot.name} (ID: ${bot._id}) is missing whatsappApiKey or whatsappBusinessAccountId`);
-        // إرسال إشعار لصاحب البوت
         await new Notification({
           user: bot.userId,
           title: 'خطأ في إعدادات واتساب',
@@ -117,9 +129,9 @@ const handleMessage = async (req, res) => {
         const newToken = await refreshWhatsAppToken(bot);
         if (newToken) {
           isTokenValid = true;
+          bot.whatsappApiKey = newToken; // تحديث التوكن في المتغير المحلي
         } else {
           console.error(`[${getTimestamp()}] ❌ Access token for bot ${bot._id} is invalid and could not be refreshed.`);
-          // إرسال إشعار لصاحب البوت
           await new Notification({
             user: bot.userId,
             title: 'خطأ في توكن واتساب',
@@ -192,7 +204,7 @@ const handleMessage = async (req, res) => {
             if (message.type === 'text' && bot.whatsappMessagingOptinsEnabled && !conversation.messages.length) {
               console.log(`[${getTimestamp()}] 📩 Processing opt-in event for ${prefixedSenderId}`);
               const welcomeMessage = bot.welcomeMessage || 'مرحبًا! كيف يمكنني مساعدتك اليوم؟';
-              await sendMessage(senderId, welcomeMessage, bot.whatsappApiKey, phoneNumberId);
+              await sendMessage(senderId, welcomeMessage, bot.whatsappApiKey, phoneNumberId, bot);
               continue;
             } else if (message.type === 'text' && !bot.whatsappMessagingOptinsEnabled && !conversation.messages.length) {
               console.log(`[${getTimestamp()}] ⚠️ Opt-in messages disabled for bot ${bot.name} (ID: ${bot._id}), skipping opt-in processing.`);
@@ -203,7 +215,7 @@ const handleMessage = async (req, res) => {
             if (message.type === 'reaction' && bot.whatsappMessageReactionsEnabled) {
               console.log(`[${getTimestamp()}] 📩 Processing reaction event from ${prefixedSenderId}: ${message.reaction.emoji}`);
               const responseText = `شكرًا على تفاعلك (${message.reaction.emoji})!`;
-              await sendMessage(senderId, responseText, bot.whatsappApiKey, phoneNumberId);
+              await sendMessage(senderId, responseText, bot.whatsappApiKey, phoneNumberId, bot);
               continue;
             } else if (message.type === 'reaction' && !bot.whatsappMessageReactionsEnabled) {
               console.log(`[${getTimestamp()}] ⚠️ Message reactions disabled for bot ${bot.name} (ID: ${bot._id}), skipping reaction processing.`);
@@ -214,7 +226,7 @@ const handleMessage = async (req, res) => {
             if (message.referral && bot.whatsappMessagingReferralsEnabled) {
               console.log(`[${getTimestamp()}] 📩 Processing referral event from ${prefixedSenderId}: ${message.referral.source}`);
               const responseText = `مرحبًا! وصلتني من ${message.referral.source}، كيف يمكنني مساعدتك؟`;
-              await sendMessage(senderId, responseText, bot.whatsappApiKey, phoneNumberId);
+              await sendMessage(senderId, responseText, bot.whatsappApiKey, phoneNumberId, bot);
               continue;
             } else if (message.referral && !bot.whatsappMessagingReferralsEnabled) {
               console.log(`[${getTimestamp()}] ⚠️ Messaging referrals disabled for bot ${bot.name} (ID: ${bot._id}), skipping referral processing.`);
@@ -241,7 +253,7 @@ const handleMessage = async (req, res) => {
 
             // إرسال الرد للمستخدم
             console.log(`[${getTimestamp()}] 📤 Attempting to send message to ${senderId} with token: ${bot.whatsappApiKey.slice(0, 10)}...`);
-            await sendMessage(senderId, responseText, bot.whatsappApiKey, phoneNumberId);
+            await sendMessage(senderId, responseText, bot.whatsappApiKey, phoneNumberId, bot);
           }
         }
       }
@@ -260,7 +272,7 @@ const handleMessage = async (req, res) => {
 };
 
 // إرسال رسالة عبر WhatsApp API
-const sendMessage = async (recipientId, messageText, accessToken, phoneNumberId) => {
+const sendMessage = async (recipientId, messageText, accessToken, phoneNumberId, bot) => {
   try {
     console.log(`[${getTimestamp()}] 📤 Attempting to send message to ${recipientId} with token: ${accessToken.slice(0, 10)}...`);
     const response = await axios.post(
@@ -282,6 +294,43 @@ const sendMessage = async (recipientId, messageText, accessToken, phoneNumberId)
     return response.data;
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error sending message to WhatsApp:`, err.response?.data || err.message);
+    if (err.response?.status === 401 || err.response?.data?.error?.code === 190) {
+      console.log(`[${getTimestamp()}] ⚠️ Token invalid during sendMessage, attempting to refresh for bot ${bot._id}`);
+      const newToken = await refreshWhatsAppToken(bot);
+      if (newToken) {
+        console.log(`[${getTimestamp()}] 📤 Retrying send message with new token: ${newToken.slice(0, 10)}...`);
+        try {
+          const retryResponse = await axios.post(
+            `https://graph.whatsapp.com/v22.0/${phoneNumberId}/messages`,
+            {
+              messaging_product: 'whatsapp',
+              to: recipientId,
+              type: 'text',
+              text: { body: messageText }
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${newToken}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          console.log(`[${getTimestamp()}] ✅ Message sent to ${recipientId} after token refresh: ${messageText}`);
+          return retryResponse.data;
+        } catch (retryErr) {
+          console.error(`[${getTimestamp()}] ❌ Failed to send message after token refresh:`, retryErr.response?.data || retryErr.message);
+          throw retryErr;
+        }
+      } else {
+        console.error(`[${getTimestamp()}] ❌ Could not refresh token for bot ${bot._id}`);
+        await new Notification({
+          user: bot.userId,
+          title: 'خطأ في توكن واتساب',
+          message: `فشل تجديد توكن واتساب للبوت "${bot.name}". برجاء إعادة ربط الحساب.`,
+          isRead: false
+        }).save();
+      }
+    }
     throw err;
   }
 };
