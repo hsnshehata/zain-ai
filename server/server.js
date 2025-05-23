@@ -18,7 +18,6 @@ const messagesRoutes = require('./routes/messages');
 const indexRoutes = require('./routes/index');
 const uploadRoutes = require('./routes/upload');
 const notificationRoutes = require('./routes/notifications');
-const whatsappController = require('./controllers/whatsappController'); // استيراد واتساب كونترولر
 const connectDB = require('./db');
 const Conversation = require('./models/Conversation');
 const Bot = require('./models/Bot');
@@ -102,17 +101,6 @@ app.use('/api/messages', messagesRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/', indexRoutes);
-
-// Route جديد لـ WhatsApp Webhook
-app.get('/api/whatsapp-webhook', (req, res) => {
-  console.log(`[${getTimestamp()}] 📡 WhatsApp Webhook GET request received at /api/whatsapp-webhook`);
-  whatsappController.verifyWebhook(req, res);
-});
-
-app.post('/api/whatsapp-webhook', (req, res) => {
-  console.log(`[${getTimestamp()}] 📡 WhatsApp Webhook POST request received at /api/whatsapp-webhook:`, JSON.stringify(req.body, null, 2));
-  whatsappController.handleMessage(req, res);
-});
 
 // Route لإدارة التقييمات
 app.post('/api/feedback', async (req, res) => {
