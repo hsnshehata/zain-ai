@@ -1,8 +1,11 @@
+// server/routes/webhook.js
 const express = require('express');
 const router = express.Router();
 const { handleMessage: handleFacebookMessage } = require('../controllers/facebookController');
 const { handleMessage: handleInstagramMessage } = require('../controllers/instagramController');
+const { handleMessage: handleWhatsAppMessage, verifyWebhook: verifyWhatsAppWebhook } = require('../controllers/whatsappController');
 
+// Webhook لفيسبوك
 router.get('/facebook', (req, res) => {
   const VERIFY_TOKEN = 'hassanshehata';
 
@@ -25,6 +28,7 @@ router.get('/facebook', (req, res) => {
 
 router.post('/facebook', handleFacebookMessage);
 
+// Webhook لإنستجرام
 router.get('/instagram', (req, res) => {
   const VERIFY_TOKEN = 'hassanshehata';
 
@@ -46,5 +50,10 @@ router.get('/instagram', (req, res) => {
 });
 
 router.post('/instagram', handleInstagramMessage);
+
+// Webhook لواتساب
+router.get('/whatsapp', verifyWhatsAppWebhook);
+
+router.post('/whatsapp', handleWhatsAppMessage);
 
 module.exports = router;
