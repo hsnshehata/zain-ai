@@ -1,4 +1,4 @@
-// server/routes/bots.js (الملف الكامل)
+// server/routes/bots.js
 const express = require('express');
 const router = express.Router();
 const botsController = require('../controllers/botsController');
@@ -59,10 +59,26 @@ router.post('/:id/link-social', authenticate, async (req, res) => {
   const { facebookApiKey, facebookPageId, instagramApiKey, instagramPageId, whatsappApiKey, whatsappBusinessAccountId } = req.body;
 
   try {
-    const bot = await Bot.findOne({ _id: botId, userId: req.user.userId });
+    // Log the user role and userId for debugging
+    console.log(`[POST /api/bots/${botId}/link-social] User Role: ${req.user.role} | User ID: ${req.user.userId}`);
+
+    // البحث عن البوت بناءً على الـ ID
+    let bot;
+    if (req.user.role === 'superadmin') {
+      // لو المستخدم سوبر أدمن، يقدر يعدل على أي بوت
+      bot = await Bot.findById(botId);
+    } else {
+      // لو مش سوبر أدمن، لازم البوت يكون تابعله
+      bot = await Bot.findOne({ _id: botId, userId: req.user.userId });
+    }
+
     if (!bot) {
+      console.log(`[POST /api/bots/${botId}/link-social] البوت غير موجود أو لا يخص المستخدم | Bot User ID: ${bot ? bot.userId : 'Not Found'}`);
       return res.status(404).json({ success: false, message: 'البوت غير موجود أو لا يخصك' });
     }
+
+    // Log the bot's userId for debugging
+    console.log(`[POST /api/bots/${botId}/link-social] Bot User ID: ${bot.userId}`);
 
     // التحقق من البيانات بناءً على نوع الربط
     let updateData = {};
