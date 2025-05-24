@@ -30,6 +30,31 @@ const validateAccessToken = async (accessToken) => {
   }
 };
 
+// التحقق من صلاحيات التوكن
+const checkTokenPermissions = async (accessToken) => {
+  try {
+    const response = await axios.get(
+      `https://graph.facebook.com/v22.0/me/permissions`,
+      {
+        params: { access_token: accessToken }
+      }
+    );
+    const hasMessagingPermission = response.data.data.some(
+      perm => perm.permission === 'whatsapp_business_messaging' && perm.status === 'granted'
+    );
+    if (hasMessagingPermission) {
+      console.log(`[${getTimestamp()}] ✅ WhatsApp token has whatsapp_business_messaging permission`);
+      return true;
+    } else {
+      console.error(`[${getTimestamp()}] ❌ WhatsApp token missing whatsapp_business_messaging permission`);
+      return false;
+    }
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Failed to check WhatsApp token permissions:`, err.response?.data || err.message);
+    return false;
+  }
+};
+
 // محاولة تجديد التوكن
 const refreshWhatsAppToken = async (bot) => {
   try {
@@ -40,7 +65,7 @@ const refreshWhatsAppToken = async (bot) => {
 
     // تجديد التوكن باستخدام Meta API
     const response = await axios.get(
-      `https://graph.facebook.com/v22.0/${bot.whatsappBusinessAccountId}/access_token`,
+      `https://graph.facebook.com/v22.0/oauth/access_token`,
       {
         params: {
           grant_type: 'fb_exchange_token',
@@ -57,6 +82,13 @@ const refreshWhatsAppToken = async (bot) => {
       const isValid = await validateAccessToken(newToken);
       if (!isValid) {
         console.error(`[${getTimestamp()}] ❌ Refreshed WhatsApp token is invalid for bot ${bot._id}`);
+        return null;
+      }
+
+      // التحقق من صلاحيات التوكن
+      const hasPermissions = await checkTokenPermissions(newToken);
+      if (!hasPermissions) {
+        console.error(`[${getTimestamp()}] ❌ Refreshed WhatsApp token lacks required permissions for bot ${bot._id}`);
         return null;
       }
 
@@ -124,20 +156,31 @@ const handleMessage = async (req, res) => {
 
       // التحقق من صلاحية التوكن
       let isTokenValid = await validateAccessToken(bot.whatsappApiKey);
+      let tokenRefreshAttempts = 0;
+      const maxRefreshAttempts = 2;
+
       if (!isTokenValid) {
-        console.log(`[${getTimestamp()}] ⚠️ Attempting to refresh WhatsApp token for bot ${bot._id}`);
-        const newToken = await refreshWhatsAppToken(bot);
-        if (newToken) {
-          isTokenValid = true;
-          bot.whatsappApiKey = newToken; // تحديث التوكن في المتغير المحلي
-        } else {
-          console.error(`[${getTimestamp()}] ❌ Access token for bot ${bot._id} is invalid and could not be refreshed.`);
-          await new Notification({
-            user: bot.userId,
-            title: 'خطأ في توكن واتساب',
-            message: `التوكن بتاع واتساب للبوت "${bot.name}" مش صالح. برجاء إعادة ربط الحساب.`,
-            isRead: false
-          }).save();
+        while (!isTokenValid && tokenRefreshAttempts < maxRefreshAttempts) {
+          console.log(`[${getTimestamp()}] ⚠️ Attempting to refresh WhatsApp token for bot ${bot._id} (Attempt ${tokenRefreshAttempts + 1})`);
+          const newToken = await refreshWhatsAppToken(bot);
+          if (newToken) {
+            isTokenValid = true;
+            bot.whatsappApiKey = newToken; // تحديث التوكن في المتغير المحلي
+          } else {
+            tokenRefreshAttempts++;
+            if (tokenRefreshAttempts >= maxRefreshAttempts) {
+              console.error(`[${getTimestamp()}] ❌ Access token for bot ${bot._id} is invalid and could not be refreshed after ${maxRefreshAttempts} attempts.`);
+              await new Notification({
+                user: bot.userId,
+                title: 'خطأ في توكن واتساب',
+                message: `التوكن بتاع واتساب للبوت "${bot.name}" مش صالح. برجاء إعادة ربط الحساب.`,
+                isRead: false
+              }).save();
+              continue;
+            }
+          }
+        }
+        if (!isTokenValid) {
           continue;
         }
       }
@@ -272,9 +315,10 @@ const handleMessage = async (req, res) => {
 };
 
 // إرسال رسالة عبر WhatsApp API
-const sendMessage = async (recipientId, messageText, accessToken, phoneNumberId, bot) => {
+const sendMessage = async (recipientId, messageText, accessToken, phoneNumberId, bot, retryCount = 0) => {
+  const maxRetries = 2;
   try {
-    console.log(`[${getTimestamp()}] 📤 Attempting to send message to ${recipientId} with token: ${accessToken.slice(0, 10)}...`);
+    console.log(`[${getTimestamp()}] 📤 Attempting to send message to ${recipientId} with token: ${accessToken.slice(0, 10)}... (Retry ${retryCount})`);
     const response = await axios.post(
       `https://graph.whatsapp.com/v22.0/${phoneNumberId}/messages`,
       {
@@ -294,33 +338,12 @@ const sendMessage = async (recipientId, messageText, accessToken, phoneNumberId,
     return response.data;
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error sending message to WhatsApp:`, err.response?.data || err.message);
-    if (err.response?.status === 401 || err.response?.data?.error?.code === 190) {
+    if ((err.response?.status === 401 || err.response?.data?.error?.code === 190) && retryCount < maxRetries) {
       console.log(`[${getTimestamp()}] ⚠️ Token invalid during sendMessage, attempting to refresh for bot ${bot._id}`);
       const newToken = await refreshWhatsAppToken(bot);
       if (newToken) {
         console.log(`[${getTimestamp()}] 📤 Retrying send message with new token: ${newToken.slice(0, 10)}...`);
-        try {
-          const retryResponse = await axios.post(
-            `https://graph.whatsapp.com/v22.0/${phoneNumberId}/messages`,
-            {
-              messaging_product: 'whatsapp',
-              to: recipientId,
-              type: 'text',
-              text: { body: messageText }
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${newToken}`,
-                'Content-Type': 'application/json'
-              }
-            }
-          );
-          console.log(`[${getTimestamp()}] ✅ Message sent to ${recipientId} after token refresh: ${messageText}`);
-          return retryResponse.data;
-        } catch (retryErr) {
-          console.error(`[${getTimestamp()}] ❌ Failed to send message after token refresh:`, retryErr.response?.data || retryErr.message);
-          throw retryErr;
-        }
+        return await sendMessage(recipientId, messageText, newToken, phoneNumberId, bot, retryCount + 1);
       } else {
         console.error(`[${getTimestamp()}] ❌ Could not refresh token for bot ${bot._id}`);
         await new Notification({
@@ -335,4 +358,4 @@ const sendMessage = async (recipientId, messageText, accessToken, phoneNumberId,
   }
 };
 
-module.exports = { verifyWebhook, handleMessage, sendMessage, validateAccessToken, refreshWhatsAppToken };
+module.exports = { verifyWebhook, handleMessage, sendMessage, validateAccessToken, refreshWhatsAppToken, checkTokenPermissions };
