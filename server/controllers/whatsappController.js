@@ -1,4 +1,3 @@
-// server/controllers/whatsappController.js
 const axios = require('axios');
 const Bot = require('../models/Bot');
 const Conversation = require('../models/Conversation');
@@ -55,7 +54,7 @@ const checkTokenPermissions = async (accessToken) => {
   }
 };
 
-// محاولة تجديد التوكن
+// مح尝试ة تجديد التوكن
 const refreshWhatsAppToken = async (bot) => {
   try {
     if (!bot.whatsappApiKey) {
@@ -205,6 +204,28 @@ const handleMessage = async (req, res) => {
             continue;
           }
 
+          // التحقق من message_echoes
+          if (messageEvent.statuses && messageEvent.statuses.length > 0) {
+            for (const status of messageEvent.statuses) {
+              if (status.status === 'sent' && status.message && status.message.is_echo) {
+                console.log(`[${getTimestamp()}] 📢 Echo message received:`, status.message);
+                // هنا ممكن تضيف أي منطق إضافي للتعامل مع الـ Echoes
+                continue;
+              }
+            }
+          }
+
+          // التحقق من messaging_handovers
+          if (messageEvent.statuses && messageEvent.statuses.length > 0) {
+            for (const status of messageEvent.statuses) {
+              if (status.handover) {
+                console.log(`[${getTimestamp()}] 🔄 Handover event received:`, status.handover);
+                // هنا ممكن تضيف أي منطق إضافي للتعامل مع الـ Handovers
+                continue;
+              }
+            }
+          }
+
           const messages = messageEvent.messages || [];
 
           for (const message of messages) {
@@ -269,7 +290,7 @@ const handleMessage = async (req, res) => {
             if (message.referral && bot.whatsappMessagingReferralsEnabled) {
               console.log(`[${getTimestamp()}] 📩 Processing referral event from ${prefixedSenderId}: ${message.referral.source}`);
               const responseText = `مرحبًا! وصلتني من ${message.referral.source}، كيف يمكنني مساعدتك؟`;
-              await sendMessage(senderId, responseText, bot.whatsappApiKey, phoneNumberId, bot);
+              await sendMessage(senderId, responsesText, bot.whatsappApiKey, phoneNumberId, bot);
               continue;
             } else if (message.referral && !bot.whatsappMessagingReferralsEnabled) {
               console.log(`[${getTimestamp()}] ⚠️ Messaging referrals disabled for bot ${bot.name} (ID: ${bot._id}), skipping referral processing.`);
