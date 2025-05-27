@@ -538,7 +538,7 @@ try {
 
       try {
         const params = new URLSearchParams({ type: currentChannel });
-        if (startDateFilter.value) params.set("startDate", start existeFilter.value);
+        if (startDateFilter.value) params.set("startDate", startDateFilter.value);
         if (endDateFilter.value) params.set("endDate", endDateFilter.value);
 
         const conversationsToDownload = await handleApiRequest(
