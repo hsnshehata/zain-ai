@@ -351,6 +351,7 @@ function showCreateUserForm(container) {
         <div class="form-group">
           <label for="newUsername">اسم المستخدم</label>
           <input type="text" id="newUsername" required>
+          <small class="form-text">سيتم تخزين اسم المستخدم بحروف صغيرة (مثال: "TestUser" يصبح "testuser")</small>
         </div>
         <div class="form-group">
           <label for="newEmail">البريد الإلكتروني</label>
@@ -399,9 +400,9 @@ function showCreateUserForm(container) {
 
   document.getElementById("createUserForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const username = document.getElementById("newUsername").value;
-    const email = document.getElementById("newEmail").value;
-    const whatsapp = document.getElementById("newWhatsapp").value;
+    let username = document.getElementById("newUsername").value.trim();
+    const email = document.getElementById("newEmail").value.trim();
+    const whatsapp = document.getElementById("newWhatsapp").value.trim();
     const password = document.getElementById("newPassword").value;
     const confirmPassword = document.getElementById("confirmPassword").value;
     const role = document.getElementById("newUserRole").value;
@@ -409,6 +410,9 @@ function showCreateUserForm(container) {
     const subscriptionEndDate = document.getElementById("newSubscriptionEndDate").value || null;
     const errorEl = document.getElementById("userFormError");
     errorEl.style.display = "none";
+
+    // تحويل الـ username للحروف الصغيرة في الـ frontend
+    username = username.toLowerCase();
 
     // تحقق محلي لتطابق كلمة السر
     if (password !== confirmPassword) {
@@ -443,6 +447,7 @@ function showEditUserForm(container, userId, currentUsername, currentRole, curre
         <div class="form-group">
           <label for="editUsername">اسم المستخدم</label>
           <input type="text" id="editUsername" value="${currentUsername}" required>
+          <small class="form-text">سيتم تخزين اسم المستخدم بحروف صغيرة (مثال: "TestUser" يصبح "testuser")</small>
         </div>
         <div class="form-group">
           <label for="editEmail">البريد الإلكتروني</label>
@@ -487,15 +492,18 @@ function showEditUserForm(container, userId, currentUsername, currentRole, curre
 
   document.getElementById("editUserForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const username = document.getElementById("editUsername").value;
-    const email = document.getElementById("editEmail").value;
-    const whatsapp = document.getElementById("editWhatsapp").value;
+    let username = document.getElementById("editUsername").value.trim();
+    const email = document.getElementById("editEmail").value.trim();
+    const whatsapp = document.getElementById("editWhatsapp").value.trim();
     const password = document.getElementById("editPassword").value;
     const role = document.getElementById("editUserRole").value;
     const subscriptionType = document.getElementById("editSubscriptionType").value;
     const subscriptionEndDate = document.getElementById("editSubscriptionEndDate").value || null;
     const errorEl = document.getElementById("editUserFormError");
     errorEl.style.display = "none";
+
+    // تحويل الـ username للحروف الصغيرة في الـ frontend
+    username = username.toLowerCase();
 
     const updateData = { username, email, whatsapp, role, subscriptionType, subscriptionEndDate };
     if (password) {
