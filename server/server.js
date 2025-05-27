@@ -209,6 +209,12 @@ app.get('/api/normalize-usernames', authenticate, async (req, res) => {
       return res.status(403).json({ message: 'غير مصرح لك بتنفيذ هذه العملية' });
     }
 
+    // التحقق إن قاعدة البيانات متصلة
+    if (mongoose.connection.readyState !== 1) {
+      console.error(`[${getTimestamp()}] ❌ Database not connected during username normalization`);
+      return res.status(500).json({ message: 'قاعدة البيانات غير متصلة، حاول مرة أخرى لاحقًا' });
+    }
+
     // التحقق إذا كان السكربت نفّذ قبل كده
     const flagFilePath = path.join(__dirname, 'normalize-usernames.flag');
     if (fs.existsSync(flagFilePath)) {
