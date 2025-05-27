@@ -249,7 +249,7 @@ async function loadChatPage() {
 
           let floatingButtonCode = `
 <div id="supportButtonContainer" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
-  <img id="supportButton" src="https://i.ibb.co/7JJScM0Q/zain-ai.png" alt="دعم العملاء" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
+  <img id="supportButton" src="https://i.ibb.co/7JScM0Q/zain-ai.png" alt="دعم العملاء" style="width: 60px; height: 60px; border-radius: 50%; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s;">
 </div>
 <div id="chatIframeContainer" style="display: none; position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
   <div style="position: relative; width: 350px; height: 530px; background: white; overflow: hidden;">
@@ -485,7 +485,7 @@ async function loadChatPage() {
                           <input type="color" class="color-input" id="inputTextColorInput" data-color-id="inputTextColor" value="${data.colors.inputTextColor || '#333333'}">
                         </div>
                         <div class="color-picker-wrapper">
-                          <label for="sendButtonColor">لون زر الإرسال:</label>
+                          <label for="sendButtonColor">لون زر الإرسال:</影像>
                           <input type="color" class="color-input" id="sendButtonColorInput" data-color-id="sendButtonColor" value="${data.colors.sendButtonColor || '#007bff'}">
                         </div>
                         <div class="color-picker-wrapper">
@@ -635,7 +635,7 @@ async function loadChatPage() {
             console.log('🔄 Updating preview styles');
             if (!data.headerHidden) {
               previewChatHeader.style.backgroundColor = colorValues.headerColor;
-              previewChatTitle.style.color = colorValues.titleColor;
+              previewChatTitle.style.color = colorValues.titleColor; // تحديث لون نص الهيدر مباشرة
             }
             previewChatMessages.style.backgroundColor = colorValues.chatAreaBackgroundColor;
             previewSendMessageBtn.style.backgroundColor = colorValues.sendButtonColor;
@@ -789,7 +789,7 @@ async function loadChatPage() {
               const formData = new FormData();
               formData.append('linkId', newLinkId);
               formData.append('title', data.title);
-              formData.append('titleColor', data.titleColor);
+              formData.append('titleColor', colorValues.titleColor); // التأكد من إرسال titleColor
               formData.append('colors', JSON.stringify(data.colors));
               formData.append('suggestedQuestionsEnabled', data.suggestedQuestionsEnabled ? 'true' : 'false');
               formData.append('suggestedQuestions', JSON.stringify(data.suggestedQuestions));
@@ -968,7 +968,7 @@ async function loadChatPage() {
             console.log('💾 Saving customization settings');
             const formData = new FormData(e.target);
             formData.set('title', formData.get('title'));
-            formData.set('titleColor', colorValues.titleColor);
+            formData.set('titleColor', colorValues.titleColor); // التأكد من إرسال titleColor
             formData.set('colors', JSON.stringify({
               header: colorValues.headerColor,
               chatAreaBackground: colorValues.chatAreaBackgroundColor,
