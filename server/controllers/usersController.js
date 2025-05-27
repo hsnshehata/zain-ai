@@ -1,3 +1,4 @@
+// /server/controllers/usersController.js
 const User = require('../models/User');
 const Bot = require('../models/Bot');
 const Notification = require('../models/Notification');
@@ -24,15 +25,16 @@ exports.createUser = async (req, res) => {
   }
 
   try {
-    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+    const normalizedUsername = username.toLowerCase(); // تحويل الـ username للحروف الصغيرة
+    const existingUser = await User.findOne({ $or: [{ username: normalizedUsername }, { email }] });
     if (existingUser) {
-      console.log(`❌ Create user failed: User ${username} or email ${email} already exists`);
+      console.log(`❌ Create user failed: User ${normalizedUsername} or email ${email} already exists`);
       return res.status(400).json({ message: 'اسم المستخدم أو البريد الإلكتروني موجود بالفعل' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({
-      username,
+      username: normalizedUsername, // تخزين الـ username بحروف صغيرة
       email,
       whatsapp,
       password: hashedPassword,
@@ -60,7 +62,7 @@ exports.createUser = async (req, res) => {
     user.bots.push(bot._id);
     await user.save();
 
-    console.log(`✅ User ${username} created successfully with bot ${botName}`);
+    console.log(`✅ User ${normalizedUsername} created successfully with bot ${botName}`);
     res.status(201).json({ user, bot });
   } catch (err) {
     console.error('❌ خطأ في إنشاء المستخدم:', err.message, err.stack);
@@ -118,7 +120,19 @@ exports.updateUser = async (req, res) => {
       return res.status(404).json({ message: 'المستخدم غير موجود' });
     }
 
-    user.username = username || user.username;
+    const normalizedUsername = username ? username.toLowerCase() : user.username; // تحويل الـ username للحروف صغيرة
+    const existingUser = await User.findOne({
+      $or: [
+        { username: normalizedUsername, _id: { $ne: req.params.id } },
+        { email: email || user.email, _id: { $ne: req.params.id } }
+      ]
+    });
+    if (existingUser) {
+      console.log(`❌ Update user failed: Username ${normalizedUsername} or email ${email} already exists`);
+      return res.status(400).json({ message: 'اسم المستخدم أو البريد الإلكتروني موجود بالفعل' });
+    }
+
+    user.username = normalizedUsername;
     user.email = email || user.email;
     user.whatsapp = whatsapp || user.whatsapp;
     user.role = role || user.role;
