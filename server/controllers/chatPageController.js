@@ -85,7 +85,7 @@ exports.createChatPage = async (req, res) => {
 
     const existingPage = await ChatPage.findOne({ botId });
     if (existingPage) {
-      const chatLink = `${process.env.APP_URL || 'https://zain-ai-a06a.onrender.com'}/chat/${existingPage.linkId}`;
+      const chatLink = `${process.env.APP_URL || 'https://zainbot.com'}/chat/${existingPage.linkId}`;
       return res.status(200).json({ link: chatLink, chatPageId: existingPage._id, exists: true });
     }
 
