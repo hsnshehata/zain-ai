@@ -200,8 +200,8 @@ router.get("/:botId", authenticate, async (req, res) => {
         result.conversations.map(async (conv) => {
           // نجرب نستخدم الـ username الموجود في المحادثة أولاً
           let username = conv.username || conv.userId;
-          if (!conv.username) {
-            // لو مافيش username مخزن، نجيبه من الـ API
+          // لو الـ username مش موجود أو قيمته مش كويسة، نجيب الاسم من الـ API
+          if (!conv.username || conv.username === "مستخدم فيسبوك" || conv.username === "مستخدم إنستجرام") {
             if (type === "facebook" && bot.facebookApiKey) {
               console.log(`📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من فيسبوك`);
               username = await getSocialUsername(conv.userId, bot, "facebook");
@@ -215,6 +215,11 @@ router.get("/:botId", authenticate, async (req, res) => {
                 `📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من واتساب`
               );
               username = await getSocialUsername(conv.userId, bot, "whatsapp");
+            }
+            // تحديث الـ username في المحادثة لو اتغير
+            if (username !== conv.username) {
+              conv.username = username;
+              await Conversation.findByIdAndUpdate(conv._id, { username });
             }
           }
           return { ...conv, username };
