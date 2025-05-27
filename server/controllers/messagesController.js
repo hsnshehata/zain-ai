@@ -122,7 +122,7 @@ exports.deleteAllMessages = async (req, res) => {
 
     await Conversation.deleteMany({ botId, channel: channelType });
     res.status(200).json({ message: "تم حذف جميع المحادثات بنجاح." });
-  }্র: true,
+  } catch (error) {
     console.error("Error in deleteAllMessages:", error.message);
     res.status(500).json({ message: "خطأ في السيرفر" });
   }
