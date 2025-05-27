@@ -29,7 +29,7 @@ async function getSocialUsername(userId, bot, platform) {
         : "واتساب";
 
     console.log(
-      `📋 جلب التوكن لـ-Dr ${attempt} | Bot ID: ${bot._id} | Token: ${
+      `📋 جلب التوكن لـ ${attempt} | Bot ID: ${bot._id} | Token: ${
         accessToken ? accessToken.slice(0, 10) + "..." : "غير موجود"
       }`
     );
@@ -99,7 +99,8 @@ async function getSocialUsername(userId, bot, platform) {
     if (response.error) {
       console.error(
         `❌ خطأ في استجابة API لجلب الاسم لـ ${cleanUserId} في ${attempt}:`,
-        response.error.message
+        response.error.message,
+        response.error
       );
       if (platform === "facebook" && attempt === "فيسبوك (المحاولة الأولى)") {
         // جرب إنستجرام كمحاولة ثانية
@@ -137,7 +138,8 @@ async function getSocialUsername(userId, bot, platform) {
         if (retryResponse.error) {
           console.error(
             `❌ خطأ في استجابة API لجلب الاسم لـ ${cleanUserId} في ${attempt}:`,
-            retryResponse.error.message
+            retryResponse.error.message,
+            retryResponse.error
           );
           return "مستخدم فيسبوك";
         }
@@ -161,7 +163,8 @@ async function getSocialUsername(userId, bot, platform) {
   } catch (err) {
     console.error(
       `❌ خطأ في جلب اسم المستخدم ${userId} من ${platform}:`,
-      err.message
+      err.message,
+      err.stack
     );
     return platform === "whatsapp"
       ? userId.replace("whatsapp_", "")
@@ -195,20 +198,24 @@ router.get("/:botId", authenticate, async (req, res) => {
     if (result && result.conversations) {
       const conversationsWithUsernames = await Promise.all(
         result.conversations.map(async (conv) => {
-          let username = conv.userId;
-          if (type === "facebook" && bot.facebookApiKey) {
-            console.log(`📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من فيسبوك`);
-            username = await getSocialUsername(conv.userId, bot, "facebook");
-          } else if (type === "instagram" && bot.instagramApiKey) {
-            console.log(
-              `📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من إنستجرام`
-            );
-            username = await getSocialUsername(conv.userId, bot, "instagram");
-          } else if (type === "whatsapp" && bot.whatsappApiKey) {
-            console.log(
-              `📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من واتساب`
-            );
-            username = await getSocialUsername(conv.userId, bot, "whatsapp");
+          // نجرب نستخدم الـ username الموجود في المحادثة أولاً
+          let username = conv.username || conv.userId;
+          if (!conv.username) {
+            // لو مافيش username مخزن، نجيبه من الـ API
+            if (type === "facebook" && bot.facebookApiKey) {
+              console.log(`📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من فيسبوك`);
+              username = await getSocialUsername(conv.userId, bot, "facebook");
+            } else if (type === "instagram" && bot.instagramApiKey) {
+              console.log(
+                `📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من إنستجرام`
+              );
+              username = await getSocialUsername(conv.userId, bot, "instagram");
+            } else if (type === "whatsapp" && bot.whatsappApiKey) {
+              console.log(
+                `📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من واتساب`
+              );
+              username = await getSocialUsername(conv.userId, bot, "whatsapp");
+            }
           }
           return { ...conv, username };
         })
@@ -253,7 +260,7 @@ router.get("/social-user/:userId", authenticate, async (req, res) => {
     const username = await getSocialUsername(userId, bot, platform);
     res.status(200).json({ name: username });
   } catch (err) {
-    console.error("Error fetching social user:", err.message);
+    console.error("Error fetching social user:", err);
     res.status(500).json({ message: "خطأ في جلب اسم المستخدم" });
   }
 });
