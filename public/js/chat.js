@@ -23,8 +23,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     settings = await response.json();
     botId = settings.botId;
 
-    console.log('🔍 Settings loaded:', settings); // لوغ للتأكد من القيم اللي جاية
-    console.log('🎨 Title color:', settings.titleColor); // لوغ للتأكد من titleColor
+    console.log('🔍 Settings loaded:', settings);
+    console.log('🎨 Title color:', settings.titleColor);
 
     chatTitle.textContent = settings.title || 'صفحة الدردشة';
     if (settings.logoUrl) {
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         background-color: ${settings?.colors?.header || '#2D3436'};
       }
       #chatTitle {
-        color: ${settings?.titleColor || '#ffffff'}; /* استخدام titleColor مباشرة */
+        color: ${settings?.titleColor || '#ffffff'};
       }
       #chatMessages {
         background-color: ${settings?.colors?.chatAreaBackground || '#3B4A4E'};
@@ -93,11 +93,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     `;
 
-    if (settings.suggestedQuestionsEnabled && settings.suggestedQuestions?.length DIY
-length > 1) {
+    if (settings.suggestedQuestionsEnabled && settings.suggestedQuestions?.length > 1) {
       suggestedQuestions.style.display = 'block';
       
-      // خلط الأسئلة بشكل عشوائي (Fisher-Yates shuffle)
       const shuffleArray = (array) => {
         for (let i = array.length - 1; i > 0; i--) {
           const j = Math.floor(Math.random() * (i + 1));
@@ -109,10 +107,9 @@ length > 1) {
       let questions = shuffleArray([...settings.suggestedQuestions]);
       let currentIndex = 0;
 
-      // دالة لعرض سؤال واحد
       const displayNextQuestion = () => {
-        suggestedQuestions.innerHTML = ''; // تفريغ العنصر
-        if (questions.length === 0) return; // لو مفيش أسئلة، نوقف
+        suggestedQuestions.innerHTML = '';
+        if (questions.length === 0) return;
 
         const question = questions[currentIndex];
         const button = document.createElement('button');
@@ -124,13 +121,10 @@ length > 1) {
         button.addEventListener('click', () => sendMessage(question));
         suggestedQuestions.appendChild(button);
 
-        currentIndex = (currentIndex + 1) % questions.length; // الانتقال للسؤال التالي (دوري)
+        currentIndex = (currentIndex + 1) % questions.length;
       };
 
-      // عرض السؤال الأول فورًا
       displayNextQuestion();
-
-      // تغيير السؤال كل 3 ثواني
       setInterval(displayNextQuestion, 3000);
     } else {
       suggestedQuestions.style.display = 'none';
@@ -171,9 +165,8 @@ length > 1) {
 
   async function submitFeedback(messageId, messageContent, feedback) {
     try {
-      // تحويل feedback إلى type
       const type = feedback === 'positive' ? 'like' : 'dislike';
-      const userId = `web_${linkId}`; // userId ثابت لتتبع المستخدم
+      const userId = `web_${linkId}`;
 
       const response = await fetch('/api/feedback', {
         method: 'POST',
