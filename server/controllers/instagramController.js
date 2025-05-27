@@ -7,6 +7,24 @@ const { processMessage } = require('../botEngine');
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
 
+// دالة لجلب اسم المستخدم من إنستجرام
+const getInstagramUsername = async (userId, accessToken) => {
+  try {
+    const cleanUserId = userId.replace(/^(instagram_|instagram_comment_)/, '');
+    const response = await axios.get(
+      `https://graph.instagram.com/v22.0/${cleanUserId}?fields=name&access_token=${accessToken}`
+    );
+    if (response.data.name) {
+      console.log(`[${getTimestamp()}] ✅ تم جلب اسم المستخدم من إنستجرام: ${response.data.name}`);
+      return response.data.name;
+    }
+    return cleanUserId;
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم من إنستجرام لـ ${userId}:`, err.message, err.response?.data);
+    return userId.replace(/^(instagram_|instagram_comment_)/, '');
+  }
+};
+
 // التحقق من صلاحية التوكن
 const validateAccessToken = async (accessToken) => {
   try {
@@ -143,20 +161,28 @@ const handleMessage = async (req, res) => {
             continue;
           }
 
+          // جلب اسم المستخدم من إنستجرام
+          const username = await getInstagramUsername(prefixedSenderId, bot.instagramApiKey);
+
           // إنشاء أو تحديث المحادثة
           let conversation = await Conversation.findOne({
             botId: bot._id,
-            channel: 'instagram', // التأكد من استخدام channel بدلاً من platform
+            channel: 'instagram',
             userId: prefixedSenderId
           });
 
           if (!conversation) {
             conversation = new Conversation({
               botId: bot._id,
-              channel: 'instagram', // استخدام channel بدلاً من platform
+              channel: 'instagram',
               userId: prefixedSenderId,
+              username: username, // حفظ اسم المستخدم
               messages: []
             });
+            await conversation.save();
+          } else if (!conversation.username) {
+            // لو المحادثة موجودة بس مافيش username، نحدثه
+            conversation.username = username;
             await conversation.save();
           }
 
@@ -280,22 +306,30 @@ const handleMessage = async (req, res) => {
               continue;
             }
 
+            // جلب اسم المستخدم من إنستجرام
+            const username = await getInstagramUsername(prefixedCommenterId, bot.instagramApiKey);
+
             console.log(`[${getTimestamp()}] 💬 Comment received from ${prefixedCommenterId}: ${commentText}`);
 
             // إنشاء أو تحديث المحادثة
             let conversation = await Conversation.findOne({
               botId: bot._id,
-              channel: 'instagram', // التأكد من استخدام channel بدلاً من platform
+              channel: 'instagram',
               userId: prefixedCommenterId
             });
 
             if (!conversation) {
               conversation = new Conversation({
                 botId: bot._id,
-                channel: 'instagram', // استخدام channel بدلاً من platform
+                channel: 'instagram',
                 userId: prefixedCommenterId,
+                username: username, // حفظ اسم المستخدم
                 messages: []
               });
+              await conversation.save();
+            } else if (!conversation.username) {
+              // لو المحادثة موجودة بس مافيش username، نحدثه
+              conversation.username = username;
               await conversation.save();
             }
 
