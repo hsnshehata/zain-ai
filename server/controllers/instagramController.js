@@ -11,6 +11,7 @@ const getTimestamp = () => new Date().toISOString();
 const getInstagramUsername = async (userId, accessToken) => {
   try {
     const cleanUserId = userId.replace(/^(instagram_|instagram_comment_)/, '');
+    console.log(`[${getTimestamp()}] 📋 محاولة جلب اسم المستخدم لـ ${cleanUserId} من إنستجرام باستخدام التوكن: ${accessToken.slice(0, 10)}...`);
     const response = await axios.get(
       `https://graph.instagram.com/v22.0/${cleanUserId}?fields=name&access_token=${accessToken}`
     );
@@ -18,6 +19,7 @@ const getInstagramUsername = async (userId, accessToken) => {
       console.log(`[${getTimestamp()}] ✅ تم جلب اسم المستخدم من إنستجرام: ${response.data.name}`);
       return response.data.name;
     }
+    console.log(`[${getTimestamp()}] ⚠️ لم يتم العثور على الاسم في الاستجابة:`, response.data);
     return cleanUserId;
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم من إنستجرام لـ ${userId}:`, err.message, err.response?.data);
@@ -180,8 +182,8 @@ const handleMessage = async (req, res) => {
               messages: []
             });
             await conversation.save();
-          } else if (!conversation.username) {
-            // لو المحادثة موجودة بس مافيش username، نحدثه
+          } else if (!conversation.username || conversation.username === "مستخدم إنستجرام") {
+            // لو الـ username مش موجود أو قيمته مش كويسة، نحدثه
             conversation.username = username;
             await conversation.save();
           }
@@ -327,8 +329,8 @@ const handleMessage = async (req, res) => {
                 messages: []
               });
               await conversation.save();
-            } else if (!conversation.username) {
-              // لو المحادثة موجودة بس مافيش username، نحدثه
+            } else if (!conversation.username || conversation.username === "مستخدم إنستجرام") {
+              // لو الـ username مش موجود أو قيمته مش كويسة، نحدثه
               conversation.username = username;
               await conversation.save();
             }
