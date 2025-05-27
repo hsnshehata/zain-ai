@@ -23,6 +23,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     settings = await response.json();
     botId = settings.botId;
 
+    console.log('🔍 Settings loaded:', settings); // لوغ للتأكد من القيم اللي جاية
+    console.log('🎨 Title color:', settings.titleColor); // لوغ للتأكد من titleColor
+
     chatTitle.textContent = settings.title || 'صفحة الدردشة';
     if (settings.logoUrl) {
       chatLogo.src = settings.logoUrl;
@@ -48,7 +51,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         background-color: ${settings?.colors?.header || '#2D3436'};
       }
       #chatTitle {
-        color: ${settings?.colors?.titleColor || '#ffffff'};
+        color: ${settings?.titleColor || '#ffffff'}; /* استخدام titleColor مباشرة */
       }
       #chatMessages {
         background-color: ${settings?.colors?.chatAreaBackground || '#3B4A4E'};
@@ -90,7 +93,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     `;
 
-    if (settings.suggestedQuestionsEnabled && settings.suggestedQuestions?.length > 0) {
+    if (settings.suggestedQuestionsEnabled && settings.suggestedQuestions?.length DIY
+length > 1) {
       suggestedQuestions.style.display = 'block';
       
       // خلط الأسئلة بشكل عشوائي (Fisher-Yates shuffle)
@@ -212,7 +216,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       (trimmedText.startsWith('<') && trimmedText.includes('>') && trimmedText.match(/<[a-zA-Z][^>]*>/)) ||
       trimmedText.match(/\b(function|const|let|var|=>|class)\b/i) ||
       (trimmedText.match(/{[^{}]*}/) && trimmedText.match(/:/)) ||
-      (trimmedText.match(/[{}$$              $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
+      (trimmedText.match(/[{}$$                  $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
     );
   }
 
