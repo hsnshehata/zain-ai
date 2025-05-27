@@ -146,14 +146,14 @@ const handleMessage = async (req, res) => {
           // إنشاء أو تحديث المحادثة
           let conversation = await Conversation.findOne({
             botId: bot._id,
-            platform: 'instagram',
+            channel: 'instagram', // التأكد من استخدام channel بدلاً من platform
             userId: prefixedSenderId
           });
 
           if (!conversation) {
             conversation = new Conversation({
               botId: bot._id,
-              platform: 'instagram',
+              channel: 'instagram', // استخدام channel بدلاً من platform
               userId: prefixedSenderId,
               messages: []
             });
@@ -206,7 +206,7 @@ const handleMessage = async (req, res) => {
             const editedMessage = event.message_edit.message;
             const mid = editedMessage.mid || `temp_${Date.now()}`;
             console.log(`📩 Processing message edit event from ${prefixedSenderId}: ${editedMessage.text}`);
-            const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid);
+            const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid, 'instagram');
             await sendMessage(senderId, responseText, bot.instagramApiKey);
             continue;
           } else if (event.message_edit && !bot.instagramMessageEditsEnabled) {
@@ -245,7 +245,7 @@ const handleMessage = async (req, res) => {
 
             // معالجة الرسالة
             console.log(`[${getTimestamp()}] 🤖 Processing message for bot: ${bot._id} user: ${prefixedSenderId} message: ${messageContent}`);
-            const reply = await processMessage(bot._id, prefixedSenderId, messageContent, isImage, isVoice, messageId);
+            const reply = await processMessage(bot._id, prefixedSenderId, messageContent, isImage, isVoice, messageId, 'instagram');
 
             // إرسال الرد للمستخدم
             console.log(`[${getTimestamp()}] 📤 Attempting to send message to ${senderId} with token: ${bot.instagramApiKey.slice(0, 10)}...`);
@@ -285,14 +285,14 @@ const handleMessage = async (req, res) => {
             // إنشاء أو تحديث المحادثة
             let conversation = await Conversation.findOne({
               botId: bot._id,
-              platform: 'instagram',
+              channel: 'instagram', // التأكد من استخدام channel بدلاً من platform
               userId: prefixedCommenterId
             });
 
             if (!conversation) {
               conversation = new Conversation({
                 botId: bot._id,
-                platform: 'instagram',
+                channel: 'instagram', // استخدام channel بدلاً من platform
                 userId: prefixedCommenterId,
                 messages: []
               });
@@ -309,7 +309,7 @@ const handleMessage = async (req, res) => {
 
             // معالجة الكومنت
             console.log(`[${getTimestamp()}] 🤖 Processing comment for bot: ${bot._id} user: ${prefixedCommenterId} comment: ${commentText}`);
-            const reply = await processMessage(bot._id, prefixedCommenterId, commentText, false, false, commentId);
+            const reply = await processMessage(bot._id, prefixedCommenterId, commentText, false, false, commentId, 'instagram');
 
             // إرسال الرد على الكومنت
             console.log(`[${getTimestamp()}] 📤 Attempting to reply to comment ${commentId} with token: ${bot.instagramApiKey.slice(0, 10)}...`);
