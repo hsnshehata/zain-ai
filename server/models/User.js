@@ -1,7 +1,14 @@
+// /server/models/User.js
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema({
-  username: { type: String, required: true, unique: true },
+  username: { 
+    type: String, 
+    required: true, 
+    unique: true, 
+    lowercase: true, // تحويل الـ username للحروف الصغيرة تلقائيًا
+    trim: true // إزالة أي مسافات زيادة
+  },
   password: { type: String, required: false },
   role: { type: String, enum: ['user', 'superadmin'], default: 'user' },
   bots: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Bot' }],
