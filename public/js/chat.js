@@ -1,4 +1,3 @@
-// /public/js/chat.js
 document.addEventListener('DOMContentLoaded', async () => {
   const linkId = window.location.pathname.split('/').pop();
   const chatMessages = document.getElementById('chatMessages');
@@ -15,63 +14,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   let settings = {};
   let messageCounter = 0;
   let lastFeedbackButtons = null;
-
-  // فحص تحميل Font Awesome
-  const checkFontAwesome = () => {
-    const testIcon = document.createElement('i');
-    testIcon.className = 'fas fa-camera';
-    document.body.appendChild(testIcon);
-    const isLoaded = window.getComputedStyle(testIcon, ':before').getPropertyValue('content') !== 'none';
-    document.body.removeChild(testIcon);
-    return isLoaded;
-  };
-
-  // إذا لم يتم تحميل Font Awesome، أعد تحميله
-  if (!checkFontAwesome()) {
-    console.warn('Font Awesome لم يتحمل، جاري إعادة التحميل...');
-    const fontAwesomeLink = document.createElement('link');
-    fontAwesomeLink.rel = 'stylesheet';
-    fontAwesomeLink.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css';
-    fontAwesomeLink.integrity = 'sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2Lw==';
-    fontAwesomeLink.crossOrigin = 'anonymous';
-    fontAwesomeLink.referrerPolicy = 'no-referrer';
-    document.head.appendChild(fontAwesomeLink);
-
-    // انتظر حتى يتم تحميل Font Awesome
-    fontAwesomeLink.onload = () => {
-      console.log('Font Awesome تحمّل بنجاح');
-      ensureButtonsVisibility();
-    };
-    fontAwesomeLink.onerror = () => {
-      console.error('فشل في تحميل Font Awesome، سيتم عرض النصوص البديلة');
-      ensureButtonsVisibility();
-    };
-  } else {
-    ensureButtonsVisibility();
-  }
-
-  // دالة للتأكد من عرض الزراير بشكل صحيح
-  function ensureButtonsVisibility() {
-    const sendButtonIcon = sendMessageBtn.querySelector('i');
-    const imageButtonIcon = document.getElementById('imageInputBtn')?.querySelector('i');
-
-    // إذا لم تظهر الأيقونات، أظهر النص البديل فقط
-    if (sendButtonIcon && window.getComputedStyle(sendButtonIcon, ':before').getPropertyValue('content') === 'none') {
-      sendButtonIcon.style.display = 'none';
-      sendMessageBtn.querySelector('.button-text').style.display = 'inline';
-    } else {
-      sendButtonIcon.style.display = 'inline';
-      sendMessageBtn.querySelector('.button-text').style.display = 'none';
-    }
-
-    if (imageButtonIcon && window.getComputedStyle(imageButtonIcon, ':before').getPropertyValue('content') === 'none') {
-      imageButtonIcon.style.display = 'none';
-      document.getElementById('imageInputBtn').querySelector('.button-text').style.display = 'inline';
-    } else if (imageButtonIcon) {
-      imageButtonIcon.style.display = 'inline';
-      document.getElementById('imageInputBtn').querySelector('.button-text').style.display = 'none';
-    }
-  }
 
   try {
     const response = await fetch(`/api/chat-page/${linkId}`);
@@ -145,10 +87,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         border: none;
         font-size: 1.2em;
         cursor: pointer;
-      }
-      .button-text {
-        display: none; /* النص البديل مخفي افتراضيًا */
-        margin-right: 5px;
       }
     `;
 
@@ -274,7 +212,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       (trimmedText.startsWith('<') && trimmedText.includes('>') && trimmedText.match(/<[a-zA-Z][^>]*>/)) ||
       trimmedText.match(/\b(function|const|let|var|=>|class)\b/i) ||
       (trimmedText.match(/{[^{}]*}/) && trimmedText.match(/:/)) ||
-      (trimmedText.match(/[{}$$                  $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
+      (trimmedText.match(/[{}$$              $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
     );
   }
 
