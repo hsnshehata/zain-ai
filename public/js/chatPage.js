@@ -270,7 +270,7 @@ async function loadChatPage() {
     supportButton.style.display = 'block';
   });
 </script>
-          `.trim();
+`.trim();
 
           let fullIframeCode = `
 <iframe src="${data.link}" style="width: 100%; height: 100%; border: none;" scrolling="no"></iframe>
