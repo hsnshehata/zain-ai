@@ -103,7 +103,7 @@ exports.createChatPage = async (req, res) => {
 
     await chatPage.save();
 
-    const chatLink = `${process.env.APP_URL || 'https://zain-ai-a06a.onrender.com'}/chat/${finalLinkId}`;
+    const chatLink = `${process.env.APP_URL || 'https://zainbot.com'}/chat/${finalLinkId}`;
 
     res.status(201).json({ link: chatLink, chatPageId: chatPage._id, exists: false });
   } catch (err) {
@@ -187,7 +187,7 @@ exports.updateChatPage = async (req, res) => {
 
     await chatPage.save();
 
-    const updatedChatLink = `${process.env.APP_URL || 'https://zain-ai-a06a.onrender.com'}/chat/${linkId}`;
+    const updatedChatLink = `${process.env.APP_URL || 'https://zainbot.com'}/chat/${linkId}`;
 
     res.status(200).json({
       message: 'Chat page settings updated successfully',
@@ -235,7 +235,7 @@ exports.getChatPageByBotId = async (req, res) => {
     if (!chatPage) {
       return res.status(404).json({ message: 'No chat page found for this bot' });
     }
-    const chatLink = `${process.env.APP_URL || 'https://zain-ai-a06a.onrender.com'}/chat/${chatPage.linkId}`;
+    const chatLink = `${process.env.APP_URL || 'https://zainbot.com'}/chat/${chatPage.linkId}`;
     res.status(200).json({
       link: chatLink,
       chatPageId: chatPage._id,
