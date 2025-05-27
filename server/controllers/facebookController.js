@@ -1,6 +1,7 @@
 // server/controllers/facebookController.js
 const axios = require('axios');
 const Bot = require('../models/Bot');
+const Conversation = require('../models/Conversation'); // السطر اللي ناقص
 const { processMessage, processFeedback } = require('../botEngine');
 
 // دالة مساعدة لإضافة timestamp للـ logs
