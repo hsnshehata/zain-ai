@@ -1,3 +1,4 @@
+// /server/routes/users.js
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
@@ -54,12 +55,13 @@ router.post('/', authenticate, async (req, res) => {
     return res.status(400).json({ message: 'كلمات المرور غير متطابقة' });
   }
   try {
-    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+    const normalizedUsername = username.toLowerCase(); // تحويل الـ username للحروف الصغيرة
+    const existingUser = await User.findOne({ $or: [{ username: normalizedUsername }, { email }] });
     if (existingUser) {
       return res.status(400).json({ message: 'اسم المستخدم أو البريد الإلكتروني موجود بالفعل' });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hashedPassword, role, email });
+    const user = new User({ username: normalizedUsername, password: hashedPassword, role, email });
     await user.save();
     res.status(201).json({ message: 'تم إنشاء المستخدم بنجاح' });
   } catch (err) {
@@ -83,17 +85,18 @@ router.put('/:id', authenticate, async (req, res) => {
       return res.status(404).json({ message: 'المستخدم غير موجود' });
     }
 
+    const normalizedUsername = username ? username.toLowerCase() : user.username; // تحويل الـ username للحروف الصغيرة
     const existingUser = await User.findOne({
       $or: [
-        { username, _id: { $ne: id } },
-        { email, _id: { $ne: id } }
+        { username: normalizedUsername, _id: { $ne: id } },
+        { email: email || user.email, _id: { $ne: id } }
       ]
     });
     if (existingUser) {
       return res.status(400).json({ message: 'اسم المستخدم أو البريد الإلكتروني موجود بالفعل' });
     }
 
-    user.username = username || user.username;
+    user.username = normalizedUsername;
     user.email = email || user.email;
     user.whatsapp = whatsapp || user.whatsapp;
     if (password) {
