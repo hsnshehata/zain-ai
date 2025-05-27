@@ -36,9 +36,6 @@ const getTimestamp = () => new Date().toISOString();
 // إعداد cache لتخزين طلبات الـ API مؤقتاً (5 دقايق)
 const apiCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
 
-// إعداد flag في الذاكرة لمنع إعادة تنفيذ السكربت
-const normalizationCache = new NodeCache({ stdTTL: 0 }); // TTL = 0 يعني ما ينتهيش إلا لما السيرفر يتوقف
-
 // إعداد Rate Limiting (100 طلب كل 15 دقيقة لكل IP)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 دقيقة
@@ -63,13 +60,22 @@ app.use((req, res, next) => {
 
 // Middleware لإضافة Cache-Control headers
 app.use((req, res, next) => {
+  // منع الـ cache للـ HTML ومسارات معينة
   if (req.path.match(/\.(html)$/i) || ['/', '/dashboard', '/dashboard_new', '/login', '/register', '/set-whatsapp', '/chat/'].some(path => req.path.startsWith(path))) {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
-  } else if (req.path.match(/\.(css|js|png|jpg|jpeg|gif|ico|json)$/i)) {
+  } 
+  // منع الـ cache للملفات المرتبطة بـ /chat/ (مثل chat.js, chat.css, Font Awesome)
+  else if (req.path.match(/\.(css|js|woff|woff2|ttf)$/i) && req.path.includes('/chat')) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Content-Type', req.path.match(/\.css$/i) ? 'text/css' : req.path.match(/\.js$/i) ? 'application/javascript' : 'font/woff2');
+  } 
+  // السماح بالـ cache للملفات التانية زي الصور
+  else if (req.path.match(/\.(png|jpg|jpeg|gif|ico|json)$/i)) {
     res.setHeader('Cache-Control', 'public, max-age=300');
-    res.setHeader('Content-Type', req.path.match(/\.css$/i) ? 'text/css' : undefined);
   }
   next();
 });
@@ -376,53 +382,8 @@ app.get('/chat/:linkId', (req, res) => {
   }
 });
 
-// دالة لتحويل usernames للحروف الصغيرة
-async function normalizeUsernames() {
-  try {
-    // التحقق إذا كان السكربت نفّذ قبل كده
-    if (normalizationCache.get('usernames_normalized')) {
-      console.log(`[${getTimestamp()}] ⚠️ Normalize usernames already executed previously`);
-      return;
-    }
-
-    // التحقق إن قاعدة البيانات متصلة
-    if (mongoose.connection.readyState !== 1) {
-      console.error(`[${getTimestamp()}] ❌ Database not connected during username normalization`);
-      return;
-    }
-
-    // تنفيذ السكربت
-    console.log(`[${getTimestamp()}] ✅ Starting username normalization...`);
-    const users = await User.find();
-    let updatedCount = 0;
-
-    for (const user of users) {
-      const normalizedUsername = user.username.toLowerCase();
-      if (user.username !== normalizedUsername) {
-        // التحقق من عدم وجود تكرار
-        const existingUser = await User.findOne({ username: normalizedUsername, _id: { $ne: user._id } });
-        if (existingUser) {
-          console.warn(`[${getTimestamp()}] ⚠️ Skipped user ${user.username}: normalized username ${normalizedUsername} already exists`);
-          continue;
-        }
-        user.username = normalizedUsername;
-        await user.save();
-        updatedCount++;
-      }
-    }
-
-    // وضع flag في الذاكرة لمنع إعادة التنفيذ
-    normalizationCache.set('usernames_normalized', true);
-    console.log(`[${getTimestamp()}] ✅ Username normalization completed: ${updatedCount} users updated`);
-  } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error during username normalization:`, err.message, err.stack);
-  }
-}
-
-// Connect to MongoDB and run username normalization
-connectDB().then(() => {
-  normalizeUsernames();
-});
+// Connect to MongoDB
+connectDB();
 
 // تشغيل وظايف التحقق الدورية
 checkAutoStopBots();
