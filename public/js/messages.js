@@ -2,8 +2,11 @@
 console.log("messages.js script started loading at", new Date().toISOString());
 
 try {
-  window.loadMessagesPage = async function() {
-    console.log("loadMessagesPage function defined and called at", new Date().toISOString());
+  window.loadMessagesPage = async function () {
+    console.log(
+      "loadMessagesPage function defined and called at",
+      new Date().toISOString()
+    );
 
     const content = document.getElementById("content");
     const token = localStorage.getItem("token");
@@ -96,11 +99,12 @@ try {
     const deleteSingleConversationBtn = document.getElementById("deleteSingleConversationBtn");
 
     let currentChannel = "facebook";
-    let allConversations = [];
+    let conversations = [];
     let userNamesCache = {};
     let webUserCounter = 1;
     let currentPage = 1;
     const itemsPerPage = 20;
+    let totalPages = 1;
     let currentOpenConversationId = null;
     let currentOpenUserId = null;
 
@@ -127,20 +131,41 @@ try {
       paginationContainer.style.display = "flex";
     }
 
-    async function fetchConversations(botId, channel, startDate, endDate) {
-      console.log("fetchConversations called with botId:", botId, "channel:", channel);
+    async function fetchConversations(botId, channel, startDate, endDate, page = 1) {
+      console.log(
+        "fetchConversations called with botId:",
+        botId,
+        "channel:",
+        channel,
+        "page:",
+        page
+      );
       showLoading();
       try {
-        const params = new URLSearchParams({ type: channel });
+        const params = new URLSearchParams({
+          type: channel,
+          page: page,
+          limit: itemsPerPage,
+        });
         if (startDate) params.set("startDate", startDate);
         if (endDate) params.set("endDate", endDate);
 
-        allConversations = await handleApiRequest(`/api/messages/${botId}?${params.toString()}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }, errorMessage, "فشل جلب المحادثات");
+        const response = await handleApiRequest(
+          `/api/messages/${botId}?${params.toString()}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+          errorMessage,
+          "فشل جلب المحادثات"
+        );
 
-        console.log(`Loaded ${allConversations.length} conversations for ${channel}`);
-        currentPage = 1;
+        conversations = response.conversations || [];
+        totalPages = response.totalPages || 1;
+        currentPage = response.currentPage || 1;
+
+        console.log(
+          `Loaded ${conversations.length} conversations for ${channel}, total pages: ${totalPages} on page ${currentPage}`
+        );
         renderConversations();
         showContent();
       } catch (err) {
@@ -153,25 +178,14 @@ try {
       conversationsContainer.innerHTML = "";
       webUserCounter = 1;
 
-      if (allConversations.length === 0) {
-        conversationsContainer.innerHTML = '<div class="placeholder">لا توجد محادثات لعرضها لهذه القناة والفترة.</div>';
+      if (conversations.length === 0) {
+        conversationsContainer.innerHTML =
+          '<div class="placeholder">لا توجد محادثات لعرضها لهذه القناة والفترة.</div>';
         paginationContainer.innerHTML = "";
         return;
       }
 
-      const sortedConversations = [...allConversations].sort((a, b) => {
-        const lastMsgA = a.messages[a.messages.length - 1]?.timestamp;
-        const lastMsgB = b.messages[b.messages.length - 1]?.timestamp;
-        return new Date(lastMsgB || 0) - new Date(lastMsgA || 0);
-      });
-
-      const totalItems = sortedConversations.length;
-      const totalPages = Math.ceil(totalItems / itemsPerPage);
-      const startIndex = (currentPage - 1) * itemsPerPage;
-      const endIndex = startIndex + itemsPerPage;
-      const paginatedConversations = sortedConversations.slice(startIndex, endIndex);
-
-      paginatedConversations.forEach(conv => {
+      conversations.forEach((conv) => {
         const card = createConversationCard(conv);
         conversationsContainer.appendChild(card);
       });
@@ -188,45 +202,61 @@ try {
 
       let userName = conv.username || conv.userId;
       let userIdentifier = conv.userId;
-      let iconClass = 'fas fa-envelope';
+      let iconClass = "fas fa-envelope";
 
       if (currentChannel === "web" && conv.userId === "anonymous") {
         userName = `زائر ويب ${webUserCounter++}`;
         userIdentifier = `web-${webUserCounter - 1}`;
       } else if (currentChannel === "instagram") {
-        if (conv.userId.startsWith('instagram_comment_')) {
-          userName = conv.username || `تعليق إنستجرام ${conv.userId.replace('instagram_comment_', '')}`;
+        if (conv.userId.startsWith("instagram_comment_")) {
+          userName =
+            conv.username ||
+            `تعليق إنستجرام ${conv.userId.replace("instagram_comment_", "")}`;
           userIdentifier = conv.userId;
-          iconClass = 'fas fa-comment';
+          iconClass = "fas fa-comment";
         } else {
-          userName = conv.username || `إنستجرام ${conv.userId.replace('instagram_', '')}`;
+          userName =
+            conv.username ||
+            `إنستجرام ${conv.userId.replace("instagram_", "")}`;
           userIdentifier = conv.userId;
         }
       } else if (currentChannel === "facebook") {
-        if (conv.userId.startsWith('facebook_comment_')) {
-          userName = conv.username || `تعليق فيسبوك ${conv.userId.replace('facebook_comment_', '')}`;
+        if (conv.userId.startsWith("facebook_comment_")) {
+          userName =
+            conv.username ||
+            `تعليق فيسبوك ${conv.userId.replace("facebook_comment_", "")}`;
           userIdentifier = conv.userId;
-          iconClass = 'fas fa-comment';
+          iconClass = "fas fa-comment";
         } else {
-          userName = conv.username || `فيسبوك ${conv.userId.replace('facebook_', '')}`;
+          userName =
+            conv.username || `فيسبوك ${conv.userId.replace("facebook_", "")}`;
           userIdentifier = conv.userId;
         }
       } else if (currentChannel === "whatsapp") {
-        userName = conv.username || `واتساب ${conv.userId.replace('whatsapp_', '')}`;
+        userName =
+          conv.username || `واتساب ${conv.userId.replace("whatsapp_", "")}`;
         userIdentifier = conv.userId;
-        iconClass = 'fab fa-whatsapp';
+        iconClass = "fab fa-whatsapp";
       }
 
       userNamesCache[conv._id] = userName;
 
       const lastMessage = conv.messages[conv.messages.length - 1];
-      const lastMessageTimestamp = lastMessage ? new Date(lastMessage.timestamp).toLocaleString("ar-EG") : "لا يوجد";
-      const messageCount = conv.messages.filter(msg => msg.role === 'assistant').length;
+      const lastMessageTimestamp = lastMessage
+        ? new Date(lastMessage.timestamp).toLocaleString("ar-EG")
+        : "لا يوجد";
+      const messageCount = conv.messages.filter(
+        (msg) => msg.role === "assistant"
+      ).length;
 
       card.innerHTML = `
         <div class="card-body">
-          <h4 class="card-title"><i class="${iconClass}"></i> ${escapeHtml(userName)}</h4>
-          <p class="card-text"><small>المعرف: ${escapeHtml(userIdentifier)}</small></p>
+          <h4 class="card-title"><i class="${iconClass}"></i> ${escapeHtml(
+        userName
+      )}</h4>
+          <p class="card-text"><small>المعرف: ${escapeHtml(
+            userIdentifier
+          )}</small></p>
           <p class="card-text">عدد الرسائل: ${messageCount}</p>
           <p class="card-text">آخر رسالة: ${lastMessageTimestamp}</p>
         </div>
@@ -235,7 +265,9 @@ try {
         </div>
       `;
 
-      card.querySelector(".view-chat-btn").addEventListener("click", () => openChatModal(conv._id, conv.userId));
+      card.querySelector(".view-chat-btn").addEventListener("click", () =>
+        openChatModal(conv._id, conv.userId)
+      );
       return card;
     }
 
@@ -244,7 +276,12 @@ try {
       paginationContainer.innerHTML = "";
       if (totalPages <= 1) return;
 
-      const createPageButton = (pageNumber, text = null, isActive = false, isDisabled = false) => {
+      const createPageButton = (
+        pageNumber,
+        text = null,
+        isActive = false,
+        isDisabled = false
+      ) => {
         const button = document.createElement("button");
         button.textContent = text || pageNumber;
         button.disabled = isDisabled;
@@ -252,13 +289,21 @@ try {
         button.addEventListener("click", () => {
           if (!isDisabled && !isActive) {
             currentPage = pageNumber;
-            renderConversations();
+            fetchConversations(
+              selectedBotId,
+              currentChannel,
+              startDateFilter.value,
+              endDateFilter.value,
+              currentPage
+            );
           }
         });
         return button;
       };
 
-      paginationContainer.appendChild(createPageButton(currentPage - 1, 'السابق', false, currentPage === 1));
+      paginationContainer.appendChild(
+        createPageButton(currentPage - 1, "السابق", false, currentPage === 1)
+      );
 
       const maxButtons = 5;
       let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
@@ -271,31 +316,45 @@ try {
       if (startPage > 1) {
         paginationContainer.appendChild(createPageButton(1));
         if (startPage > 2) {
-          const ellipsis = document.createElement('span');
-          ellipsis.textContent = '...';
+          const ellipsis = document.createElement("span");
+          ellipsis.textContent = "...";
           paginationContainer.appendChild(ellipsis);
         }
       }
 
       for (let i = startPage; i <= endPage; i++) {
-        paginationContainer.appendChild(createPageButton(i, null, i === currentPage));
+        paginationContainer.appendChild(
+          createPageButton(i, null, i === currentPage)
+        );
       }
 
       if (endPage < totalPages) {
         if (endPage < totalPages - 1) {
-          const ellipsis = document.createElement('span');
-          ellipsis.textContent = '...';
+          const ellipsis = document.createElement("span");
+          ellipsis.textContent = "...";
           paginationContainer.appendChild(ellipsis);
         }
         paginationContainer.appendChild(createPageButton(totalPages));
       }
 
-      paginationContainer.appendChild(createPageButton(currentPage + 1, 'التالي', false, currentPage === totalPages));
+      paginationContainer.appendChild(
+        createPageButton(
+          currentPage + 1,
+          "التالي",
+          false,
+          currentPage === totalPages
+        )
+      );
     }
 
     function openChatModal(conversationId, userId) {
-      console.log("openChatModal called with conversationId:", conversationId, "userId:", userId);
-      const conversation = allConversations.find(conv => conv._id === conversationId);
+      console.log(
+        "openChatModal called with conversationId:",
+        conversationId,
+        "userId:",
+        userId
+      );
+      const conversation = conversations.find((conv) => conv._id === conversationId);
       if (!conversation) {
         console.error(`Conversation with ID ${conversationId} not found`);
         return;
@@ -303,7 +362,9 @@ try {
 
       currentOpenConversationId = conversationId;
       currentOpenUserId = userId;
-      console.log(`Opening chat modal for conversation ${conversationId}, user ${currentOpenUserId}`);
+      console.log(
+        `Opening chat modal for conversation ${conversationId}, user ${currentOpenUserId}`
+      );
 
       const userName = userNamesCache[conversationId] || "مستخدم";
       chatModalTitle.textContent = `محادثة مع ${escapeHtml(userName)}`;
@@ -311,8 +372,12 @@ try {
 
       conversation.messages.forEach((msg, index) => {
         const messageDiv = document.createElement("div");
-        messageDiv.className = `message ${msg.role === "user" ? "user-message" : "bot-message"}`;
-        let messageContentHtml = `<p>${escapeHtml(msg.content)}</p><small>${new Date(msg.timestamp).toLocaleString("ar-EG")}</small>`;
+        messageDiv.className = `message ${
+          msg.role === "user" ? "user-message" : "bot-message"
+        }`;
+        let messageContentHtml = `<p>${escapeHtml(
+          msg.content
+        )}</p><small>${new Date(msg.timestamp).toLocaleString("ar-EG")}</small>`;
 
         if (msg.role === "assistant" && index > 0) {
           let precedingUserMessage = null;
@@ -348,13 +413,13 @@ try {
         chatModalBody.appendChild(messageDiv);
       });
 
-      chatModalBody.querySelectorAll(".edit-rule-btn").forEach(button => {
+      chatModalBody.querySelectorAll(".edit-rule-btn").forEach((button) => {
         button.addEventListener("click", handleEditRuleClick);
       });
-      chatModalBody.querySelectorAll(".save-edited-rule-btn").forEach(button => {
+      chatModalBody.querySelectorAll(".save-edited-rule-btn").forEach((button) => {
         button.addEventListener("click", handleSaveEditedRuleClick);
       });
-      chatModalBody.querySelectorAll(".cancel-edit-btn").forEach(button => {
+      chatModalBody.querySelectorAll(".cancel-edit-btn").forEach((button) => {
         button.addEventListener("click", handleCancelEditClick);
       });
 
@@ -367,95 +432,147 @@ try {
       chatModal.style.display = "none";
       currentOpenConversationId = null;
       currentOpenUserId = null;
-      console.log("Chat modal closed, cleared currentOpenConversationId and currentOpenUserId");
+      console.log(
+        "Chat modal closed, cleared currentOpenConversationId and currentOpenUserId"
+      );
     }
 
     async function deleteSingleConversation() {
       console.log("deleteSingleConversation called...");
-      console.log(`currentOpenConversationId: ${currentOpenConversationId}, currentOpenUserId: ${currentOpenUserId}`);
+      console.log(
+        `currentOpenConversationId: ${currentOpenConversationId}, currentOpenUserId: ${currentOpenUserId}`
+      );
 
       if (!currentOpenConversationId || !currentOpenUserId) {
-        console.error("Cannot delete conversation: currentOpenConversationId or currentOpenUserId is not set");
+        console.error(
+          "Cannot delete conversation: currentOpenConversationId or currentOpenUserId is not set"
+        );
         alert("خطأ: لا يمكن حذف المحادثة، يرجى فتح المحادثة أولاً.");
         return;
       }
 
-      if (!confirm("هل أنت متأكد من حذف هذه المحادثة؟ لا يمكن التراجع عن هذا الإجراء.")) return;
+      if (
+        !confirm(
+          "هل أنت متأكد من حذف هذه المحادثة؟ لا يمكن التراجع عن هذا الإجراء."
+        )
+      )
+        return;
 
       deleteSingleConversationBtn.disabled = true;
-      deleteSingleConversationBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جار الحذف...';
+      deleteSingleConversationBtn.innerHTML =
+        '<i class="fas fa-spinner fa-spin"></i> جار الحذف...';
 
       try {
-        console.log(`Attempting to delete conversation for bot ${selectedBotId}, user ${currentOpenUserId}, channel ${currentChannel}`);
-        await handleApiRequest(`/api/messages/delete-user/${selectedBotId}/${currentOpenUserId}?type=${currentChannel}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        }, errorMessage, "فشل حذف المحادثة");
+        console.log(
+          `Attempting to delete conversation for bot ${selectedBotId}, user ${currentOpenUserId}, channel ${currentChannel}`
+        );
+        await handleApiRequest(
+          `/api/messages/delete-user/${selectedBotId}/${currentOpenUserId}?type=${currentChannel}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          },
+          errorMessage,
+          "فشل حذف المحادثة"
+        );
         alert("تم حذف المحادثة بنجاح.");
         closeChatModal();
-        allConversations = allConversations.filter(conv => conv._id !== currentOpenConversationId);
+        conversations = conversations.filter(
+          (conv) => conv._id !== currentOpenConversationId
+        );
         renderConversations();
       } catch (err) {
         console.error("Error deleting single conversation:", err.message);
         alert(`خطأ في حذف المحادثة: ${err.message}`);
       } finally {
         deleteSingleConversationBtn.disabled = false;
-        deleteSingleConversationBtn.innerHTML = '<i class="fas fa-trash-alt"></i> حذف هذه المحادثة';
+        deleteSingleConversationBtn.innerHTML =
+          '<i class="fas fa-trash-alt"></i> حذف هذه المحادثة';
       }
     }
 
     async function deleteAllConversationsForChannel() {
       console.log("deleteAllConversationsForChannel called...");
-      if (!confirm(`هل أنت متأكد من حذف جميع محادثات قناة ${currentChannel}؟ لا يمكن التراجع عن هذا الإجراء.`)) return;
+      if (
+        !confirm(
+          `هل أنت متأكد من حذف جميع محادثات قناة ${currentChannel}؟ لا يمكن التراجع عن هذا الإجراء.`
+        )
+      )
+        return;
 
       deleteAllConversationsBtn.disabled = true;
-      deleteAllConversationsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جار الحذف...';
+      deleteAllConversationsBtn.innerHTML =
+        '<i class="fas fa-spinner fa-spin"></i> جار الحذف...';
 
       try {
-        console.log(`Attempting to delete all conversations for bot ${selectedBotId}, channel ${currentChannel}`);
-        await handleApiRequest(`/api/messages/delete-all/${selectedBotId}?type=${currentChannel}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        }, errorMessage, "فشل حذف المحادثات");
+        console.log(
+          `Attempting to delete all conversations for bot ${selectedBotId}, channel ${currentChannel}`
+        );
+        await handleApiRequest(
+          `/api/messages/delete-all/${selectedBotId}?type=${currentChannel}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          },
+          errorMessage,
+          "فشل حذف المحادثات"
+        );
         alert(`تم حذف جميع محادثات قناة ${currentChannel} بنجاح.`);
-        allConversations = [];
+        conversations = [];
         renderConversations();
       } catch (err) {
         console.error("Error deleting all conversations:", err.message);
         alert(`خطأ في حذف المحادثات: ${err.message}`);
       } finally {
         deleteAllConversationsBtn.disabled = false;
-        deleteAllConversationsBtn.innerHTML = '<i class="fas fa-trash-alt"></i> حذف الكل';
+        deleteAllConversationsBtn.innerHTML =
+          '<i class="fas fa-trash-alt"></i> حذف الكل';
       }
     }
 
     async function downloadMessagesForChannel() {
       console.log("downloadMessagesForChannel called...");
       downloadMessagesBtn.disabled = true;
-      downloadMessagesBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جار التنزيل...';
+      downloadMessagesBtn.innerHTML =
+        '<i class="fas fa-spinner fa-spin"></i> جار التنزيل...';
 
       try {
         const params = new URLSearchParams({ type: currentChannel });
-        if (startDateFilter.value) params.set("startDate", startDateFilter.value);
+        if (startDateFilter.value) params.set("startDate", start existeFilter.value);
         if (endDateFilter.value) params.set("endDate", endDateFilter.value);
 
-        const conversationsToDownload = await handleApiRequest(`/api/messages/${selectedBotId}?${params.toString()}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }, errorMessage, "فشل جلب المحادثات للتنزيل");
+        const conversationsToDownload = await handleApiRequest(
+          `/api/messages/${selectedBotId}?${params.toString()}&page=1&limit=1000`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+          errorMessage,
+          "فشل جلب المحادثات للتنزيل"
+        );
 
-        if (!Array.isArray(conversationsToDownload) || conversationsToDownload.length === 0) {
-          alert(`لا توجد محادثات لقناة ${currentChannel} في الفترة المحددة للتنزيل.`);
+        const conversationsArray = conversationsToDownload.conversations || [];
+
+        if (!Array.isArray(conversationsArray) || conversationsArray.length === 0) {
+          alert(
+            `لا توجد محادثات لقناة ${currentChannel} في الفترة المحددة للتنزيل.`
+          );
           return;
         }
 
         let txtContent = `سجل محادثات قناة ${currentChannel} للبوت ${selectedBotId}\n`;
-        txtContent += `الفترة: ${startDateFilter.value || 'البداية'} إلى ${endDateFilter.value || 'النهاية'}\n`;
+        txtContent += `الفترة: ${startDateFilter.value || "البداية"} إلى ${
+          endDateFilter.value || "النهاية"
+        }\n`;
         txtContent += "========================================\n\n";
 
-        conversationsToDownload.forEach((conv, index) => {
-          let userName = userNamesCache[conv._id] || conv.username || conv.userId || `مستخدم ${index + 1}`;
+        conversationsArray.forEach((conv, index) => {
+          let userName =
+            userNamesCache[conv._id] ||
+            conv.username ||
+            conv.userId ||
+            `مستخدم ${index + 1}`;
           txtContent += `--- محادثة مع: ${userName} (ID: ${conv.userId}) ---\n`;
-          conv.messages.forEach(msg => {
+          conv.messages.forEach((msg) => {
             const role = msg.role === "user" ? "المستخدم" : "البوت";
             const timestamp = new Date(msg.timestamp).toLocaleString("ar-EG");
             txtContent += `[${timestamp}] ${role}: ${msg.content}\n`;
@@ -467,7 +584,9 @@ try {
         const link = document.createElement("a");
         const url = URL.createObjectURL(blob);
         link.setAttribute("href", url);
-        const filename = `محادثات_${currentChannel}_${selectedBotId}_${new Date().toISOString().split("T")[0]}.txt`;
+        const filename = `محادثات_${currentChannel}_${selectedBotId}_${new Date()
+          .toISOString()
+          .split("T")[0]}.txt`;
         link.setAttribute("download", filename);
         link.style.visibility = "hidden";
         document.body.appendChild(link);
@@ -514,7 +633,9 @@ try {
       const editArea = saveButton.closest(".edit-area");
       const textarea = editArea.querySelector(".edit-textarea");
       const messageActions = editArea.previousElementSibling;
-      const editButton = messageActions ? messageActions.querySelector(".edit-rule-btn") : null;
+      const editButton = messageActions
+        ? messageActions.querySelector(".edit-rule-btn")
+        : null;
 
       if (!editButton) {
         alert("خطأ: لم يتم العثور على زر التعديل الأصلي.");
@@ -535,19 +656,24 @@ try {
       if (cancelButton) cancelButton.disabled = true;
 
       try {
-        await handleApiRequest("/api/rules", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+        await handleApiRequest(
+          "/api/rules",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              botId: selectedBotId,
+              type: "qa",
+              content: { question: question, answer: editedAnswer },
+              channel: currentChannel,
+            }),
           },
-          body: JSON.stringify({
-            botId: selectedBotId,
-            type: "qa",
-            content: { question: question, answer: editedAnswer },
-            channel: currentChannel
-          }),
-        }, errorMessage, "فشل حفظ القاعدة");
+          errorMessage,
+          "فشل حفظ القاعدة"
+        );
         alert("تم حفظ القاعدة الجديدة بنجاح!");
         editArea.style.display = "none";
         if (messageActions) messageActions.style.display = "block";
@@ -556,7 +682,8 @@ try {
         alert(`خطأ في حفظ القاعدة: ${err.message}`);
       } finally {
         saveButton.disabled = false;
-        saveButton.innerHTML = '<i class="fas fa-save"></i> حفظ كقاعدة جديدة';
+        saveButton.innerHTML =
+          '<i class="fas fa-save"></i> حفظ كقاعدة جديدة';
         if (cancelButton) cancelButton.disabled = false;
       }
     }
@@ -578,26 +705,41 @@ try {
       }
     }
 
-    tabs.forEach(tab => {
+    tabs.forEach((tab) => {
       tab.addEventListener("click", () => {
         console.log("Tab clicked, channel:", tab.dataset.channel);
-        tabs.forEach(t => t.classList.remove("active"));
+        tabs.forEach((t) => t.classList.remove("active"));
         tab.classList.add("active");
         currentChannel = tab.dataset.channel;
-        fetchConversations(selectedBotId, currentChannel, startDateFilter.value, endDateFilter.value);
+        currentPage = 1; // Reset to first page when changing channel
+        fetchConversations(
+          selectedBotId,
+          currentChannel,
+          startDateFilter.value,
+          endDateFilter.value,
+          currentPage
+        );
       });
     });
 
     applyFilterBtn.addEventListener("click", () => {
       console.log("applyFilterBtn clicked...");
-      fetchConversations(selectedBotId, currentChannel, startDateFilter.value, endDateFilter.value);
+      currentPage = 1; // Reset to first page when applying filters
+      fetchConversations(
+        selectedBotId,
+        currentChannel,
+        startDateFilter.value,
+        endDateFilter.value,
+        currentPage
+      );
     });
 
     resetFilterBtn.addEventListener("click", () => {
       console.log("resetFilterBtn clicked...");
       startDateFilter.value = "";
       endDateFilter.value = "";
-      fetchConversations(selectedBotId, currentChannel, null, null);
+      currentPage = 1; // Reset to first page when resetting filters
+      fetchConversations(selectedBotId, currentChannel, null, null, currentPage);
     });
 
     closeChatModalBtn.addEventListener("click", closeChatModal);
@@ -621,7 +763,7 @@ try {
     });
 
     console.log("Calling fetchConversations for initial load...");
-    fetchConversations(selectedBotId, currentChannel, null, null);
+    fetchConversations(selectedBotId, currentChannel, null, null, currentPage);
   };
 
   console.log("loadMessagesPage is defined:", typeof window.loadMessagesPage);
@@ -634,11 +776,11 @@ function escapeHtml(unsafe) {
   console.log("escapeHtml called...");
   if (typeof unsafe !== "string") return unsafe;
   return unsafe
-       .replace(/&/g, "&amp;")
-       .replace(/</g, "&lt;")
-       .replace(/>/g, "&gt;")
-       .replace(/"/g, "&quot;")
-       .replace(/\n/g, "<br>");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/\n/g, "<br>");
 }
 
 console.log("messages.js script finished loading at", new Date().toISOString());
