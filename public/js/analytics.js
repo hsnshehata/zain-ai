@@ -139,23 +139,29 @@ document.addEventListener('DOMContentLoaded', () => {
           throw new Error('عناصر إحصائيات الرسائل غير موجودة');
         }
 
-        const channels = ['facebook', 'web', 'instagram'];
+        const channels = ['facebook', 'web', 'instagram', 'whatsapp'];
         const messagesByChannelData = {
           facebook: { userMessages: 0, botMessages: 0 },
           web: { userMessages: 0, botMessages: 0 },
-          instagram: { userMessages: 0, botMessages: 0 }
+          instagram: { userMessages: 0, botMessages: 0 },
+          whatsapp: { userMessages: 0, botMessages: 0 }
         };
 
         for (const channel of channels) {
           const query = new URLSearchParams({
-            type: channel,
+            type: channel, // هنا بنستخدم type اللي بيترجم لـ channel في الـ API
+            page: 1,
+            limit: 1000, // نجيب كل المحادثات مرة واحدة (يمكن تقليله لو البيانات كبيرة)
             ...(startDate && { startDate }),
             ...(endDate && { endDate }),
           });
           console.log(`Fetching messages for channel ${channel} with query: ${query.toString()}`);
-          const conversations = await handleApiRequest(`/api/messages/${botId}?${query}`, {
+          const response = await handleApiRequest(`/api/messages/${botId}?${query}`, {
             headers: { Authorization: `Bearer ${token}` },
           }, messagesByChannelError, `فشل في جلب رسائل ${channel}`);
+
+          // التأكد إن response.conversations موجود
+          const conversations = response.conversations || [];
 
           let userMessageCount = 0;
           let botMessageCount = 0;
@@ -168,8 +174,8 @@ document.addEventListener('DOMContentLoaded', () => {
           console.log(`Messages for ${channel}: user=${userMessageCount}, bot=${botMessageCount}`);
         }
 
-        const totalUserMessages = messagesByChannelData.facebook.userMessages + messagesByChannelData.web.userMessages + messagesByChannelData.instagram.userMessages;
-        const totalBotMessages = messagesByChannelData.facebook.botMessages + messagesByChannelData.web.botMessages + messagesByChannelData.instagram.botMessages;
+        const totalUserMessages = messagesByChannelData.facebook.userMessages + messagesByChannelData.web.userMessages + messagesByChannelData.instagram.userMessages + messagesByChannelData.whatsapp.userMessages;
+        const totalBotMessages = messagesByChannelData.facebook.botMessages + messagesByChannelData.web.botMessages + messagesByChannelData.instagram.botMessages + messagesByChannelData.whatsapp.botMessages;
         const totalMessages = totalUserMessages + totalBotMessages;
 
         // عرض الإحصائيات النصية لتوزيع الرسائل
@@ -199,6 +205,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <li>الإجمالي: ${messagesByChannelData.instagram.userMessages + messagesByChannelData.instagram.botMessages}</li>
               </ul>
             </li>
+            <li>رسائل واتساب:
+              <ul>
+                <li>رسائل المستخدمين: ${messagesByChannelData.whatsapp.userMessages}</li>
+                <li>ردود البوت: ${messagesByChannelData.whatsapp.botMessages}</li>
+                <li>الإجمالي: ${messagesByChannelData.whatsapp.userMessages + messagesByChannelData.whatsapp.botMessages}</li>
+              </ul>
+            </li>
           </ul>
         `;
 
@@ -222,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
           ...(endDate && { endDate }),
         });
         console.log(`Fetching daily messages with query: ${dailyQuery.toString()}`);
-        const dailyData = await handleApiRequest(`/api/messages/daily/${botId}?${dailyQuery}&role=assistant`, {
+        const dailyData = await handleApiRequest(`/api/messages/daily/${botId}?${dailyQuery}`, {
           headers: { Authorization: `Bearer ${token}` },
         }, dailyMessagesError, 'فشل في جلب معدل الرسائل يوميًا');
 
@@ -236,13 +249,13 @@ document.addEventListener('DOMContentLoaded', () => {
         let dailyStatsHTML = '<ul>';
         filteredData.forEach(item => {
           const date = new Date(item.date).toLocaleDateString("ar-EG");
-          dailyStatsHTML += `<li>${date}: ${item.count} رد من البوت</li>`;
+          dailyStatsHTML += `<li>${date}: ${item.count} رسالة</li>`;
         });
         dailyStatsHTML += '</ul>';
 
         const totalDailyMessages = filteredData.reduce((sum, item) => sum + item.count, 0);
         dailyStatsHTML = `
-          <p>إجمالي ردود البوت في الفترة: ${totalDailyMessages}</p>
+          <p>إجمالي الرسائل في الفترة: ${totalDailyMessages}</p>
           ${dailyStatsHTML}
         `;
 
@@ -293,17 +306,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const feedbackByChannel = {
           facebook: { positive: 0, negative: 0 },
           web: { positive: 0, negative: 0 },
-          instagram: { positive: 0, negative: 0 }
+          instagram: { positive: 0, negative: 0 },
+          whatsapp: { positive: 0, negative: 0 }
         };
 
-        feedbackData.forEach(feedback => {
+        // جلب المحادثات عشان نحدد القناة بناءً على channel
+        for (const feedback of feedbackData) {
+          const conversation = await handleApiRequest(`/api/messages/${botId}?type=facebook&userId=${feedback.userId}&page=1&limit=1`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }, null, null, true); // طلب صامت بدون عرض خطأ
+
           let channel = 'unknown';
-          if (feedback.userId.startsWith('web_') || feedback.userId === 'anonymous') {
-            channel = 'web';
-          } else if (feedback.userId.startsWith('instagram_')) {
-            channel = 'instagram';
+          if (conversation && conversation.conversations && conversation.conversations.length > 0) {
+            channel = conversation.conversations[0].channel || 'unknown';
           } else {
-            channel = 'facebook'; // افتراضي لفيسبوك
+            // لو ما لقيناش المحادثة، نعتمد على البادئات كحل احتياطي
+            if (feedback.userId.startsWith('web_') || feedback.userId === 'anonymous') {
+              channel = 'web';
+            } else if (feedback.userId.startsWith('instagram_')) {
+              channel = 'instagram';
+            } else if (feedback.userId.startsWith('whatsapp_')) {
+              channel = 'whatsapp';
+            } else {
+              channel = 'facebook'; // افتراضي لفيسبوك
+            }
           }
 
           if (feedback.feedback === 'positive') {
@@ -313,7 +339,7 @@ document.addEventListener('DOMContentLoaded', () => {
             negativeCount++;
             feedbackByChannel[channel].negative++;
           }
-        });
+        }
 
         const totalFeedback = positiveCount + negativeCount;
         const positivePercentage = totalFeedback > 0 ? ((positiveCount / totalFeedback) * 100).toFixed(1) : 0;
@@ -344,6 +370,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <li>إيجابية: ${feedbackByChannel.instagram.positive}</li>
                 <li>سلبية: ${feedbackByChannel.instagram.negative}</li>
                 <li>الإجمالي: ${feedbackByChannel.instagram.positive + feedbackByChannel.instagram.negative}</li>
+              </ul>
+            </li>
+            <li>تقييمات واتساب:
+              <ul>
+                <li>إيجابية: ${feedbackByChannel.whatsapp.positive}</li>
+                <li>سلبية: ${feedbackByChannel.whatsapp.negative}</li>
+                <li>الإجمالي: ${feedbackByChannel.whatsapp.positive + feedbackByChannel.whatsapp.negative}</li>
               </ul>
             </li>
           </ul>
@@ -397,6 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
           facebook: { channels: 0 },
           web: { channels: 0 },
           instagram: { channels: 0 },
+          whatsapp: { channels: 0 },
           other: { channels: 0 }
         };
 
@@ -418,6 +452,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 channel = 'instagram';
               } else if (rule.content.platform.toLowerCase().includes('web')) {
                 channel = 'web';
+              } else if (rule.content.platform.toLowerCase().includes('whatsapp')) {
+                channel = 'whatsapp';
               }
             }
             rulesByChannel[channel].channels++;
@@ -444,6 +480,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <li>فيسبوك: ${rulesByChannel.facebook.channels}</li>
             <li>إنستجرام: ${rulesByChannel.instagram.channels}</li>
             <li>ويب: ${rulesByChannel.web.channels}</li>
+            <li>واتساب: ${rulesByChannel.whatsapp.channels}</li>
             <li>أخرى: ${rulesByChannel.other.channels}</li>
           </ul>
         `;
@@ -462,6 +499,26 @@ document.addEventListener('DOMContentLoaded', () => {
           rulesTypeError.textContent = err.message || 'فشل في تحميل إحصائيات القواعد';
           rulesTypeError.style.display = 'block';
         }
+      }
+    }
+
+    // دالة مساعدة للتعامل مع طلبات API مع دعم الطلبات الصامتة
+    async function handleApiRequest(url, options, errorElement, defaultErrorMessage, silent = false) {
+      console.log('handleApiRequest called for URL:', url);
+      try {
+        const response = await fetch(url, options);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || defaultErrorMessage);
+        }
+        return await response.json();
+      } catch (err) {
+        console.error(`Error in API request to ${url}:`, err);
+        if (!silent) {
+          errorElement.textContent = err.message || defaultErrorMessage;
+          errorElement.style.display = "block";
+        }
+        throw err;
       }
     }
   }
