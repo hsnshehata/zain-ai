@@ -1,3 +1,4 @@
+// /server/routes/auth.js
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
@@ -26,15 +27,16 @@ router.post('/register', async (req, res) => {
     return res.status(400).json({ message: 'جميع الحقول مطلوبة', success: false });
   }
   try {
-    const existingUser = await User.findOne({ $or: [{ username }, { email }] });
+    const normalizedUsername = username.toLowerCase(); // تحويل الـ username للحروف الصغيرة
+    const existingUser = await User.findOne({ $or: [{ username: normalizedUsername }, { email }] });
     if (existingUser) {
-      console.log(`❌ Registration failed: Username ${username} or email ${email} already exists`);
+      console.log(`❌ Registration failed: Username ${normalizedUsername} or email ${email} already exists`);
       return res.status(400).json({ message: 'اسم المستخدم أو البريد الإلكتروني موجود بالفعل', success: false });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({
       email,
-      username,
+      username: normalizedUsername, // تخزين الـ username بحروف صغيرة
       password: hashedPassword,
       whatsapp,
       role: 'user',
@@ -124,18 +126,19 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ message: 'اسم المستخدم وكلمة المرور مطلوبان', success: false });
   }
   try {
-    const user = await User.findOne({ username });
+    const normalizedUsername = username.toLowerCase(); // تحويل الـ username للحروف الصغيرة
+    const user = await User.findOne({ username: normalizedUsername });
     if (!user) {
-      console.log(`❌ Login failed: Username ${username} not found`);
+      console.log(`❌ Login failed: Username ${normalizedUsername} not found`);
       return res.status(400).json({ message: 'اسم المستخدم أو كلمة المرور غير صحيحة', success: false });
     }
     if (!user.isVerified) {
-      console.log(`❌ Login failed: Account for ${username} not verified`);
+      console.log(`❌ Login failed: Account for ${normalizedUsername} not verified`);
       return res.status(400).json({ message: 'الحساب غير مفعل، تحقق من بريدك الإلكتروني', success: false });
     }
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      console.log(`❌ Login failed: Incorrect password for username ${username}`);
+      console.log(`❌ Login failed: Incorrect password for username ${normalizedUsername}`);
       return res.status(400).json({ message: 'اسم المستخدم أو كلمة المرور غير صحيحة', success: false });
     }
     const token = jwt.sign(
@@ -143,7 +146,7 @@ router.post('/login', async (req, res) => {
       process.env.JWT_SECRET || 'your_jwt_secret',
       { expiresIn: '30d' } // تغيير لمدة 30 يوم
     );
-    console.log(`✅ Login successful for username ${username}, token valid for 30 days`);
+    console.log(`✅ Login successful for username ${normalizedUsername}, token valid for 30 days`);
     res.status(200).json({ token, role: user.role, userId: user._id, username: user.username, success: true });
   } catch (err) {
     console.error('❌ خطأ في تسجيل الدخول:', err.message, err.stack);
@@ -191,10 +194,11 @@ router.post('/google', async (req, res) => {
         return res.status(400).json({ message: 'البريد الإلكتروني مسجل بالفعل', success: false });
       }
       let username = payload['given_name'] + '_' + payload['family_name'];
-      username = username.toLowerCase().replace(/\s/g, '_');
+      username = username.toLowerCase().replace(/\s/g, '_'); // تحويل الـ username للحروف الصغيرة
       let count = 1;
       while (await User.findOne({ username })) {
         username = `${payload['given_name']}_${payload['family_name']}${count}`;
+        username = username.toLowerCase(); // التأكد من التحويل للحروف الصغيرة
         count++;
       }
       user = new User({
