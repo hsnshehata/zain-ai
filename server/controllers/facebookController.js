@@ -10,6 +10,7 @@ const getTimestamp = () => new Date().toISOString();
 const getFacebookUsername = async (userId, accessToken) => {
   try {
     const cleanUserId = userId.replace(/^(facebook_|facebook_comment_)/, '');
+    console.log(`[${getTimestamp()}] 📋 محاولة جلب اسم المستخدم لـ ${cleanUserId} من فيسبوك باستخدام التوكن: ${accessToken.slice(0, 10)}...`);
     const response = await axios.get(
       `https://graph.facebook.com/v22.0/${cleanUserId}?fields=name&access_token=${accessToken}`
     );
@@ -17,6 +18,7 @@ const getFacebookUsername = async (userId, accessToken) => {
       console.log(`[${getTimestamp()}] ✅ تم جلب اسم المستخدم من فيسبوك: ${response.data.name}`);
       return response.data.name;
     }
+    console.log(`[${getTimestamp()}] ⚠️ لم يتم العثور على الاسم في الاستجابة:`, response.data);
     return cleanUserId;
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم من فيسبوك لـ ${userId}:`, err.message, err.response?.data);
@@ -100,8 +102,8 @@ const handleMessage = async (req, res) => {
             messages: []
           });
           await conversation.save();
-        } else if (!conversation.username) {
-          // لو المحادثة موجودة بس مافيش username، نحدثه
+        } else if (!conversation.username || conversation.username === "مستخدم فيسبوك") {
+          // لو الـ username مش موجود أو قيمته مش كويسة، نحدثه
           conversation.username = username;
           await conversation.save();
         }
@@ -249,8 +251,8 @@ const handleMessage = async (req, res) => {
                 messages: []
               });
               await conversation.save();
-            } else if (!conversation.username) {
-              // لو المحادثة موجودة بس مافيش username، نحدثه
+            } else if (!conversation.username || conversation.username === "مستخدم فيسبوك") {
+              // لو الـ username مش موجود أو قيمته مش كويسة، نحدثه
               conversation.username = username;
               await conversation.save();
             }
