@@ -29,6 +29,7 @@ const bcrypt = require('bcryptjs');
 const request = require('request');
 const { checkAutoStopBots, refreshInstagramTokens } = require('./cronJobs');
 const authenticate = require('./middleware/authenticate');
+const fs = require('fs'); // إضافة fs للتعامل مع ملفات flag
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
@@ -196,6 +197,56 @@ app.post('/api/bot/ai', async (req, res) => {
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error in AI route | User: ${req.body.userId || 'N/A'} | Bot: ${req.body.botId || 'N/A'}`, err.message, err.stack);
     res.status(500).json({ message: 'Failed to process AI request' });
+  }
+});
+
+// Route مؤقت لتحويل usernames للحروف الصغيرة
+app.get('/api/normalize-usernames', authenticate, async (req, res) => {
+  try {
+    // التأكد إن المستخدم superadmin
+    if (req.user.role !== 'superadmin') {
+      console.log(`[${getTimestamp()}] ❌ Unauthorized attempt to normalize usernames by user: ${req.user.userId}`);
+      return res.status(403).json({ message: 'غير مصرح لك بتنفيذ هذه العملية' });
+    }
+
+    // التحقق إذا كان السكربت نفّذ قبل كده
+    const flagFilePath = path.join(__dirname, 'normalize-usernames.flag');
+    if (fs.existsSync(flagFilePath)) {
+      console.log(`[${getTimestamp()}] ⚠️ Normalize usernames already executed previously`);
+      return res.status(400).json({ message: 'تم تنفيذ تحويل أسماء المستخدمين مسبقًا' });
+    }
+
+    // تنفيذ السكربت
+    console.log(`[${getTimestamp()}] ✅ Starting username normalization...`);
+    const users = await User.find();
+    let updatedCount = 0;
+
+    for (const user of users) {
+      const normalizedUsername = user.username.toLowerCase();
+      if (user.username !== normalizedUsername) {
+        // التحقق من عدم وجود تكرار
+        const existingUser = await User.findOne({ username: normalizedUsername, _id: { $ne: user._id } });
+        if (existingUser) {
+          console.warn(`[${getTimestamp()}] ⚠️ Skipped user ${user.username}: normalized username ${normalizedUsername} already exists`);
+          continue;
+        }
+        user.username = normalizedUsername;
+        await user.save();
+        updatedCount++;
+      }
+    }
+
+    // إنشاء ملف flag لمنع إعادة التنفيذ
+    fs.writeFileSync(flagFilePath, new Date().toISOString());
+    console.log(`[${getTimestamp()}] ✅ Username normalization completed: ${updatedCount} users updated`);
+
+    res.status(200).json({
+      message: 'تم تحويل أسماء المستخدمين إلى حروف صغيرة بنجاح',
+      updatedCount
+    });
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Error during username normalization:`, err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في تحويل أسماء المستخدمين', error: err.message });
   }
 });
 
