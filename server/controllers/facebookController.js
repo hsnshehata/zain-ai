@@ -101,7 +101,7 @@ const handleMessage = async (req, res) => {
           const editedMessage = webhookEvent.message_edit.message;
           const mid = editedMessage.mid || `temp_${Date.now()}`;
           console.log(`📩 Processing message edit event from ${prefixedSenderId}: ${editedMessage.text}`);
-          const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid);
+          const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid, 'facebook');
           await sendMessage(senderPsid, responseText, bot.facebookApiKey);
           continue;
         } else if (webhookEvent.message_edit && !bot.messageEditsEnabled) {
@@ -119,15 +119,15 @@ const handleMessage = async (req, res) => {
 
           if (message.text) {
             console.log(`📝 Text message received from ${prefixedSenderId}: ${message.text}`);
-            responseText = await processMessage(bot._id, prefixedSenderId, message.text, false, false, mid);
+            responseText = await processMessage(bot._id, prefixedSenderId, message.text, false, false, mid, 'facebook');
           } else if (message.attachments) {
             const attachment = message.attachments[0];
             if (attachment.type === 'image') {
               console.log(`🖼️ Image received from ${prefixedSenderId}: ${attachment.payload.url}`);
-              responseText = await processMessage(bot._id, prefixedSenderId, attachment.payload.url, true, false, mid);
+              responseText = await processMessage(bot._id, prefixedSenderId, attachment.payload.url, true, false, mid, 'facebook');
             } else if (attachment.type === 'audio') {
               console.log(`🎙️ Audio received from ${prefixedSenderId}: ${attachment.payload.url}`);
-              responseText = await processMessage(bot._id, prefixedSenderId, attachment.payload.url, false, true, mid);
+              responseText = await processMessage(bot._id, prefixedSenderId, attachment.payload.url, false, true, mid, 'facebook');
             } else {
               console.log(`📎 Unsupported attachment type from ${prefixedSenderId}: ${attachment.type}`);
               responseText = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
@@ -187,7 +187,7 @@ const handleMessage = async (req, res) => {
 
             console.log(`💬 Comment received on post ${postId} from ${commenterName} (${prefixedCommenterId}): ${message}`);
 
-            const responseText = await processMessage(bot._id, prefixedCommenterId, message, false, false, `comment_${commentId}`);
+            const responseText = await processMessage(bot._id, prefixedCommenterId, message, false, false, `comment_${commentId}`, 'facebook');
             await replyToComment(commentId, responseText, bot.facebookApiKey);
           } else {
             console.log('❌ Not a comment event or not an "add" verb:', change);
