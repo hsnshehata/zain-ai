@@ -6,6 +6,24 @@ const { processMessage, processFeedback } = require('../botEngine');
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
 
+// دالة لجلب اسم المستخدم من فيسبوك
+const getFacebookUsername = async (userId, accessToken) => {
+  try {
+    const cleanUserId = userId.replace(/^(facebook_|facebook_comment_)/, '');
+    const response = await axios.get(
+      `https://graph.facebook.com/v22.0/${cleanUserId}?fields=name&access_token=${accessToken}`
+    );
+    if (response.data.name) {
+      console.log(`[${getTimestamp()}] ✅ تم جلب اسم المستخدم من فيسبوك: ${response.data.name}`);
+      return response.data.name;
+    }
+    return cleanUserId;
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم من فيسبوك لـ ${userId}:`, err.message, err.response?.data);
+    return userId.replace(/^(facebook_|facebook_comment_)/, '');
+  }
+};
+
 const handleMessage = async (req, res) => {
   try {
     console.log('📩 Webhook POST request received:', JSON.stringify(req.body, null, 2));
@@ -61,6 +79,31 @@ const handleMessage = async (req, res) => {
         if (webhookEvent.message && webhookEvent.message.is_echo) {
           console.log(`⚠️ Ignoring echo message from bot: ${webhookEvent.message.text}`);
           continue;
+        }
+
+        // جلب اسم المستخدم من فيسبوك
+        const username = await getFacebookUsername(prefixedSenderId, bot.facebookApiKey);
+
+        // إنشاء أو تحديث المحادثة
+        let conversation = await Conversation.findOne({
+          botId: bot._id,
+          channel: 'facebook',
+          userId: prefixedSenderId
+        });
+
+        if (!conversation) {
+          conversation = new Conversation({
+            botId: bot._id,
+            channel: 'facebook',
+            userId: prefixedSenderId,
+            username: username, // حفظ اسم المستخدم
+            messages: []
+          });
+          await conversation.save();
+        } else if (!conversation.username) {
+          // لو المحادثة موجودة بس مافيش username، نحدثه
+          conversation.username = username;
+          await conversation.save();
         }
 
         // معالجة رسائل الترحيب (messaging_optins)
@@ -185,7 +228,32 @@ const handleMessage = async (req, res) => {
               continue;
             }
 
+            // جلب اسم المستخدم من فيسبوك
+            const username = await getFacebookUsername(prefixedCommenterId, bot.facebookApiKey);
+
             console.log(`💬 Comment received on post ${postId} from ${commenterName} (${prefixedCommenterId}): ${message}`);
+
+            // إنشاء أو تحديث المحادثة
+            let conversation = await Conversation.findOne({
+              botId: bot._id,
+              channel: 'facebook',
+              userId: prefixedCommenterId
+            });
+
+            if (!conversation) {
+              conversation = new Conversation({
+                botId: bot._id,
+                channel: 'facebook',
+                userId: prefixedCommenterId,
+                username: username, // حفظ اسم المستخدم
+                messages: []
+              });
+              await conversation.save();
+            } else if (!conversation.username) {
+              // لو المحادثة موجودة بس مافيش username، نحدثه
+              conversation.username = username;
+              await conversation.save();
+            }
 
             const responseText = await processMessage(bot._id, prefixedCommenterId, message, false, false, `comment_${commentId}`, 'facebook');
             await replyToComment(commentId, responseText, bot.facebookApiKey);
