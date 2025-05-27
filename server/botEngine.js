@@ -44,14 +44,14 @@ async function transcribeAudio(audioUrl) {
   }
 }
 
-async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null) {
+async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'unknown') {
   try {
-    console.log('🤖 Processing message for bot:', botId, 'user:', userId, 'message:', message);
+    console.log('🤖 Processing message for bot:', botId, 'user:', userId, 'message:', message, 'channel:', channel);
 
-    let conversation = await Conversation.findOne({ botId, userId });
+    let conversation = await Conversation.findOne({ botId, userId, channel });
     if (!conversation) {
-      console.log('📋 Creating new conversation for bot:', botId, 'user:', userId);
-      conversation = await Conversation.create({ botId, userId, messages: [] });
+      console.log('📋 Creating new conversation for bot:', botId, 'user:', userId, 'channel:', channel);
+      conversation = await Conversation.create({ botId, userId, channel, messages: [] });
     } else {
       console.log('📋 Found existing conversation:', conversation._id);
     }
