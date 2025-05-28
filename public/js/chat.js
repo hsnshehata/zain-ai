@@ -1,3 +1,6 @@
+// public/js/chat.js
+import { v4 as uuidv4 } from 'uuid'; // إضافة مكتبة uuid
+
 document.addEventListener('DOMContentLoaded', async () => {
   const linkId = window.location.pathname.split('/').pop();
   const chatMessages = document.getElementById('chatMessages');
@@ -14,6 +17,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   let settings = {};
   let messageCounter = 0;
   let lastFeedbackButtons = null;
+  let userId = localStorage.getItem('webUserId') || `web_${uuidv4()}`; // توليد معرّف فريد
+
+  // تخزين المعرّف في localStorage لو أول مرة
+  if (!localStorage.getItem('webUserId')) {
+    localStorage.setItem('webUserId', userId);
+  }
 
   try {
     const response = await fetch(`/api/chat-page/${linkId}`);
@@ -166,7 +175,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function submitFeedback(messageId, messageContent, feedback) {
     try {
       const type = feedback === 'positive' ? 'like' : 'dislike';
-      const userId = `web_${linkId}`;
 
       const response = await fetch('/api/feedback', {
         method: 'POST',
@@ -209,7 +217,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       (trimmedText.startsWith('<') && trimmedText.includes('>') && trimmedText.match(/<[a-zA-Z][^>]*>/)) ||
       trimmedText.match(/\b(function|const|let|var|=>|class)\b/i) ||
       (trimmedText.match(/{[^{}]*}/) && trimmedText.match(/:/)) ||
-      (trimmedText.match(/[{}$$                  $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
+      (trimmedText.match(/[{}$$                      $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
     );
   }
 
@@ -248,6 +256,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
         body: JSON.stringify({
           botId,
+          userId, // إرسال المعرّف الفريد
           message: isImage ? imageData.imageUrl : message,
           isImage,
         }),
