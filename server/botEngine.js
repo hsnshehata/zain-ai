@@ -55,7 +55,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         finalUserId = `web_${uuidv4()}`;
         console.log(`📋 Generated new userId for web user: ${finalUserId}`);
       } else {
-        finalUserId = userId || `unknown_${Date.now()}`;
+        finalUserId = userId || `unknown_${uuidv4()}`;
       }
     }
 
@@ -74,8 +74,10 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         messages: [],
         username: finalChannel === 'web' ? `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}` : undefined 
       });
-    } else {
-      console.log('📋 Found existing conversation:', conversation._id);
+    } else if (finalChannel === 'web' && !conversation.username) {
+      // تحديث username لو مش موجود للويب
+      conversation.username = `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}`;
+      await conversation.save();
     }
 
     const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
@@ -115,7 +117,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       role: 'user', 
       content: userMessageContent, 
       timestamp: new Date(),
-      messageId: messageId || `msg_${Date.now()}` 
+      messageId: messageId || `msg_${uuidv4()}` // استخدام UUID لضمان التفرد
     });
 
     await conversation.save();
@@ -192,7 +194,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     }
 
     // حفظ رد البوت
-    const responseMessageId = `response_${messageId || Date.now()}`;
+    const responseMessageId = `response_${messageId || uuidv4()}`; // استخدام UUID لضمان التفرد
     conversation.messages.push({ 
       role: 'assistant', 
       content: reply, 
