@@ -10,25 +10,24 @@
 </head>
 <body>
   <div class="chat-container">
-    <div id="chatHeader" class="chat-header">
-      <img id="chatLogo" src="" alt="Logo" style="display: none;">
-      <h2 id="chatTitle">صفحة الدردشة</h2>
-    </div>
-    <div id="chatMessages" class="chat-messages"></div>
-    <div id="suggestedQuestions" class="suggested-questions" style="display: none;"></div>
-    <div class="chat-input">
-      <input type="text" id="messageInput" placeholder="اكتب رسالتك هنا..." class="form-control">
-      <div class="input-actions">
-        <label for="imageInput" id="imageInputBtn" class="btn btn-secondary btn-sm" style="display: none;">
-          <i class="fas fa-image"></i>
-          <input type="file" id="imageInput" accept="image/*" style="display: none;">
-        </label>
-        <button id="sendMessageBtn" class="btn btn-primary btn-sm">
-          <i class="fas fa-paper-plane"></i> 
-        </button>
+    <header id="chatHeader">
+      <div class="header-content">
+        <img id="chatLogo" src="" alt="Logo" style="display: none;">
+        <h1 id="chatTitle">صفحة الدردشة</h1>
       </div>
+    </header>
+    <div id="suggestedQuestions" style="display: none;"></div>
+    <div id="chatMessages"></div>
+    <div class="chat-input">
+      <input type="text" id="messageInput" placeholder="اكتب رسالتك...">
+      <label for="imageInput" id="imageInputBtn" class="image-input-btn">
+        <i class="fas fa-image"></i>
+        <input type="file" id="imageInput" accept="image/*" style="display: none;">
+      </label>
+      <button id="sendMessageBtn"><i class="fas fa-arrow-up"></i></button>
     </div>
   </div>
+</div>
 
   <!-- تحميل مكتبة uuid من CDN -->
   <script defer src="https://cdn.jsdelivr.net/npm/uuid@9.0.1/dist/umd/uuidv4.min.js"></script>
