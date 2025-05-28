@@ -3,36 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Cache Control Meta Tags -->
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
   <title>صفحة الدردشة</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <link rel="stylesheet" href="/css/chat.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style id="customStyles"></style>
 </head>
 <body>
   <div class="chat-container">
-    <header id="chatHeader">
-      <div class="header-content">
-        <img id="chatLogo" src="" alt="Logo" style="display: none;">
-        <h1 id="chatTitle">صفحة الدردشة</h1>
-      </div>
-    </header>
-    <div id="suggestedQuestions" style="display: none;"></div>
-    <div id="chatMessages"></div>
+    <div id="chatHeader" class="chat-header">
+      <img id="chatLogo" src="" alt="Logo" style="display: none;">
+      <h2 id="chatTitle">صفحة الدردشة</h2>
+    </div>
+    <div id="chatMessages" class="chat-messages"></div>
+    <div id="suggestedQuestions" class="suggested-questions" style="display: none;"></div>
     <div class="chat-input">
-      <input type="text" id="messageInput" placeholder="اكتب رسالتك...">
-      <label for="imageInput" id="imageInputBtn" class="image-input-btn">
-        <i class="fas fa-image"></i>
-        <input type="file" id="imageInput" accept="image/*" style="display: none;">
-      </label>
-      <button id="sendMessageBtn"><i class="fas fa-arrow-up"></i></button>
+      <input type="text" id="messageInput" placeholder="اكتب رسالتك هنا..." class="form-control">
+      <div class="input-actions">
+        <label for="imageInput" id="imageInputBtn" class="btn btn-secondary btn-sm" style="display: none;">
+          <i class="fas fa-image"></i>
+          <input type="file" id="imageInput" accept="image/*" style="display: none;">
+        </label>
+        <button id="sendMessageBtn" class="btn btn-primary btn-sm">
+          <i class="fas fa-paper-plane"></i> إرسال
+        </button>
+      </div>
     </div>
   </div>
+
+  <!-- تحميل مكتبة uuid من CDN -->
   <script src="https://unpkg.com/uuid@latest/dist/umd/uuidv4.min.js"></script>
-  <script src="/js/chat.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'937c62ce3ad8bd28',t:'MTc0NTkwNDQwMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93e0006b3aaeb00d',t:'MTc0Njk0ODk0Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+  <!-- تحميل utils.js (كسكربت عادي لأنه مش module) -->
+  <script src="/js/utils.js"></script>
+  <!-- تحميل chat.js كموديول -->
+  <script type="module" src="/js/chat.js"></script>
+</body>
 </html>
