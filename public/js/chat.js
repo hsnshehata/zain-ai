@@ -1,6 +1,4 @@
 // public/js/chat.js
-import { v4 as uuidv4 } from 'uuid'; // إضافة مكتبة uuid
-
 document.addEventListener('DOMContentLoaded', async () => {
   const linkId = window.location.pathname.split('/').pop();
   const chatMessages = document.getElementById('chatMessages');
@@ -17,7 +15,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   let settings = {};
   let messageCounter = 0;
   let lastFeedbackButtons = null;
-  let userId = localStorage.getItem('webUserId') || `web_${uuidv4()}`; // توليد معرّف فريد
+  let userId = localStorage.getItem('webUserId') || `web_${uuidv4()}`; // استخدام uuidv4 من CDN
 
   // تخزين المعرّف في localStorage لو أول مرة
   if (!localStorage.getItem('webUserId')) {
@@ -46,8 +44,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (settings.headerHidden) {
       chatHeader.style.display = 'none';
     }
-
-    const isInIframe = window.self !== window.top;
 
     customStyles.textContent = `
       body {
@@ -217,7 +213,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       (trimmedText.startsWith('<') && trimmedText.includes('>') && trimmedText.match(/<[a-zA-Z][^>]*>/)) ||
       trimmedText.match(/\b(function|const|let|var|=>|class)\b/i) ||
       (trimmedText.match(/{[^{}]*}/) && trimmedText.match(/:/)) ||
-      (trimmedText.match(/[{}$$                      $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
+      (trimmedText.match(/[{}$$                          $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
     );
   }
 
@@ -256,7 +252,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         },
         body: JSON.stringify({
           botId,
-          userId, // إرسال المعرّف الفريد
+          userId,
           message: isImage ? imageData.imageUrl : message,
           isImage,
         }),
