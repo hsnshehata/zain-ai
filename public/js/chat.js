@@ -107,6 +107,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         font-size: 1.2em;
         cursor: pointer;
       }
+      .link-button {
+        display: inline-block;
+        background-color: #6AB04C;
+        color: #ffffff;
+        padding: 5px 10px;
+        border-radius: 4px;
+        text-decoration: none;
+        margin: 5px 0;
+      }
+      .link-button i {
+        margin-left: 5px;
+      }
     `;
 
     if (settings.suggestedQuestionsEnabled && settings.suggestedQuestions?.length > 1) {
@@ -207,23 +219,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
-  function isCodeResponse(text) {
-    const trimmedText = text.trim();
-    return (
-      trimmedText.includes('```') ||
-      (trimmedText.startsWith('<') && trimmedText.includes('>') && trimmedText.match(/<[a-zA-Z][^>]*>/)) ||
-      trimmedText.match(/\b(function|const|let|var|=>|class)\b/i) ||
-      (trimmedText.match(/{[^{}]*}/) && trimmedText.match(/:/)) ||
-      (trimmedText.match(/[{}$$                          $$;]/) && trimmedText.match(/\b[a-zA-Z0-9_]+\s*=/))
-    );
-  }
-
-  function extractCode(text) {
-    const codeBlockMatch = text.match(/```[\s\S]*?```/g);
-    if (codeBlockMatch) {
-      return codeBlockMatch.map(block => block.replace(/```/g, '').trim()).join('\n');
-    }
-    return text.trim();
+  function convertLinksToButtons(text) {
+    // Regex لإيجاد الروابط (http:// أو https://)
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.replace(urlRegex, (url) => {
+      return `<a href="${url}" target="_blank" class="link-button">اضغط هنا <i class="fas fa-external-link-alt"></i></a>`;
+    });
   }
 
   async function sendMessage(message, isImage = false, imageData = null) {
@@ -264,41 +265,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       botMessageDiv.className = 'message bot-message';
       botMessageDiv.setAttribute('data-message-id', messageId);
 
-      if (isCodeResponse(response.reply)) {
-        const codeText = extractCode(response.reply);
-        const codeContainer = document.createElement('div');
-        codeContainer.className = 'code-block-container';
-
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'copy-btn';
-        copyBtn.textContent = 'نسخ';
-        copyBtn.addEventListener('click', async () => {
-          try {
-            await navigator.clipboard.writeText(codeText);
-            copyBtn.textContent = 'تم النسخ!';
-            setTimeout(() => (copyBtn.textContent = 'نسخ'), 2000);
-          } catch (err) {
-            console.error('خطأ في النسخ:', err);
-          }
-        });
-
-        const pre = document.createElement('pre');
-        const code = document.createElement('code');
-        code.appendChild(document.createTextNode(codeText));
-        pre.appendChild(code);
-        codeContainer.appendChild(copyBtn);
-        codeContainer.appendChild(pre);
-        botMessageDiv.appendChild(codeContainer);
-
-        const nonCodeText = response.reply.replace(/```[\s\S]*?```/g, '').trim();
-        if (nonCodeText && !isCodeResponse(nonCodeText)) {
-          const nonCodeDiv = document.createElement('div');
-          nonCodeDiv.appendChild(document.createTextNode(nonCodeText));
-          botMessageDiv.appendChild(nonCodeDiv);
-        }
-      } else {
-        botMessageDiv.appendChild(document.createTextNode(response.reply || 'رد البوت'));
-      }
+      // تحويل الروابط في الرد لأزرار
+      const replyHtml = convertLinksToButtons(response.reply || 'رد البوت');
+      botMessageDiv.innerHTML = replyHtml;
 
       const feedbackButtons = document.createElement('div');
       feedbackButtons.className = 'feedback-buttons';
@@ -312,7 +281,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const badBtn = document.createElement('button');
       badBtn.className = 'feedback-btn bad';
       badBtn.setAttribute('data-message-id', messageId);
-      badBtn.setAttribute('data-message-content', response.reply || 'رد البوت');
+      goodBtn.setAttribute('data-message-content', response.reply || 'رد البوت');
       badBtn.appendChild(document.createTextNode('👎'));
 
       feedbackButtons.appendChild(goodBtn);
