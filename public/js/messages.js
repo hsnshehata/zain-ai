@@ -204,9 +204,10 @@ try {
       let userIdentifier = conv.userId;
       let iconClass = "fas fa-envelope";
 
-      if (currentChannel === "web" && conv.userId === "anonymous") {
-        userName = `زائر ويب ${webUserCounter++}`;
-        userIdentifier = `web-${webUserCounter - 1}`;
+      if (currentChannel === "web") {
+        userName = conv.username || `زائر ويب ${webUserCounter++}`;
+        userIdentifier = conv.userId.replace("web_", "web-");
+        iconClass = "fas fa-globe";
       } else if (currentChannel === "instagram") {
         if (conv.userId.startsWith("instagram_comment_")) {
           userName =
