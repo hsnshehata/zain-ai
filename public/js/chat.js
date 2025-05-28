@@ -15,7 +15,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   let settings = {};
   let messageCounter = 0;
   let lastFeedbackButtons = null;
-  let userId = localStorage.getItem('webUserId') || `web_${uuidv4()}`; // استخدام uuidv4 من CDN
+
+  // فحص إذا كان uuidv4 موجود، وإلا نستخدم fallback
+  const generateUUID = () => {
+    if (typeof window.uuidv4 === 'function') {
+      return window.uuidv4();
+    }
+    // Fallback: توليد معرّف بسيط باستخدام Date.now و Math.random
+    console.warn('uuidv4 غير متوفّر، بستخدم fallback لتوليد UUID');
+    return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
+  };
+
+  let userId = localStorage.getItem('webUserId') || `web_${generateUUID()}`;
 
   // تخزين المعرّف في localStorage لو أول مرة
   if (!localStorage.getItem('webUserId')) {
@@ -23,11 +34,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   try {
-    const response = await fetch(`/api/chat-page/${linkId}`);
-    if (!response.ok) {
-      throw new Error(`فشل في جلب إعدادات الصفحة: ${response.status} ${response.statusText}`);
+    const response = await window.handleApiRequest(`/api/chat-page/${linkId}`);
+    if (!response) {
+      throw new Error('فشل في جلب إعدادات الصفحة');
     }
-    settings = await response.json();
+    settings = response;
     botId = settings.botId;
 
     console.log('🔍 Settings loaded:', settings);
@@ -56,7 +67,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         background-color: ${settings?.colors?.header || '#2D3436'};
       }
       #chatTitle {
-        color: ${settings?.titleColor || '#ffffff'};
+        color: ${settings?.colors?.titleColor || '#ffffff'};
       }
       #chatMessages {
         background-color: ${settings?.colors?.chatAreaBackground || '#3B4A4E'};
@@ -151,17 +162,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     formData.append('image', file);
 
     try {
-      const response = await fetch('/api/upload', {
+      const response = await window.handleApiRequest('/api/upload', {
         method: 'POST',
         body: formData,
       });
 
-      if (!response.ok) {
-        throw new Error(`فشل في رفع الصورة: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      return { imageUrl: data.imageUrl, thumbUrl: data.thumbUrl };
+      return response;
     } catch (err) {
       console.error('خطأ في رفع الصورة:', err);
       throw err;
@@ -172,7 +178,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       const type = feedback === 'positive' ? 'like' : 'dislike';
 
-      const response = await fetch('/api/feedback', {
+      await window.handleApiRequest('/api/feedback', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -185,11 +191,6 @@ document.addEventListener('DOMContentLoaded', async () => {
           messageContent,
         }),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(`فشل في إرسال التقييم: ${errorData.message || response.statusText}`);
-      }
 
       console.log(`✅ Feedback submitted: ${type} for message ID: ${messageId}`);
       alert(`تم تسجيل التقييم بنجاح: ${type === 'like' ? 'لايك' : 'ديسلايك'}`);
@@ -245,7 +246,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
     try {
-      const response = await fetch('/api/bot', {
+      const response = await window.handleApiRequest('/api/bot', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -258,18 +259,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         }),
       });
 
-      if (!response.ok) {
-        throw new Error(`فشل في إرسال الرسالة: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
       const messageId = `msg_${messageCounter++}`;
       const botMessageDiv = document.createElement('div');
       botMessageDiv.className = 'message bot-message';
       botMessageDiv.setAttribute('data-message-id', messageId);
 
-      if (isCodeResponse(data.reply)) {
-        const codeText = extractCode(data.reply);
+      if (isCodeResponse(response.reply)) {
+        const codeText = extractCode(response.reply);
         const codeContainer = document.createElement('div');
         codeContainer.className = 'code-block-container';
 
@@ -294,14 +290,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         codeContainer.appendChild(pre);
         botMessageDiv.appendChild(codeContainer);
 
-        const nonCodeText = data.reply.replace(/```[\s\S]*?```/g, '').trim();
+        const nonCodeText = response.reply.replace(/```[\s\S]*?```/g, '').trim();
         if (nonCodeText && !isCodeResponse(nonCodeText)) {
           const nonCodeDiv = document.createElement('div');
           nonCodeDiv.appendChild(document.createTextNode(nonCodeText));
           botMessageDiv.appendChild(nonCodeDiv);
         }
       } else {
-        botMessageDiv.appendChild(document.createTextNode(data.reply || 'رد البوت'));
+        botMessageDiv.appendChild(document.createTextNode(response.reply || 'رد البوت'));
       }
 
       const feedbackButtons = document.createElement('div');
@@ -310,13 +306,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       const goodBtn = document.createElement('button');
       goodBtn.className = 'feedback-btn good';
       goodBtn.setAttribute('data-message-id', messageId);
-      goodBtn.setAttribute('data-message-content', data.reply || 'رد البوت');
+      goodBtn.setAttribute('data-message-content', response.reply || 'رد البوت');
       goodBtn.appendChild(document.createTextNode('👍'));
 
       const badBtn = document.createElement('button');
       badBtn.className = 'feedback-btn bad';
       badBtn.setAttribute('data-message-id', messageId);
-      badBtn.setAttribute('data-message-content', data.reply || 'رد البوت');
+      badBtn.setAttribute('data-message-content', response.reply || 'رد البوت');
       badBtn.appendChild(document.createTextNode('👎'));
 
       feedbackButtons.appendChild(goodBtn);
