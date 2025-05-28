@@ -1,7 +1,9 @@
+// server/botEngine.js
 const OpenAI = require('openai');
 const mongoose = require('mongoose');
 const axios = require('axios');
 const FormData = require('form-data');
+const { v4: uuidv4 } = require('uuid'); // إضافة مكتبة uuid
 const Bot = require('./models/Bot');
 const Rule = require('./models/Rule');
 const Conversation = require('./models/Conversation');
@@ -46,12 +48,32 @@ async function transcribeAudio(audioUrl) {
 
 async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'unknown') {
   try {
-    console.log('🤖 Processing message for bot:', botId, 'user:', userId, 'message:', message, 'channel:', channel);
+    // تحقق من userId وتوليد واحد جديد لو مش صالح (للويب بس)
+    let finalUserId = userId;
+    if (!userId || userId === 'anonymous' || !userId.startsWith('web_')) {
+      if (channel === 'web') {
+        finalUserId = `web_${uuidv4()}`;
+        console.log(`📋 Generated new userId for web user: ${finalUserId}`);
+      } else {
+        finalUserId = userId || `unknown_${Date.now()}`;
+      }
+    }
 
-    let conversation = await Conversation.findOne({ botId, userId, channel });
+    console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', channel);
+
+    // تحديد القناة إذا كانت غير محددة
+    const finalChannel = channel === 'unknown' ? 'web' : channel;
+
+    let conversation = await Conversation.findOne({ botId, userId: finalUserId, channel: finalChannel });
     if (!conversation) {
-      console.log('📋 Creating new conversation for bot:', botId, 'user:', userId, 'channel:', channel);
-      conversation = await Conversation.create({ botId, userId, channel, messages: [] });
+      console.log('📋 Creating new conversation for bot:', botId, 'user:', finalUserId, 'channel:', finalChannel);
+      conversation = await Conversation.create({ 
+        botId, 
+        userId: finalUserId, 
+        channel: finalChannel, 
+        messages: [],
+        username: finalChannel === 'web' ? `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}` : undefined 
+      });
     } else {
       console.log('📋 Found existing conversation:', conversation._id);
     }
