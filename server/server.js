@@ -164,33 +164,33 @@ app.get('/api/conversations/:botId/:userId', async (req, res) => {
 });
 
 // Route للذكاء الاصطناعي
-app.post('/api/bot/ai', async (req, res) => {
+app.post('/api/bot', async (req, res) => {
   try {
-    const { botId, message, userId } = req.body;
+    const { botId, message, userId, isImage, channel } = req.body;
     if (!botId || !message || !userId) {
       return res.status(400).json({ message: 'Bot ID, message, and user ID are required' });
     }
 
     const ipAddress = req.headers['x-forwarded-for'] || req.ip || 'unknown';
-    console.log(`[${getTimestamp()}] 📥 Received request for bot: ${botId}, user: ${userId}, IP: ${ipAddress}`);
+    console.log(`[${getTimestamp()}] 📥 Received request for bot: ${botId}, user: ${userId}, channel: ${channel || 'unknown'}, IP: ${ipAddress}`);
 
     const messageKey = `${botId}-${userId}-${message}-${Date.now()}`;
     if (apiCache.get(messageKey)) {
-      console.log(`[${getTimestamp()}] ⚠️ Duplicate AI message detected with key ${messageKey}, skipping...`);
+      console.log(`[${getTimestamp()}] ⚠️ Duplicate message detected with key ${messageKey}, skipping...`);
       return res.status(200).json({ reply: 'تم معالجة هذه الرسالة من قبل' });
     }
     apiCache.set(messageKey, true);
 
-    let conversation = await Conversation.findOne({ botId, userId });
+    let conversation = await Conversation.findOne({ botId, userId, channel: channel || 'web' });
     if (!conversation) {
       conversation = new Conversation({
         botId,
         userId,
         messages: [],
-        channel: 'web'
+        channel: channel || 'web'
       });
       await conversation.save();
-      console.log(`[${getTimestamp()}] 📋 Created new conversation for user: ${userId}`);
+      console.log(`[${getTimestamp()}] 📋 Created new conversation for user: ${userId}, channel: ${channel || 'web'}`);
     }
 
     const messageExists = conversation.messages.some(msg => 
@@ -202,11 +202,11 @@ app.post('/api/bot/ai', async (req, res) => {
       return res.status(200).json({ reply: 'تم معالجة هذه الرسالة من قبل' });
     }
 
-    const reply = await processMessage(botId, userId, message, false, false, null, 'web');
+    const reply = await processMessage(botId, userId, message, isImage, false, null, channel || 'web');
     res.status(200).json({ reply });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error in AI route | User: ${req.body.userId || 'N/A'} | Bot: ${req.body.botId || 'N/A'}`, err.message, err.stack);
-    res.status(500).json({ message: 'Failed to process AI request' });
+    console.error(`[${getTimestamp()}] ❌ Error in bot route | User: ${req.body.userId || 'N/A'} | Bot: ${req.body.botId || 'N/A'}`, err.message, err.stack);
+    res.status(500).json({ message: 'Failed to process bot request' });
   }
 });
 
