@@ -171,6 +171,9 @@ app.post('/api/bot/ai', async (req, res) => {
       return res.status(400).json({ message: 'Bot ID, message, and user ID are required' });
     }
 
+    const ipAddress = req.headers['x-forwarded-for'] || req.ip || 'unknown';
+    console.log(`[${getTimestamp()}] 📥 Received request for bot: ${botId}, user: ${userId}, IP: ${ipAddress}`);
+
     const messageKey = `${botId}-${userId}-${message}-${Date.now()}`;
     if (apiCache.get(messageKey)) {
       console.log(`[${getTimestamp()}] ⚠️ Duplicate AI message detected with key ${messageKey}, skipping...`);
@@ -184,8 +187,10 @@ app.post('/api/bot/ai', async (req, res) => {
         botId,
         userId,
         messages: [],
+        channel: 'web'
       });
       await conversation.save();
+      console.log(`[${getTimestamp()}] 📋 Created new conversation for user: ${userId}`);
     }
 
     const messageExists = conversation.messages.some(msg => 
@@ -197,8 +202,7 @@ app.post('/api/bot/ai', async (req, res) => {
       return res.status(200).json({ reply: 'تم معالجة هذه الرسالة من قبل' });
     }
 
-    const ipAddress = req.headers['x-forwarded-for'] || req.ip || 'unknown';
-    const reply = await processMessage(botId, userId, message, false, false, null, 'web', ipAddress);
+    const reply = await processMessage(botId, userId, message, false, false, null, 'web');
     res.status(200).json({ reply });
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error in AI route | User: ${req.body.userId || 'N/A'} | Bot: ${req.body.botId || 'N/A'}`, err.message, err.stack);
