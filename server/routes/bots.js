@@ -12,14 +12,14 @@ console.log('✅ Initializing bots routes');
 
 // دالة لتحويل توكن قصير المدى لتوكن طويل المدى
 const convertToLongLivedToken = async (shortLivedToken) => {
-  const appId = '499020366015281'; // نفس الـ appId المستخدم في facebook.js
-  const appSecret = process.env.FACEBOOK_APP_SECRET; // لازم تضيف الـ App Secret في الـ environment variables
+  const appId = '499020366015281';
+  const appSecret = process.env.FACEBOOK_APP_SECRET;
   const url = `https://graph.facebook.com/v20.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${shortLivedToken}`;
 
   try {
     const response = await axios.get(url);
     if (response.data.access_token) {
-      console.log(`[${new Date().toISOString()}] ✅ Successfully converted short-lived token to long-lived token`);
+      console.log(`[${new Date().toISOString()}] ✅ Successfully converted short-lived token to long-lived token: ${response.data.access_token.slice(0, 10)}...`);
       return response.data.access_token;
     }
     throw new Error('Failed to convert token: No access_token in response');
@@ -85,10 +85,8 @@ router.post('/:id/link-social', authenticate, async (req, res) => {
     // البحث عن البوت بناءً على الـ ID
     let bot;
     if (req.user.role === 'superadmin') {
-      // لو المستخدم سوبر أدمن، يقدر يعدل على أي بوت
       bot = await Bot.findById(botId);
     } else {
-      // لو مش سوبر أدمن، لازم البوت يكون تابعله
       bot = await Bot.findOne({ _id: botId, userId: req.user.userId });
     }
 
@@ -137,11 +135,31 @@ router.post('/:id/link-social', authenticate, async (req, res) => {
       return res.status(400).json({ success: false, message: 'لا توجد بيانات لربط الحساب' });
     }
 
+    // لوج قبل التحديث
+    console.log(`[POST /api/bots/${botId}/link-social] Updating bot with data:`, updateData);
+
     // تحديث البوت
-    const updatedBot = await Bot.findByIdAndUpdate(botId, { $set: updateData }, { new: true });
+    const updatedBot = await Bot.findByIdAndUpdate(
+      botId,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedBot) {
+      console.error(`[POST /api/bots/${botId}/link-social] Failed to update bot: Bot not found`);
+      return res.status(500).json({ success: false, message: 'فشل في تحديث البوت' });
+    }
+
+    // لوج بعد التحديث
+    console.log(`[POST /api/bots/${botId}/link-social] Bot updated successfully:`, {
+      facebookApiKey: updatedBot.facebookApiKey?.slice(0, 10) + '...',
+      facebookPageId: updatedBot.facebookPageId,
+      lastFacebookTokenRefresh: updatedBot.lastFacebookTokenRefresh
+    });
+
     res.status(200).json({ success: true, message: 'تم ربط الحساب بنجاح', data: updatedBot });
   } catch (error) {
-    console.error('خطأ في ربط الحساب:', error);
+    console.error(`[POST /api/bots/${botId}/link-social] Error linking social account:`, error.message, error.stack);
     res.status(500).json({ success: false, message: 'خطأ في السيرفر: ' + error.message });
   }
 });
