@@ -3,7 +3,7 @@ const OpenAI = require('openai');
 const mongoose = require('mongoose');
 const axios = require('axios');
 const FormData = require('form-data');
-const { v4: uuidv4 } = require('uuid'); // إضافة مكتبة uuid
+const { v4: uuidv4 } = require('uuid');
 const Bot = require('./models/Bot');
 const Rule = require('./models/Rule');
 const Conversation = require('./models/Conversation');
@@ -46,20 +46,25 @@ async function transcribeAudio(audioUrl) {
   }
 }
 
-async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'unknown') {
+async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'unknown', ipAddress = 'unknown') {
   try {
     // تحقق من userId وتوليد واحد جديد لو مش صالح (للويب بس)
     let finalUserId = userId;
     if (!userId || userId === 'anonymous' || !userId.startsWith('web_')) {
       if (channel === 'web') {
-        finalUserId = `web_${uuidv4()}`;
-        console.log(`📋 Generated new userId for web user: ${finalUserId}`);
+        finalUserId = `web_${ipAddress}_${uuidv4()}`;
+        console.log(`📋 Generated new userId for web user with IP ${ipAddress}: ${finalUserId}`);
       } else {
         finalUserId = userId || `unknown_${uuidv4()}`;
+        console.log(`📋 Generated fallback userId: ${finalUserId}`);
       }
+    } else if (channel === 'web' && !userId.includes(ipAddress)) {
+      // تحقق إن الـ userId يحتوي على الـ IP الصحيح
+      finalUserId = `web_${ipAddress}_${uuidv4()}`;
+      console.log(`📋 Regenerated userId for web user with new IP ${ipAddress}: ${finalUserId}`);
     }
 
-    console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', channel);
+    console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', channel, 'ip:', ipAddress);
 
     // تحديد القناة إذا كانت غير محددة
     const finalChannel = channel === 'unknown' ? 'web' : channel;
@@ -117,14 +122,14 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       role: 'user', 
       content: userMessageContent, 
       timestamp: new Date(),
-      messageId: messageId || `msg_${uuidv4()}` // استخدام UUID لضمان التفرد
+      messageId: messageId || `msg_${uuidv4()}` 
     });
 
     await conversation.save();
     console.log('💬 User message added to conversation:', userMessageContent);
 
     // جلب السياق (آخر 20 رسالة قبل الرسالة الحالية)
-    const contextMessages = conversation.messages.slice(-21, -1); // نجيب آخر 20 رسالة قبل الرسالة الحالية
+    const contextMessages = conversation.messages.slice(-21, -1);
     const context = contextMessages.map(msg => ({
       role: msg.role,
       content: msg.content,
@@ -159,7 +164,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     // إذا لم يتم العثور على قاعدة، استدعاء OpenAI
     if (!reply) {
       if (isImage) {
-        // معالجة الصور باستخدام responses.create مع input
         const response = await openai.responses.create({
           model: 'gpt-4.1-mini-2025-04-14',
           input: [
@@ -178,7 +182,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         reply = response.output_text || 'عذرًا، لم أتمكن من تحليل الصورة.';
         console.log('🖼️ Image processed:', reply);
       } else {
-        // معالجة النصوص باستخدام chat.completions.create
         const messages = [
           { role: 'system', content: systemPrompt },
           ...context,
@@ -194,7 +197,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     }
 
     // حفظ رد البوت
-    const responseMessageId = `response_${messageId || uuidv4()}`; // استخدام UUID لضمان التفرد
+    const responseMessageId = `response_${messageId || uuidv4()}`;
     conversation.messages.push({ 
       role: 'assistant', 
       content: reply, 
@@ -216,7 +219,6 @@ async function processFeedback(botId, userId, messageId, feedback) {
   try {
     console.log(`📊 Processing feedback for bot: ${botId}, user: ${userId}, messageId: ${messageId}, feedback: ${feedback}`);
 
-    // تحويل feedback إلى type
     let type = '';
     if (feedback === 'Good response') {
       type = 'like';
@@ -227,14 +229,12 @@ async function processFeedback(botId, userId, messageId, feedback) {
       return;
     }
 
-    // جلب المحادثة
     const conversation = await Conversation.findOne({ botId, userId });
     let messageContent = 'غير معروف';
     let userMessage = 'غير معروف';
     let feedbackTimestamp = new Date();
 
     if (conversation) {
-      // نبحث عن آخر رد بوت قبل تاريخ التقييم
       const botMessages = conversation.messages
         .filter(msg => msg.role === 'assistant' && new Date(msg.timestamp) <= feedbackTimestamp)
         .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -243,7 +243,6 @@ async function processFeedback(botId, userId, messageId, feedback) {
 
       if (botMessage) {
         messageContent = botMessage.content;
-        // نبحث عن رسالة المستخدم اللي قبل رد البوت مباشرة
         const botMessageIndex = conversation.messages.findIndex(msg => msg === botMessage);
         let userMessageIndex = botMessageIndex - 1;
         while (userMessageIndex >= 0 && conversation.messages[userMessageIndex].role !== 'user') {
@@ -261,7 +260,6 @@ async function processFeedback(botId, userId, messageId, feedback) {
       console.log(`⚠️ No conversation found for bot: ${botId}, user: ${userId}`);
     }
 
-    // حفظ التقييم باستخدام الموديل الجديد
     const feedbackEntry = await Feedback.findOneAndUpdate(
       { userId, messageId },
       {
@@ -270,7 +268,7 @@ async function processFeedback(botId, userId, messageId, feedback) {
         messageId,
         type,
         messageContent,
-        userMessage, // حفظ رسالة المستخدم
+        userMessage,
         timestamp: feedbackTimestamp,
         isVisible: true
       },
