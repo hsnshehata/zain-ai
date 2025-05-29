@@ -35,15 +35,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
-  // توليد userId بناءً على Fingerprint
+  // جلب أو توليد userId
   let userId = localStorage.getItem('webUserId');
   if (!userId || !userId.startsWith('web_')) {
     const fingerprint = await generateUniqueId();
     userId = `web_${fingerprint}`;
     localStorage.setItem('webUserId', userId);
-    console.log(`📋 تم توليد userId جديد: ${userId}`);
+    console.log(`📋 تم توليد userId جديد وتخزينه في localStorage: ${userId}`);
   } else {
-    console.log(`📋 استخدام userId موجود: ${userId}`);
+    console.log(`📋 جلب userId من localStorage: ${userId}`);
   }
 
   try {
@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           userId,
           message: isImage ? imageData.imageUrl : message,
           isImage,
-          channel: 'web' // نضيف الـ channel صراحة
+          channel: 'web'
         }),
       });
 
