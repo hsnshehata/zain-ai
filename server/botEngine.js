@@ -48,14 +48,14 @@ async function transcribeAudio(audioUrl) {
 
 async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'web') {
   try {
+    // لوج لقيمة userId الخام
+    console.log(`📢 Raw userId received: ${userId} (type: ${typeof userId})`);
+
     // تحقق من userId
     let finalUserId = userId;
-    if (!userId || userId === 'anonymous') {
+    if (!userId || userId === 'anonymous' || userId === null || userId === undefined) {
       finalUserId = `web_${uuidv4()}`;
-      console.log(`📋 Generated new userId for channel ${channel} due to missing or anonymous userId: ${finalUserId}`);
-    } else if (!userId.startsWith('web_')) {
-      finalUserId = `web_${userId}`;
-      console.log(`📋 Prepended 'web_' to userId: ${finalUserId}`);
+      console.log(`📋 Generated new userId for channel ${channel} due to missing or invalid userId: ${finalUserId}`);
     } else {
       console.log(`📋 Using provided userId: ${finalUserId}`);
     }
