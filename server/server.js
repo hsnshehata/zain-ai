@@ -60,20 +60,17 @@ app.use((req, res, next) => {
 
 // Middleware لإضافة Cache-Control headers
 app.use((req, res, next) => {
-  // منع الـ cache للـ HTML ومسارات معينة
   if (req.path.match(/\.(html)$/i) || ['/', '/dashboard', '/dashboard_new', '/login', '/register', '/set-whatsapp', '/chat/'].some(path => req.path.startsWith(path))) {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
   } 
-  // منع الـ cache للملفات المرتبطة بـ /chat/ (مثل chat.js, chat.css, Font Awesome)
   else if (req.path.match(/\.(css|js|woff|woff2|ttf)$/i) && req.path.includes('/chat')) {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
     res.setHeader('Content-Type', req.path.match(/\.css$/i) ? 'text/css' : req.path.match(/\.js$/i) ? 'application/javascript' : 'font/woff2');
   } 
-  // السماح بالـ cache للملفات التانية زي الصور
   else if (req.path.match(/\.(png|jpg|jpeg|gif|ico|json)$/i)) {
     res.setHeader('Cache-Control', 'public, max-age=300');
   }
@@ -200,7 +197,8 @@ app.post('/api/bot/ai', async (req, res) => {
       return res.status(200).json({ reply: 'تم معالجة هذه الرسالة من قبل' });
     }
 
-    const reply = await processMessage(botId, userId, message);
+    const ipAddress = req.headers['x-forwarded-for'] || req.ip || 'unknown';
+    const reply = await processMessage(botId, userId, message, false, false, null, 'web', ipAddress);
     res.status(200).json({ reply });
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error in AI route | User: ${req.body.userId || 'N/A'} | Bot: ${req.body.botId || 'N/A'}`, err.message, err.stack);
