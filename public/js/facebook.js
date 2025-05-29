@@ -247,11 +247,12 @@ document.addEventListener("DOMContentLoaded", () => {
             const statusDiv = document.createElement("div");
             statusDiv.style.display = "inline-block";
             statusDiv.style.color = "green";
+            const refreshDate = bot.lastFacebookTokenRefresh ? new Date(bot.lastFacebookTokenRefresh).toLocaleString('ar-EG') : 'غير متوفر';
             statusDiv.innerHTML = `
               <strong>حالة الربط:</strong> مربوط ✅<br>
               <strong>اسم الصفحة:</strong> ${pageData.name}<br>
               <strong>معرف الصفحة:</strong> ${bot.facebookPageId}<br>
-              <strong>تاريخ الربط:</strong> ${new Date(bot.lastInstagramTokenRefresh).toLocaleString('ar-EG')}
+              <strong>تاريخ الربط:</strong> ${refreshDate}
             `;
 
             // Create unlink button
