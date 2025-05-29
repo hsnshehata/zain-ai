@@ -16,32 +16,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   let messageCounter = 0;
   let lastFeedbackButtons = null;
 
-  // فحص إذا كان uuidv4 موجود، وإلا نستخدم fallback
-  const generateUUID = () => {
-    if (typeof window.uuidv4 === 'function') {
-      return window.uuidv4();
-    }
-    console.warn('uuidv4 غير متوفّر، بستخدم fallback لتوليد UUID');
-    return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-  };
-
-  // دالة لجلب عنوان IP
-  async function getUserIP() {
-    try {
-      const response = await fetch('https://api.ipify.org?format=json');
-      const data = await response.json();
-      return data.ip;
-    } catch (err) {
-      console.error('خطأ في جلب عنوان IP:', err);
-      return 'unknown';
-    }
+  // دالة لتوليد معرّف فريد باستخدام Fingerprint2
+  async function generateUniqueId() {
+    return new Promise((resolve) => {
+      if (window.Fingerprint2) {
+        Fingerprint2.get((components) => {
+          const values = components.map(component => component.value);
+          const fingerprint = Fingerprint2.x64hash128(values.join(''), 31);
+          console.log(`📋 Generated fingerprint: ${fingerprint}`);
+          resolve(fingerprint);
+        });
+      } else {
+        console.warn('Fingerprint2 غير متوفّر، بستخدم fallback لتوليد UUID');
+        resolve(`${Date.now()}-${Math.random().toString(36).substring(2, 15)}`);
+      }
+    });
   }
 
-  // توليد userId بناءً على IP و UUID
+  // توليد userId بناءً على Fingerprint
   let userId = localStorage.getItem('webUserId');
   if (!userId) {
-    const ip = await getUserIP();
-    userId = `web_${ip}_${generateUUID()}`;
+    const fingerprint = await generateUniqueId();
+    userId = `web_${fingerprint}`;
     localStorage.setItem('webUserId', userId);
     console.log(`📋 تم توليد userId جديد: ${userId}`);
   } else {
@@ -261,6 +257,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
     try {
+      console.log(`📤 Sending message with userId: ${userId}`);
       const response = await window.handleApiRequest('/api/bot', {
         method: 'POST',
         headers: {
