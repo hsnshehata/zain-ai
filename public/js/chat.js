@@ -20,12 +20,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   async function generateUniqueId() {
     return new Promise((resolve) => {
       if (window.Fingerprint2) {
-        Fingerprint2.get((components) => {
-          const values = components.map(component => component.value);
-          const fingerprint = Fingerprint2.x64hash128(values.join(''), 31);
-          console.log(`📋 Generated fingerprint: ${fingerprint}`);
-          resolve(fingerprint);
-        });
+        setTimeout(() => {
+          Fingerprint2.get((components) => {
+            const values = components.map(component => component.value);
+            const fingerprint = Fingerprint2.x64hash128(values.join(''), 31);
+            console.log(`📋 Generated fingerprint: ${fingerprint}`);
+            resolve(fingerprint);
+          });
+        }, 500); // نستنى 500ms عشان نضمن إن المتصفّح جاهز
       } else {
         console.warn('Fingerprint2 غير متوفّر، بستخدم fallback لتوليد UUID');
         resolve(`${Date.now()}-${Math.random().toString(36).substring(2, 15)}`);
@@ -35,7 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // توليد userId بناءً على Fingerprint
   let userId = localStorage.getItem('webUserId');
-  if (!userId) {
+  if (!userId || !userId.startsWith('web_')) {
     const fingerprint = await generateUniqueId();
     userId = `web_${fingerprint}`;
     localStorage.setItem('webUserId', userId);
@@ -257,7 +259,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
     try {
-      console.log(`📤 Sending message with userId: ${userId}`);
+      console.log(`📤 Sending message with userId: ${userId}, botId: ${botId}`);
       const response = await window.handleApiRequest('/api/bot', {
         method: 'POST',
         headers: {
@@ -268,6 +270,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           userId,
           message: isImage ? imageData.imageUrl : message,
           isImage,
+          channel: 'web' // نضيف الـ channel صراحة
         }),
       });
 
