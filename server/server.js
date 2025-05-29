@@ -23,7 +23,6 @@ const Conversation = require('./models/Conversation');
 const Bot = require('./models/Bot');
 const User = require('./models/User');
 const Feedback = require('./models/Feedback');
-const { processMessage } = require('./botEngine');
 const NodeCache = require('node-cache');
 const bcrypt = require('bcryptjs');
 const request = require('request');
@@ -160,57 +159,6 @@ app.get('/api/conversations/:botId/:userId', async (req, res) => {
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error fetching conversations | Bot: ${req.params.botId} | User: ${req.params.userId}`, err.message, err.stack);
     res.status(500).json({ message: 'Failed to fetch conversations' });
-  }
-});
-
-// Route للذكاء الاصطناعي
-app.post('/api/bot', async (req, res) => {
-  try {
-    console.log(`[${getTimestamp()}] 📥 Raw request body before parsing:`, req.body);
-    const { botId, message, userId, isImage, channel } = req.body;
-    console.log(`[${getTimestamp()}] 📥 Parsed request fields: botId=${botId}, message=${message}, userId=${userId}, isImage=${isImage}, channel=${channel}`);
-
-    if (!botId || !message || !userId) {
-      console.error(`[${getTimestamp()}] ❌ Missing required fields: botId=${botId}, message=${message}, userId=${userId}`);
-      return res.status(400).json({ message: 'Bot ID, message, and user ID are required' });
-    }
-
-    const ipAddress = req.headers['x-forwarded-for'] || req.ip || 'unknown';
-    console.log(`[${getTimestamp()}] 📥 Received request for bot: ${botId}, user: ${userId}, channel: ${channel || 'unknown'}, IP: ${ipAddress}`);
-
-    const messageKey = `${botId}-${userId}-${message}-${Date.now()}`;
-    if (apiCache.get(messageKey)) {
-      console.log(`[${getTimestamp()}] ⚠️ Duplicate message detected with key ${messageKey}, skipping...`);
-      return res.status(200).json({ reply: 'تم معالجة هذه الرسالة من قبل' });
-    }
-    apiCache.set(messageKey, true);
-
-    let conversation = await Conversation.findOne({ botId, userId, channel: channel || 'web' });
-    if (!conversation) {
-      conversation = new Conversation({
-        botId,
-        userId,
-        messages: [],
-        channel: channel || 'web'
-      });
-      await conversation.save();
-      console.log(`[${getTimestamp()}] 📋 Created new conversation for user: ${userId}, channel: ${channel || 'web'}`);
-    }
-
-    const messageExists = conversation.messages.some(msg => 
-      msg.content === message && 
-      Math.abs(new Date(msg.timestamp) - Date.now()) < 1000
-    );
-    if (messageExists) {
-      console.log(`[${getTimestamp()}] ⚠️ Duplicate message detected in conversation for ${userId}, skipping...`);
-      return res.status(200).json({ reply: 'تم معالجة هذه الرسالة من قبل' });
-    }
-
-    const reply = await processMessage(botId, userId, message, isImage, false, null, channel || 'web');
-    res.status(200).json({ reply });
-  } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error in bot route | User: ${req.body.userId || 'N/A'} | Bot: ${req.body.botId || 'N/A'}`, err.message, err.stack);
-    res.status(500).json({ message: 'Failed to process bot request' });
   }
 });
 
