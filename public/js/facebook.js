@@ -1,5 +1,4 @@
 // public/js/facebook.js
-
 document.addEventListener("DOMContentLoaded", () => {
   async function loadFacebookPage() {
     const link = document.createElement("link");
@@ -152,7 +151,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function handleApiRequest(url, options, errorElement, defaultErrorMessage) {
       try {
-        const response = await fetch(url, options);
+        const response = await fetch(url, {
+          method: options.method || 'GET',
+          headers: options.headers || {},
+          body: options.body || null,
+        });
         if (!response.ok) {
           const contentType = response.headers.get("content-type");
           if (!contentType || !contentType.includes("application/json")) {
@@ -484,7 +487,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ facebookApiKey, facebookPageId }),
+          body: JSON.stringify({ facebookApiKey, facebookPageId, convertToLongLived: true }),
         }, errorMessage, "فشل حفظ معلومات الربط");
 
         console.log('✅ التوكن تم حفظه بنجاح:', facebookApiKey.slice(0, 10) + '...');
