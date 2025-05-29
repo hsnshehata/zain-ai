@@ -1,5 +1,7 @@
 // public/js/chat.js
 document.addEventListener('DOMContentLoaded', async () => {
+  console.log('📢 chat.js started loading at', new Date().toISOString());
+
   const linkId = window.location.pathname.split('/').pop();
   const chatMessages = document.getElementById('chatMessages');
   const messageInput = document.getElementById('messageInput');
@@ -25,24 +27,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   // جلب أو توليد userId
-  let userId = localStorage.getItem('webUserId');
-  if (!userId || !userId.startsWith('web_')) {
-    userId = `web_${generateUUID()}`;
-    try {
+  let userId = null;
+  try {
+    userId = localStorage.getItem('webUserId');
+    console.log('📋 Attempting to retrieve userId from localStorage:', userId);
+    if (!userId || !userId.startsWith('web_')) {
+      userId = `web_${generateUUID()}`;
       localStorage.setItem('webUserId', userId);
-      console.log(`📋 تم توليد userId جديد وتخزينه في localStorage: ${userId}`);
-    } catch (err) {
-      console.error('❌ خطأ في تخزين userId في localStorage:', err);
+      console.log(`📋 Generated and stored new userId in localStorage: ${userId}`);
+    } else {
+      console.log(`📋 Retrieved existing userId from localStorage: ${userId}`);
     }
-  } else {
-    console.log(`📋 جلب userId من localStorage: ${userId}`);
+    // تأكيد التخزين
+    const storedUserId = localStorage.getItem('webUserId');
+    console.log(`📋 Confirmed userId in localStorage: ${storedUserId}`);
+  } catch (err) {
+    console.error('❌ Error accessing localStorage:', err);
+    userId = `web_${generateUUID()}`;
+    console.log(`📋 Fallback: Generated temporary userId due to localStorage error: ${userId}`);
   }
 
-  // فحص إن userId اتخزّن صح
-  const storedUserId = localStorage.getItem('webUserId');
-  console.log(`📋 تأكيد userId في localStorage: ${storedUserId}`);
-
   try {
+    console.log('📢 Fetching chat page settings for linkId:', linkId);
     const response = await window.handleApiRequest(`/api/chat-page/${linkId}`);
     if (!response) {
       throw new Error('فشل في جلب إعدادات الصفحة');
@@ -173,7 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       imageInput.parentElement.style.display = 'none';
     }
   } catch (err) {
-    console.error('خطأ في جلب إعدادات الصفحة:', err);
+    console.error('❌ خطأ في جلب إعدادات الصفحة:', err);
     chatMessages.innerHTML = '<p style="color: red;">تعذر تحميل الصفحة، حاول مرة أخرى لاحقًا.</p>';
     return;
   }
@@ -187,10 +193,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         method: 'POST',
         body: formData,
       });
-
+      console.log('📤 Image uploaded successfully:', response);
       return response;
     } catch (err) {
-      console.error('خطأ في رفع الصورة:', err);
+      console.error('❌ خطأ في رفع الصورة:', err);
       throw err;
     }
   }
@@ -216,7 +222,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log(`✅ Feedback submitted: ${type} for message ID: ${messageId}`);
       alert(`تم تسجيل التقييم بنجاح: ${type === 'like' ? 'لايك' : 'ديسلايك'}`);
     } catch (err) {
-      console.error('خطأ في إرسال التقييم:', err);
+      console.error('❌ خطأ في إرسال التقييم:', err);
       alert('فشل في تسجيل التقييم، حاول مرة أخرى.');
     }
   }
@@ -236,7 +242,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   async function sendMessage(message, isImage = false, imageData = null) {
-    if (!message && !isImage) return;
+    if (!message && !isImage) {
+      console.warn('⚠️ No message or image provided, skipping send');
+      return;
+    }
 
     hidePreviousFeedbackButtons();
 
@@ -255,7 +264,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     chatMessages.scrollTop = chatMessages.scrollHeight;
 
     try {
-      console.log(`📤 Sending message with userId: ${userId}, botId: ${botId}`);
+      console.log(`📤 Sending message with userId: ${userId}, botId: ${botId}, message: ${message}`);
       const response = await window.handleApiRequest('/api/bot', {
         method: 'POST',
         headers: {
@@ -269,6 +278,8 @@ document.addEventListener('DOMContentLoaded', async () => {
           channel: 'web'
         }),
       });
+
+      console.log('📥 Received response:', response);
 
       const messageId = `msg_${messageCounter++}`;
       const botMessageDiv = document.createElement('div');
@@ -313,7 +324,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
       });
     } catch (err) {
-      console.error('خطأ في إرسال الرسالة:', err);
+      console.error('❌ خطأ في إرسال الرسالة:', err);
       const errorMessageDiv = document.createElement('div');
       errorMessageDiv.className = 'message bot-message';
       errorMessageDiv.appendChild(document.createTextNode('عذرًا، حدث خطأ أثناء معالجة رسالتك.'));
@@ -344,7 +355,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         sendMessage(null, true, imageData);
         imageInput.value = '';
       } catch (err) {
-        console.error('خطأ في معالجة الصورة:', err);
+        console.error('❌ خطأ في معالجة الصورة:', err);
         const errorMessageDiv = document.createElement('div');
         errorMessageDiv.className = 'message bot-message';
         errorMessageDiv.appendChild(document.createTextNode('عذرًا، حدث خطأ أثناء معالجة الصورة.'));
@@ -353,4 +364,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
     }
   });
+
+  console.log('📢 chat.js finished loading at', new Date().toISOString());
 });
