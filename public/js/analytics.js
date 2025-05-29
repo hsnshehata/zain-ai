@@ -149,9 +149,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
         for (const channel of channels) {
           const query = new URLSearchParams({
-            type: channel, // هنا بنستخدم type اللي بيترجم لـ channel في الـ API
+            type: channel,
             page: 1,
-            limit: 1000, // نجيب كل المحادثات مرة واحدة (يمكن تقليله لو البيانات كبيرة)
+            limit: 1000,
             ...(startDate && { startDate }),
             ...(endDate && { endDate }),
           });
@@ -160,7 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
             headers: { Authorization: `Bearer ${token}` },
           }, messagesByChannelError, `فشل في جلب رسائل ${channel}`);
 
-          // التأكد إن response.conversations موجود
           const conversations = response.conversations || [];
 
           let userMessageCount = 0;
@@ -178,7 +177,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const totalBotMessages = messagesByChannelData.facebook.botMessages + messagesByChannelData.web.botMessages + messagesByChannelData.instagram.botMessages + messagesByChannelData.whatsapp.botMessages;
         const totalMessages = totalUserMessages + totalBotMessages;
 
-        // عرض الإحصائيات النصية لتوزيع الرسائل
         messagesByChannelStats.innerHTML = `
           <ul>
             <li>إجمالي الرسائل: ${totalMessages}</li>
@@ -215,12 +213,10 @@ document.addEventListener('DOMContentLoaded', () => {
           </ul>
         `;
 
-        // إخفاء السبينر وإظهار المحتوى
         messagesByChannelSpinner.style.display = 'none';
         messagesByChannelStats.style.display = 'block';
         messagesByChannelError.style.display = 'none';
 
-        // 2. معدل الرسائل يوميًا
         const dailyMessagesSpinner = document.getElementById('dailyMessagesSpinner');
         const dailyMessagesStats = document.getElementById('dailyMessagesStats');
         const dailyMessagesError = document.getElementById('dailyMessagesError');
@@ -239,13 +235,11 @@ document.addEventListener('DOMContentLoaded', () => {
           headers: { Authorization: `Bearer ${token}` },
         }, dailyMessagesError, 'فشل في جلب معدل الرسائل يوميًا');
 
-        // قصر البيانات على آخر 20 يوم لو مفيش فلتر
         let filteredData = dailyData;
         if (!startDate && !endDate) {
           filteredData = dailyData.slice(-20);
         }
 
-        // عرض الإحصائيات النصية لمعدل الرسائل
         let dailyStatsHTML = '<ul>';
         filteredData.forEach(item => {
           const date = new Date(item.date).toLocaleDateString("ar-EG");
@@ -261,14 +255,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         dailyMessagesStats.innerHTML = dailyStatsHTML;
 
-        // إخفاء السبينر وإظهار المحتوى
         dailyMessagesSpinner.style.display = 'none';
         dailyMessagesStats.style.display = 'block';
         dailyMessagesError.style.display = 'none';
 
       } catch (err) {
         console.error('Error in loadMessagesAnalytics:', err);
-        // التأكد إن السبينر يختفي حتى لو حصل خطأ
         document.getElementById('messagesByChannelSpinner').style.display = 'none';
         document.getElementById('dailyMessagesSpinner').style.display = 'none';
         const messagesByChannelError = document.getElementById('messagesByChannelError');
@@ -282,7 +274,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadFeedbackAnalytics(botId, token, startDate, endDate) {
       console.log('Loading feedback analytics for botId:', botId);
       try {
-        // 1. نسبة التقييمات الإيجابية مقابل السلبية
         const feedbackRatioSpinner = document.getElementById('feedbackRatioSpinner');
         const feedbackRatioStats = document.getElementById('feedbackRatioStats');
         const feedbackRatioError = document.getElementById('feedbackRatioError');
@@ -307,20 +298,22 @@ document.addEventListener('DOMContentLoaded', () => {
           facebook: { positive: 0, negative: 0 },
           web: { positive: 0, negative: 0 },
           instagram: { positive: 0, negative: 0 },
-          whatsapp: { positive: 0, negative: 0 }
+          whatsapp: { positive: 0, negative: 0 },
+          unknown: { positive: 0, negative: 0 } // Added to handle unexpected channels
         };
 
-        // جلب المحادثات عشان نحدد القناة بناءً على channel
         for (const feedback of feedbackData) {
-          const conversation = await handleApiRequest(`/api/messages/${botId}?type=facebook&userId=${feedback.userId}&page=1&limit=1`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }, null, null, true); // طلب صامت بدون عرض خطأ
-
           let channel = 'unknown';
+          
+          // Try to fetch conversation to determine channel
+          const conversation = await handleApiRequest(`/api/messages/${botId}?userId=${feedback.userId}&page=1&limit=1`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }, null, null, true).catch(() => null); // Silent request
+
           if (conversation && conversation.conversations && conversation.conversations.length > 0) {
             channel = conversation.conversations[0].channel || 'unknown';
           } else {
-            // لو ما لقيناش المحادثة، نعتمد على البادئات كحل احتياطي
+            // Fallback to userId prefixes
             if (feedback.userId.startsWith('web_') || feedback.userId === 'anonymous') {
               channel = 'web';
             } else if (feedback.userId.startsWith('instagram_')) {
@@ -328,8 +321,14 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (feedback.userId.startsWith('whatsapp_')) {
               channel = 'whatsapp';
             } else {
-              channel = 'facebook'; // افتراضي لفيسبوك
+              channel = 'facebook'; // Default fallback
             }
+          }
+
+          // Ensure channel exists in feedbackByChannel
+          if (!feedbackByChannel[channel]) {
+            feedbackByChannel[channel] = { positive: 0, negative: 0 };
+            console.log(`Added new channel to feedbackByChannel: ${channel}`);
           }
 
           if (feedback.feedback === 'positive') {
@@ -346,50 +345,42 @@ document.addEventListener('DOMContentLoaded', () => {
         const negativePercentage = totalFeedback > 0 ? ((negativeCount / totalFeedback) * 100).toFixed(1) : 0;
 
         // عرض الإحصائيات النصية للتقييمات
-        feedbackRatioStats.innerHTML = `
+        let feedbackStatsHTML = `
           <ul>
             <li>إجمالي التقييمات: ${totalFeedback}</li>
             <li>التقييمات الإيجابية: ${positiveCount} (${positivePercentage}%)</li>
             <li>التقييمات السلبية: ${negativeCount} (${negativePercentage}%)</li>
-            <li>تقييمات فيسبوك:
-              <ul>
-                <li>إيجابية: ${feedbackByChannel.facebook.positive}</li>
-                <li>سلبية: ${feedbackByChannel.facebook.negative}</li>
-                <li>الإجمالي: ${feedbackByChannel.facebook.positive + feedbackByChannel.facebook.negative}</li>
-              </ul>
-            </li>
-            <li>تقييمات الويب:
-              <ul>
-                <li>إيجابية: ${feedbackByChannel.web.positive}</li>
-                <li>سلبية: ${feedbackByChannel.web.negative}</li>
-                <li>الإجمالي: ${feedbackByChannel.web.positive + feedbackByChannel.web.negative}</li>
-              </ul>
-            </li>
-            <li>تقييمات إنستجرام:
-              <ul>
-                <li>إيجابية: ${feedbackByChannel.instagram.positive}</li>
-                <li>سلبية: ${feedbackByChannel.instagram.negative}</li>
-                <li>الإجمالي: ${feedbackByChannel.instagram.positive + feedbackByChannel.instagram.negative}</li>
-              </ul>
-            </li>
-            <li>تقييمات واتساب:
-              <ul>
-                <li>إيجابية: ${feedbackByChannel.whatsapp.positive}</li>
-                <li>سلبية: ${feedbackByChannel.whatsapp.negative}</li>
-                <li>الإجمالي: ${feedbackByChannel.whatsapp.positive + feedbackByChannel.whatsapp.negative}</li>
-              </ul>
-            </li>
-          </ul>
         `;
 
-        // إخفاء السبينر وإظهار المحتوى
+        // Add stats for each channel
+        for (const [channel, counts] of Object.entries(feedbackByChannel)) {
+          const channelName = {
+            facebook: 'فيسبوك',
+            web: 'الويب',
+            instagram: 'إنستجرام',
+            whatsapp: 'واتساب',
+            unknown: 'غير معروف'
+          }[channel] || channel;
+          feedbackStatsHTML += `
+            <li>${channelName}:
+              <ul>
+                <li>إيجابية: ${counts.positive}</li>
+                <li>سلبية: ${counts.negative}</li>
+                <li>الإجمالي: ${counts.positive + counts.negative}</li>
+              </ul>
+            </li>
+          `;
+        }
+        feedbackStatsHTML += '</ul>';
+
+        feedbackRatioStats.innerHTML = feedbackStatsHTML;
+
         feedbackRatioSpinner.style.display = 'none';
         feedbackRatioStats.style.display = 'block';
         feedbackRatioError.style.display = 'none';
 
       } catch (err) {
         console.error('Error in loadFeedbackAnalytics:', err);
-        // التأكد إن السبينر يختفي حتى لو حصل خطأ
         document.getElementById('feedbackRatioSpinner').style.display = 'none';
         const feedbackRatioError = document.getElementById('feedbackRatioError');
         if (feedbackRatioError) {
@@ -402,7 +393,6 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadRulesAnalytics(botId, token) {
       console.log('Loading rules analytics for botId:', botId);
       try {
-        // 1. توزيع أنواع القواعد
         const rulesTypeSpinner = document.getElementById('rulesTypeSpinner');
         const rulesTypeStats = document.getElementById('rulesTypeStats');
         const rulesTypeError = document.getElementById('rulesTypeError');
@@ -435,14 +425,12 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         rulesData.rules.forEach(rule => {
-          // تجاهل القواعد الموحدة (global)
           if (rule.type === 'global') return;
 
           if (rulesTypesCount[rule.type] !== undefined) {
             rulesTypesCount[rule.type]++;
           }
 
-          // تحديد القناة بناءً على rule.content.platform لقواعد نوع channels
           if (rule.type === 'channels') {
             let channel = 'other';
             if (rule.content?.platform) {
@@ -467,7 +455,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const channelsPercentage = totalRules > 0 ? ((rulesTypesCount.channels / totalRules) * 100).toFixed(1) : 0;
         const apiPercentage = totalRules > 0 ? ((rulesTypesCount.api / totalRules) * 100).toFixed(1) : 0;
 
-        // عرض الإحصائيات النصية لتوزيع أنواع القواعد
         rulesTypeStats.innerHTML = `
           <p>إجمالي القواعد: ${totalRules}</p>
           <p>قواعد عامة: ${rulesTypesCount.general} (${generalPercentage}%)</p>
@@ -485,14 +472,12 @@ document.addEventListener('DOMContentLoaded', () => {
           </ul>
         `;
 
-        // إخفاء السبينر وإظهار المحتوى
         rulesTypeStats.style.display = 'block';
         rulesTypeSpinner.style.display = 'none';
         rulesTypeError.style.display = 'none';
 
       } catch (err) {
         console.error('Error in loadRulesAnalytics:', err);
-        // التأكد إن السبينر يختفي حتى لو حصل خطأ
         document.getElementById('rulesTypeSpinner').style.display = 'none';
         const rulesTypeError = document.getElementById('rulesTypeError');
         if (rulesTypeError) {
@@ -508,13 +493,13 @@ document.addEventListener('DOMContentLoaded', () => {
       try {
         const response = await fetch(url, options);
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || defaultErrorMessage);
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || defaultErrorMessage || 'خطأ غير معروف');
         }
         return await response.json();
       } catch (err) {
         console.error(`Error in API request to ${url}:`, err);
-        if (!silent) {
+        if (!silent && errorElement) {
           errorElement.textContent = err.message || defaultErrorMessage;
           errorElement.style.display = "block";
         }
