@@ -370,19 +370,15 @@ document.addEventListener("DOMContentLoaded", () => {
     document.head.appendChild(fbScript);
 
     function loginWithFacebook() {
-      // First, check the login status
+      // Check if user is already logged into Facebook
       FB.getLoginStatus(function(response) {
         if (response.status === 'connected') {
-          // If user is logged in, log them out first
-          console.log('المستخدم مسجّل دخوله، جاري تسجيل الخروج...');
-          FB.logout(function(logoutResponse) {
-            console.log('تم تسجيل الخروج من فيسبوك:', logoutResponse);
-            // Proceed with login after logout
-            performFacebookLogin();
-          });
+          // User is logged in, use existing session
+          console.log('المستخدم مسجّل دخوله بالفعل، جاري جلب الصفحات...');
+          getUserPages(response.authResponse.accessToken);
         } else {
-          // If user is not logged in, proceed with login directly
-          console.log('المستخدم غير مسجّل دخوله، جاري تسجيل الدخول...');
+          // User is not logged in, prompt for login
+          console.log('المستخدم غير مسجّل دخوله، جاري طلب تسجيل الدخول...');
           performFacebookLogin();
         }
       });
@@ -398,8 +394,8 @@ document.addEventListener("DOMContentLoaded", () => {
           errorMessage.style.display = 'block';
         }
       }, { 
-        scope: 'public_profile,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_engagement',
-        auth_type: 'reauthenticate' // Force re-authentication to show permission prompt
+        scope: 'public_profile,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_engagement'
+        // Removed auth_type: 'reauthenticate' to avoid password prompt
       });
     }
 
