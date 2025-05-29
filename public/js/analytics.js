@@ -299,30 +299,46 @@ document.addEventListener('DOMContentLoaded', () => {
           web: { positive: 0, negative: 0 },
           instagram: { positive: 0, negative: 0 },
           whatsapp: { positive: 0, negative: 0 },
-          unknown: { positive: 0, negative: 0 } // Added to handle unexpected channels
+          unknown: { positive: 0, negative: 0 }
         };
 
         for (const feedback of feedbackData) {
           let channel = 'unknown';
-          
-          // Try to fetch conversation to determine channel
-          const conversation = await handleApiRequest(`/api/messages/${botId}?userId=${feedback.userId}&page=1&limit=1`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }, null, null, true).catch(() => null); // Silent request
+
+          // Determine channel based on userId prefix
+          let inferredChannel = 'unknown';
+          if (feedback.userId.startsWith('web_') || feedback.userId === 'anonymous') {
+            inferredChannel = 'web';
+          } else if (feedback.userId.startsWith('instagram_')) {
+            inferredChannel = 'instagram';
+          } else if (feedback.userId.startsWith('whatsapp_')) {
+            inferredChannel = 'whatsapp';
+          } else {
+            inferredChannel = 'facebook';
+          }
+
+          // Try to fetch conversation only if needed
+          let conversation = null;
+          if (inferredChannel !== 'unknown') {
+            const query = new URLSearchParams({
+              type: inferredChannel,
+              userId: feedback.userId,
+              page: 1,
+              limit: 1
+            });
+            console.log(`Fetching conversation for userId: ${feedback.userId} with type: ${inferredChannel}`);
+            conversation = await handleApiRequest(`/api/messages/${botId}?${query}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }, null, null, true).catch(err => {
+              console.warn(`Failed to fetch conversation for userId: ${feedback.userId}, error: ${err.message}`);
+              return null;
+            });
+          }
 
           if (conversation && conversation.conversations && conversation.conversations.length > 0) {
-            channel = conversation.conversations[0].channel || 'unknown';
+            channel = conversation.conversations[0].channel || inferredChannel;
           } else {
-            // Fallback to userId prefixes
-            if (feedback.userId.startsWith('web_') || feedback.userId === 'anonymous') {
-              channel = 'web';
-            } else if (feedback.userId.startsWith('instagram_')) {
-              channel = 'instagram';
-            } else if (feedback.userId.startsWith('whatsapp_')) {
-              channel = 'whatsapp';
-            } else {
-              channel = 'facebook'; // Default fallback
-            }
+            channel = inferredChannel;
           }
 
           // Ensure channel exists in feedbackByChannel
@@ -344,7 +360,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const positivePercentage = totalFeedback > 0 ? ((positiveCount / totalFeedback) * 100).toFixed(1) : 0;
         const negativePercentage = totalFeedback > 0 ? ((negativeCount / totalFeedback) * 100).toFixed(1) : 0;
 
-        // عرض الإحصائيات النصية للتقييمات
         let feedbackStatsHTML = `
           <ul>
             <li>إجمالي التقييمات: ${totalFeedback}</li>
@@ -352,7 +367,6 @@ document.addEventListener('DOMContentLoaded', () => {
             <li>التقييمات السلبية: ${negativeCount} (${negativePercentage}%)</li>
         `;
 
-        // Add stats for each channel
         for (const [channel, counts] of Object.entries(feedbackByChannel)) {
           const channelName = {
             facebook: 'فيسبوك',
