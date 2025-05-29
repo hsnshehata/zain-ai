@@ -48,11 +48,13 @@ async function transcribeAudio(audioUrl) {
 
 async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'web') {
   try {
-    // تحقق من userId وتوليد واحد جديد لو مش صالح
+    // تحقق من userId
     let finalUserId = userId;
     if (!userId || userId === 'anonymous' || !userId.startsWith('web_')) {
       finalUserId = `web_${uuidv4()}`;
-      console.log(`📋 Generated new userId for channel ${channel}: ${finalUserId}`);
+      console.log(`📋 Generated new userId for channel ${channel} due to invalid userId: ${finalUserId}`);
+    } else {
+      console.log(`📋 Using provided userId: ${finalUserId}`);
     }
 
     console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', channel);
@@ -84,7 +86,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     // بناء الـ systemPrompt مع إضافة الوقت الحالي
     let systemPrompt = `أنت بوت ذكي يساعد المستخدمين بناءً على القواعد التالية. الوقت الحالي هو: ${getCurrentTime()}.\n`;
     if (rules.length === 0) {
-      systemPrompt += ' لا توجد قواعد محددة، قم بالرد بشكل عام ومفيد دون اختراع اسعار و منتجات اذا سألت عن منتج او خدمة غير متوفرة في قوائم الاسعار اجب بانها غير متوفرة .\n';
+      systemPrompt += 'لا توجد قواعد محددة، قم بالرد بشكل عام ومفيد.\n';
     } else {
       rules.forEach((rule) => {
         if (rule.type === 'global' || rule.type === 'general') {
