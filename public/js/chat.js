@@ -21,16 +21,31 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (typeof window.uuidv4 === 'function') {
       return window.uuidv4();
     }
-    // Fallback: توليد معرّف بسيط باستخدام Date.now و Math.random
     console.warn('uuidv4 غير متوفّر، بستخدم fallback لتوليد UUID');
     return `${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
   };
 
-  let userId = localStorage.getItem('webUserId') || `web_${generateUUID()}`;
+  // دالة لجلب عنوان IP
+  async function getUserIP() {
+    try {
+      const response = await fetch('https://api.ipify.org?format=json');
+      const data = await response.json();
+      return data.ip;
+    } catch (err) {
+      console.error('خطأ في جلب عنوان IP:', err);
+      return 'unknown';
+    }
+  }
 
-  // تخزين المعرّف في localStorage لو أول مرة
-  if (!localStorage.getItem('webUserId')) {
+  // توليد userId بناءً على IP و UUID
+  let userId = localStorage.getItem('webUserId');
+  if (!userId) {
+    const ip = await getUserIP();
+    userId = `web_${ip}_${generateUUID()}`;
     localStorage.setItem('webUserId', userId);
+    console.log(`📋 تم توليد userId جديد: ${userId}`);
+  } else {
+    console.log(`📋 استخدام userId موجود: ${userId}`);
   }
 
   try {
@@ -220,7 +235,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function convertLinksToButtons(text) {
-    // Regex لإيجاد الروابط (http:// أو https://)
     const urlRegex = /(https?:\/\/[^\s]+)/g;
     return text.replace(urlRegex, (url) => {
       return `<a href="${url}" target="_blank" class="link-button">اضغط هنا <i class="fas fa-external-link-alt"></i></a>`;
@@ -265,7 +279,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       botMessageDiv.className = 'message bot-message';
       botMessageDiv.setAttribute('data-message-id', messageId);
 
-      // تحويل الروابط في الرد لأزرار
       const replyHtml = convertLinksToButtons(response.reply || 'رد البوت');
       botMessageDiv.innerHTML = replyHtml;
 
@@ -281,7 +294,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       const badBtn = document.createElement('button');
       badBtn.className = 'feedback-btn bad';
       badBtn.setAttribute('data-message-id', messageId);
-      goodBtn.setAttribute('data-message-content', response.reply || 'رد البوت');
+      badBtn.setAttribute('data-message-content', response.reply || 'رد البوت');
       badBtn.appendChild(document.createTextNode('👎'));
 
       feedbackButtons.appendChild(goodBtn);
