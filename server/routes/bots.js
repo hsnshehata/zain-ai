@@ -5,9 +5,29 @@ const botsController = require('../controllers/botsController');
 const botController = require('../controllers/botController');
 const authenticate = require('../middleware/authenticate');
 const Bot = require('../models/Bot');
+const axios = require('axios');
 
 // Log عشان نتأكد إن الـ router شغال
 console.log('✅ Initializing bots routes');
+
+// دالة لتحويل توكن قصير المدى لتوكن طويل المدى
+const convertToLongLivedToken = async (shortLivedToken) => {
+  const appId = '499020366015281'; // نفس الـ appId المستخدم في facebook.js
+  const appSecret = process.env.FACEBOOK_APP_SECRET; // لازم تضيف الـ App Secret في الـ environment variables
+  const url = `https://graph.facebook.com/v20.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${shortLivedToken}`;
+
+  try {
+    const response = await axios.get(url);
+    if (response.data.access_token) {
+      console.log(`[${new Date().toISOString()}] ✅ Successfully converted short-lived token to long-lived token`);
+      return response.data.access_token;
+    }
+    throw new Error('Failed to convert token: No access_token in response');
+  } catch (err) {
+    console.error(`[${new Date().toISOString()}] ❌ Error converting to long-lived token:`, err.response?.data || err.message);
+    throw err;
+  }
+};
 
 // جلب كل البوتات
 router.get('/', authenticate, botsController.getBots);
@@ -56,7 +76,7 @@ router.put('/:id', authenticate, botsController.updateBot);
 // ربط صفحة فيسبوك أو إنستجرام أو واتساب بالبوت
 router.post('/:id/link-social', authenticate, async (req, res) => {
   const { id: botId } = req.params;
-  const { facebookApiKey, facebookPageId, instagramApiKey, instagramPageId, whatsappApiKey, whatsappBusinessAccountId } = req.body;
+  const { facebookApiKey, facebookPageId, instagramApiKey, instagramPageId, whatsappApiKey, whatsappBusinessAccountId, convertToLongLived } = req.body;
 
   try {
     // Log the user role and userId for debugging
@@ -85,8 +105,17 @@ router.post('/:id/link-social', authenticate, async (req, res) => {
 
     // لو فيسبوك
     if (facebookApiKey && facebookPageId) {
-      updateData.facebookApiKey = facebookApiKey;
+      let finalFacebookApiKey = facebookApiKey;
+      if (convertToLongLived) {
+        try {
+          finalFacebookApiKey = await convertToLongLivedToken(facebookApiKey);
+        } catch (err) {
+          return res.status(500).json({ success: false, message: 'فشل في تحويل التوكن إلى طويل المدى: ' + err.message });
+        }
+      }
+      updateData.facebookApiKey = finalFacebookApiKey;
       updateData.facebookPageId = facebookPageId;
+      updateData.lastFacebookTokenRefresh = new Date();
     }
 
     // لو إنستجرام
@@ -125,7 +154,7 @@ router.post('/:id/unlink-instagram', authenticate, botsController.unlinkInstagra
 
 // تبادل Instagram OAuth code بـ access token
 router.post('/:id/exchange-instagram-code', authenticate, (req, res) => {
-  console.log(`📌 Received request for /api/bots/${req.params.id}/exchange-instagram-code`);
+  console.log(`[${new Date().toISOString()}] 📌 Received request for /api/bots/${req.params.id}/exchange-instagram-code`);
   botsController.exchangeInstagramCode(req, res);
 });
 
