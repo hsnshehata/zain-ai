@@ -168,8 +168,8 @@ try {
       messages: "/css/messages.css",
       feedback: "/css/feedback.css",
       facebook: "/css/facebook.css",
-      instagram: "/css/facebook.css", // نستخدم نفس ستايل facebook.css
-      whatsapp: "/css/facebook.css", // نستخدم نفس ستايل facebook.css
+      instagram: "/css/facebook.css",
+      whatsapp: "/css/facebook.css",
       settings: "/css/settings.css",
     };
 
@@ -229,8 +229,15 @@ try {
         console.log(`${pageJsMap[page]} already loaded at`, new Date().toISOString());
       }
 
-      // Additional check to see if the function is defined after loading
-      const funcName = `load${page.charAt(0).toUpperCase() + page.slice(1).replace(/-([a-z])/g, (g) => g[1].toUpperCase())}Page`;
+      // Check if the function is defined after loading
+      let funcName;
+      // Special case for chat-page to match loadChatPage instead of loadChatPagePage
+      if (page === 'chat-page') {
+        funcName = 'loadChatPage';
+      } else {
+        funcName = `load${page.charAt(0).toUpperCase() + page.slice(1).replace(/-([a-z])/g, (g) => g[1].toUpperCase())}Page`;
+      }
+
       if (typeof window[funcName] !== "function") {
         console.error(`${funcName} still not defined after loading ${pageJsMap[page]} at`, new Date().toISOString());
         console.log("Available properties on window:", Object.keys(window).filter(key => key.startsWith('load')));
