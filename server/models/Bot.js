@@ -35,6 +35,8 @@ const botSchema = new mongoose.Schema({
   whatsappMessageReactionsEnabled: { type: Boolean, default: true },
   whatsappMessagingReferralsEnabled: { type: Boolean, default: true },
   whatsappMessageEditsEnabled: { type: Boolean, default: true },
+    // تواريخ الربط
+  lastFacebookTokenRefresh: { type: Date }, // أضفنا الحقل هنا
   lastInstagramTokenRefresh: { type: Date },
   createdAt: { type: Date, default: Date.now },
 });
