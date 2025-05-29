@@ -46,24 +46,19 @@ async function transcribeAudio(audioUrl) {
   }
 }
 
-async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'unknown') {
+async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'web') {
   try {
-    // تحقق من userId وتوليد واحد جديد لو مش صالح (للويب بس)
+    // تحقق من userId وتوليد واحد جديد لو مش صالح
     let finalUserId = userId;
     if (!userId || userId === 'anonymous' || !userId.startsWith('web_')) {
-      if (channel === 'web') {
-        finalUserId = `web_${uuidv4()}`;
-        console.log(`📋 Generated new userId for web user: ${finalUserId}`);
-      } else {
-        finalUserId = userId || `unknown_${uuidv4()}`;
-        console.log(`📋 Generated fallback userId: ${finalUserId}`);
-      }
+      finalUserId = `web_${uuidv4()}`;
+      console.log(`📋 Generated new userId for channel ${channel}: ${finalUserId}`);
     }
 
     console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', channel);
 
-    // تحديد القناة إذا كانت غير محددة
-    const finalChannel = channel === 'unknown' ? 'web' : channel;
+    // تحديد القناة
+    const finalChannel = channel || 'web';
 
     let conversation = await Conversation.findOne({ botId, userId: finalUserId, channel: finalChannel });
     if (!conversation) {
@@ -76,9 +71,8 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         username: finalChannel === 'web' ? `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}` : undefined 
       });
     } else {
-      console.log('📋 Found existing conversation for user:', finalUserId);
+      console.log('📋 Found existing conversation for user:', finalUserId, 'conversationId:', conversation._id);
       if (finalChannel === 'web' && !conversation.username) {
-        // تحديث username لو مش موجود للويب
         conversation.username = `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}`;
         await conversation.save();
       }
@@ -90,7 +84,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     // بناء الـ systemPrompt مع إضافة الوقت الحالي
     let systemPrompt = `أنت بوت ذكي يساعد المستخدمين بناءً على القواعد التالية. الوقت الحالي هو: ${getCurrentTime()}.\n`;
     if (rules.length === 0) {
-      systemPrompt += 'لا توجد قواعد محددة، قم بالرد بشكل عام ومفيد.\n';
+      systemPrompt += ' لا توجد قواعد محددة، قم بالرد بشكل عام ومفيد دون اختراع اسعار و منتجات اذا سألت عن منتج او خدمة غير متوفرة في قوائم الاسعار اجب بانها غير متوفرة .\n';
     } else {
       rules.forEach((rule) => {
         if (rule.type === 'global' || rule.type === 'general') {
