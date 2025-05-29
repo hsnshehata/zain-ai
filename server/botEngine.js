@@ -46,25 +46,21 @@ async function transcribeAudio(audioUrl) {
   }
 }
 
-async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'unknown', ipAddress = 'unknown') {
+async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'unknown') {
   try {
     // تحقق من userId وتوليد واحد جديد لو مش صالح (للويب بس)
     let finalUserId = userId;
     if (!userId || userId === 'anonymous' || !userId.startsWith('web_')) {
       if (channel === 'web') {
-        finalUserId = `web_${ipAddress}_${uuidv4()}`;
-        console.log(`📋 Generated new userId for web user with IP ${ipAddress}: ${finalUserId}`);
+        finalUserId = `web_${uuidv4()}`;
+        console.log(`📋 Generated new userId for web user: ${finalUserId}`);
       } else {
         finalUserId = userId || `unknown_${uuidv4()}`;
         console.log(`📋 Generated fallback userId: ${finalUserId}`);
       }
-    } else if (channel === 'web' && !userId.includes(ipAddress)) {
-      // تحقق إن الـ userId يحتوي على الـ IP الصحيح
-      finalUserId = `web_${ipAddress}_${uuidv4()}`;
-      console.log(`📋 Regenerated userId for web user with new IP ${ipAddress}: ${finalUserId}`);
     }
 
-    console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', channel, 'ip:', ipAddress);
+    console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', channel);
 
     // تحديد القناة إذا كانت غير محددة
     const finalChannel = channel === 'unknown' ? 'web' : channel;
@@ -79,14 +75,17 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         messages: [],
         username: finalChannel === 'web' ? `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}` : undefined 
       });
-    } else if (finalChannel === 'web' && !conversation.username) {
-      // تحديث username لو مش موجود للويب
-      conversation.username = `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}`;
-      await conversation.save();
+    } else {
+      console.log('📋 Found existing conversation for user:', finalUserId);
+      if (finalChannel === 'web' && !conversation.username) {
+        // تحديث username لو مش موجود للويب
+        conversation.username = `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}`;
+        await conversation.save();
+      }
     }
 
     const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
-    console.log('📜 Rules found:', rules);
+    console.log('📜 Rules found:', rules.length);
 
     // بناء الـ systemPrompt مع إضافة الوقت الحالي
     let systemPrompt = `أنت بوت ذكي يساعد المستخدمين بناءً على القواعد التالية. الوقت الحالي هو: ${getCurrentTime()}.\n`;
@@ -134,7 +133,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       role: msg.role,
       content: msg.content,
     }));
-    console.log('🧠 Conversation context:', context);
+    console.log('🧠 Conversation context:', context.length, 'messages');
 
     let reply = '';
 
