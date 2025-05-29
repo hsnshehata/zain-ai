@@ -16,35 +16,31 @@ document.addEventListener('DOMContentLoaded', async () => {
   let messageCounter = 0;
   let lastFeedbackButtons = null;
 
-  // دالة لتوليد معرّف فريد باستخدام Fingerprint2
-  async function generateUniqueId() {
-    return new Promise((resolve) => {
-      if (window.Fingerprint2) {
-        setTimeout(() => {
-          Fingerprint2.get((components) => {
-            const values = components.map(component => component.value);
-            const fingerprint = Fingerprint2.x64hash128(values.join(''), 31);
-            console.log(`📋 Generated fingerprint: ${fingerprint}`);
-            resolve(fingerprint);
-          });
-        }, 500); // نستنى 500ms عشان نضمن إن المتصفّح جاهز
-      } else {
-        console.warn('Fingerprint2 غير متوفّر، بستخدم fallback لتوليد UUID');
-        resolve(`${Date.now()}-${Math.random().toString(36).substring(2, 15)}`);
-      }
+  // دالة لتوليد UUID
+  function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
     });
   }
 
   // جلب أو توليد userId
   let userId = localStorage.getItem('webUserId');
   if (!userId || !userId.startsWith('web_')) {
-    const fingerprint = await generateUniqueId();
-    userId = `web_${fingerprint}`;
-    localStorage.setItem('webUserId', userId);
-    console.log(`📋 تم توليد userId جديد وتخزينه في localStorage: ${userId}`);
+    userId = `web_${generateUUID()}`;
+    try {
+      localStorage.setItem('webUserId', userId);
+      console.log(`📋 تم توليد userId جديد وتخزينه في localStorage: ${userId}`);
+    } catch (err) {
+      console.error('❌ خطأ في تخزين userId في localStorage:', err);
+    }
   } else {
     console.log(`📋 جلب userId من localStorage: ${userId}`);
   }
+
+  // فحص إن userId اتخزّن صح
+  const storedUserId = localStorage.getItem('webUserId');
+  console.log(`📋 تأكيد userId في localStorage: ${storedUserId}`);
 
   try {
     const response = await window.handleApiRequest(`/api/chat-page/${linkId}`);
