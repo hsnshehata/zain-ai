@@ -166,8 +166,10 @@ app.get('/api/conversations/:botId/:userId', async (req, res) => {
 // Route للذكاء الاصطناعي
 app.post('/api/bot', async (req, res) => {
   try {
+    console.log(`[${getTimestamp()}] 📥 Raw request body before parsing:`, req.body);
     const { botId, message, userId, isImage, channel } = req.body;
-    console.log(`[${getTimestamp()}] 📥 Raw request body:`, req.body);
+    console.log(`[${getTimestamp()}] 📥 Parsed request fields: botId=${botId}, message=${message}, userId=${userId}, isImage=${isImage}, channel=${channel}`);
+
     if (!botId || !message || !userId) {
       console.error(`[${getTimestamp()}] ❌ Missing required fields: botId=${botId}, message=${message}, userId=${userId}`);
       return res.status(400).json({ message: 'Bot ID, message, and user ID are required' });
