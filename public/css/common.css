@@ -1,3 +1,4 @@
+/* public/css/common.css */
 :root {
   --turquoise: #00C4B4;
   --dark-bg: #1a1a2e;
@@ -528,6 +529,33 @@ body.dark-mode .loader {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+/* Character Counter (إضافة لعداد الأحرف) */
+.char-count {
+  font-size: 0.9em;
+  margin-top: 5px;
+  transition: color var(--transition-speed) ease;
+}
+
+body.dark-mode .char-count {
+  color: var(--dark-text);
+}
+
+body.light-mode .char-count {
+  color: var(--light-text);
+}
+
+.char-count.error {
+  color: var(--error-color);
+}
+
+/* Emoji Picker Button (إضافة لزرار الإيموجي) */
+.emoji-picker-btn {
+  padding: 8px;
+  font-size: 1.2em;
+  min-width: 40px;
+  border-radius: 6px;
 }
 
 /* Responsive Adjustments */
