@@ -1,9 +1,11 @@
+// server/controllers/botsController.js
 const express = require('express');
 const Bot = require('../models/Bot');
 const User = require('../models/User');
 const Feedback = require('../models/Feedback');
 const Notification = require('../models/Notification');
 const axios = require('axios');
+const { uploadToImgbb } = require('./uploadController');
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
@@ -794,6 +796,131 @@ exports.updateInstagramSettings = async (req, res) => {
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ خطأ في تحديث إعدادات الإنستجرام:`, err.message, err.stack);
     res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
+  }
+};
+
+// جلب إعدادات الرسالة التلقائية
+exports.getAutoMessageSettings = async (req, res) => {
+  try {
+    const botId = req.params.id;
+    console.log(`[${getTimestamp()}] جاري جلب إعدادات الرسالة التلقائية | Bot ID: ${botId}`);
+
+    const bot = await Bot.findById(botId);
+    if (!bot) {
+      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      return res.status(404).json({ success: false, message: 'البوت غير موجود' });
+    }
+
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
+      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      return res.status(403).json({ success: false, message: 'غير مصرح لك بتعديل هذا البوت' });
+    }
+
+    const settings = {
+      facebookAutoMessageEnabled: bot.facebookAutoMessageEnabled,
+      facebookAutoMessageText: bot.facebookAutoMessageText,
+      facebookAutoMessageImage: bot.facebookAutoMessageImage,
+      facebookAutoMessageDelay: bot.facebookAutoMessageDelay,
+      instagramAutoMessageEnabled: bot.instagramAutoMessageEnabled,
+      instagramAutoMessageText: bot.instagramAutoMessageText,
+      instagramAutoMessageImage: bot.instagramAutoMessageImage,
+      instagramAutoMessageDelay: bot.instagramAutoMessageDelay,
+    };
+
+    console.log(`[${getTimestamp()}] ✅ تم جلب إعدادات الرسالة التلقائية بنجاح | Bot ID: ${botId}`);
+    res.status(200).json({ success: true, data: settings });
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ خطأ في جلب إعدادات الرسالة التلقائية:`, err.message, err.stack);
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
+  }
+};
+
+// حفظ إعدادات الرسالة التلقائية
+exports.saveAutoMessageSettings = async (req, res) => {
+  try {
+    const botId = req.params.id;
+    const { platform, enabled, text, delay } = req.body;
+    const file = req.file;
+
+    console.log(`[${getTimestamp()}] 📝 محاولة حفظ إعدادات الرسالة التلقائية | Bot ID: ${botId} | Platform: ${platform} | Data:`, req.body);
+
+    if (!['facebook', 'instagram'].includes(platform)) {
+      console.log(`[${getTimestamp()}] ⚠️ المنصة غير صالحة | Platform: ${platform}`);
+      return res.status(400).json({ success: false, message: 'المنصة يجب أن تكون facebook أو instagram' });
+    }
+
+    if (enabled === undefined || text === undefined || delay === undefined) {
+      console.log(`[${getTimestamp()}] ⚠️ بيانات ناقصة | Enabled: ${enabled}, Text: ${text}, Delay: ${delay}`);
+      return res.status(400).json({ success: false, message: 'enabled، text، وdelay مطلوبة' });
+    }
+
+    if (typeof enabled !== 'boolean') {
+      console.log(`[${getTimestamp()}] ⚠️ enabled يجب أن يكون boolean | Enabled: ${enabled}`);
+      return res.status(400).json({ success: false, message: 'enabled يجب أن يكون true أو false' });
+    }
+
+    if (text && (typeof text !== 'string' || text.length > 200)) {
+      console.log(`[${getTimestamp()}] ⚠️ النص غير صالح أو أطول من 200 حرف | Text: ${text}`);
+      return res.status(400).json({ success: false, message: 'النص يجب أن يكون نصًا ولا يتجاوز 200 حرف' });
+    }
+
+    const validDelays = [600000, 900000, 3600000, 10800000]; // 10 دقايق، 15 دقيقة، ساعة، 3 ساعات
+    if (!validDelays.includes(Number(delay))) {
+      console.log(`[${getTimestamp()}] ⚠️ المدة غير صالحة | Delay: ${delay}`);
+      return res.status(400).json({ success: false, message: 'المدة يجب أن تكون إحدى القيم: 600000، 900000، 3600000، 10800000' });
+    }
+
+    const bot = await Bot.findById(botId);
+    if (!bot) {
+      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      return res.status(404).json({ success: false, message: 'البوت غير موجود' });
+    }
+
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
+      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      return res.status(403).json({ success: false, message: 'غير مصرح لك بتعديل هذا البوت' });
+    }
+
+    let imageUrl = platform === 'facebook' ? bot.facebookAutoMessageImage : bot.instagramAutoMessageImage;
+
+    if (file) {
+      const uploadedImage = await uploadToImgbb(file);
+      imageUrl = uploadedImage.url;
+      console.log(`[${getTimestamp()}] ✅ تم رفع الصورة بنجاح | URL: ${imageUrl}`);
+    } else if (text && !enabled) {
+      imageUrl = ''; // إذا تم تعطيل الخاصية، نمسح الصورة
+    }
+
+    if (platform === 'facebook') {
+      bot.facebookAutoMessageEnabled = enabled;
+      bot.facebookAutoMessageText = text || '';
+      bot.facebookAutoMessageImage = imageUrl;
+      bot.facebookAutoMessageDelay = Number(delay);
+    } else if (platform === 'instagram') {
+      bot.instagramAutoMessageEnabled = enabled;
+      bot.instagramAutoMessageText = text || '';
+      bot.instagramAutoMessageImage = imageUrl;
+      bot.instagramAutoMessageDelay = Number(delay);
+    }
+
+    await bot.save();
+    console.log(`[${getTimestamp()}] ✅ تم حفظ إعدادات الرسالة التلقائية بنجاح | Bot ID: ${botId} | Platform: ${platform}`);
+
+    const updatedSettings = {
+      facebookAutoMessageEnabled: bot.facebookAutoMessageEnabled,
+      facebookAutoMessageText: bot.facebookAutoMessageText,
+      facebookAutoMessageImage: bot.facebookAutoMessageImage,
+      facebookAutoMessageDelay: bot.facebookAutoMessageDelay,
+      instagramAutoMessageEnabled: bot.instagramAutoMessageEnabled,
+      instagramAutoMessageText: bot.instagramAutoMessageText,
+      instagramAutoMessageImage: bot.instagramAutoMessageImage,
+      instagramAutoMessageDelay: bot.instagramAutoMessageDelay,
+    };
+
+    res.status(200).json({ success: true, data: updatedSettings });
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ خطأ في حفظ إعدادات الرسالة التلقائية:`, err.message, err.stack);
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر: ' + err.message });
   }
 };
 
