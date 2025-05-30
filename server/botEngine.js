@@ -20,6 +20,9 @@ function getCurrentTime() {
   return new Date().toLocaleString('ar-EG', { timeZone: 'Africa/Cairo' });
 }
 
+// دالة لجلب الـ timestamp
+const getTimestamp = () => new Date().toISOString();
+
 async function transcribeAudio(audioUrl) {
   const body = new FormData();
   body.append('file', audioUrl);
@@ -27,7 +30,7 @@ async function transcribeAudio(audioUrl) {
   body.append('response_format', 'json');
   try {
     console.log(
-      'LemonFox API Key: ' +
+      `[${getTimestamp()}] LemonFox API Key: ` +
         (process.env.LEMONFOX_API_KEY ? 'تم جلب المفتاح' : 'المفتاح فاضي!')
     );
     const response = await axios.post(
@@ -40,10 +43,10 @@ async function transcribeAudio(audioUrl) {
         },
       }
     );
-    console.log('✅ Audio transcribed with LemonFox:', response.data.text);
+    console.log(`[${getTimestamp()}] ✅ Audio transcribed with LemonFox:`, response.data.text);
     return response.data.text;
   } catch (err) {
-    console.error('❌ Error transcribing audio with LemonFox:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ Error transcribing audio with LemonFox:`, err.message, err.stack);
     throw new Error(`Failed to transcribe audio: ${err.message}`);
   }
 }
@@ -51,25 +54,25 @@ async function transcribeAudio(audioUrl) {
 async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'web') {
   try {
     // لوج لقيمة userId الخام
-    console.log(`📢 Raw userId received: ${userId} (type: ${typeof userId})`);
+    console.log(`[${getTimestamp()}] 📢 Raw userId received: ${userId} (type: ${typeof userId})`);
 
     // تحقق من userId
     let finalUserId = userId;
     if (!userId || userId === 'anonymous' || userId === null || userId === undefined) {
       finalUserId = `web_${uuidv4()}`;
-      console.log(`📋 Generated new userId for channel ${channel} due to missing or invalid userId: ${finalUserId}`);
+      console.log(`[${getTimestamp()}] 📋 Generated new userId for channel ${channel} due to missing or invalid userId: ${finalUserId}`);
     } else {
-      console.log(`📋 Using provided userId: ${finalUserId}`);
+      console.log(`[${getTimestamp()}] 📋 Using provided userId: ${finalUserId}`);
     }
 
-    console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', channel);
+    console.log(`[${getTimestamp()}] 🤖 Processing message for bot: ${botId}, user: ${finalUserId}, message: ${message}, channel: ${channel}`);
 
     // تحديد القناة
     const finalChannel = channel || 'web';
 
     let conversation = await Conversation.findOne({ botId, userId: finalUserId, channel: finalChannel });
     if (!conversation) {
-      console.log('📋 Creating new conversation for bot:', botId, 'user:', finalUserId, 'channel:', finalChannel);
+      console.log(`[${getTimestamp()}] 📋 Creating new conversation for bot: ${botId}, user: ${finalUserId}, channel: ${finalChannel}`);
       conversation = await Conversation.create({ 
         botId, 
         userId: finalUserId, 
@@ -78,7 +81,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         username: finalChannel === 'web' ? `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}` : undefined 
       });
     } else {
-      console.log('📋 Found existing conversation for user:', finalUserId, 'conversationId:', conversation._id);
+      console.log(`[${getTimestamp()}] 📋 Found existing conversation for user: ${finalUserId}, conversationId: ${conversation._id}`);
       if (finalChannel === 'web' && !conversation.username) {
         conversation.username = `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}`;
         await conversation.save();
@@ -86,7 +89,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     }
 
     const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
-    console.log('📜 Rules found:', rules.length);
+    console.log(`[${getTimestamp()}] 📜 Rules found: ${rules.length}`);
 
     // بناء الـ systemPrompt مع إضافة الوقت الحالي
     let systemPrompt = `أنت بوت ذكي يساعد المستخدمين بناءً على القواعد التالية. الوقت الحالي هو: ${getCurrentTime()}.\n`;
@@ -105,7 +108,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         }
       });
     }
-    console.log('📝 System prompt:', systemPrompt);
+    console.log(`[${getTimestamp()}] 📝 System prompt:`, systemPrompt);
 
     let userMessageContent = message;
 
@@ -114,7 +117,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       if (!userMessageContent) {
         throw new Error('Failed to transcribe audio: No text returned');
       }
-      console.log('💬 Transcribed audio message:', userMessageContent);
+      console.log(`[${getTimestamp()}] 💬 Transcribed audio message: ${userMessageContent}`);
     }
 
     // إضافة رسالة المستخدم للمحادثة
@@ -126,7 +129,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     });
 
     await conversation.save();
-    console.log('💬 User message added to conversation:', userMessageContent);
+    console.log(`[${getTimestamp()}] 💬 User message added to conversation: ${userMessageContent}`);
 
     // جلب السياق (آخر 20 رسالة قبل الرسالة الحالية)
     const contextMessages = conversation.messages.slice(-21, -1);
@@ -134,7 +137,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       role: msg.role,
       content: msg.content,
     }));
-    console.log('🧠 Conversation context:', context.length, 'messages');
+    console.log(`[${getTimestamp()}] 🧠 Conversation context: ${context.length} messages`);
 
     let reply = '';
 
@@ -180,7 +183,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
           max_output_tokens: 5000,
         });
         reply = response.output_text || 'عذرًا، لم أتمكن من تحليل الصورة.';
-        console.log('🖼️ Image processed:', reply);
+        console.log(`[${getTimestamp()}] 🖼️ Image processed: ${reply}`);
       } else {
         const messages = [
           { role: 'system', content: systemPrompt },
@@ -206,7 +209,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     });
 
     await conversation.save();
-    console.log('💬 Assistant reply added to conversation:', reply);
+    console.log(`[${getTimestamp()}] 💬 Assistant reply added to conversation: ${reply}`);
 
     // معالجة الرسالة التلقائية لفيسبوك أو إنستجرام
     if (finalChannel === 'facebook' || finalChannel === 'instagram') {
@@ -272,14 +275,14 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     return reply;
   } catch (err) {
-    console.error('❌ Error processing message:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ Error processing message:`, err.message, err.stack);
     return 'عذرًا، حدث خطأ أثناء معالجة طلبك.';
   }
 }
 
 async function processFeedback(botId, userId, messageId, feedback) {
   try {
-    console.log(`📊 Processing feedback for bot: ${botId}, user: ${userId}, messageId: ${messageId}, feedback: ${feedback}`);
+    console.log(`[${getTimestamp()}] 📊 Processing feedback for bot: ${botId}, user: ${userId}, messageId: ${messageId}, feedback: ${feedback}`);
 
     let type = '';
     if (feedback === 'Good response') {
@@ -287,7 +290,7 @@ async function processFeedback(botId, userId, messageId, feedback) {
     } else if (feedback === 'Bad response') {
       type = 'dislike';
     } else {
-      console.log(`⚠️ Unknown feedback type: ${feedback}, skipping...`);
+      console.log(`[${getTimestamp()}] ⚠️ Unknown feedback type: ${feedback}, skipping...`);
       return;
     }
 
@@ -313,13 +316,13 @@ async function processFeedback(botId, userId, messageId, feedback) {
         if (userMessageIndex >= 0) {
           userMessage = conversation.messages[userMessageIndex].content;
         } else {
-          console.log(`⚠️ No user message found before bot message for userId: ${userId}`);
+          console.log(`[${getTimestamp()}] ⚠️ No user message found before bot message for userId: ${userId}`);
         }
       } else {
-        console.log(`⚠️ No bot message found for userId: ${userId} before timestamp: ${feedbackTimestamp}`);
+        console.log(`[${getTimestamp()}] ⚠️ No bot message found for userId: ${userId} before timestamp: ${feedbackTimestamp}`);
       }
     } else {
-      console.log(`⚠️ No conversation found for bot: ${botId}, user: ${userId}`);
+      console.log(`[${getTimestamp()}] ⚠️ No conversation found for bot: ${botId}, user: ${userId}`);
     }
 
     const feedbackEntry = await Feedback.findOneAndUpdate(
@@ -337,9 +340,9 @@ async function processFeedback(botId, userId, messageId, feedback) {
       { upsert: true, new: true }
     );
 
-    console.log(`✅ Feedback saved: ${type} for message ID: ${messageId} with content: ${messageContent}, user message: ${userMessage}`);
+    console.log(`[${getTimestamp()}] ✅ Feedback saved: ${type} for message ID: ${messageId} with content: ${messageContent}, user message: ${userMessage}`);
   } catch (err) {
-    console.error('❌ Error processing feedback:', err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ Error processing feedback:`, err.message, err.stack);
   }
 }
 
