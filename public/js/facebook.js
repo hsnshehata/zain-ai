@@ -32,24 +32,23 @@ document.addEventListener("DOMContentLoaded", () => {
     // Main structure for the Facebook settings page
     content.innerHTML = `
       <div class="page-header">
-        <h2><i class="fab fa-facebook-square"></i> إعدادات ربط فيسبوك</h2>
+        <h2><i class="fab fa-facebook"></i> إعدادات ربط فيسبوك</h2>
         <div id="instructionsContainer" class="instructions-container" style="display: none;">
           <h3>📋 خطوات بسيطة لربط صفحتك على فيسبوك</h3>
           <p>عشان تقدر تربط صفحتك بالبوت بنجاح، اتأكد من الخطوات دي:</p>
           <ul>
             <li>
-              <strong>إنشاء حساب مطور:</strong> لازم يكون عندك حساب مطور على موقع Meta Developer عشان تقدر تكمل عملية الربط.
+              <strong>إنشاء صفحة فيسبوك:</strong> لازم يكون عندك صفحة فيسبوك تديرها.
               <br>
               <span style="display: block; margin-top: 5px;">
-                <strong>إزاي تعمل حساب مطور؟</strong><br>
-                1. ادخل على موقع <a href="https://developers.facebook.com/" target="_blank">Meta Developer</a>.<br>
-                2. اضغط على "Get Started" أو "Log In" لو عندك حساب فيسبوك.<br>
-                3. سجّل دخولك بنفس حساب فيسبوك اللي بتدير منه الصفحة.<br>
-                4. وافق على شروط المطورين (Meta Developer Terms) لو ظهرتلك، وكده هيبقى عندك حساب مطور.
+                <strong>إزاي تعمل صفحة؟</strong><br>
+                1. افتح فيسبوك واضغط على "إنشاء" من القايمة.<br>
+                2. اختار "صفحة" واملأ التفاصيل زي اسم الصفحة والفئة.<br>
+                3. انشر الصفحة وتأكد إنك مديرها.
               </span>
             </li>
             <li>
-              <strong>تواصل معانا:</strong> بعد ما تعمل حساب المطور، ابعتلنا رسالة على واتساب على الرقم 
+              <strong>تواصل معانا:</strong> بعد ما تعمل الصفحة، ابعتلنا رسالة على واتساب على الرقم 
               <a href="https://wa.me/01279425543" target="_blank">01279425543</a>، وهنبعتلك دعوة لتطبيقنا عشان تقدر تستخدمه.
             </li>
             <li>
@@ -83,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="setting-item toggle-item">
               <div class="setting-info">
                 <h4>ردود الفعل (Reactions)</h4>
-                <p>تسمح للبوت بالردود على عمليات التفاعل مع الرسالة مثل اعجاب او قلب.</p>
+                <p>تسمح للبوت بالردود على عمليات التفاعل مع الرسالة مثل اعجاب أو قلب.</p>
               </div>
               <label class="switch">
                 <input type="checkbox" id="messageReactionsToggle" data-setting-key="messageReactionsEnabled">
@@ -107,16 +106,6 @@ document.addEventListener("DOMContentLoaded", () => {
               </div>
               <label class="switch">
                 <input type="checkbox" id="messageEditsToggle" data-setting-key="messageEditsEnabled">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="setting-item toggle-item">
-              <div class="setting-info">
-                <h4>تصنيفات المحادثات (Labels)</h4>
-                <p>تسمح للبوت بوضع تصنيفات وتعديل حالات المحادثة (يتطلب اعدادت صلاحيات صفحة خاص).</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" id="inboxLabelsToggle" data-setting-key="inboxLabelsEnabled">
                 <span class="slider"></span>
               </label>
             </div>
@@ -168,6 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <div class="form-group">
                 <label for="facebookAutoMessageDelay">مدة التأخير:</label>
                 <select id="facebookAutoMessageDelay" class="form-control">
+                  <option value="30000">30 ثانية (تجريبي)</option>
                   <option value="600000">10 دقائق</option>
                   <option value="900000">15 دقيقة</option>
                   <option value="3600000">ساعة</option>
@@ -288,7 +278,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (response.success && response.data) {
           const settings = response.data;
-          console.log('تم جلب الإعدادات بنجاح:', settings);
+          console.log('تم جلب إعدادات فيسبوك بنجاح:', settings);
 
           // Populate Toggles
           toggles.forEach(toggle => {
@@ -317,11 +307,11 @@ document.addEventListener("DOMContentLoaded", () => {
     async function loadPageStatus(botId) {
       console.log(`جاري جلب بيانات البوت بالـ ID: ${botId}`);
       try {
-        const response = await handleApiRequest(`/api/bots/${botId}`, {
+        const bot = await handleApiRequest(`/api/bots/${botId}`, {
           headers: { Authorization: `Bearer ${token}` },
         }, pageStatus, "فشل في جلب بيانات البوت");
 
-        if (!response) {
+        if (!bot) {
           console.log(`البوت بالـ ID ${botId} مش موجود`);
           pageStatus.innerHTML = `
             <div style="display: inline-block; color: red;">
@@ -333,7 +323,6 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        const bot = response;
         console.log(`بيانات البوت:`, bot);
 
         // Check if bot is linked to a Facebook page
@@ -349,12 +338,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const statusDiv = document.createElement("div");
             statusDiv.style.display = "inline-block";
             statusDiv.style.color = "green";
-            const refreshDate = bot.lastFacebookTokenRefresh ? new Date(bot.lastFacebookTokenRefresh).toLocaleString('ar-EG') : 'غير متوفر';
             statusDiv.innerHTML = `
               <strong>حالة الربط:</strong> مربوط ✅<br>
               <strong>اسم الصفحة:</strong> ${pageData.name}<br>
               <strong>معرف الصفحة:</strong> ${bot.facebookPageId}<br>
-              <strong>تاريخ الربط:</strong> ${refreshDate}
+              <strong>تاريخ الربط:</strong> ${new Date(bot.lastFacebookTokenRefresh).toLocaleString('ar-EG')}
             `;
 
             // Create unlink button
@@ -565,15 +553,19 @@ document.addEventListener("DOMContentLoaded", () => {
     document.head.appendChild(fbScript);
 
     function loginWithFacebook() {
-      // Check if user is already logged into Facebook
+      // First, check the login status
       FB.getLoginStatus(function(response) {
         if (response.status === 'connected') {
-          // User is logged in, use existing session
-          console.log('المستخدم مسجّل دخوله بالفعل، جاري جلب الصفحات...');
-          getUserPages(response.authResponse.accessToken);
+          // If user is logged in, log them out first
+          console.log('المستخدم مسجّل دخوله، جاري تسجيل الخروج...');
+          FB.logout(function(logoutResponse) {
+            console.log('تم تسجيل الخروج من فيسبوك:', logoutResponse);
+            // Proceed with login after logout
+            performFacebookLogin();
+          });
         } else {
-          // User is not logged in, prompt for login
-          console.log('المستخدم غير مسجّل دخوله، جاري طلب تسجيل الدخول...');
+          // If user is not logged in, proceed with login directly
+          console.log('المستخدم غير مسجّل دخوله، جاري تسجيل الدخول...');
           performFacebookLogin();
         }
       });
@@ -589,7 +581,8 @@ document.addEventListener("DOMContentLoaded", () => {
           errorMessage.style.display = 'block';
         }
       }, { 
-        scope: 'public_profile,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_engagement'
+        scope: 'pages_show_list,pages_messaging,pages_messaging_subscriptions,business_management,public_profile',
+        auth_type: 'reauthenticate' // Force re-authentication to show permission prompt
       });
     }
 
@@ -602,60 +595,63 @@ document.addEventListener("DOMContentLoaded", () => {
             errorMessage.style.display = 'block';
             return;
           }
-
-          const modal = document.createElement("div");
-          modal.classList.add("modal");
-          modal.innerHTML = `
-            <div class="modal-content">
-              <div class="modal-header">
-                <h3>اختر صفحة واحدة لربطها بالبوت</h3>
-                <button class="modal-close-btn"><i class="fas fa-times"></i></button>
-              </div>
-              <div class="modal-body">
-                <select id="pageSelect" class="form-control">
-                  <option value="">اختر صفحة</option>
-                  ${response.data.map(page => `<option value="${page.id}" data-token="${page.access_token}">${page.name}</option>`).join('')}
-                </select>
-              </div>
-              <div class="form-actions">
-                <button id="confirmPageBtn" class="btn btn-primary">تأكيد</button>
-                <button class="btn btn-secondary modal-close-btn">إلغاء</button>
-              </div>
-            </div>
-          `;
-          document.body.appendChild(modal);
-
-          modal.querySelectorAll(".modal-close-btn").forEach(btn => {
-            btn.addEventListener("click", () => modal.remove());
-          });
-
-          const confirmPageBtn = document.getElementById("confirmPageBtn");
-          if (confirmPageBtn) {
-            confirmPageBtn.addEventListener("click", () => {
-              const pageSelect = document.getElementById("pageSelect");
-              const selectedPageId = pageSelect.value;
-              const selectedOption = pageSelect.options[pageSelect.selectedIndex];
-              const accessToken = selectedOption.dataset.token;
-
-              if (!selectedPageId || !accessToken) {
-                errorMessage.textContent = 'يرجى اختيار صفحة لربطها بالبوت';
-                errorMessage.style.display = 'block';
-                modal.remove();
-                return;
-              }
-
-              console.log('بيانات الصفحة المختارة:', { access_token: accessToken, page_id: selectedPageId });
-              saveApiKeys(selectedBotId, accessToken, selectedPageId);
-              modal.remove();
-            });
-          } else {
-            console.error("❌ confirmPageBtn is not found in the DOM");
-          }
+          displayPageSelectionModal(response.data);
         } else {
           errorMessage.textContent = 'خطأ في جلب الصفحات: ' + (response.error.message || 'غير معروف');
           errorMessage.style.display = 'block';
         }
       });
+    }
+
+    function displayPageSelectionModal(pages) {
+      const modal = document.createElement("div");
+      modal.classList.add("modal");
+      modal.innerHTML = `
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>اختر صفحة فيسبوك واحدة لربطها بالبوت</h3>
+            <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="modal-body">
+            <select id="pageSelect" class="form-control">
+              <option value="">اختر صفحة</option>
+              ${pages.map(page => `<option value="${page.id}" data-token="${page.access_token}">${page.name}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-actions">
+            <button id="confirmPageBtn" class="btn btn-primary">تأكيد</button>
+            <button class="btn btn-secondary modal-close-btn">إلغاء</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      modal.querySelectorAll(".modal-close-btn").forEach(btn => {
+        btn.addEventListener("click", () => modal.remove());
+      });
+
+      const confirmPageBtn = document.getElementById("confirmPageBtn");
+      if (confirmPageBtn) {
+        confirmPageBtn.addEventListener("click", () => {
+          const pageSelect = document.getElementById("pageSelect");
+          const selectedPageId = pageSelect.value;
+          const selectedOption = pageSelect.options[pageSelect.selectedIndex];
+          const accessToken = selectedOption.dataset.token;
+
+          if (!selectedPageId || !accessToken) {
+            errorMessage.textContent = 'يرجى اختيار صفحة لربطها بالبوت';
+            errorMessage.style.display = 'block';
+            modal.remove();
+            return;
+          }
+
+          console.log('بيانات الصفحة المختارة:', { access_token: accessToken, page_id: selectedPageId });
+          saveApiKeys(selectedBotId, accessToken, selectedPageId);
+          modal.remove();
+        });
+      } else {
+        console.error("❌ confirmPageBtn is not found in the DOM");
+      }
     }
 
     async function saveApiKeys(botId, facebookApiKey, facebookPageId) {
@@ -678,7 +674,7 @@ document.addEventListener("DOMContentLoaded", () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ facebookApiKey, facebookPageId, convertToLongLived: true }),
+          body: JSON.stringify({ facebookApiKey, facebookPageId }),
         }, errorMessage, "فشل حفظ معلومات الربط");
 
         console.log('✅ التوكن تم حفظه بنجاح:', facebookApiKey.slice(0, 10) + '...');
