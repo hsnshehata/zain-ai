@@ -1,3 +1,4 @@
+// server/models/Conversation.js
 const mongoose = require("mongoose");
 
 const messageSchema = new mongoose.Schema({
@@ -10,9 +11,10 @@ const messageSchema = new mongoose.Schema({
 const conversationSchema = new mongoose.Schema({
   botId: { type: mongoose.Schema.Types.ObjectId, ref: "Bot", required: true },
   userId: { type: String, required: true }, // Facebook user ID
-  channel: { type: String, required: true }, // Add channel field
+  channel: { type: String, required: true, enum: ['facebook', 'instagram', 'whatsapp', 'web'] }, // Add channel field
   username: { type: String },
   messages: [messageSchema],
+  lastAutoMessageSent: { type: Date }, // وقت آخر رسالة تلقائية
 });
 
 // إضافة Index على messages.timestamp لتسريع الـ Sort
