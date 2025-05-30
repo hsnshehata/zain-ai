@@ -8,6 +8,8 @@ const Bot = require('./models/Bot');
 const Rule = require('./models/Rule');
 const Conversation = require('./models/Conversation');
 const Feedback = require('./models/Feedback');
+const { sendMessage: sendFacebookMessage } = require('./controllers/facebookController');
+const { sendMessage: sendInstagramMessage } = require('./controllers/instagramController');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -205,6 +207,68 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     await conversation.save();
     console.log('💬 Assistant reply added to conversation:', reply);
+
+    // معالجة الرسالة التلقائية لفيسبوك أو إنستجرام
+    if (finalChannel === 'facebook' || finalChannel === 'instagram') {
+      const bot = await Bot.findById(botId);
+      if (!bot) {
+        console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+        return reply;
+      }
+
+      let autoMessageEnabled, autoMessageText, autoMessageImage, autoMessageDelay, sendMessageFn, recipientId;
+
+      if (finalChannel === 'facebook' && bot.facebookAutoMessageEnabled) {
+        autoMessageEnabled = bot.facebookAutoMessageEnabled;
+        autoMessageText = bot.facebookAutoMessageText;
+        autoMessageImage = bot.facebookAutoMessageImage;
+        autoMessageDelay = bot.facebookAutoMessageDelay;
+        sendMessageFn = sendFacebookMessage;
+        recipientId = finalUserId.replace('facebook_', '');
+      } else if (finalChannel === 'instagram' && bot.instagramAutoMessageEnabled) {
+        autoMessageEnabled = bot.instagramAutoMessageEnabled;
+        autoMessageText = bot.instagramAutoMessageText;
+        autoMessageImage = bot.instagramAutoMessageImage;
+        autoMessageDelay = bot.instagramAutoMessageDelay;
+        sendMessageFn = sendInstagramMessage;
+        recipientId = finalUserId.replace('instagram_', '');
+      }
+
+      if (autoMessageEnabled && autoMessageText) {
+        const now = new Date();
+        const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000); // 48 ساعة
+
+        if (!conversation.lastAutoMessageSent || conversation.lastAutoMessageSent < fortyEightHoursAgo) {
+          console.log(`[${getTimestamp()}] ⏰ Scheduling auto message for user ${finalUserId} after ${autoMessageDelay}ms`);
+
+          setTimeout(async () => {
+            try {
+              // التحقق مرة أخرى من حالة المحادثة
+              const updatedConversation = await Conversation.findOne({ botId, userId: finalUserId, channel: finalChannel });
+              if (!updatedConversation) {
+                console.log(`[${getTimestamp()}] ⚠️ المحادثة غير موجودة عند إرسال الرسالة التلقائية | User ID: ${finalUserId}`);
+                return;
+              }
+
+              if (!updatedConversation.lastAutoMessageSent || updatedConversation.lastAutoMessageSent < fortyEightHoursAgo) {
+                await sendMessageFn(recipientId, autoMessageText, bot[finalChannel === 'facebook' ? 'facebookApiKey' : 'instagramApiKey'], autoMessageImage);
+
+                // تحديث وقت آخر رسالة تلقائية
+                updatedConversation.lastAutoMessageSent = new Date();
+                await updatedConversation.save();
+                console.log(`[${getTimestamp()}] ✅ Auto message sent to ${finalUserId} and lastAutoMessageSent updated`);
+              } else {
+                console.log(`[${getTimestamp()}] ⚠️ Auto message skipped for ${finalUserId} (sent within last 48 hours)`);
+              }
+            } catch (err) {
+              console.error(`[${getTimestamp()}] ❌ Error sending auto message to ${finalUserId}:`, err.message);
+            }
+          }, autoMessageDelay);
+        } else {
+          console.log(`[${getTimestamp()}] ⚠️ Auto message skipped for ${finalUserId} (sent within last 48 hours)`);
+        }
+      }
+    }
 
     return reply;
   } catch (err) {
