@@ -138,10 +138,10 @@ document.addEventListener("DOMContentLoaded", () => {
             <div class="form-group" id="autoMessageSettings" style="display: none;">
               <label for="facebookAutoMessageText">نص الرسالة التلقائية:</label>
               <div class="input-group">
-                <textarea id="facebookAutoMessageText" maxlength="200" placeholder="اكتب رسالة قصيرة وجذابة (200 حرف كحد أقصى). يمكنك إضافة إيموجي مثل ♥"></textarea>
+                <textarea id="facebookAutoMessageText" maxlength="700" placeholder="اكتب رسالة جذابة (700 حرف كحد أقصى). يمكنك إضافة إيموجي مثل ♥"></textarea>
                 <button id="emojiPickerBtn" class="btn btn-secondary" title="إضافة إيموجي">😊</button>
               </div>
-              <p id="charCount" class="char-count">0/200 حرف</p>
+              <p id="charCount" class="char-count">0/700 حرف</p>
               <div class="form-group">
                 <label for="facebookAutoMessageImage">صورة الرسالة التلقائية (اختياري):</label>
                 <p style="font-size: 0.8em; margin-bottom: 5px;">JPG أو PNG، أقل من 4 ميجا. الصورة اختيارية.</p>
@@ -497,8 +497,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function updateCharCount() {
       const count = autoMessageText.value.length;
-      charCount.textContent = `${count}/200 حرف`;
-      charCount.className = `char-count${count > 200 ? ' error' : ''}`;
+      charCount.textContent = `${count}/700 حرف`;
+      charCount.className = `char-count${count > 700 ? ' error' : ''}`;
     }
 
     function previewAutoMessage() {
