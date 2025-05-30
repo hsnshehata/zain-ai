@@ -1,9 +1,11 @@
+// server/controllers/botsController.js
 const express = require('express');
 const Bot = require('../models/Bot');
 const User = require('../models/User');
 const Feedback = require('../models/Feedback');
 const Notification = require('../models/Notification');
 const axios = require('axios');
+const { uploadToImgbb } = require('./uploadController');
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
@@ -349,6 +351,7 @@ exports.unlinkFacebookPage = async (req, res) => {
     // إلغاء ربط صفحة فيسبوك
     bot.facebookApiKey = '';
     bot.facebookPageId = '';
+    bot.lastFacebookTokenRefresh = null;
     await bot.save();
 
     console.log(`[${getTimestamp()}] ✅ تم إلغاء ربط صفحة فيسبوك بنجاح | Bot ID: ${botId}`);
@@ -378,7 +381,7 @@ exports.unlinkInstagramAccount = async (req, res) => {
     // إلغاء ربط حساب إنستجرام
     bot.instagramApiKey = '';
     bot.instagramPageId = '';
-    bot.lastInstagramTokenRefresh = null; // إزالة تاريخ التجديد
+    bot.lastInstagramTokenRefresh = null;
     await bot.save();
 
     console.log(`[${getTimestamp()}] ✅ تم إلغاء ربط حساب إنستجرام بنجاح | Bot ID: ${botId}`);
@@ -436,8 +439,9 @@ exports.linkSocialPage = async (req, res) => {
       // تحديث البوت بالتوكن ومعرف الصفحة
       bot.facebookApiKey = longLivedToken;
       bot.facebookPageId = facebookPageId;
+      bot.lastFacebookTokenRefresh = new Date();
 
-      // حقول فيسبوك المشترك فيها (زي النسخة القديمة)
+      // حقول فيسبوك المشترك فيها
       subscribedFields = [
         'messages',
         'messaging_postbacks',
@@ -482,6 +486,7 @@ exports.linkSocialPage = async (req, res) => {
       // تحديث البوت بالتوكن ومعرف الصفحة
       bot.instagramApiKey = longLivedToken;
       bot.instagramPageId = instagramPageId;
+      bot.lastInstagramTokenRefresh = new Date();
     }
 
     await bot.save();
@@ -793,6 +798,142 @@ exports.updateInstagramSettings = async (req, res) => {
     res.status(200).json({ success: true, data: updatedInstagramSettings });
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ خطأ في تحديث إعدادات الإنستجرام:`, err.message, err.stack);
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
+  }
+};
+
+// جلب إعدادات الرسالة التلقائية
+exports.getAutoMessageSettings = async (req, res) => {
+  try {
+    const botId = req.params.id;
+    console.log(`[${getTimestamp()}] جاري جلب إعدادات الرسالة التلقائية | Bot ID: ${botId}`);
+
+    const bot = await Bot.findById(botId);
+    if (!bot) {
+      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      return res.status(404).json({ success: false, message: 'البوت غير موجود' });
+    }
+
+    const autoMessageSettings = {
+      facebookAutoMessageEnabled: bot.facebookAutoMessageEnabled,
+      facebookAutoMessageText: bot.facebookAutoMessageText,
+      facebookAutoMessageImage: bot.facebookAutoMessageImage,
+      facebookAutoMessageDelay: bot.facebookAutoMessageDelay,
+      instagramAutoMessageEnabled: bot.instagramAutoMessageEnabled,
+      instagramAutoMessageText: bot.instagramAutoMessageText,
+      instagramAutoMessageImage: bot.instagramAutoMessageImage,
+      instagramAutoMessageDelay: bot.instagramAutoMessageDelay,
+    };
+
+    console.log(`[${getTimestamp()}] ✅ تم جلب إعدادات الرسالة التلقائية بنجاح | Bot ID: ${botId}`);
+    res.status(200).json({ success: true, data: autoMessageSettings });
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ خطأ في جلب إعدادات الرسالة التلقائية:`, err.message, err.stack);
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
+  }
+};
+
+// حفظ إعدادات الرسالة التلقائية
+exports.saveAutoMessageSettings = async (req, res) => {
+  try {
+    const botId = req.params.id;
+    const {
+      facebookAutoMessageEnabled,
+      facebookAutoMessageText,
+      facebookAutoMessageDelay,
+      instagramAutoMessageEnabled,
+      instagramAutoMessageText,
+      instagramAutoMessageDelay,
+    } = req.body;
+    const facebookAutoMessageImage = req.files?.facebookAutoMessageImage;
+    const instagramAutoMessageImage = req.files?.instagramAutoMessageImage;
+
+    console.log(`[${getTimestamp()}] 📝 محاولة حفظ إعدادات الرسالة التلقائية | Bot ID: ${botId}`);
+
+    const bot = await Bot.findById(botId);
+    if (!bot) {
+      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      return res.status(404).json({ success: false, message: 'البوت غير موجود' });
+    }
+
+    if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
+      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      return res.status(403).json({ success: false, message: 'غير مصرح لك بتعديل هذا البوت' });
+    }
+
+    // التحقق من النص (200 حرف كحد أقصى)
+    if (facebookAutoMessageText && facebookAutoMessageText.length > 200) {
+      return res.status(400).json({ success: false, message: 'نص الرسالة التلقائية لفيسبوك يجب ألا يتجاوز 200 حرف' });
+    }
+
+    if (instagramAutoMessageText && instagramAutoMessageText.length > 200) {
+      return res.status(400).json({ success: false, message: 'نص الرسالة التلقائية لإنستجرام يجب ألا يتجاوز 200 حرف' });
+    }
+
+    // التحقق من المدة
+    const validDelays = [600000, 900000, 3600000, 10800000];
+    if (facebookAutoMessageDelay && !validDelays.includes(Number(facebookAutoMessageDelay))) {
+      return res.status(400).json({ success: false, message: 'مدة التأخير لفيسبوك غير صالحة' });
+    }
+
+    if (instagramAutoMessageDelay && !validDelays.includes(Number(instagramAutoMessageDelay))) {
+      return res.status(400).json({ success: false, message: 'مدة التأخير لإنستجرام غير صالحة' });
+    }
+
+    // معالجة الصور
+    let facebookImageUrl = bot.facebookAutoMessageImage;
+    let instagramImageUrl = bot.instagramAutoMessageImage;
+
+    if (facebookAutoMessageImage) {
+      try {
+        const uploadResult = await uploadToImgbb(facebookAutoMessageImage);
+        facebookImageUrl = uploadResult.url;
+      } catch (err) {
+        return res.status(400).json({ success: false, message: `فشل في رفع صورة فيسبوك: ${err.message}` });
+      }
+    } else if (facebookAutoMessageEnabled === 'false' || !facebookAutoMessageEnabled) {
+      facebookImageUrl = ''; // مسح الصورة إذا تم تعطيل الخاصية
+    }
+
+    if (instagramAutoMessageImage) {
+      try {
+        const uploadResult = await uploadToImgbb(instagramAutoMessageImage);
+        instagramImageUrl = uploadResult.url;
+      } catch (err) {
+        return res.status(400).json({ success: false, message: `فشل في رفع صورة إنستجرام: ${err.message}` });
+      }
+    } else if (instagramAutoMessageEnabled === 'false' || !instagramAutoMessageEnabled) {
+      instagramImageUrl = ''; // مسح الصورة إذا تم تعطيل الخاصية
+    }
+
+    // تحديث الإعدادات
+    bot.facebookAutoMessageEnabled = facebookAutoMessageEnabled === 'true';
+    bot.facebookAutoMessageText = facebookAutoMessageText || '';
+    bot.facebookAutoMessageImage = facebookImageUrl;
+    bot.facebookAutoMessageDelay = Number(facebookAutoMessageDelay) || 600000;
+
+    bot.instagramAutoMessageEnabled = instagramAutoMessageEnabled === 'true';
+    bot.instagramAutoMessageText = instagramAutoMessageText || '';
+    bot.instagramAutoMessageImage = instagramImageUrl;
+    bot.instagramAutoMessageDelay = Number(instagramAutoMessageDelay) || 600000;
+
+    await bot.save();
+
+    const updatedSettings = {
+      facebookAutoMessageEnabled: bot.facebookAutoMessageEnabled,
+      facebookAutoMessageText: bot.facebookAutoMessageText,
+      facebookAutoMessageImage: bot.facebookAutoMessageImage,
+      facebookAutoMessageDelay: bot.facebookAutoMessageDelay,
+      instagramAutoMessageEnabled: bot.instagramAutoMessageEnabled,
+      instagramAutoMessageText: bot.instagramAutoMessageText,
+      instagramAutoMessageImage: bot.instagramAutoMessageImage,
+      instagramAutoMessageDelay: bot.instagramAutoMessageDelay,
+    };
+
+    console.log(`[${getTimestamp()}] ✅ تم حفظ إعدادات الرسالة التلقائية بنجاح | Bot ID: ${botId}`);
+    res.status(200).json({ success: true, data: updatedSettings });
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ خطأ في حفظ إعدادات الرسالة التلقائية:`, err.message, err.stack);
     res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
   }
 };
