@@ -1,766 +1,337 @@
-// public/js/facebook.js
-document.addEventListener("DOMContentLoaded", () => {
-  async function loadFacebookPage() {
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = "/css/facebook.css";
-    document.head.appendChild(link);
-    const content = document.getElementById("content");
-    const token = localStorage.getItem("token");
-    const selectedBotId = localStorage.getItem("selectedBotId");
+// server/controllers/facebookController.js
+const axios = require('axios');
+const Bot = require('../models/Bot');
+const Conversation = require('../models/Conversation');
+const { processMessage, processFeedback } = require('../botEngine');
+const { getTimestamp } = require('./botsController');
 
-    if (!selectedBotId) {
-      content.innerHTML = `
-        <div class="placeholder error">
-          <h2><i class="fas fa-exclamation-triangle"></i> لم يتم اختيار بوت</h2>
-          <p>يرجى اختيار بوت من القائمة العلوية أولاً لعرض إعدادات فيسبوك.</p>
-        </div>
-      `;
-      return;
+// دالة لجلب اسم المستخدم من فيسبوك
+const getFacebookUsername = async (userId, accessToken) => {
+  try {
+    const cleanUserId = userId.replace(/^(facebook_|facebook_comment_)/, '');
+    console.log(`[${getTimestamp()}] 📋 محاولة جلب اسم المستخدم لـ ${cleanUserId} من فيسبوك باستخدام التوكن: ${accessToken.slice(0, 10)}...`);
+    const response = await axios.get(
+      `https://graph.facebook.com/v22.0/${cleanUserId}?fields=name&access_token=${accessToken}`
+    );
+    if (response.data.name) {
+      console.log(`[${getTimestamp()}] ✅ تم جلب اسم المستخدم من فيسبوك: ${response.data.name}`);
+      return response.data.name;
+    }
+    console.log(`[${getTimestamp()}] ⚠️ لم يتم العثور على الاسم في الاستجابة:`, response.data);
+    return cleanUserId;
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم من فيسبوك لـ ${userId}:`, err.message, err.response?.data);
+    return userId.replace(/^(facebook_|facebook_comment_)/, '');
+  }
+};
+
+const handleMessage = async (req, res) => {
+  try {
+    console.log(`[${getTimestamp()}] 📩 Webhook POST request received:`, JSON.stringify(req.body, null, 2));
+
+    const body = req.body;
+
+    if (body.object !== 'page') {
+      console.log(`[${getTimestamp()}] ⚠️ Ignored non-page webhook event:`, body.object);
+      return res.status(200).send('EVENT_RECEIVED');
     }
 
-    if (!token) {
-      content.innerHTML = `
-        <div class="placeholder error">
-          <h2><i class="fas fa-exclamation-triangle"></i> تسجيل الدخول مطلوب</h2>
-          <p>يرجى تسجيل الدخول لعرض إعدادات فيسبوك.</p>
-        </div>
-      `;
-      return;
-    }
+    for (const entry of body.entry) {
+      const pageId = entry.id;
 
-    // Main structure for the Facebook settings page
-    content.innerHTML = `
-      <div class="page-header">
-        <h2><i class="fab fa-facebook-square"></i> إعدادات ربط فيسبوك</h2>
-        <div id="instructionsContainer" class="instructions-container" style="display: none;">
-          <h3>📋 خطوات بسيطة لربط صفحتك على فيسبوك</h3>
-          <p>عشان تقدر تربط صفحتك بالبوت بنجاح، اتأكد من الخطوات دي:</p>
-          <ul>
-            <li>
-              <strong>إنشاء حساب مطور:</strong> لازم يكون عندك حساب مطور على موقع Meta Developer عشان تقدر تكمل عملية الربط.
-              <br>
-              <span style="display: block; margin-top: 5px;">
-                <strong>إزاي تعمل حساب مطور؟</strong><br>
-                1. ادخل على موقع <a href="https://developers.facebook.com/" target="_blank">Meta Developer</a>.<br>
-                2. اضغط على "Get Started" أو "Log In" لو عندك حساب فيسبوك.<br>
-                3. سجّل دخولك بنفس حساب فيسبوك اللي بتدير منه الصفحة.<br>
-                4. وافق على شروط المطورين (Meta Developer Terms) لو ظهرتلك، وكده هيبقى عندك حساب مطور.
-              </span>
-            </li>
-            <li>
-              <strong>تواصل معانا:</strong> بعد ما تعمل حساب المطور، ابعتلنا رسالة على واتساب على الرقم 
-              <a href="https://wa.me/01279425543" target="_blank">01279425543</a>، وهنبعتلك دعوة لتطبيقنا عشان تقدر تستخدمه.
-            </li>
-            <li>
-              <strong>ربط الصفحة:</strong> بعد ما تقبل الدعوة، تقدر تختار الصفحة اللي بتديرها من الزر اللي تحت عشان البوت يشتغل عليها.
-            </li>
-          </ul>
-        </div>
-        <div class="header-actions">
-          <button id="connectFacebookBtn" class="btn btn-primary"><i class="fab fa-facebook"></i> ربط صفحتك على فيسبوك</button>
-          <div id="pageStatus" class="page-status" style="margin-left: 20px;"></div>
-        </div>
-      </div>
-
-      <div id="loadingSpinner" class="spinner"><div class="loader"></div></div>
-      <div id="errorMessage" class="error-message" style="display: none;"></div>
-
-      <div id="facebookSettingsContainer" class="settings-container facebook-settings-grid" style="display: none;">
-        <div class="card settings-card">
-          <div class="card-header"><h3><i class="fas fa-toggle-on"></i> تفعيل ميزات Webhook</h3></div>
-          <div class="card-body toggles-grid">
-            <div class="setting-item toggle-item">
-              <div class="setting-info">
-                <h4>رسائل الترحيب (Opt-ins)</h4>
-                <p>إرسال رسالة ترحيب من البوت بمجرد فتح دردشة مع الصفحة لأول مرة قبل بدء المحادثة.</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" id="messagingOptinsToggle" data-setting-key="messagingOptinsEnabled">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="setting-item toggle-item">
-              <div class="setting-info">
-                <h4>ردود الفعل (Reactions)</h4>
-                <p>تسمح للبوت بالردود على عمليات التفاعل مع الرسالة مثل اعجاب او قلب.</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" id="messageReactionsToggle" data-setting-key="messageReactionsEnabled">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="setting-item toggle-item">
-              <div class="setting-info">
-                <h4>تتبع المصدر (Referrals)</h4>
-                <p>معرفة كيف وصل المستخدم إلى صفحتك (مثل الإعلانات).</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" id="messagingReferralsToggle" data-setting-key="messagingReferralsEnabled">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="setting-item toggle-item">
-              <div class="setting-info">
-                <h4>تعديلات الرسائل (Edits)</h4>
-                <p>استقبال إشعارات عندما يقوم المستخدم بتعديل رسالة وتوليد رد جديد بناء على التعديل.</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" id="messageEditsToggle" data-setting-key="messageEditsEnabled">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="setting-item toggle-item">
-              <div class="setting-info">
-                <h4>تصنيفات المحادثات (Labels)</h4>
-                <p>تسمح للبوت بوضع تصنيفات وتعديل حالات المحادثة (يتطلب اعدادت صلاحيات صفحة خاص).</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" id="inboxLabelsToggle" data-setting-key="inboxLabelsEnabled">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="setting-item toggle-item">
-              <div class="setting-info">
-                <h4>الرد على التعليقات (Comments)</h4>
-                <p>تسمح للبوت بالرد على تعليقات المستخدمين على بوستات الصفحة بنفس طريقة الرد على الرسايل.</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" id="commentsRepliesToggle" data-setting-key="commentsRepliesEnabled">
-                <span class="slider"></span>
-              </label>
-            </div>
-          </div>
-          <p id="togglesError" class="error-message small-error" style="display: none;"></p>
-        </div>
-        <div class="card settings-card">
-          <div class="card-header"><h3><i class="fas fa-comment-alt"></i> إعدادات الرسالة التلقائية</h3></div>
-          <div class="card-body">
-            <div class="setting-item toggle-item">
-              <div class="setting-info">
-                <h4>تفعيل الرسالة التلقائية</h4>
-                <p>إرسال رسالة تلقائية (نص + صورة اختيارية) بعد مدة من آخر رسالة من المستخدم.</p>
-              </div>
-              <label class="switch">
-                <input type="checkbox" id="facebookAutoMessageToggle" data-setting-key="facebookAutoMessageEnabled">
-                <span class="slider"></span>
-              </label>
-            </div>
-            <div class="form-group" id="autoMessageSettings" style="display: none;">
-              <label for="facebookAutoMessageText">نص الرسالة التلقائية:</label>
-              <div class="input-group">
-                <textarea id="facebookAutoMessageText" maxlength="200" placeholder="اكتب رسالة قصيرة وجذابة (200 حرف كحد أقصى). يمكنك إضافة إيموجي مثل ♥"></textarea>
-                <button id="emojiPickerBtn" class="btn btn-secondary" title="إضافة إيموجي">😊</button>
-              </div>
-              <p id="charCount" style="font-size: 0.9em; margin-top: 5px;">0/200 حرف</p>
-              <div class="form-group">
-                <label for="facebookAutoMessageImage">صورة الرسالة التلقائية (اختياري):</label>
-                <p style="font-size: 0.8em; margin-bottom: 5px;">JPG أو PNG، أقل من 4 ميجا. الصورة اختيارية.</p>
-                <label for="facebookAutoMessageImage" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 5px;">
-                  <i class="fas fa-image"></i> اختيار صورة
-                </label>
-                <input type="file" id="facebookAutoMessageImage" accept="image/png,image/jpeg" style="display: none;">
-                <div id="imagePreviewContainer" style="margin-top: 10px; display: none;">
-                  <p style="font-size: 0.8em; margin-bottom: 5px;">معاينة الصورة:</p>
-                  <img id="imagePreview" style="max-width: 100px; max-height: 100px; border-radius: 8px;" alt="Image Preview">
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="facebookAutoMessageDelay">مدة التأخير:</label>
-                <select id="facebookAutoMessageDelay" class="form-control">
-                  <option value="600000">10 دقائق</option>
-                  <option value="900000">15 دقيقة</option>
-                  <option value="3600000">ساعة</option>
-                  <option value="10800000">3 ساعات</option>
-                </select>
-                <p style="font-size: 0.8em; margin-top: 5px;">الرسالة هتتبعت بعد المدة دي من آخر رسالة من المستخدم.</p>
-              </div>
-              <div class="form-actions">
-                <button id="previewAutoMessageBtn" class="btn btn-secondary">معاينة الرسالة</button>
-                <button id="saveAutoMessageBtn" class="btn btn-primary">حفظ الإعدادات</button>
-              </div>
-            </div>
-          </div>
-          <p id="autoMessageError" class="error-message small-error" style="display: none;"></p>
-        </div>
-      </div>
-    `;
-
-    const loadingSpinner = document.getElementById("loadingSpinner");
-    const errorMessage = document.getElementById("errorMessage");
-    const settingsContainer = document.getElementById("facebookSettingsContainer");
-    const instructionsContainer = document.getElementById("instructionsContainer");
-    const connectFacebookBtn = document.getElementById("connectFacebookBtn");
-    const pageStatus = document.getElementById("pageStatus");
-
-    // Toggle elements
-    const toggles = settingsContainer.querySelectorAll(".switch input[type=\"checkbox\"]");
-    const togglesError = document.getElementById("togglesError");
-
-    // Auto message elements
-    const autoMessageToggle = document.getElementById("facebookAutoMessageToggle");
-    const autoMessageSettings = document.getElementById("autoMessageSettings");
-    const autoMessageText = document.getElementById("facebookAutoMessageText");
-    const autoMessageImage = document.getElementById("facebookAutoMessageImage");
-    const autoMessageDelay = document.getElementById("facebookAutoMessageDelay");
-    const saveAutoMessageBtn = document.getElementById("saveAutoMessageBtn");
-    const previewAutoMessageBtn = document.getElementById("previewAutoMessageBtn");
-    const autoMessageError = document.getElementById("autoMessageError");
-    const charCount = document.getElementById("charCount");
-    const imagePreviewContainer = document.getElementById("imagePreviewContainer");
-    const imagePreview = document.getElementById("imagePreview");
-    const emojiPickerBtn = document.getElementById("emojiPickerBtn");
-
-    // Emoji picker initialization
-    const emojiPicker = document.createElement("div");
-    emojiPicker.id = "emojiPicker";
-    emojiPicker.style.display = "none";
-    emojiPicker.style.position = "absolute";
-    emojiPicker.style.background = "#fff";
-    emojiPicker.style.border = "1px solid #ccc";
-    emojiPicker.style.padding = "10px";
-    emojiPicker.style.borderRadius = "8px";
-    emojiPicker.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
-    emojiPicker.style.zIndex = "1000";
-    emojiPicker.innerHTML = `
-      <span style="cursor: pointer; margin: 5px;">😊</span>
-      <span style="cursor: pointer; margin: 5px;">👍</span>
-      <span style="cursor: pointer; margin: 5px;">♥</span>
-      <span style="cursor: pointer; margin: 5px;">🎉</span>
-      <span style="cursor: pointer; margin: 5px;">🔥</span>
-    `;
-    document.body.appendChild(emojiPicker);
-
-    emojiPickerBtn.addEventListener("click", (e) => {
-      const rect = emojiPickerBtn.getBoundingClientRect();
-      emojiPicker.style.top = `${rect.bottom + window.scrollY}px`;
-      emojiPicker.style.left = `${rect.left}px`;
-      emojiPicker.style.display = emojiPicker.style.display === "none" ? "block" : "none";
-    });
-
-    emojiPicker.querySelectorAll("span").forEach((emoji) => {
-      emoji.addEventListener("click", () => {
-        autoMessageText.value += emoji.textContent;
-        updateCharCount();
-        emojiPicker.style.display = "none";
-      });
-    });
-
-    // Close emoji picker when clicking outside
-    document.addEventListener("click", (e) => {
-      if (!emojiPicker.contains(e.target) && e.target !== emojiPickerBtn) {
-        emojiPicker.style.display = "none";
+      const bot = await Bot.findOne({ facebookPageId: pageId });
+      if (!bot) {
+        console.log(`[${getTimestamp()}] ❌ No bot found for page ID: ${pageId}`);
+        continue;
       }
-    });
 
-    // --- Functions ---
-
-    async function handleApiRequest(url, options, errorElement, defaultErrorMessage) {
-      try {
-        const response = await fetch(url, options);
-        if (!response.ok) {
-          const contentType = response.headers.get("content-type");
-          if (!contentType || !contentType.includes("application/json")) {
-            throw new Error("الرد غير متوقع (مش JSON). يمكن إن الـ endpoint مش موجود.");
-          }
-          const errorData = await response.json();
-          throw new Error(errorData.message || defaultErrorMessage);
-        }
-        return await response.json();
-      } catch (err) {
-        if (errorElement) {
-          errorElement.textContent = err.message;
-          errorElement.style.display = "block";
-        }
-        throw err;
+      // التحقق من حالة البوت
+      if (!bot.isActive) {
+        console.log(`[${getTimestamp()}] ⚠️ Bot ${bot.name} (ID: ${bot._id}) is inactive, skipping message processing.`);
+        continue;
       }
-    }
 
-    async function loadBotSettings(botId) {
-      loadingSpinner.style.display = "flex";
-      settingsContainer.style.display = "none";
-      errorMessage.style.display = "none";
+      if (entry.messaging && entry.messaging.length > 0) {
+        const webhookEvent = entry.messaging[0];
+        const senderPsid = webhookEvent.sender?.id;
+        const recipientId = webhookEvent.recipient?.id;
 
-      try {
-        const response = await handleApiRequest(`/api/bots/${botId}/settings`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }, errorMessage, "حدث خطأ أثناء تحميل الإعدادات");
+        if (!senderPsid) {
+          console.log(`[${getTimestamp()}] ❌ Sender PSID not found in webhook event:`, webhookEvent);
+          continue;
+        }
 
-        if (response.success && response.data) {
-          const settings = response.data;
-          console.log('تم جلب الإعدادات بنجاح:', settings);
+        // إضافة بادئة facebook_ لمعرف المستخدم (للرسايل)
+        const prefixedSenderId = `facebook_${senderPsid}`;
 
-          // Populate Toggles
-          toggles.forEach(toggle => {
-            const key = toggle.dataset.settingKey;
-            if (key && settings.hasOwnProperty(key)) {
-              toggle.checked = settings[key];
-              console.log(`Toggle ${key} set to: ${settings[key]}`);
-            } else {
-              console.warn(`Key ${key} not found in settings or undefined`);
-            }
+        // Validate that senderId is not the page itself
+        if (senderPsid === bot.facebookPageId) {
+          console.log(`[${getTimestamp()}] ⚠️ Skipping message because senderId (${senderPsid}) is the page itself`);
+          continue;
+        }
+
+        // Validate that recipientId matches the page
+        if (recipientId !== bot.facebookPageId) {
+          console.log(`[${getTimestamp()}] ⚠️ Skipping message because recipientId (${recipientId}) does not match pageId (${bot.facebookPageId})`);
+          continue;
+        }
+
+        // Check if the message is an echo (sent by the bot itself)
+        if (webhookEvent.message && webhookEvent.message.is_echo) {
+          console.log(`[${getTimestamp()}] ⚠️ Ignoring echo message from bot: ${webhookEvent.message.text}`);
+          continue;
+        }
+
+        // جلب اسم المستخدم من فيسبوك
+        const username = await getFacebookUsername(prefixedSenderId, bot.facebookApiKey);
+
+        // إنشاء أو تحديث المحادثة
+        let conversation = await Conversation.findOne({
+          botId: bot._id,
+          channel: 'facebook',
+          userId: prefixedSenderId
+        });
+
+        if (!conversation) {
+          conversation = new Conversation({
+            botId: bot._id,
+            channel: 'facebook',
+            userId: prefixedSenderId,
+            username: username,
+            messages: []
           });
+          await conversation.save();
+        } else if (!conversation.username || conversation.username === "مستخدم فيسبوك") {
+          conversation.username = username;
+          await conversation.save();
+        }
 
-          settingsContainer.style.display = "grid";
+        // معالجة رسائل الترحيب (messaging_optins)
+        if (webhookEvent.optin && bot.messagingOptinsEnabled) {
+          console.log(`[${getTimestamp()}] 📩 Processing opt-in event from ${prefixedSenderId}`);
+          const welcomeMessage = bot.welcomeMessage || 'مرحبًا! كيف يمكنني مساعدتك اليوم؟';
+          await sendMessage(senderPsid, welcomeMessage, bot.facebookApiKey);
+          continue;
+        } else if (webhookEvent.optin && !bot.messagingOptinsEnabled) {
+          console.log(`[${getTimestamp()}] ⚠️ Opt-in messages disabled for bot ${bot.name} (ID: ${bot._id}), skipping opt-in processing.`);
+          continue;
+        }
+
+        // معالجة ردود الفعل (message_reactions)
+        if (webhookEvent.reaction && bot.messageReactionsEnabled) {
+          console.log(`[${getTimestamp()}] 📩 Processing reaction event from ${prefixedSenderId}: ${webhookEvent.reaction.reaction}`);
+          const responseText = `شكرًا على تفاعلك (${webhookEvent.reaction.reaction})!`;
+          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
+          continue;
+        } else if (webhookEvent.reaction && !bot.messageReactionsEnabled) {
+          console.log(`[${getTimestamp()}] ⚠️ Message reactions disabled for bot ${bot.name} (ID: ${bot._id}), skipping reaction processing.`);
+          continue;
+        }
+
+        // معالجة تتبع المصدر (messaging_referrals)
+        if (webhookEvent.referral && bot.messagingReferralsEnabled) {
+          console.log(`[${getTimestamp()}] 📩 Processing referral event from ${prefixedSenderId}: ${webhookEvent.referral.ref}`);
+          const responseText = `مرحبًا! وصلتني من ${webhookEvent.referral.source}، كيف يمكنني مساعدتك؟`;
+          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
+          continue;
+        } else if (webhookEvent.referral && !bot.messagingReferralsEnabled) {
+          console.log(`[${getTimestamp()}] ⚠️ Messaging referrals disabled for bot ${bot.name} (ID: ${bot._id}), skipping referral processing.`);
+          continue;
+        }
+
+        // معالجة تعديلات الرسائل (message_edits)
+        if (webhookEvent.message_edit && bot.messageEditsEnabled) {
+          const editedMessage = webhookEvent.message_edit.message;
+          const mid = editedMessage.mid || `temp_${Date.now()}`;
+          console.log(`[${getTimestamp()}] 📩 Processing message edit event from ${prefixedSenderId}: ${editedMessage.text}`);
+          const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid, 'facebook');
+          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
+          continue;
+        } else if (webhookEvent.message_edit && !bot.messageEditsEnabled) {
+          console.log(`[${getTimestamp()}] ⚠️ Message edits disabled for bot ${bot.name} (ID: ${bot._id}), skipping message edit processing.`);
+          continue;
+        }
+
+        // التعامل مع الرسائل العادية
+        if (webhookEvent.message) {
+          const message = webhookEvent.message;
+          const mid = message.mid || `temp_${Date.now()}`;
+          const messageContent = message.text || (message.attachments ? JSON.stringify(message.attachments) : 'رسالة غير نصية');
+
+          let responseText = '';
+
+          if (message.text) {
+            console.log(`[${getTimestamp()}] 📝 Text message received from ${prefixedSenderId}: ${message.text}`);
+            responseText = await processMessage(bot._id, prefixedSenderId, message.text, false, false, mid, 'facebook');
+          } else if (message.attachments) {
+            const attachment = message.attachments[0];
+            if (attachment.type === 'image') {
+              console.log(`[${getTimestamp()}] 🖼️ Image received from ${prefixedSenderId}: ${attachment.payload.url}`);
+              responseText = await processMessage(bot._id, prefixedSenderId, attachment.payload.url, true, false, mid, 'facebook');
+            } else if (attachment.type === 'audio') {
+              console.log(`[${getTimestamp()}] 🎙️ Audio received from ${prefixedSenderId}: ${attachment.payload.url}`);
+              responseText = await processMessage(bot._id, prefixedSenderId, attachment.payload.url, false, true, mid, 'facebook');
+            } else {
+              console.log(`[${getTimestamp()}] 📎 Unsupported attachment type from ${prefixedSenderId}: ${attachment.type}`);
+              responseText = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
+            }
+          } else {
+            console.log(`[${getTimestamp()}] ❓ Unknown message type from ${prefixedSenderId}`);
+            responseText = 'عذرًا، لا أستطيع فهم هذه الرسالة.';
+          }
+
+          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
+        } else if (webhookEvent.response_feedback) {
+          const feedbackData = webhookEvent.response_feedback;
+          const mid = feedbackData.mid;
+          const feedback = feedbackData.feedback;
+
+          if (!mid || !feedback) {
+            console.log(`[${getTimestamp()}] ❌ Invalid feedback data: mid=${mid}, feedback=${feedback}`);
+            continue;
+          }
+
+          console.log(`[${getTimestamp()}] 📊 Feedback received from ${prefixedSenderId}: ${feedback} for message ID: ${mid}`);
+          await processFeedback(bot._id, prefixedSenderId, mid, feedback);
         } else {
-          throw new Error("فشل في جلب الإعدادات: البيانات غير متاحة");
+          console.log(`[${getTimestamp()}] ❌ No message or feedback found in webhook event:`, webhookEvent);
         }
-      } catch (err) {
-        console.error('خطأ في تحميل الإعدادات:', err);
-        errorMessage.textContent = "خطأ في تحميل الإعدادات: " + (err.message || "غير معروف");
-        errorMessage.style.display = "block";
-      } finally {
-        loadingSpinner.style.display = "none";
       }
-    }
 
-    async function loadPageStatus(botId) {
-      console.log(`جاري جلب بيانات البوت بالـ ID: ${botId}`);
-      try {
-        const response = await handleApiRequest(`/api/bots/${botId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }, pageStatus, "فشل في جلب بيانات البوت");
-
-        if (!response) {
-          console.log(`البوت بالـ ID ${botId} مش موجود`);
-          pageStatus.innerHTML = `
-            <div style="display: inline-block; color: red;">
-              <strong>حالة الربط:</strong> غير مربوط ❌<br>
-              <strong>السبب:</strong> البوت غير موجود أو تم حذفه
-            </div>
-          `;
-          instructionsContainer.style.display = "block";
-          return;
+      if (entry.changes && entry.changes.length > 0) {
+        // التحقق من تفعيل ميزة الرد على الكومنتات
+        if (!bot.commentsRepliesEnabled) {
+          console.log(`[${getTimestamp()}] ⚠️ Comment replies disabled for bot ${bot.name} (ID: ${bot._id}), skipping comment processing.`);
+          continue;
         }
 
-        const bot = response;
-        console.log(`بيانات البوت:`, bot);
+        for (const change of entry.changes) {
+          if (change.field === 'feed' && change.value.item === 'comment' && change.value.verb === 'add') {
+            const commentEvent = change.value;
+            const commentId = commentEvent.comment_id;
+            const postId = commentEvent.post_id;
+            const message = commentEvent.message;
+            const commenterId = commentEvent.from?.id;
+            const commenterName = commentEvent.from?.name;
 
-        // Check if bot is linked to a Facebook page
-        if (bot.facebookPageId && bot.facebookApiKey) {
-          console.log(`جاري جلب بيانات الصفحة بالـ ID: ${bot.facebookPageId}`);
-          const response = await fetch(`https://graph.facebook.com/${bot.facebookPageId}?fields=name&access_token=${bot.facebookApiKey}`);
-          const pageData = await response.json();
+            if (!commenterId || !message) {
+              console.log(`[${getTimestamp()}] ❌ Commenter ID or message not found in feed event:`, commentEvent);
+              continue;
+            }
 
-          if (pageData.name) {
-            console.log(`تم جلب بيانات الصفحة بنجاح:`, pageData);
+            // إضافة بادئة facebook_comment_ لمعرف المستخدم (للتعليقات)
+            const prefixedCommenterId = `facebook_comment_${commenterId}`;
 
-            // Create status container
-            const statusDiv = document.createElement("div");
-            statusDiv.style.display = "inline-block";
-            statusDiv.style.color = "green";
-            const refreshDate = bot.lastFacebookTokenRefresh ? new Date(bot.lastFacebookTokenRefresh).toLocaleString('ar-EG') : 'غير متوفر';
-            statusDiv.innerHTML = `
-              <strong>حالة الربط:</strong> مربوط ✅<br>
-              <strong>اسم الصفحة:</strong> ${pageData.name}<br>
-              <strong>معرف الصفحة:</strong> ${bot.facebookPageId}<br>
-              <strong>تاريخ الربط:</strong> ${refreshDate}
-            `;
+            // تجاهل الكومنتات من الصفحة نفسها (ردود البوت)
+            if (commenterId === bot.facebookPageId) {
+              console.log(`[${getTimestamp()}] ⚠️ Skipping comment because commenterId (${commenterId}) is the page itself`);
+              continue;
+            }
 
-            // Create unlink button
-            const unlinkFacebookBtn = document.createElement("button");
-            unlinkFacebookBtn.id = "unlinkFacebookBtn";
-            unlinkFacebookBtn.className = "btn btn-danger";
-            unlinkFacebookBtn.style.marginLeft = "10px";
-            unlinkFacebookBtn.style.backgroundColor = "#dc3545";
-            unlinkFacebookBtn.style.borderColor = "#dc3545";
-            unlinkFacebookBtn.textContent = "إلغاء الربط";
+            // جلب اسم المستخدم من فيسبوك
+            const username = await getFacebookUsername(prefixedCommenterId, bot.facebookApiKey);
 
-            // Add event listener for unlink button
-            unlinkFacebookBtn.addEventListener("click", async () => {
-              if (confirm("هل أنت متأكد أنك تريد إلغاء ربط هذه الصفحة؟")) {
-                try {
-                  await handleApiRequest(`/api/bots/${botId}/unlink-facebook`, {
-                    method: "POST",
-                    headers: {
-                      "Content-Type": "application/json",
-                      Authorization: `Bearer ${token}`,
-                    },
-                  }, errorMessage, "فشل في إلغاء ربط الصفحة");
+            console.log(`[${getTimestamp()}] 💬 Comment received on post ${postId} from ${commenterName} (${prefixedCommenterId}): ${message}`);
 
-                  errorMessage.textContent = "تم إلغاء ربط الصفحة بنجاح!";
-                  errorMessage.style.color = "green";
-                  errorMessage.style.display = "block";
-                  await loadPageStatus(botId);
-                } catch (err) {
-                  console.error('❌ خطأ في إلغاء الربط:', err);
-                  errorMessage.textContent = 'خطأ في إلغاء الربط: ' + (err.message || 'غير معروف');
-                  errorMessage.style.color = "red";
-                  errorMessage.style.display = "block";
-                }
-              }
+            // إنشاء أو تحديث المحادثة
+            let conversation = await Conversation.findOne({
+              botId: bot._id,
+              channel: 'facebook',
+              userId: prefixedCommenterId
             });
 
-            // Append status and button to pageStatus
-            pageStatus.innerHTML = "";
-            pageStatus.appendChild(statusDiv);
-            pageStatus.appendChild(unlinkFacebookBtn);
+            if (!conversation) {
+              conversation = new Conversation({
+                botId: bot._id,
+                channel: 'facebook',
+                userId: prefixedCommenterId,
+                username: username,
+                messages: []
+              });
+              await conversation.save();
+            } else if (!conversation.username || conversation.username === "مستخدم فيسبوك") {
+              conversation.username = username;
+              await conversation.save();
+            }
 
-            instructionsContainer.style.display = "none";
+            const responseText = await processMessage(bot._id, prefixedCommenterId, message, false, false, `comment_${commentId}`, 'facebook');
+            await replyToComment(commentId, responseText, bot.facebookApiKey);
           } else {
-            console.log(`فشل في جلب بيانات الصفحة:`, pageData);
-            pageStatus.innerHTML = `
-              <div style="display: inline-block; color: red;">
-                <strong>حالة الربط:</strong> غير مربوط ❌<br>
-                <strong>السبب:</strong> فشل في جلب بيانات الصفحة (التوكن قد يكون غير صالح أو منتهي)
-              </div>
-            `;
-            instructionsContainer.style.display = "block";
-          }
-        } else {
-          console.log(`البوت مش مرتبط بصفحة فيسبوك`);
-          pageStatus.innerHTML = `
-            <div style="display: inline-block; color: red;">
-              <strong>حالة الربط:</strong> غير مربوط ❌
-            </div>
-          `;
-          instructionsContainer.style.display = "block";
-        }
-      } catch (err) {
-        console.error('Error loading page status:', err);
-        pageStatus.innerHTML = `
-          <div style="display: inline-block; color: red;">
-            <strong>حالة الربط:</strong> غير مربوط ❌<br>
-            <strong>السبب:</strong> خطأ في جلب بيانات البوت: ${err.message || 'غير معروف'}
-          </div>
-        `;
-        instructionsContainer.style.display = "block";
-      }
-    }
-
-    async function updateWebhookSetting(botId, key, value) {
-      togglesError.style.display = "none";
-
-      try {
-        const response = await handleApiRequest(`/api/bots/${botId}/settings`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ [key]: value }),
-        }, togglesError, `فشل تحديث إعداد ${key}`);
-
-        if (response.success) {
-          console.log(`✅ Updated ${key} to ${value} for bot ${botId}`);
-        } else {
-          throw new Error("فشل في تحديث الإعداد");
-        }
-      } catch (err) {
-        console.error('خطأ في تحديث الإعداد:', err);
-        const toggleInput = document.querySelector(`input[data-setting-key="${key}"]`);
-        if (toggleInput) toggleInput.checked = !value;
-      }
-    }
-
-    async function loadAutoMessageSettings(botId) {
-      try {
-        const response = await handleApiRequest(`/api/bots/${botId}/auto-message`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }, autoMessageError, "حدث خطأ أثناء تحميل إعدادات الرسالة التلقائية");
-
-        if (response.success && response.data) {
-          const settings = response.data;
-          autoMessageToggle.checked = settings.facebookAutoMessageEnabled || false;
-          autoMessageText.value = settings.facebookAutoMessageText || '';
-          autoMessageDelay.value = settings.facebookAutoMessageDelay || '600000';
-          if (settings.facebookAutoMessageImage) {
-            imagePreview.src = settings.facebookAutoMessageImage;
-            imagePreviewContainer.style.display = "block";
-          }
-          autoMessageSettings.style.display = autoMessageToggle.checked ? "block" : "none";
-          updateCharCount();
-        }
-      } catch (err) {
-        console.error('خطأ في تحميل إعدادات الرسالة التلقائية:', err);
-        autoMessageError.textContent = "خطأ في تحميل الإعدادات: " + (err.message || "غير معروف");
-        autoMessageError.style.display = "block";
-      }
-    }
-
-    async function saveAutoMessageSettings() {
-      autoMessageError.style.display = "none";
-      const formData = new FormData();
-      formData.append("facebookAutoMessageEnabled", autoMessageToggle.checked);
-      formData.append("facebookAutoMessageText", autoMessageText.value);
-      formData.append("facebookAutoMessageDelay", autoMessageDelay.value);
-      if (autoMessageImage.files[0]) {
-        formData.append("facebookAutoMessageImage", autoMessageImage.files[0]);
-      } else if (!autoMessageToggle.checked) {
-        formData.append("facebookAutoMessageImage", ""); // Clear image if disabled
-      }
-
-      try {
-        const response = await handleApiRequest(`/api/bots/${selectedBotId}/auto-message`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData,
-        }, autoMessageError, "فشل حفظ إعدادات الرسالة التلقائية");
-
-        if (response.success) {
-          autoMessageError.textContent = "تم حفظ الإعدادات بنجاح!";
-          autoMessageError.style.color = "green";
-          autoMessageError.style.display = "block";
-          if (response.data.facebookAutoMessageImage) {
-            imagePreview.src = response.data.facebookAutoMessageImage;
-            imagePreviewContainer.style.display = "block";
-          } else {
-            imagePreviewContainer.style.display = "none";
+            console.log(`[${getTimestamp()}] ❌ Not a comment event or not an "add" verb:`, change);
           }
         }
-      } catch (err) {
-        console.error('خطأ في حفظ إعدادات الرسالة التلقائية:', err);
       }
     }
 
-    function updateCharCount() {
-      const count = autoMessageText.value.length;
-      charCount.textContent = `${count}/200 حرف`;
-      charCount.style.color = count > 200 ? "red" : "inherit";
-    }
+    res.status(200).send('EVENT_RECEIVED');
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Error in webhook:`, err.message, err.stack);
+    res.sendStatus(500);
+  }
+};
 
-    function previewAutoMessage() {
-      const text = autoMessageText.value || "لا يوجد نص";
-      const imageSrc = imagePreview.src && imagePreviewContainer.style.display !== "none" ? imagePreview.src : null;
-      const modal = document.createElement("div");
-      modal.classList.add("modal");
-      modal.innerHTML = `
-        <div class="modal-content">
-          <div class="modal-header">
-            <h3>معاينة الرسالة التلقائية</h3>
-            <button class="modal-close-btn"><i class="fas fa-times"></i></button>
-          </div>
-          <div class="modal-body">
-            <p style="margin-bottom: 10px;">${text}</p>
-            ${imageSrc ? `<img src="${imageSrc}" style="max-width: 100%; border-radius: 8px;" alt="Auto Message Image">` : ''}
-          </div>
-          <div class="form-actions">
-            <button class="btn btn-secondary modal-close-btn">إغلاق</button>
-          </div>
-        </div>
-      `;
-      document.body.appendChild(modal);
-
-      modal.querySelectorAll(".modal-close-btn").forEach(btn => {
-        btn.addEventListener("click", () => modal.remove());
-      });
-    }
-
-    // Initialize Facebook SDK
-    window.fbAsyncInit = function () {
-      FB.init({
-        appId: '499020366015281',
-        cookie: true,
-        xfbml: true,
-        version: 'v20.0'
-      });
+const sendMessage = (senderPsid, responseText, facebookApiKey, imageUrl = null) => {
+  return new Promise((resolve, reject) => {
+    console.log(`[${getTimestamp()}] 📤 Attempting to send message to ${senderPsid} with token: ${facebookApiKey.slice(0, 10)}...`);
+    const requestBody = {
+      recipient: { id: senderPsid },
+      message: {}
     };
 
-    // Load Facebook SDK
-    const fbScript = document.createElement("script");
-    fbScript.src = "https://connect.facebook.net/en_US/sdk.js";
-    fbScript.async = true;
-    fbScript.defer = true;
-    fbScript.crossOrigin = "anonymous";
-    document.head.appendChild(fbScript);
-
-    function loginWithFacebook() {
-      // Check if user is already logged into Facebook
-      FB.getLoginStatus(function(response) {
-        if (response.status === 'connected') {
-          // User is logged in, use existing session
-          console.log('المستخدم مسجّل دخوله بالفعل، جاري جلب الصفحات...');
-          getUserPages(response.authResponse.accessToken);
-        } else {
-          // User is not logged in, prompt for login
-          console.log('المستخدم غير مسجّل دخوله، جاري طلب تسجيل الدخول...');
-          performFacebookLogin();
-        }
-      });
-    }
-
-    function performFacebookLogin() {
-      FB.login(function (response) {
-        if (response.authResponse) {
-          console.log('تم تسجيل الدخول!');
-          getUserPages(response.authResponse.accessToken);
-        } else {
-          errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ';
-          errorMessage.style.display = 'block';
-        }
-      }, { 
-        scope: 'public_profile,pages_show_list,pages_messaging,pages_manage_metadata,pages_read_engagement,pages_manage_engagement'
-      });
-    }
-
-    function getUserPages(accessToken) {
-      FB.api('/me/accounts', { access_token: accessToken }, function (response) {
-        if (response && !response.error) {
-          console.log('الصفحات:', response.data);
-          if (response.data.length === 0) {
-            errorMessage.textContent = 'لم يتم العثور على صفحات مرتبطة بحسابك';
-            errorMessage.style.display = 'block';
-            return;
+    if (imageUrl) {
+      requestBody.message = {
+        attachment: {
+          type: "image",
+          payload: {
+            url: imageUrl,
+            is_reusable: true
           }
-
-          const modal = document.createElement("div");
-          modal.classList.add("modal");
-          modal.innerHTML = `
-            <div class="modal-content">
-              <div class="modal-header">
-                <h3>اختر صفحة واحدة لربطها بالبوت</h3>
-                <button class="modal-close-btn"><i class="fas fa-times"></i></button>
-              </div>
-              <div class="modal-body">
-                <select id="pageSelect" class="form-control">
-                  <option value="">اختر صفحة</option>
-                  ${response.data.map(page => `<option value="${page.id}" data-token="${page.access_token}">${page.name}</option>`).join('')}
-                </select>
-              </div>
-              <div class="form-actions">
-                <button id="confirmPageBtn" class="btn btn-primary">تأكيد</button>
-                <button class="btn btn-secondary modal-close-btn">إلغاء</button>
-              </div>
-            </div>
-          `;
-          document.body.appendChild(modal);
-
-          modal.querySelectorAll(".modal-close-btn").forEach(btn => {
-            btn.addEventListener("click", () => modal.remove());
-          });
-
-          const confirmPageBtn = document.getElementById("confirmPageBtn");
-          if (confirmPageBtn) {
-            confirmPageBtn.addEventListener("click", () => {
-              const pageSelect = document.getElementById("pageSelect");
-              const selectedPageId = pageSelect.value;
-              const selectedOption = pageSelect.options[pageSelect.selectedIndex];
-              const accessToken = selectedOption.dataset.token;
-
-              if (!selectedPageId || !accessToken) {
-                errorMessage.textContent = 'يرجى اختيار صفحة لربطها بالبوت';
-                errorMessage.style.display = 'block';
-                modal.remove();
-                return;
-              }
-
-              console.log('بيانات الصفحة المختارة:', { access_token: accessToken, page_id: selectedPageId });
-              saveApiKeys(selectedBotId, accessToken, selectedPageId);
-              modal.remove();
-            });
-          } else {
-            console.error("❌ confirmPageBtn is not found in the DOM");
-          }
-        } else {
-          errorMessage.textContent = 'خطأ في جلب الصفحات: ' + (response.error.message || 'غير معروف');
-          errorMessage.style.display = 'block';
         }
-      });
-    }
-
-    async function saveApiKeys(botId, facebookApiKey, facebookPageId) {
-      errorMessage.style.display = "none";
-      loadingSpinner.style.display = "flex";
-
-      if (!facebookApiKey || !facebookPageId) {
-        loadingSpinner.style.display = "none";
-        errorMessage.textContent = "فشل حفظ معلومات الربط: مفتاح API أو معرف الصفحة غير موجود";
-        errorMessage.style.display = "block";
-        return;
+      };
+      if (responseText) {
+        requestBody.message.text = responseText; // إضافة النص مع الصورة
       }
-
-      console.log('البيانات المرسلة:', { facebookApiKey, facebookPageId });
-
-      try {
-        const saveResponse = await handleApiRequest(`/api/bots/${botId}/link-social`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ facebookApiKey, facebookPageId, convertToLongLived: true }),
-        }, errorMessage, "فشل حفظ معلومات الربط");
-
-        console.log('✅ التوكن تم حفظه بنجاح:', facebookApiKey.slice(0, 10) + '...');
-        errorMessage.textContent = "تم ربط الصفحة بنجاح!";
-        errorMessage.style.color = "green";
-        errorMessage.style.display = "block";
-        await loadPageStatus(botId);
-      } catch (err) {
-        console.error('❌ خطأ في حفظ التوكن:', err);
-      } finally {
-        loadingSpinner.style.display = "none";
-      }
-    }
-
-    // --- Event Listeners ---
-    if (connectFacebookBtn) {
-      connectFacebookBtn.addEventListener("click", loginWithFacebook);
     } else {
-      console.error("❌ connectFacebookBtn is not found in the DOM");
+      requestBody.message = { text: responseText };
     }
 
-    toggles.forEach(toggle => {
-      if (toggle) {
-        toggle.addEventListener("change", (e) => {
-          const key = e.target.dataset.settingKey;
-          const value = e.target.checked;
-          if (key) {
-            updateWebhookSetting(selectedBotId, key, value);
-          }
-        });
-      } else {
-        console.error("❌ A toggle element is not found in the DOM");
+    axios.post(
+      `https://graph.facebook.com/v20.0/me/messages`,
+      requestBody,
+      {
+        params: { access_token: facebookApiKey },
       }
+    ).then(response => {
+      console.log(`[${getTimestamp()}] ✅ Message sent to ${senderPsid}: ${responseText}${imageUrl ? ` with image ${imageUrl}` : ''}`);
+      resolve(response.data);
+    }).catch(err => {
+      console.error(`[${getTimestamp()}] ❌ Error sending message to Facebook:`, err.response?.data || err.message);
+      reject(err);
     });
+  });
+};
 
-    if (autoMessageToggle) {
-      autoMessageToggle.addEventListener("change", () => {
-        autoMessageSettings.style.display = autoMessageToggle.checked ? "block" : "none";
-      });
-    }
+const replyToComment = (commentId, responseText, facebookApiKey) => {
+  return new Promise((resolve, reject) => {
+    console.log(`[${getTimestamp()}] 📤 Attempting to reply to comment ${commentId} with token: ${facebookApiKey.slice(0, 10)}...`);
+    const requestBody = {
+      message: responseText,
+    };
 
-    if (autoMessageText) {
-      autoMessageText.addEventListener("input", updateCharCount);
-    }
+    axios.post(
+      `https://graph.facebook.com/v20.0/${commentId}/comments`,
+      requestBody,
+      {
+        params: { access_token: facebookApiKey },
+      }
+    ).then(response => {
+      console.log(`[${getTimestamp()}] ✅ Replied to comment ${commentId}: ${responseText}`);
+      resolve(response.data);
+    }).catch(err => {
+      console.error(`[${getTimestamp()}] ❌ Error replying to comment on Facebook:`, err.response?.data || err.message);
+      reject(err);
+    });
+  });
+};
 
-    if (autoMessageImage) {
-      autoMessageImage.addEventListener("change", () => {
-        const file = autoMessageImage.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = (e) => {
-            imagePreview.src = e.target.result;
-            imagePreviewContainer.style.display = "block";
-          };
-          reader.readAsDataURL(file);
-        } else {
-          imagePreviewContainer.style.display = "none";
-        }
-      });
-    }
-
-    if (saveAutoMessageBtn) {
-      saveAutoMessageBtn.addEventListener("click", saveAutoMessageSettings);
-    }
-
-    if (previewAutoMessageBtn) {
-      previewAutoMessageBtn.addEventListener("click", previewAutoMessage);
-    }
-
-    // --- Initial Load ---
-    loadPageStatus(selectedBotId);
-    loadBotSettings(selectedBotId);
-    loadAutoMessageSettings(selectedBotId);
-  }
-
-  // Make loadFacebookPage globally accessible
-  window.loadFacebookPage = loadFacebookPage;
-
-  // Ensure the function is available even if called early
-  if (window.loadFacebookPage) {
-    console.log('✅ loadFacebookPage is defined and ready');
-  } else {
-    console.error('❌ loadFacebookPage is not defined');
-  }
-});
+module.exports = { handleMessage, sendMessage };
