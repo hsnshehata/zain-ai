@@ -8,7 +8,14 @@ const Bot = require('./models/Bot');
 const Rule = require('./models/Rule');
 const Conversation = require('./models/Conversation');
 const Feedback = require('./models/Feedback');
-const { sendMessage: sendFacebookMessage } = require('./controllers/facebookController');
+let sendFacebookMessage;
+try {
+  sendFacebookMessage = require('./controllers/facebookController').sendMessage;
+  console.log(`[${new Date().toISOString()}] ✅ Successfully imported sendFacebookMessage from facebookController`);
+} catch (err) {
+  console.error(`[${new Date().toISOString()}] ❌ Failed to import sendFacebookMessage:`, err.message);
+  sendFacebookMessage = null; // Fallback to null if import fails
+}
 const { sendMessage: sendInstagramMessage } = require('./controllers/instagramController');
 
 const openai = new OpenAI({
