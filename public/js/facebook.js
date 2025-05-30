@@ -133,46 +133,51 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <p id="togglesError" class="error-message small-error" style="display: none;"></p>
         </div>
-
-        <!-- إعدادات الرسالة التلقائية -->
         <div class="card settings-card">
-          <div class="card-header"><h3><i class="fas fa-paper-plane"></i> إعدادات الرسالة التلقائية</h3></div>
+          <div class="card-header"><h3><i class="fas fa-comment-alt"></i> إعدادات الرسالة التلقائية</h3></div>
           <div class="card-body">
             <div class="setting-item toggle-item">
               <div class="setting-info">
                 <h4>تفعيل الرسالة التلقائية</h4>
-                <p>إرسال رسالة تلقائية للمستخدم بعد مدة محددة من آخر رسالة.</p>
+                <p>إرسال رسالة تلقائية (نص + صورة اختيارية) بعد مدة من آخر رسالة من المستخدم.</p>
               </div>
               <label class="switch">
-                <input type="checkbox" id="autoMessageToggle">
+                <input type="checkbox" id="facebookAutoMessageToggle" data-setting-key="facebookAutoMessageEnabled">
                 <span class="slider"></span>
               </label>
             </div>
-            <div id="autoMessageSettings" style="display: none;">
-              <div class="setting-item">
-                <label for="autoMessageText">نص الرسالة:</label>
-                <textarea id="autoMessageText" class="form-control" maxlength="200" placeholder="اكتب رسالة قصيرة وجذابة (200 حرف كحد أقصى). يمكنك إضافة إيموجي مثل ♥"></textarea>
-                <p id="charCount" class="small-text">0/200 حرف</p>
+            <div class="form-group" id="autoMessageSettings" style="display: none;">
+              <label for="facebookAutoMessageText">نص الرسالة التلقائية:</label>
+              <div class="input-group">
+                <textarea id="facebookAutoMessageText" maxlength="200" placeholder="اكتب رسالة قصيرة وجذابة (200 حرف كحد أقصى). يمكنك إضافة إيموجي مثل ♥"></textarea>
+                <button id="emojiPickerBtn" class="btn btn-secondary" title="إضافة إيموجي">😊</button>
               </div>
-              <div class="setting-item">
-                <label for="autoMessageImage">رفع صورة (اختياري):</label>
-                <input type="file" id="autoMessageImage" accept="image/png,image/jpeg">
-                <p class="small-text">JPG أو PNG، أقل من 4 ميجا. الصورة اختيارية.</p>
-                <img id="imagePreview" style="display: none; max-width: 200px; margin-top: 10px;">
+              <p id="charCount" style="font-size: 0.9em; margin-top: 5px;">0/200 حرف</p>
+              <div class="form-group">
+                <label for="facebookAutoMessageImage">صورة الرسالة التلقائية (اختياري):</label>
+                <p style="font-size: 0.8em; margin-bottom: 5px;">JPG أو PNG، أقل من 4 ميجا. الصورة اختيارية.</p>
+                <label for="facebookAutoMessageImage" class="btn btn-primary" style="display: inline-flex; align-items: center; gap: 5px;">
+                  <i class="fas fa-image"></i> اختيار صورة
+                </label>
+                <input type="file" id="facebookAutoMessageImage" accept="image/png,image/jpeg" style="display: none;">
+                <div id="imagePreviewContainer" style="margin-top: 10px; display: none;">
+                  <p style="font-size: 0.8em; margin-bottom: 5px;">معاينة الصورة:</p>
+                  <img id="imagePreview" style="max-width: 100px; max-height: 100px; border-radius: 8px;" alt="Image Preview">
+                </div>
               </div>
-              <div class="setting-item">
-                <label for="autoMessageDelay">المدة الزمنية:</label>
-                <select id="autoMessageDelay" class="form-control">
-                  <option value="600000">10 دقايق</option>
+              <div class="form-group">
+                <label for="facebookAutoMessageDelay">مدة التأخير:</label>
+                <select id="facebookAutoMessageDelay" class="form-control">
+                  <option value="600000">10 دقائق</option>
                   <option value="900000">15 دقيقة</option>
                   <option value="3600000">ساعة</option>
                   <option value="10800000">3 ساعات</option>
                 </select>
-                <p class="small-text">الرسالة هتتبعت بعد المدة دي من آخر رسالة من المستخدم.</p>
+                <p style="font-size: 0.8em; margin-top: 5px;">الرسالة هتتبعت بعد المدة دي من آخر رسالة من المستخدم.</p>
               </div>
               <div class="form-actions">
-                <button id="previewAutoMessageBtn" class="btn btn-secondary">معاينة</button>
-                <button id="saveAutoMessageBtn" class="btn btn-primary">حفظ</button>
+                <button id="previewAutoMessageBtn" class="btn btn-secondary">معاينة الرسالة</button>
+                <button id="saveAutoMessageBtn" class="btn btn-primary">حفظ الإعدادات</button>
               </div>
             </div>
           </div>
@@ -193,26 +198,66 @@ document.addEventListener("DOMContentLoaded", () => {
     const togglesError = document.getElementById("togglesError");
 
     // Auto message elements
-    const autoMessageToggle = document.getElementById("autoMessageToggle");
+    const autoMessageToggle = document.getElementById("facebookAutoMessageToggle");
     const autoMessageSettings = document.getElementById("autoMessageSettings");
-    const autoMessageText = document.getElementById("autoMessageText");
-    const autoMessageImage = document.getElementById("autoMessageImage");
-    const imagePreview = document.getElementById("imagePreview");
-    const autoMessageDelay = document.getElementById("autoMessageDelay");
-    const previewAutoMessageBtn = document.getElementById("previewAutoMessageBtn");
+    const autoMessageText = document.getElementById("facebookAutoMessageText");
+    const autoMessageImage = document.getElementById("facebookAutoMessageImage");
+    const autoMessageDelay = document.getElementById("facebookAutoMessageDelay");
     const saveAutoMessageBtn = document.getElementById("saveAutoMessageBtn");
+    const previewAutoMessageBtn = document.getElementById("previewAutoMessageBtn");
     const autoMessageError = document.getElementById("autoMessageError");
     const charCount = document.getElementById("charCount");
+    const imagePreviewContainer = document.getElementById("imagePreviewContainer");
+    const imagePreview = document.getElementById("imagePreview");
+    const emojiPickerBtn = document.getElementById("emojiPickerBtn");
+
+    // Emoji picker initialization
+    const emojiPicker = document.createElement("div");
+    emojiPicker.id = "emojiPicker";
+    emojiPicker.style.display = "none";
+    emojiPicker.style.position = "absolute";
+    emojiPicker.style.background = "#fff";
+    emojiPicker.style.border = "1px solid #ccc";
+    emojiPicker.style.padding = "10px";
+    emojiPicker.style.borderRadius = "8px";
+    emojiPicker.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
+    emojiPicker.style.zIndex = "1000";
+    emojiPicker.innerHTML = `
+      <span style="cursor: pointer; margin: 5px;">😊</span>
+      <span style="cursor: pointer; margin: 5px;">👍</span>
+      <span style="cursor: pointer; margin: 5px;">♥</span>
+      <span style="cursor: pointer; margin: 5px;">🎉</span>
+      <span style="cursor: pointer; margin: 5px;">🔥</span>
+    `;
+    document.body.appendChild(emojiPicker);
+
+    emojiPickerBtn.addEventListener("click", (e) => {
+      const rect = emojiPickerBtn.getBoundingClientRect();
+      emojiPicker.style.top = `${rect.bottom + window.scrollY}px`;
+      emojiPicker.style.left = `${rect.left}px`;
+      emojiPicker.style.display = emojiPicker.style.display === "none" ? "block" : "none";
+    });
+
+    emojiPicker.querySelectorAll("span").forEach((emoji) => {
+      emoji.addEventListener("click", () => {
+        autoMessageText.value += emoji.textContent;
+        updateCharCount();
+        emojiPicker.style.display = "none";
+      });
+    });
+
+    // Close emoji picker when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!emojiPicker.contains(e.target) && e.target !== emojiPickerBtn) {
+        emojiPicker.style.display = "none";
+      }
+    });
 
     // --- Functions ---
 
     async function handleApiRequest(url, options, errorElement, defaultErrorMessage) {
       try {
-        const response = await fetch(url, {
-          method: options.method || 'GET',
-          headers: options.headers || {},
-          body: options.body || null,
-        });
+        const response = await fetch(url, options);
         if (!response.ok) {
           const contentType = response.headers.get("content-type");
           if (!contentType || !contentType.includes("application/json")) {
@@ -266,29 +311,6 @@ document.addEventListener("DOMContentLoaded", () => {
         errorMessage.style.display = "block";
       } finally {
         loadingSpinner.style.display = "none";
-      }
-    }
-
-    async function loadAutoMessageSettings(botId) {
-      try {
-        const response = await handleApiRequest(`/api/bots/${botId}/auto-message`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }, autoMessageError, "حدث خطأ أثناء تحميل إعدادات الرسالة التلقائية");
-
-        if (response.success && response.data) {
-          const settings = response.data;
-          autoMessageToggle.checked = settings.facebookAutoMessageEnabled;
-          autoMessageText.value = settings.facebookAutoMessageText;
-          autoMessageDelay.value = settings.facebookAutoMessageDelay;
-          imagePreview.src = settings.facebookAutoMessageImage || '';
-          imagePreview.style.display = settings.facebookAutoMessageImage ? 'block' : 'none';
-          autoMessageSettings.style.display = autoMessageToggle.checked ? 'block' : 'none';
-          updateCharCount();
-        }
-      } catch (err) {
-        console.error('خطأ في تحميل إعدادات الرسالة التلقائية:', err);
-        autoMessageError.textContent = "خطأ في تحميل إعدادات الرسالة التلقائية: " + (err.message || "غير معروف");
-        autoMessageError.style.display = "block";
       }
     }
 
@@ -431,14 +453,75 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    async function loadAutoMessageSettings(botId) {
+      try {
+        const response = await handleApiRequest(`/api/bots/${botId}/auto-message`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }, autoMessageError, "حدث خطأ أثناء تحميل إعدادات الرسالة التلقائية");
+
+        if (response.success && response.data) {
+          const settings = response.data;
+          autoMessageToggle.checked = settings.facebookAutoMessageEnabled || false;
+          autoMessageText.value = settings.facebookAutoMessageText || '';
+          autoMessageDelay.value = settings.facebookAutoMessageDelay || '600000';
+          if (settings.facebookAutoMessageImage) {
+            imagePreview.src = settings.facebookAutoMessageImage;
+            imagePreviewContainer.style.display = "block";
+          }
+          autoMessageSettings.style.display = autoMessageToggle.checked ? "block" : "none";
+          updateCharCount();
+        }
+      } catch (err) {
+        console.error('خطأ في تحميل إعدادات الرسالة التلقائية:', err);
+        autoMessageError.textContent = "خطأ في تحميل الإعدادات: " + (err.message || "غير معروف");
+        autoMessageError.style.display = "block";
+      }
+    }
+
+    async function saveAutoMessageSettings() {
+      autoMessageError.style.display = "none";
+      const formData = new FormData();
+      formData.append("facebookAutoMessageEnabled", autoMessageToggle.checked);
+      formData.append("facebookAutoMessageText", autoMessageText.value);
+      formData.append("facebookAutoMessageDelay", autoMessageDelay.value);
+      if (autoMessageImage.files[0]) {
+        formData.append("facebookAutoMessageImage", autoMessageImage.files[0]);
+      } else if (!autoMessageToggle.checked) {
+        formData.append("facebookAutoMessageImage", ""); // Clear image if disabled
+      }
+
+      try {
+        const response = await handleApiRequest(`/api/bots/${selectedBotId}/auto-message`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        }, autoMessageError, "فشل حفظ إعدادات الرسالة التلقائية");
+
+        if (response.success) {
+          autoMessageError.textContent = "تم حفظ الإعدادات بنجاح!";
+          autoMessageError.style.color = "green";
+          autoMessageError.style.display = "block";
+          if (response.data.facebookAutoMessageImage) {
+            imagePreview.src = response.data.facebookAutoMessageImage;
+            imagePreviewContainer.style.display = "block";
+          } else {
+            imagePreviewContainer.style.display = "none";
+          }
+        }
+      } catch (err) {
+        console.error('خطأ في حفظ إعدادات الرسالة التلقائية:', err);
+      }
+    }
+
     function updateCharCount() {
       const count = autoMessageText.value.length;
       charCount.textContent = `${count}/200 حرف`;
+      charCount.style.color = count > 200 ? "red" : "inherit";
     }
 
     function previewAutoMessage() {
-      const text = autoMessageText.value;
-      const image = imagePreview.src;
+      const text = autoMessageText.value || "لا يوجد نص";
+      const imageSrc = imagePreview.src && imagePreviewContainer.style.display !== "none" ? imagePreview.src : null;
       const modal = document.createElement("div");
       modal.classList.add("modal");
       modal.innerHTML = `
@@ -448,8 +531,11 @@ document.addEventListener("DOMContentLoaded", () => {
             <button class="modal-close-btn"><i class="fas fa-times"></i></button>
           </div>
           <div class="modal-body">
-            <p>${text || 'لا يوجد نص'}</p>
-            ${image ? `<img src="${image}" style="max-width: 100%; margin-top: 10px;">` : ''}
+            <p style="margin-bottom: 10px;">${text}</p>
+            ${imageSrc ? `<img src="${imageSrc}" style="max-width: 100%; border-radius: 8px;" alt="Auto Message Image">` : ''}
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-secondary modal-close-btn">إغلاق</button>
           </div>
         </div>
       `;
@@ -458,41 +544,6 @@ document.addEventListener("DOMContentLoaded", () => {
       modal.querySelectorAll(".modal-close-btn").forEach(btn => {
         btn.addEventListener("click", () => modal.remove());
       });
-    }
-
-    async function saveAutoMessageSettings() {
-      autoMessageError.style.display = "none";
-      const formData = new FormData();
-      formData.append("platform", "facebook");
-      formData.append("enabled", autoMessageToggle.checked);
-      formData.append("text", autoMessageText.value);
-      formData.append("delay", autoMessageDelay.value);
-      if (autoMessageImage.files[0]) {
-        formData.append("image", autoMessageImage.files[0]);
-      }
-
-      try {
-        const response = await fetch(`/api/bots/${selectedBotId}/auto-message`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData,
-        });
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "فشل في حفظ إعدادات الرسالة التلقائية");
-        }
-        const data = await response.json();
-        if (data.success) {
-          errorMessage.textContent = "تم حفظ إعدادات الرسالة التلقائية بنجاح!";
-          errorMessage.style.color = "green";
-          errorMessage.style.display = "block";
-          imagePreview.src = data.data.facebookAutoMessageImage || '';
-          imagePreview.style.display = data.data.facebookAutoMessageImage ? 'block' : 'none';
-        }
-      } catch (err) {
-        autoMessageError.textContent = err.message;
-        autoMessageError.style.display = "block";
-      }
     }
 
     // Initialize Facebook SDK
@@ -663,30 +714,39 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
-    // Auto message event listeners
-    autoMessageToggle.addEventListener("change", () => {
-      autoMessageSettings.style.display = autoMessageToggle.checked ? 'block' : 'none';
-    });
+    if (autoMessageToggle) {
+      autoMessageToggle.addEventListener("change", () => {
+        autoMessageSettings.style.display = autoMessageToggle.checked ? "block" : "none";
+      });
+    }
 
-    autoMessageText.addEventListener("input", updateCharCount);
+    if (autoMessageText) {
+      autoMessageText.addEventListener("input", updateCharCount);
+    }
 
-    autoMessageImage.addEventListener("change", () => {
-      if (autoMessageImage.files[0]) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          imagePreview.src = e.target.result;
-          imagePreview.style.display = "block";
-        };
-        reader.readAsDataURL(autoMessageImage.files[0]);
-      } else {
-        imagePreview.src = "";
-        imagePreview.style.display = "none";
-      }
-    });
+    if (autoMessageImage) {
+      autoMessageImage.addEventListener("change", () => {
+        const file = autoMessageImage.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            imagePreview.src = e.target.result;
+            imagePreviewContainer.style.display = "block";
+          };
+          reader.readAsDataURL(file);
+        } else {
+          imagePreviewContainer.style.display = "none";
+        }
+      });
+    }
 
-    previewAutoMessageBtn.addEventListener("click", previewAutoMessage);
+    if (saveAutoMessageBtn) {
+      saveAutoMessageBtn.addEventListener("click", saveAutoMessageSettings);
+    }
 
-    saveAutoMessageBtn.addEventListener("click", saveAutoMessageSettings);
+    if (previewAutoMessageBtn) {
+      previewAutoMessageBtn.addEventListener("click", previewAutoMessage);
+    }
 
     // --- Initial Load ---
     loadPageStatus(selectedBotId);
