@@ -6,6 +6,22 @@ const botController = require('../controllers/botController');
 const authenticate = require('../middleware/authenticate');
 const Bot = require('../models/Bot');
 const axios = require('axios');
+const multer = require('multer');
+
+// إعداد multer لرفع الصور
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: { fileSize: 4 * 1024 * 1024 }, // 4MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/png', 'image/jpeg'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('نوع الملف غير مدعوم، يرجى رفع صورة PNG أو JPG'), false);
+    }
+  }
+});
 
 // Log عشان نتأكد إن الـ router شغال
 console.log('✅ Initializing bots routes');
@@ -54,6 +70,18 @@ router.get('/:id/settings', authenticate, botController.getSettings);
 router.patch('/:id/settings', authenticate, botController.updateSettings);
 router.get('/:id/instagram-settings', authenticate, botController.getInstagramSettings);
 router.patch('/:id/instagram-settings', authenticate, botController.updateInstagramSettings);
+
+// Routes for auto message settings
+router.get('/:id/auto-message', authenticate, botsController.getAutoMessageSettings);
+router.post(
+  '/:id/auto-message',
+  authenticate,
+  upload.fields([
+    { name: 'facebookAutoMessageImage', maxCount: 1 },
+    { name: 'instagramAutoMessageImage', maxCount: 1 }
+  ]),
+  botsController.saveAutoMessageSettings
+);
 
 // جلب التقييمات لبوت معين
 router.get('/:id/feedback', authenticate, botsController.getFeedback);
