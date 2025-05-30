@@ -76,15 +76,15 @@ exports.getFeedback = async (req, res) => {
             }
           }
         } catch (err) {
-          console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم ${item.userId} من فيسبوك/إنستجرام:`, err.message);
+          console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم ${item.userId} من فيسبوك/إنترنت:`, err.message);
         }
 
         // تحويل type إلى feedback للتوافق مع الفرونت
         return {
           ...item._doc,
           username,
-          feedback: item.type === 'like' ? 'positive' : 'negative', // توافق مع الفرونت
-          userMessage: item.userMessage // إضافة رسالة المستخدم للرد
+          feedback: item.type === 'like' ? 'positive' : 'negative',
+          userMessage: item.userMessage
         };
       })
     );
@@ -154,7 +154,7 @@ exports.hideFeedback = async (req, res) => {
     res.status(200).json({ message: 'تم إخفاء التقييم بنجاح' });
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ خطأ في إخفاء التقييم:`, err.message, err.stack);
-    res.status(500).json({ message: 'خطأ في السيرفر' });
+    res.status(500).json({ message: 'خطأ في السيرفر.' });
   }
 };
 
@@ -871,7 +871,7 @@ exports.saveAutoMessageSettings = async (req, res) => {
     }
 
     // التحقق من المدة
-    const validDelays = [600000, 900000, 3600000, 10800000];
+    const validDelays = [30000, 600000, 900000, 3600000, 10800000]; // أضفنا 30000 (30 ثانية)
     if (facebookAutoMessageDelay && !validDelays.includes(Number(facebookAutoMessageDelay))) {
       return res.status(400).json({ success: false, message: 'مدة التأخير لفيسبوك غير صالحة' });
     }
