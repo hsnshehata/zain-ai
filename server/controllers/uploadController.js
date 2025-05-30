@@ -1,16 +1,17 @@
+// server/controllers/uploadController.js
 const axios = require('axios');
 const FormData = require('form-data');
 
 async function uploadToImgbb(file, options = {}) {
   try {
-    const maxSizeInBytes = 32 * 1024 * 1024; // 32MB
+    const maxSizeInBytes = 4 * 1024 * 1024; // 4MB
     if (file.size > maxSizeInBytes) {
-      throw new Error('حجم الصورة أكبر من الحد الأقصى المسموح (32 ميجابايت)');
+      throw new Error('حجم الصورة أكبر من الحد الأقصى المسموح (4 ميجابايت)');
     }
 
-    const allowedTypes = ['image/png', 'image/jpeg', 'image/gif'];
+    const allowedTypes = ['image/png', 'image/jpeg'];
     if (!allowedTypes.includes(file.mimetype)) {
-      throw new Error('نوع الصورة غير مدعوم، يرجى رفع صورة بصيغة PNG، JPEG، أو GIF');
+      throw new Error('نوع الصورة غير مدعوم، يرجى رفع صورة بصيغة PNG أو JPG');
     }
 
     const formData = new FormData();
