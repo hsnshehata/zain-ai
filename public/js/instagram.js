@@ -1,5 +1,4 @@
 // public/js/instagram.js
-
 document.addEventListener("DOMContentLoaded", () => {
   async function loadInstagramPage() {
     const link = document.createElement("link");
@@ -124,6 +123,51 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
           <p id="togglesError" class="error-message small-error" style="display: none;"></p>
         </div>
+
+        <!-- إعدادات الرسالة التلقائية -->
+        <div class="card settings-card">
+          <div class="card-header"><h3><i class="fas fa-paper-plane"></i> إعدادات الرسالة التلقائية</h3></div>
+          <div class="card-body">
+            <div class="setting-item toggle-item">
+              <div class="setting-info">
+                <h4>تفعيل الرسالة التلقائية</h4>
+                <p>إرسال رسالة تلقائية للمستخدم بعد مدة محددة من آخر رسالة.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="autoMessageToggle">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div id="autoMessageSettings" style="display: none;">
+              <div class="setting-item">
+                <label for="autoMessageText">نص الرسالة:</label>
+                <textarea id="autoMessageText" class="form-control" maxlength="200" placeholder="اكتب رسالة قصيرة وجذابة (200 حرف كحد أقصى). يمكنك إضافة إيموجي مثل ♥"></textarea>
+                <p id="charCount" class="small-text">0/200 حرف</p>
+              </div>
+              <div class="setting-item">
+                <label for="autoMessageImage">رفع صورة (اختياري):</label>
+                <input type="file" id="autoMessageImage" accept="image/png,image/jpeg">
+                <p class="small-text">JPG أو PNG، أقل من 4 ميجا. الصورة اختيارية.</p>
+                <img id="imagePreview" style="display: none; max-width: 200px; margin-top: 10px;">
+              </div>
+              <div class="setting-item">
+                <label for="autoMessageDelay">المدة الزمنية:</label>
+                <select id="autoMessageDelay" class="form-control">
+                  <option value="600000">10 دقايق</option>
+                  <option value="900000">15 دقيقة</option>
+                  <option value="3600000">ساعة</option>
+                  <option value="10800000">3 ساعات</option>
+                </select>
+                <p class="small-text">الرسالة هتتبعت بعد المدة دي من آخر رسالة من المستخدم.</p>
+              </div>
+              <div class="form-actions">
+                <button id="previewAutoMessageBtn" class="btn btn-secondary">معاينة</button>
+                <button id="saveAutoMessageBtn" class="btn btn-primary">حفظ</button>
+              </div>
+            </div>
+          </div>
+          <p id="autoMessageError" class="error-message small-error" style="display: none;"></p>
+        </div>
       </div>
     `;
 
@@ -137,6 +181,18 @@ document.addEventListener("DOMContentLoaded", () => {
     // Toggle elements
     const toggles = settingsContainer.querySelectorAll(".switch input[type=\"checkbox\"]");
     const togglesError = document.getElementById("togglesError");
+
+    // Auto message elements
+    const autoMessageToggle = document.getElementById("autoMessageToggle");
+    const autoMessageSettings = document.getElementById("autoMessageSettings");
+    const autoMessageText = document.getElementById("autoMessageText");
+    const autoMessageImage = document.getElementById("autoMessageImage");
+    const imagePreview = document.getElementById("imagePreview");
+    const autoMessageDelay = document.getElementById("autoMessageDelay");
+    const previewAutoMessageBtn = document.getElementById("previewAutoMessageBtn");
+    const saveAutoMessageBtn = document.getElementById("saveAutoMessageBtn");
+    const autoMessageError = document.getElementById("autoMessageError");
+    const charCount = document.getElementById("charCount");
 
     // --- Functions ---
 
@@ -196,6 +252,29 @@ document.addEventListener("DOMContentLoaded", () => {
         errorMessage.style.display = "block";
       } finally {
         loadingSpinner.style.display = "none";
+      }
+    }
+
+    async function loadAutoMessageSettings(botId) {
+      try {
+        const response = await handleApiRequest(`/api/bots/${botId}/auto-message`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }, autoMessageError, "حدث خطأ أثناء تحميل إعدادات الرسالة التلقائية");
+
+        if (response.success && response.data) {
+          const settings = response.data;
+          autoMessageToggle.checked = settings.instagramAutoMessageEnabled;
+          autoMessageText.value = settings.instagramAutoMessageText;
+          autoMessageDelay.value = settings.instagramAutoMessageDelay;
+          imagePreview.src = settings.instagramAutoMessageImage || '';
+          imagePreview.style.display = settings.instagramAutoMessageImage ? 'block' : 'none';
+          autoMessageSettings.style.display = autoMessageToggle.checked ? 'block' : 'none';
+          updateCharCount();
+        }
+      } catch (err) {
+        console.error('خطأ في تحميل إعدادات الرسالة التلقائية:', err);
+        autoMessageError.textContent = "خطأ في تحميل إعدادات الرسالة التلقائية: " + (err.message || "غير معروف");
+        autoMessageError.style.display = "block";
       }
     }
 
@@ -333,6 +412,70 @@ document.addEventListener("DOMContentLoaded", () => {
         console.error('خطأ في تحديث الإعداد:', err);
         const toggleInput = document.querySelector(`input[data-setting-key="${key}"]`);
         if (toggleInput) toggleInput.checked = !value;
+      }
+    }
+
+    function updateCharCount() {
+      const count = autoMessageText.value.length;
+      charCount.textContent = `${count}/200 حرف`;
+    }
+
+    function previewAutoMessage() {
+      const text = autoMessageText.value;
+      const image = imagePreview.src;
+      const modal = document.createElement("div");
+      modal.classList.add("modal");
+      modal.innerHTML = `
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>معاينة الرسالة التلقائية</h3>
+            <button class="modal-close-btn"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="modal-body">
+            <p>${text || 'لا يوجد نص'}</p>
+            ${image ? `<img src="${image}" style="max-width: 100%; margin-top: 10px;">` : ''}
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      modal.querySelectorAll(".modal-close-btn").forEach(btn => {
+        btn.addEventListener("click", () => modal.remove());
+      });
+    }
+
+    async function saveAutoMessageSettings() {
+      autoMessageError.style.display = "none";
+      const formData = new FormData();
+      formData.append("platform", "instagram");
+      formData.append("enabled", autoMessageToggle.checked);
+      formData.append("text", autoMessageText.value);
+      formData.append("delay", autoMessageDelay.value);
+      if (autoMessageImage.files[0]) {
+        formData.append("image", autoMessageImage.files[0]);
+      }
+
+      try {
+        const response = await fetch(`/api/bots/${selectedBotId}/auto-message`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || "فشل في حفظ إعدادات الرسالة التلقائية");
+        }
+        const data = await response.json();
+        if (data.success) {
+          errorMessage.textContent = "تم حفظ إعدادات الرسالة التلقائية بنجاح!";
+          errorMessage.style.color = "green";
+          errorMessage.style.display = "block";
+          imagePreview.src = data.data.instagramAutoMessageImage || '';
+          imagePreview.style.display = data.data.instagramAutoMessageImage ? 'block' : 'none';
+        }
+      } catch (err) {
+        autoMessageError.textContent = err.message;
+        autoMessageError.style.display = "block";
       }
     }
 
@@ -535,9 +678,35 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
 
+    // Auto message event listeners
+    autoMessageToggle.addEventListener("change", () => {
+      autoMessageSettings.style.display = autoMessageToggle.checked ? 'block' : 'none';
+    });
+
+    autoMessageText.addEventListener("input", updateCharCount);
+
+    autoMessageImage.addEventListener("change", () => {
+      if (autoMessageImage.files[0]) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          imagePreview.src = e.target.result;
+          imagePreview.style.display = "block";
+        };
+        reader.readAsDataURL(autoMessageImage.files[0]);
+      } else {
+        imagePreview.src = "";
+        imagePreview.style.display = "none";
+      }
+    });
+
+    previewAutoMessageBtn.addEventListener("click", previewAutoMessage);
+
+    saveAutoMessageBtn.addEventListener("click", saveAutoMessageSettings);
+
     // --- Initial Load ---
     loadAccountStatus(selectedBotId);
     loadBotSettings(selectedBotId);
+    loadAutoMessageSettings(selectedBotId);
   }
 
   // Make loadInstagramPage globally accessible
