@@ -6,6 +6,21 @@ const botController = require('../controllers/botController');
 const authenticate = require('../middleware/authenticate');
 const Bot = require('../models/Bot');
 const axios = require('axios');
+const multer = require('multer');
+
+// إعداد Multer لرفع الصور
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 4 * 1024 * 1024 }, // 4MB
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/png', 'image/jpeg'];
+    if (allowedTypes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('نوع الملف غير مدعوم، يرجى رفع صورة PNG أو JPEG'));
+    }
+  }
+});
 
 // Log عشان نتأكد إن الـ router شغال
 console.log('✅ Initializing bots routes');
@@ -178,5 +193,9 @@ router.post('/:id/exchange-instagram-code', authenticate, (req, res) => {
 
 // حذف بوت
 router.delete('/:id', authenticate, botsController.deleteBot);
+
+// جلب وحفظ إعدادات الرسالة التلقائية
+router.get('/:id/auto-message', authenticate, botsController.getAutoMessageSettings);
+router.post('/:id/auto-message', authenticate, upload.single('image'), botsController.saveAutoMessageSettings);
 
 module.exports = router;
