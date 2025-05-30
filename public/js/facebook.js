@@ -141,7 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <textarea id="facebookAutoMessageText" maxlength="200" placeholder="اكتب رسالة قصيرة وجذابة (200 حرف كحد أقصى). يمكنك إضافة إيموجي مثل ♥"></textarea>
                 <button id="emojiPickerBtn" class="btn btn-secondary" title="إضافة إيموجي">😊</button>
               </div>
-              <p id="charCount" style="font-size: 0.9em; margin-top: 5px;">0/200 حرف</p>
+              <p id="charCount" class="char-count">0/200 حرف</p>
               <div class="form-group">
                 <label for="facebookAutoMessageImage">صورة الرسالة التلقائية (اختياري):</label>
                 <p style="font-size: 0.8em; margin-bottom: 5px;">JPG أو PNG، أقل من 4 ميجا. الصورة اختيارية.</p>
@@ -204,14 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Emoji picker initialization
     const emojiPicker = document.createElement("div");
     emojiPicker.id = "emojiPicker";
-    emojiPicker.style.display = "none";
-    emojiPicker.style.position = "absolute";
-    emojiPicker.style.background = "#fff";
-    emojiPicker.style.border = "1px solid #ccc";
-    emojiPicker.style.padding = "10px";
-    emojiPicker.style.borderRadius = "8px";
-    emojiPicker.style.boxShadow = "0 2px 5px rgba(0,0,0,0.2)";
-    emojiPicker.style.zIndex = "1000";
+    emojiPicker.className = "emoji-picker";
     emojiPicker.innerHTML = `
       <span style="cursor: pointer; margin: 5px;">😊</span>
       <span style="cursor: pointer; margin: 5px;">👍</span>
@@ -226,6 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
       emojiPicker.style.top = `${rect.bottom + window.scrollY}px`;
       emojiPicker.style.left = `${rect.left}px`;
       emojiPicker.style.display = emojiPicker.style.display === "none" ? "block" : "none";
+      e.stopPropagation();
     });
 
     emojiPicker.querySelectorAll("span").forEach((emoji) => {
@@ -504,7 +498,7 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateCharCount() {
       const count = autoMessageText.value.length;
       charCount.textContent = `${count}/200 حرف`;
-      charCount.style.color = count > 200 ? "red" : "inherit";
+      charCount.className = `char-count${count > 200 ? ' error' : ''}`;
     }
 
     function previewAutoMessage() {
