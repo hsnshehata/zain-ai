@@ -861,17 +861,17 @@ exports.saveAutoMessageSettings = async (req, res) => {
       return res.status(403).json({ success: false, message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
-    // التحقق من النص (200 حرف كحد أقصى)
-    if (facebookAutoMessageText && facebookAutoMessageText.length > 200) {
-      return res.status(400).json({ success: false, message: 'نص الرسالة التلقائية لفيسبوك يجب ألا يتجاوز 200 حرف' });
+    // التحقق من النص (700 حرف كحد أقصى)
+    if (facebookAutoMessageText && facebookAutoMessageText.length > 700) {
+      return res.status(400).json({ success: false, message: 'نص الرسالة التلقائية لفيسبوك يجب ألا يتجاوز 700 حرف' });
     }
 
-    if (instagramAutoMessageText && instagramAutoMessageText.length > 200) {
-      return res.status(400).json({ success: false, message: 'نص الرسالة التلقائية لإنستجرام يجب ألا يتجاوز 200 حرف' });
+    if (instagramAutoMessageText && instagramAutoMessageText.length > 700) {
+      return res.status(400).json({ success: false, message: 'نص الرسالة التلقائية لإنستجرام يجب ألا يتجاوز 700 حرف' });
     }
 
     // التحقق من المدة
-    const validDelays = [30000, 600000, 900000, 3600000, 10800000]; // أضفنا 30000 (30 ثانية)
+    const validDelays = [30000, 600000, 900000, 3600000, 10800000];
     if (facebookAutoMessageDelay && !validDelays.includes(Number(facebookAutoMessageDelay))) {
       return res.status(400).json({ success: false, message: 'مدة التأخير لفيسبوك غير صالحة' });
     }
