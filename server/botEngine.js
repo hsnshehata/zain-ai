@@ -221,7 +221,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
       let autoMessageEnabled, autoMessageText, autoMessageImage, autoMessageDelay, sendMessageFn, recipientId, apiKey;
 
-      if (finalChannel === 'facebook' && bot.facebookAutoMessageEnabled) {
+      if (finalChannel === 'facebook') {
         autoMessageEnabled = bot.facebookAutoMessageEnabled;
         autoMessageText = bot.facebookAutoMessageText;
         autoMessageImage = bot.facebookAutoMessageImage;
@@ -229,7 +229,8 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         sendMessageFn = sendFacebookMessage;
         recipientId = finalUserId.replace('facebook_', '');
         apiKey = bot.facebookApiKey;
-      } else if (finalChannel === 'instagram' && bot.instagramAutoMessageEnabled) {
+        console.log(`[${getTimestamp()}] 📋 Facebook auto message settings | Bot ID: ${botId} | Enabled: ${autoMessageEnabled} | Text: ${autoMessageText} | Delay: ${autoMessageDelay}ms | Image: ${autoMessageImage || 'None'}`);
+      } else if (finalChannel === 'instagram') {
         autoMessageEnabled = bot.instagramAutoMessageEnabled;
         autoMessageText = bot.instagramAutoMessageText;
         autoMessageImage = bot.instagramAutoMessageImage;
@@ -237,6 +238,17 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         sendMessageFn = sendInstagramMessage;
         recipientId = finalUserId.replace('instagram_', '');
         apiKey = bot.instagramApiKey;
+        console.log(`[${getTimestamp()}] 📋 Instagram auto message settings | Bot ID: ${botId} | Enabled: ${autoMessageEnabled} | Text: ${autoMessageText} | Delay: ${autoMessageDelay}ms | Image: ${autoMessageImage || 'None'}`);
+      }
+
+      if (!autoMessageEnabled) {
+        console.log(`[${getTimestamp()}] ⚠️ Auto message disabled for ${finalChannel} | Bot ID: ${botId} | User ID: ${finalUserId}`);
+      }
+      if (!autoMessageText) {
+        console.log(`[${getTimestamp()}] ⚠️ Auto message text is empty for ${finalChannel} | Bot ID: ${botId} | User ID: ${finalUserId}`);
+      }
+      if (typeof sendMessageFn !== 'function') {
+        console.error(`[${getTimestamp()}] ❌ sendMessageFn is not a function for ${finalChannel} | Bot ID: ${botId} | User ID: ${finalUserId}`);
       }
 
       if (autoMessageEnabled && autoMessageText && typeof sendMessageFn === 'function') {
@@ -257,10 +269,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
               }
 
               if (!updatedConversation.lastAutoMessageSent || updatedConversation.lastAutoMessageSent < fortyEightHoursAgo) {
-                if (typeof sendMessageFn !== 'function') {
-                  console.error(`[${getTimestamp()}] ❌ sendMessageFn is not a function for ${finalChannel} | User ID: ${finalUserId}`);
-                  return;
-                }
                 await sendMessageFn(recipientId, autoMessageText, apiKey, autoMessageImage);
 
                 // تحديث وقت آخر رسالة تلقائية
@@ -278,7 +286,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
           console.log(`[${getTimestamp()}] ⚠️ Auto message skipped for ${finalUserId} (sent within last 48 hours)`);
         }
       } else {
-        console.log(`[${getTimestamp()}] ⚠️ Auto message not configured or sendMessageFn invalid for ${finalChannel} | Bot ID: ${botId} | User ID: ${finalUserId}`);
+        console.log(`[${getTimestamp()}] ⚠️ Auto message not sent for ${finalChannel} due to invalid configuration | Bot ID: ${botId} | User ID: ${finalUserId}`);
       }
     }
 
