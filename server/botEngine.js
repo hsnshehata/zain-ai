@@ -219,7 +219,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         return reply;
       }
 
-      let autoMessageEnabled, autoMessageText, autoMessageImage, autoMessageDelay, sendMessageFn, recipientId;
+      let autoMessageEnabled, autoMessageText, autoMessageImage, autoMessageDelay, sendMessageFn, recipientId, apiKey;
 
       if (finalChannel === 'facebook' && bot.facebookAutoMessageEnabled) {
         autoMessageEnabled = bot.facebookAutoMessageEnabled;
@@ -228,6 +228,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         autoMessageDelay = bot.facebookAutoMessageDelay;
         sendMessageFn = sendFacebookMessage;
         recipientId = finalUserId.replace('facebook_', '');
+        apiKey = bot.facebookApiKey;
       } else if (finalChannel === 'instagram' && bot.instagramAutoMessageEnabled) {
         autoMessageEnabled = bot.instagramAutoMessageEnabled;
         autoMessageText = bot.instagramAutoMessageText;
@@ -235,9 +236,11 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         autoMessageDelay = bot.instagramAutoMessageDelay;
         sendMessageFn = sendInstagramMessage;
         recipientId = finalUserId.replace('instagram_', '');
+        apiKey = bot.instagramApiKey;
       }
 
-      if (autoMessageEnabled && autoMessageText) {
+      if (autoMessageEnabled && autoMessageText && typeof sendMessageFn === 'function') {
+        console.log(`[${getTimestamp()}] ✅ Auto message settings valid for ${finalChannel} | Bot ID: ${botId} | User ID: ${finalUserId}`);
         const now = new Date();
         const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000); // 48 ساعة
 
@@ -254,7 +257,11 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
               }
 
               if (!updatedConversation.lastAutoMessageSent || updatedConversation.lastAutoMessageSent < fortyEightHoursAgo) {
-                await sendMessageFn(recipientId, autoMessageText, bot[finalChannel === 'facebook' ? 'facebookApiKey' : 'instagramApiKey'], autoMessageImage);
+                if (typeof sendMessageFn !== 'function') {
+                  console.error(`[${getTimestamp()}] ❌ sendMessageFn is not a function for ${finalChannel} | User ID: ${finalUserId}`);
+                  return;
+                }
+                await sendMessageFn(recipientId, autoMessageText, apiKey, autoMessageImage);
 
                 // تحديث وقت آخر رسالة تلقائية
                 updatedConversation.lastAutoMessageSent = new Date();
@@ -270,6 +277,8 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         } else {
           console.log(`[${getTimestamp()}] ⚠️ Auto message skipped for ${finalUserId} (sent within last 48 hours)`);
         }
+      } else {
+        console.log(`[${getTimestamp()}] ⚠️ Auto message not configured or sendMessageFn invalid for ${finalChannel} | Bot ID: ${botId} | User ID: ${finalUserId}`);
       }
     }
 
