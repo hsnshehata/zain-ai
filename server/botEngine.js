@@ -225,7 +225,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         autoMessageEnabled = bot.facebookAutoMessageEnabled;
         autoMessageText = bot.facebookAutoMessageText;
         autoMessageImage = bot.facebookAutoMessageImage;
-        autoMessageDelay = bot.facebookAutoMessageDelay;
+        autoMessageDelay = bot.facebookAutoMessageDelay || 600000; // Default to 10 minutes if undefined
         sendMessageFn = sendFacebookMessage;
         recipientId = finalUserId.replace('facebook_', '');
         apiKey = bot.facebookApiKey;
@@ -234,7 +234,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         autoMessageEnabled = bot.instagramAutoMessageEnabled;
         autoMessageText = bot.instagramAutoMessageText;
         autoMessageImage = bot.instagramAutoMessageImage;
-        autoMessageDelay = bot.instagramAutoMessageDelay;
+        autoMessageDelay = bot.instagramAutoMessageDelay || 600000; // Default to 10 minutes if undefined
         sendMessageFn = sendInstagramMessage;
         recipientId = finalUserId.replace('instagram_', '');
         apiKey = bot.instagramApiKey;
@@ -248,18 +248,21 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       if (!autoMessageText) {
         console.log(`[${getTimestamp()}] ⚠️ Auto message text is empty for ${finalChannel} | Bot ID: ${botId} | User ID: ${finalUserId}`);
       }
+      if (!autoMessageDelay) {
+        console.log(`[${getTimestamp()}] ⚠️ Auto message delay is not set for ${finalChannel} | Bot ID: ${botId} | User ID: ${finalUserId}`);
+      }
       if (typeof sendMessageFn !== 'function') {
         console.error(`[${getTimestamp()}] ❌ sendMessageFn is not a function for ${finalChannel} | Bot ID: ${botId} | User ID: ${finalUserId} | Type: ${typeof sendMessageFn}`);
-        console.error(`[${getTimestamp()}] 🔍 Check if facebookController.js is correctly exporting sendMessage`);
+        console.error(`[${getTimestamp()}] 🔍 Check if ${finalChannel === 'facebook' ? 'facebookController.js' : 'instagramController.js'} is correctly exporting sendMessage`);
       }
 
-      if (autoMessageEnabled && autoMessageText && typeof sendMessageFn === 'function') {
+      if (autoMessageEnabled && autoMessageText && autoMessageDelay && typeof sendMessageFn === 'function') {
         console.log(`[${getTimestamp()}] ✅ Auto message settings valid for ${finalChannel} | Bot ID: ${botId} | User ID: ${finalUserId}`);
         const now = new Date();
         const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000); // 48 ساعة
 
         if (!conversation.lastAutoMessageSent || conversation.lastAutoMessageSent < fortyEightHoursAgo) {
-          console.log(`[${getTimestamp()}] ⏰ Scheduling auto message for user ${finalUserId} after ${autoMessageDelay}ms`);
+          console.log(`[${getTimestamp()}] ⏰ Scheduling auto message for user ${finalUserId} to be sent after ${autoMessageDelay}ms`);
 
           setTimeout(async () => {
             try {
@@ -271,6 +274,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
               }
 
               if (!updatedConversation.lastAutoMessageSent || updatedConversation.lastAutoMessageSent < fortyEightHoursAgo) {
+                console.log(`[${getTimestamp()}] 📤 Attempting to send auto message to ${finalUserId} after delay`);
                 await sendMessageFn(recipientId, autoMessageText, apiKey, autoMessageImage);
 
                 // تحديث وقت آخر رسالة تلقائية
