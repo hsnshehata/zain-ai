@@ -241,6 +241,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         console.log(`[${getTimestamp()}] 📋 Instagram auto message settings | Bot ID: ${botId} | Enabled: ${autoMessageEnabled} | Text: ${autoMessageText} | Delay: ${autoMessageDelay}ms | Image: ${autoMessageImage || 'None'}`);
       }
 
+      // التحقق من إعدادات الرسالة التلقائية
       if (!autoMessageEnabled) {
         console.log(`[${getTimestamp()}] ⚠️ Auto message disabled for ${finalChannel} | Bot ID: ${botId} | User ID: ${finalUserId}`);
       }
@@ -248,7 +249,8 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         console.log(`[${getTimestamp()}] ⚠️ Auto message text is empty for ${finalChannel} | Bot ID: ${botId} | User ID: ${finalUserId}`);
       }
       if (typeof sendMessageFn !== 'function') {
-        console.error(`[${getTimestamp()}] ❌ sendMessageFn is not a function for ${finalChannel} | Bot ID: ${botId} | User ID: ${finalUserId}`);
+        console.error(`[${getTimestamp()}] ❌ sendMessageFn is not a function for ${finalChannel} | Bot ID: ${botId} | User ID: ${finalUserId} | Type: ${typeof sendMessageFn}`);
+        console.error(`[${getTimestamp()}] 🔍 Check if facebookController.js is correctly exporting sendMessage`);
       }
 
       if (autoMessageEnabled && autoMessageText && typeof sendMessageFn === 'function') {
