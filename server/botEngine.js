@@ -8,6 +8,8 @@ const Bot = require('./models/Bot');
 const Rule = require('./models/Rule');
 const Conversation = require('./models/Conversation');
 const Feedback = require('./models/Feedback');
+const { sendMessage: sendFacebookMessage } = require('./controllers/facebookController');
+const { sendMessage: sendInstagramMessage } = require('./controllers/instagramController');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -38,245 +40,363 @@ async function transcribeAudio(audioUrl) {
         },
       }
     );
-    console.log('✅ Audio transcribed with LemonFox:', response.data.text);
+    console.log(`[${getCurrentTime()}] ✅ تم تحويل الصوت إلى نص:`, response.data);
     return response.data.text;
   } catch (err) {
-    console.error('❌ Error transcribing audio with LemonFox:', err.message, err.stack);
-    throw new Error(`Failed to transcribe audio: ${err.message}`);
+    console.error(
+      `[${getCurrentTime()}] ❌ خطأ في تحويل الصوت إلى نص:`,
+      err.message,
+      err.response?.data
+    );
+    return null;
   }
 }
 
-async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'web') {
+async function generateImage(prompt) {
   try {
-    // لوج لقيمة userId الخام
-    console.log(`📢 Raw userId received: ${userId} (type: ${typeof userId})`);
-
-    // تحقق من userId
-    let finalUserId = userId;
-    if (!userId || userId === 'anonymous' || userId === null || userId === undefined) {
-      finalUserId = `web_${uuidv4()}`;
-      console.log(`📋 Generated new userId for channel ${channel} due to missing or invalid userId: ${finalUserId}`);
-    } else {
-      console.log(`📋 Using provided userId: ${finalUserId}`);
-    }
-
-    console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', channel);
-
-    // تحديد القناة
-    const finalChannel = channel || 'web';
-
-    let conversation = await Conversation.findOne({ botId, userId: finalUserId, channel: finalChannel });
-    if (!conversation) {
-      console.log('📋 Creating new conversation for bot:', botId, 'user:', finalUserId, 'channel:', finalChannel);
-      conversation = await Conversation.create({ 
-        botId, 
-        userId: finalUserId, 
-        channel: finalChannel, 
-        messages: [],
-        username: finalChannel === 'web' ? `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}` : undefined 
-      });
-    } else {
-      console.log('📋 Found existing conversation for user:', finalUserId, 'conversationId:', conversation._id);
-      if (finalChannel === 'web' && !conversation.username) {
-        conversation.username = `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}`;
-        await conversation.save();
-      }
-    }
-
-    const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
-    console.log('📜 Rules found:', rules.length);
-
-    // بناء الـ systemPrompt مع إضافة الوقت الحالي
-    let systemPrompt = `أنت بوت ذكي يساعد المستخدمين بناءً على القواعد التالية. الوقت الحالي هو: ${getCurrentTime()}.\n`;
-    if (rules.length === 0) {
-      systemPrompt += 'لا توجد قواعد محددة، قم بالرد بشكل عام ومفيد.\n';
-    } else {
-      rules.forEach((rule) => {
-        if (rule.type === 'global' || rule.type === 'general') {
-          systemPrompt += `${rule.content}\n`;
-        } else if (rule.type === 'products') {
-          systemPrompt += `المنتج: ${rule.content.product}، السعر: ${rule.content.price} ${rule.content.currency}\n`;
-        } else if (rule.type === 'qa') {
-          systemPrompt += `السؤال: ${rule.content.question}، الإجابة: ${rule.content.answer}\n`;
-        } else if (rule.type === 'channels') {
-          systemPrompt += `قناة التواصل: ${rule.content.platform}، الوصف: ${rule.content.description}، الرابط/الرقم: ${rule.content.value}\n`;
-        }
-      });
-    }
-    console.log('📝 System prompt:', systemPrompt);
-
-    let userMessageContent = message;
-
-    if (isVoice) {
-      userMessageContent = await transcribeAudio(message);
-      if (!userMessageContent) {
-        throw new Error('Failed to transcribe audio: No text returned');
-      }
-      console.log('💬 Transcribed audio message:', userMessageContent);
-    }
-
-    // إضافة رسالة المستخدم للمحادثة
-    conversation.messages.push({ 
-      role: 'user', 
-      content: userMessageContent, 
-      timestamp: new Date(),
-      messageId: messageId || `msg_${uuidv4()}` 
+    console.log(`[${getCurrentTime()}] 🖼️ جاري إنشاء صورة بناءً على النص: ${prompt}`);
+    const response = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt,
+      n: 1,
+      size: '1024x1024',
     });
-
-    await conversation.save();
-    console.log('💬 User message added to conversation:', userMessageContent);
-
-    // جلب السياق (آخر 20 رسالة قبل الرسالة الحالية)
-    const contextMessages = conversation.messages.slice(-21, -1);
-    const context = contextMessages.map(msg => ({
-      role: msg.role,
-      content: msg.content,
-    }));
-    console.log('🧠 Conversation context:', context.length, 'messages');
-
-    let reply = '';
-
-    // البحث عن قاعدة مطابقة قبل استدعاء OpenAI
-    for (const rule of rules) {
-      if (rule.type === 'qa' && userMessageContent.toLowerCase().includes(rule.content.question.toLowerCase())) {
-        reply = rule.content.answer;
-        break;
-      } else if (rule.type === 'general' || rule.type === 'global') {
-        if (userMessageContent.toLowerCase().includes(rule.content.toLowerCase())) {
-          reply = rule.content;
-          break;
-        }
-      } else if (rule.type === 'products') {
-        if (userMessageContent.toLowerCase().includes(rule.content.product.toLowerCase())) {
-          reply = `المنتج: ${rule.content.product}، السعر: ${rule.content.price} ${rule.content.currency}`;
-          break;
-        }
-      } else if (rule.type === 'channels') {
-        if (userMessageContent.toLowerCase().includes(rule.content.platform.toLowerCase())) {
-          reply = `قناة التواصل: ${rule.content.platform}\nالوصف: ${rule.content.description}\nالرابط/الرقم: ${rule.content.value}`;
-          break;
-        }
-      }
-    }
-
-    // إذا لم يتم العثور على قاعدة، استدعاء OpenAI
-    if (!reply) {
-      if (isImage) {
-        const response = await openai.responses.create({
-          model: 'gpt-4.1-mini-2025-04-14',
-          input: [
-            { role: 'system', content: systemPrompt },
-            ...context,
-            {
-              role: 'user',
-              content: [
-                { type: 'input_text', text: 'رد على حسب محتوى الصورة' },
-                { type: 'input_image', image_url: message },
-              ],
-            },
-          ],
-          max_output_tokens: 5000,
-        });
-        reply = response.output_text || 'عذرًا، لم أتمكن من تحليل الصورة.';
-        console.log('🖼️ Image processed:', reply);
-      } else {
-        const messages = [
-          { role: 'system', content: systemPrompt },
-          ...context,
-          { role: 'user', content: userMessageContent },
-        ];
-        const response = await openai.chat.completions.create({
-          model: 'gpt-4.1-mini-2025-04-14',
-          messages,
-          max_tokens: 5000,
-        });
-        reply = response.choices[0].message.content;
-      }
-    }
-
-    // حفظ رد البوت
-    const responseMessageId = `response_${messageId || uuidv4()}`;
-    conversation.messages.push({ 
-      role: 'assistant', 
-      content: reply, 
-      timestamp: new Date(),
-      messageId: responseMessageId 
-    });
-
-    await conversation.save();
-    console.log('💬 Assistant reply added to conversation:', reply);
-
-    return reply;
+    console.log(`[${getCurrentTime()}] ✅ تم إنشاء الصورة بنجاح:`, response.data);
+    return response.data[0].url;
   } catch (err) {
-    console.error('❌ Error processing message:', err.message, err.stack);
-    return 'عذرًا، حدث خطأ أثناء معالجة طلبك.';
+    console.error(`[${getCurrentTime()}] ❌ خطأ في إنشاء الصورة:`, err.message);
+    return null;
   }
 }
 
-async function processFeedback(botId, userId, messageId, feedback) {
+async function applyRules(message, botId) {
   try {
-    console.log(`📊 Processing feedback for bot: ${botId}, user: ${userId}, messageId: ${messageId}, feedback: ${feedback}`);
-
-    let type = '';
-    if (feedback === 'Good response') {
-      type = 'like';
-    } else if (feedback === 'Bad response') {
-      type = 'dislike';
-    } else {
-      console.log(`⚠️ Unknown feedback type: ${feedback}, skipping...`);
-      return;
-    }
-
-    const conversation = await Conversation.findOne({ botId, userId });
-    let messageContent = 'غير معروف';
-    let userMessage = 'غير معروف';
-    let feedbackTimestamp = new Date();
-
-    if (conversation) {
-      const botMessages = conversation.messages
-        .filter(msg => msg.role === 'assistant' && new Date(msg.timestamp) <= feedbackTimestamp)
-        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-      const botMessage = botMessages.length > 0 ? botMessages[0] : null;
-
-      if (botMessage) {
-        messageContent = botMessage.content;
-        const botMessageIndex = conversation.messages.findIndex(msg => msg === botMessage);
-        let userMessageIndex = botMessageIndex - 1;
-        while (userMessageIndex >= 0 && conversation.messages[userMessageIndex].role !== 'user') {
-          userMessageIndex--;
+    console.log(`[${getCurrentTime()}] 🔍 جاري تطبيق القواعد على الرسالة: ${message}`);
+    const rules = await Rule.find({ botId });
+    for (const rule of rules) {
+      if (rule.isActive) {
+        const regex = new RegExp(rule.pattern, 'i');
+        if (regex.test(message)) {
+          console.log(
+            `[${getCurrentTime()}] ✅ تم العثور على قاعدة مطابقة:`,
+            rule._id
+          );
+          return rule.response;
         }
-        if (userMessageIndex >= 0) {
-          userMessage = conversation.messages[userMessageIndex].content;
-        } else {
-          console.log(`⚠️ No user message found before bot message for userId: ${userId}`);
-        }
-      } else {
-        console.log(`⚠️ No bot message found for userId: ${userId} before timestamp: ${feedbackTimestamp}`);
       }
-    } else {
-      console.log(`⚠️ No conversation found for bot: ${botId}, user: ${userId}`);
     }
+    console.log(`[${getCurrentTime()}] ℹ️ لم يتم العثور على قواعد مطابقة`);
+    return null;
+  } catch (err) {
+    console.error(
+      `[${getCurrentTime()}] ❌ خطأ في تطبيق القواعد:`,
+      err.message
+    );
+    return null;
+  }
+}
 
-    const feedbackEntry = await Feedback.findOneAndUpdate(
-      { userId, messageId },
+async function generateResponse(message, conversationHistory, botInstructions) {
+  try {
+    console.log(
+      `[${getCurrentTime()}] 🤖 جاري إنشاء رد باستخدام OpenAI: ${message}`
+    );
+    const messages = [
       {
-        botId,
-        userId,
-        messageId,
-        type,
-        messageContent,
-        userMessage,
-        timestamp: feedbackTimestamp,
-        isVisible: true
+        role: 'system',
+        content: botInstructions || 'أنت مساعد ذكي، قم بالرد بطريقة ودودة ومفيدة.',
       },
-      { upsert: true, new: true }
+      ...conversationHistory.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      })),
+      { role: 'user', content: message },
+    ];
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages,
+      max_tokens: 150,
+      temperature: 0.7,
+    });
+
+    const response = completion.choices[0].message.content.trim();
+    console.log(`[${getCurrentTime()}] ✅ تم إنشاء الرد بنجاح: ${response}`);
+    return response;
+  } catch (err) {
+    console.error(
+      `[${getCurrentTime()}] ❌ خطأ في إنشاء الرد باستخدام OpenAI:`,
+      err.message
+    );
+    return 'عذراً، حدث خطأ أثناء معالجة طلبك. حاول مرة أخرى لاحقاً.';
+  }
+}
+
+async function processMessage({ botId, userId, message, channel, messageId }) {
+  try {
+    console.log(
+      `[${getCurrentTime()}] 📨 جاري معالجة الرسالة | Bot ID: ${botId} | User ID: ${userId} | Channel: ${channel} | Message: ${message}`
     );
 
-    console.log(`✅ Feedback saved: ${type} for message ID: ${messageId} with content: ${messageContent}, user message: ${userMessage}`);
+    const bot = await Bot.findById(botId);
+    if (!bot) {
+      console.error(`[${getCurrentTime()}] ❌ البوت غير موجود: ${botId}`);
+      return { success: false, message: 'البوت غير موجود' };
+    }
+
+    if (!bot.isActive) {
+      console.log(`[${getCurrentTime()}] ⚠️ البوت غير مفعل: ${botId}`);
+      return { success: false, message: 'البوت غير مفعل' };
+    }
+
+    let conversation = await Conversation.findOne({ botId, userId, channel });
+    if (!conversation) {
+      console.log(
+        `[${getCurrentTime()}] 🆕 إنشاء محادثة جديدة لـ User ID: ${userId}`
+      );
+      conversation = new Conversation({
+        botId,
+        userId,
+        channel,
+        messages: [],
+      });
+    }
+
+    if (messageId) {
+      const messageExists = conversation.messages.some(
+        (msg) => msg.messageId === messageId
+      );
+      if (messageExists) {
+        console.log(
+          `[${getCurrentTime()}] ⚠️ الرسالة تم معالجتها مسبقاً: ${messageId}`
+        );
+        return { success: false, message: 'الرسالة تم معالجتها مسبقاً' };
+      }
+    }
+
+    conversation.messages.push({
+      role: 'user',
+      content: message,
+      messageId: messageId || uuidv4(),
+      timestamp: new Date(),
+    });
+
+    let response = await applyRules(message, botId);
+
+    if (!response) {
+      const conversationHistory = conversation.messages.slice(-10);
+      const botInstructions = bot.welcomeMessage || null;
+      response = await generateResponse(
+        message,
+        conversationHistory,
+        botInstructions
+      );
+    }
+
+    conversation.messages.push({
+      role: 'assistant',
+      content: response,
+      messageId: uuidv4(),
+      timestamp: new Date(),
+    });
+
+    await conversation.save();
+    console.log(
+      `[${getCurrentTime()}] 💾 تم حفظ المحادثة بنجاح | Conversation ID: ${conversation._id}`
+    );
+
+    let sendMessageResult;
+    if (channel === 'facebook') {
+      sendMessageResult = await sendFacebookMessage(
+        botId,
+        userId,
+        response,
+        null
+      );
+    } else if (channel === 'instagram') {
+      sendMessageResult = await sendInstagramMessage(
+        botId,
+        userId,
+        response,
+        null
+      );
+    } else {
+      console.error(
+        `[${getCurrentTime()}] ❌ القناة غير مدعومة: ${channel}`
+      );
+      return { success: false, message: 'القناة غير مدعومة' };
+    }
+
+    if (!sendMessageResult.success) {
+      console.error(
+        `[${getCurrentTime()}] ❌ فشل إرسال الرد:`,
+        sendMessageResult.message
+      );
+      return sendMessageResult;
+    }
+
+    // منطق الرسالة التلقائية
+    if (
+      (channel === 'facebook' && bot.facebookAutoMessageEnabled) ||
+      (channel === 'instagram' && bot.instagramAutoMessageEnabled)
+    ) {
+      const autoMessageText =
+        channel === 'facebook'
+          ? bot.facebookAutoMessageText
+          : bot.instagramAutoMessageText;
+      const autoMessageImage =
+        channel === 'facebook'
+          ? bot.facebookAutoMessageImage
+          : bot.instagramAutoMessageImage;
+      const autoMessageDelay =
+        channel === 'facebook'
+          ? bot.facebookAutoMessageDelay
+          : bot.instagramAutoMessageDelay;
+
+      if (autoMessageText) {
+        const lastAutoMessageSent = conversation.lastAutoMessageSent;
+        const now = new Date();
+        const fortyEightHours = 48 * 60 * 60 * 1000; // 48 ساعة بالمللي ثانية
+
+        if (
+          !lastAutoMessageSent ||
+          now - new Date(lastAutoMessageSent) >= fortyEightHours
+        ) {
+          console.log(
+            `[${getCurrentTime()}] ⏰ جدولة الرسالة التلقائية بعد ${autoMessageDelay} مللي ثانية`
+          );
+          setTimeout(async () => {
+            try {
+              let autoMessageResult;
+              if (channel === 'facebook') {
+                autoMessageResult = await sendFacebookMessage(
+                  botId,
+                  userId,
+                  autoMessageText,
+                  autoMessageImage
+                );
+              } else if (channel === 'instagram') {
+                autoMessageResult = await sendInstagramMessage(
+                  botId,
+                  userId,
+                  autoMessageText,
+                  autoMessageImage
+                );
+              }
+
+              if (autoMessageResult.success) {
+                conversation.lastAutoMessageSent = new Date();
+                conversation.messages.push({
+                  role: 'assistant',
+                  content: autoMessageText,
+                  messageId: uuidv4(),
+                  timestamp: new Date(),
+                });
+                await conversation.save();
+                console.log(
+                  `[${getCurrentTime()}] ✅ تم إرسال الرسالة التلقائية بنجاح | User ID: ${userId}`
+                );
+              } else {
+                console.error(
+                  `[${getCurrentTime()}] ❌ فشل إرسال الرسالة التلقائية:`,
+                  autoMessageResult.message
+                );
+              }
+            } catch (err) {
+              console.error(
+                `[${getCurrentTime()}] ❌ خطأ أثناء إرسال الرسالة التلقائية:`,
+                err.message
+              );
+            }
+          }, autoMessageDelay);
+        } else {
+          console.log(
+            `[${getCurrentTime()}] ℹ️ الرسالة التلقائية لم تُرسل لأنها أُرسلت خلال الـ 48 ساعة الماضية`
+          );
+        }
+      }
+    }
+
+    return { success: true, message: response };
   } catch (err) {
-    console.error('❌ Error processing feedback:', err.message, err.stack);
+    console.error(
+      `[${getCurrentTime()}] ❌ خطأ في معالجة الرسالة:`,
+      err.message,
+      err.stack
+    );
+    return { success: false, message: 'خطأ في معالجة الرسالة' };
   }
 }
 
-module.exports = { processMessage, processFeedback };
+async function handleWebhookEvent(event) {
+  try {
+    console.log(
+      `[${getCurrentTime()}] 🌐 تلقي حدث Webhook:`,
+      JSON.stringify(event, null, 2)
+    );
+
+    if (event.object === 'page') {
+      for (const entry of event.entry) {
+        for (const messagingEvent of entry.messaging) {
+          const botId = entry.id;
+          const userId = messagingEvent.sender.id;
+          const message = messagingEvent.message?.text;
+          const messageId = messagingEvent.message?.mid;
+
+          if (message) {
+            return await processMessage({
+              botId,
+              userId,
+              message,
+              channel: 'facebook',
+              messageId,
+            });
+          } else {
+            console.log(
+              `[${getCurrentTime()}] ℹ️ حدث Webhook غير مدعوم أو لا يحتوي على نص`
+            );
+          }
+        }
+      }
+    } else if (event.object === 'instagram') {
+      for (const entry of event.entry) {
+        for (const messagingEvent of entry.messaging) {
+          const botId = entry.id;
+          const userId = messagingEvent.sender.id;
+          const message = messagingEvent.message?.text;
+          const messageId = messagingEvent.message?.mid;
+
+          if (message) {
+            return await processMessage({
+              botId,
+              userId,
+              message,
+              channel: 'instagram',
+              messageId,
+            });
+          } else {
+            console.log(
+              `[${getCurrentTime()}] ℹ️ حدث Webhook غير مدعوم أو لا يحتوي على نص`
+            );
+          }
+        }
+      }
+    }
+
+    return { success: false, message: 'حدث Webhook غير مدعوم' };
+  } catch (err) {
+    console.error(
+      `[${getCurrentTime()}] ❌ خطأ في معالجة حدث Webhook:`,
+      err.message,
+      err.stack
+    );
+    return { success: false, message: 'خطأ في معالجة حدث Webhook' };
+  }
+}
+
+module.exports = {
+  processMessage,
+  handleWebhookEvent,
+  transcribeAudio,
+  generateImage,
+};
