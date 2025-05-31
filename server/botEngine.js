@@ -382,4 +382,6 @@ async function processFeedback(botId, userId, messageId, feedback) {
   }
 }
 
+// لوج للتحقق من الـ export
+console.log(`[${getTimestamp()}] 📦 Exporting processMessage: ${typeof processMessage}`);
 module.exports = { processMessage, processFeedback };
