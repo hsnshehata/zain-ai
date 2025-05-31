@@ -12,7 +12,7 @@ const getInstagramUsername = async (userId, accessToken) => {
     const cleanUserId = userId.replace(/^(instagram_|instagram_comment_)/, '');
     console.log(`[${getTimestamp()}] 📋 محاولة جلب اسم المستخدم لـ ${cleanUserId} من إنستجرام باستخدام التوكن: ${accessToken.slice(0, 10)}...`);
     const response = await axios.get(
-      `https://graph.instagram.com/v22.0/${cleanUserId}?fields=username&access_token=${accessToken}`
+      `https://graph.instagram.com/v20.0/${cleanUserId}?fields=username&access_token=${accessToken}`
     );
     if (response.data.username) {
       console.log(`[${getTimestamp()}] ✅ تم جلب اسم المستخدم من إنستجرام: ${response.data.username}`);
@@ -248,6 +248,10 @@ const handleMessage = async (req, res) => {
             const editedMessage = event.message_edit.message;
             const mid = editedMessage.mid || `temp_${Date.now()}`;
             console.log(`[${getTimestamp()}] 📩 Processing message edit event from ${prefixedSenderId}: ${editedMessage.text}`);
+            if (typeof processMessage !== 'function') {
+              console.error(`[${getTimestamp()}] ❌ processMessage is not a function`);
+              throw new Error('processMessage is not a function');
+            }
             const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid, 'instagram');
             await sendMessage(senderId, responseText, bot.instagramApiKey);
             continue;
@@ -287,6 +291,10 @@ const handleMessage = async (req, res) => {
 
             // معالجة الرسالة
             console.log(`[${getTimestamp()}] 🤖 Processing message for bot: ${bot._id} user: ${prefixedSenderId} message: ${messageContent}`);
+            if (typeof processMessage !== 'function') {
+              console.error(`[${getTimestamp()}] ❌ processMessage is not a function`);
+              throw new Error('processMessage is not a function');
+            }
             const reply = await processMessage(bot._id, prefixedSenderId, messageContent, isImage, isVoice, messageId, 'instagram');
 
             // إرسال الرد للمستخدم
@@ -358,6 +366,10 @@ const handleMessage = async (req, res) => {
 
             // معالجة الكومنت
             console.log(`[${getTimestamp()}] 🤖 Processing comment for bot: ${bot._id} user: ${prefixedCommenterId} comment: ${commentText}`);
+            if (typeof processMessage !== 'function') {
+              console.error(`[${getTimestamp()}] ❌ processMessage is not a function`);
+              throw new Error('processMessage is not a function');
+            }
             const reply = await processMessage(bot._id, prefixedCommenterId, commentText, false, false, commentId, 'instagram');
 
             // إرسال الرد على الكومنت
