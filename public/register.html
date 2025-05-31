@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل جديد - زين بوت</title>
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/register.css">
+</head>
+<body class="dark-mode">
+  <div class="login-container">
+    <h1>تسجيل جديد</h1>
+    <div id="successMessage" style="display: none;">
+      <h2> تم إرسال رابط تفعيل إلى بريدك الإلكتروني </h2>
+      <p id="error" role="alert"></p>
+    </div>
+    <form id="registerForm">
+      <div class="form-group">
+        <input type="text" id="username" required placeholder=" " aria-label="اسم المستخدم">
+        <label for="username">اسم المستخدم</label>
+      </div>
+      <div class="form-group">
+        <input type="password" id="password" required placeholder=" " aria-label="كلمة المرور">
+        <label for="password">كلمة المرور</label>
+      </div>
+      <div class="form-group">
+        <input type="password" id="confirmPassword" required placeholder=" " aria-label="تأكيد كلمة المرور">
+        <label for="confirmPassword">تأكيد كلمة المرور</label>
+      </div>
+      <div class="form-group">
+        <input type="text" id="botName" required placeholder=" " aria-label="اسم البوت">
+        <label for="botName">اسم البوت</label>
+      </div>
+      <div class="form-group">
+        <input type="text" id="whatsapp" required placeholder=" " aria-label="رقم الواتساب">
+        <label for="whatsapp">رقم الواتساب</label>
+      </div>
+      <div class="form-group">
+        <input type="email" id="email" required placeholder=" " aria-label="البريد الإلكتروني">
+        <label for="email">البريد الإلكتروني</label>
+      </div>
+      <button type="submit">إنشاء عضو</button>
+    </form>
+    <p class="login-link">لديك حساب بالفعل؟ <a href="/login.html">تسجيل الدخول</a></p>
+  </div>
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const username = document.getElementById('username').value;
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+      const botName = document.getElementById('botName').value;
+      const whatsapp = document.getElementById('whatsapp').value;
+      const errorDiv = document.getElementById('error');
+      const registerForm = document.getElementById('registerForm');
+      const successMessage = document.getElementById('successMessage');
+      if (password !== confirmPassword) {
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = 'كلمات المرور غير متطابقة';
+        return;
+      }
+      try {
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, username, password, botName, whatsapp })
+        });
+        const data = await response.json();
+        if (response.ok) {
+          registerForm.style.display = 'none';
+          successMessage.style.display = 'block';
+          errorDiv.textContent = 'تم إرسال رابط تفعيل إلى بريدك الإلكتروني';
+        } else {
+          errorDiv.style.display = 'block';
+          errorDiv.textContent = data.message || 'فشل في التسجيل، حاول مرة أخرى';
+        }
+      } catch (error) {
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = 'خطأ في السيرفر، حاول مرة أخرى';
+      }
+    });
+  </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93b61bb9fc74dd1a',t:'MTc0NjUwOTY2NC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
+</html>
