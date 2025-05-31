@@ -3,8 +3,12 @@ const request = require('request');
 const Conversation = require('../models/Conversation');
 const Bot = require('../models/Bot');
 const axios = require('axios');
-const { processMessage } = require('../botEngine');
+const botEngine = require('../botEngine');
+const { processMessage } = botEngine; // تأكد من الـ import
 const { getTimestamp } = require('./botsController');
+
+// لوج للتحقق من الـ import
+console.log(`[${getTimestamp()}] 📦 Importing processMessage from botEngine: ${typeof processMessage}`);
 
 // دالة لجلب اسم المستخدم من إنستجرام
 const getInstagramUsername = async (userId, accessToken) => {
@@ -56,7 +60,7 @@ const sendMessage = (recipientId, messageText, accessToken, imageUrl = null) => 
         }
       };
       if (messageText) {
-        messagePayload.text = messageText; // إضافة النص مع الصورة
+        messagePayload.text = messageText;
       }
     } else {
       messagePayload.text = messageText;
@@ -250,10 +254,16 @@ const handleMessage = async (req, res) => {
             console.log(`[${getTimestamp()}] 📩 Processing message edit event from ${prefixedSenderId}: ${editedMessage.text}`);
             if (typeof processMessage !== 'function') {
               console.error(`[${getTimestamp()}] ❌ processMessage is not a function`);
-              throw new Error('processMessage is not a function');
+              await sendMessage(senderId, 'عذرًا، حدث خطأ أثناء معالجة الرسالة.', bot.instagramApiKey);
+              continue;
             }
-            const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid, 'instagram');
-            await sendMessage(senderId, responseText, bot.instagramApiKey);
+            try {
+              const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid, 'instagram');
+              await sendMessage(senderId, responseText, bot.instagramApiKey);
+            } catch (err) {
+              console.error(`[${getTimestamp()}] ❌ Error processing edited message: ${err.message}`);
+              await sendMessage(senderId, 'عذرًا، حدث خطأ أثناء معالجة الرسالة.', bot.instagramApiKey);
+            }
             continue;
           } else if (event.message_edit && !bot.instagramMessageEditsEnabled) {
             console.log(`[${getTimestamp()}] ⚠️ Message edits disabled for bot ${bot.name} (ID: ${bot._id}), skipping message edit processing.`);
@@ -293,13 +303,17 @@ const handleMessage = async (req, res) => {
             console.log(`[${getTimestamp()}] 🤖 Processing message for bot: ${bot._id} user: ${prefixedSenderId} message: ${messageContent}`);
             if (typeof processMessage !== 'function') {
               console.error(`[${getTimestamp()}] ❌ processMessage is not a function`);
-              throw new Error('processMessage is not a function');
+              await sendMessage(senderId, 'عذرًا، حدث خطأ أثناء معالجة الرسالة.', bot.instagramApiKey);
+              continue;
             }
-            const reply = await processMessage(bot._id, prefixedSenderId, messageContent, isImage, isVoice, messageId, 'instagram');
-
-            // إرسال الرد للمستخدم
-            console.log(`[${getTimestamp()}] 📤 Attempting to send message to ${senderId} with token: ${bot.instagramApiKey.slice(0, 10)}...`);
-            await sendMessage(senderId, reply, bot.instagramApiKey);
+            try {
+              const reply = await processMessage(bot._id, prefixedSenderId, messageContent, isImage, isVoice, messageId, 'instagram');
+              console.log(`[${getTimestamp()}] 📤 Attempting to send message to ${senderId} with token: ${bot.instagramApiKey.slice(0, 10)}...`);
+              await sendMessage(senderId, reply, bot.instagramApiKey);
+            } catch (err) {
+              console.error(`[${getTimestamp()}] ❌ Error processing message: ${err.message}`);
+              await sendMessage(senderId, 'عذرًا، حدث خطأ أثناء معالجة الرسالة.', bot.instagramApiKey);
+            }
           } else {
             console.log(`[${getTimestamp()}] ⚠️ Unhandled event type from ${prefixedSenderId}`);
           }
@@ -308,7 +322,6 @@ const handleMessage = async (req, res) => {
 
       // معالجة الكومنتات (Comments Events)
       if (entry.changes) {
-        // التحقق من تفعيل ميزة الرد على الكومنتات
         if (!bot.instagramCommentsRepliesEnabled) {
           console.log(`[${getTimestamp()}] ⚠️ Comment replies disabled for bot ${bot.name} (ID: ${bot._id}), skipping comment processing.`);
           continue;
@@ -321,21 +334,17 @@ const handleMessage = async (req, res) => {
             const commentId = comment.id;
             const commentText = comment.text;
 
-            // إضافة بادئة instagram_comment_ لمعرف المستخدم (للتعليقات)
             const prefixedCommenterId = `instagram_comment_${commenterId}`;
 
-            // تجاهل الكومنتات المرسلة من الصفحة نفسها
             if (commenterId === pageId) {
               console.log(`[${getTimestamp()}] ⚠️ Ignoring comment sent by the page itself: ${commenterId}`);
               continue;
             }
 
-            // جلب اسم المستخدم من إنستجرام
             const username = await getInstagramUsername(prefixedCommenterId, bot.instagramApiKey);
 
             console.log(`[${getTimestamp()}] 💬 Comment received from ${prefixedCommenterId}: ${commentText}`);
 
-            // إنشاء أو تحديث المحادثة
             let conversation = await Conversation.findOne({
               botId: bot._id,
               channel: 'instagram',
@@ -356,7 +365,6 @@ const handleMessage = async (req, res) => {
               await conversation.save();
             }
 
-            // إضافة ملصق "new_comment" للمحادثة
             console.log(`[${getTimestamp()}] 🏷️ Adding label to conversation for user ${prefixedCommenterId}`);
             conversation.labels = conversation.labels || [];
             if (!conversation.labels.includes('new_comment')) {
@@ -364,17 +372,20 @@ const handleMessage = async (req, res) => {
               await conversation.save();
             }
 
-            // معالجة الكومنت
             console.log(`[${getTimestamp()}] 🤖 Processing comment for bot: ${bot._id} user: ${prefixedCommenterId} comment: ${commentText}`);
             if (typeof processMessage !== 'function') {
               console.error(`[${getTimestamp()}] ❌ processMessage is not a function`);
-              throw new Error('processMessage is not a function');
+              await replyToComment(commentId, 'عذرًا، حدث خطأ أثناء معالجة التعليق.', bot.instagramApiKey);
+              continue;
             }
-            const reply = await processMessage(bot._id, prefixedCommenterId, commentText, false, false, commentId, 'instagram');
-
-            // إرسال الرد على الكومنت
-            console.log(`[${getTimestamp()}] 📤 Attempting to reply to comment ${commentId} with token: ${bot.instagramApiKey.slice(0, 10)}...`);
-            await replyToComment(commentId, reply, bot.instagramApiKey);
+            try {
+              const reply = await processMessage(bot._id, prefixedCommenterId, commentText, false, false, commentId, 'instagram');
+              console.log(`[${getTimestamp()}] 📤 Attempting to reply to comment ${commentId} with token: ${bot.instagramApiKey.slice(0, 10)}...`);
+              await replyToComment(commentId, reply, bot.instagramApiKey);
+            } catch (err) {
+              console.error(`[${getTimestamp()}] ❌ Error processing comment: ${err.message}`);
+              await replyToComment(commentId, 'عذرًا، حدث خطأ أثناء معالجة التعليق.', bot.instagramApiKey);
+            }
           }
         }
       }
