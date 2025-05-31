@@ -14,7 +14,7 @@ try {
   console.log(`[${new Date().toISOString()}] ✅ Successfully imported sendFacebookMessage from facebookController`);
 } catch (err) {
   console.error(`[${new Date().toISOString()}] ❌ Failed to import sendFacebookMessage:`, err.message);
-  sendFacebookMessage = null; // Fallback to null if import fails
+  sendFacebookMessage = null;
 }
 const { sendMessage: sendInstagramMessage } = require('./controllers/instagramController');
 
@@ -60,7 +60,6 @@ async function transcribeAudio(audioUrl) {
 
 async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'web') {
   try {
-    // لوج لقيمة userId الخام
     console.log(`[${getTimestamp()}] 📢 Raw userId received: ${userId} (type: ${typeof userId})`);
 
     // تحقق من userId
@@ -120,11 +119,16 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     let userMessageContent = message;
 
     if (isVoice) {
-      userMessageContent = await transcribeAudio(message);
-      if (!userMessageContent) {
-        throw new Error('Failed to transcribe audio: No text returned');
+      try {
+        userMessageContent = await transcribeAudio(message);
+        if (!userMessageContent) {
+          throw new Error('Failed to transcribe audio: No text returned');
+        }
+        console.log(`[${getTimestamp()}] 💬 Transcribed audio message: ${userMessageContent}`);
+      } catch (err) {
+        console.error(`[${getTimestamp()}] ❌ Failed to transcribe audio: ${err.message}`);
+        userMessageContent = 'عذرًا، لم أتمكن من معالجة الرسالة الصوتية.';
       }
-      console.log(`[${getTimestamp()}] 💬 Transcribed audio message: ${userMessageContent}`);
     }
 
     // إضافة رسالة المستخدم للمحادثة
@@ -173,36 +177,41 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     // إذا لم يتم العثور على قاعدة، استدعاء OpenAI
     if (!reply) {
-      if (isImage) {
-        const response = await openai.responses.create({
-          model: 'gpt-4.1-mini-2025-04-14',
-          input: [
+      try {
+        if (isImage) {
+          const response = await openai.responses.create({
+            model: 'gpt-4.1-mini-2025-04-14',
+            input: [
+              { role: 'system', content: systemPrompt },
+              ...context,
+              {
+                role: 'user',
+                content: [
+                  { type: 'input_text', text: 'رد على حسب محتوى الصورة' },
+                  { type: 'input_image', image_url: message },
+                ],
+              },
+            ],
+            max_output_tokens: 5000,
+          });
+          reply = response.output_text || 'عذرًا، لم أتمكن من تحليل الصورة.';
+          console.log(`[${getTimestamp()}] 🖼️ Image processed: ${reply}`);
+        } else {
+          const messages = [
             { role: 'system', content: systemPrompt },
             ...context,
-            {
-              role: 'user',
-              content: [
-                { type: 'input_text', text: 'رد على حسب محتوى الصورة' },
-                { type: 'input_image', image_url: message },
-              ],
-            },
-          ],
-          max_output_tokens: 5000,
-        });
-        reply = response.output_text || 'عذرًا، لم أتمكن من تحليل الصورة.';
-        console.log(`[${getTimestamp()}] 🖼️ Image processed: ${reply}`);
-      } else {
-        const messages = [
-          { role: 'system', content: systemPrompt },
-          ...context,
-          { role: 'user', content: userMessageContent },
-        ];
-        const response = await openai.chat.completions.create({
-          model: 'gpt-4.1-mini-2025-04-14',
-          messages,
-          max_tokens: 5000,
-        });
-        reply = response.choices[0].message.content;
+            { role: 'user', content: userMessageContent },
+          ];
+          const response = await openai.chat.completions.create({
+            model: 'gpt-4.1-mini-2025-04-14',
+            messages,
+            max_tokens: 5000,
+          });
+          reply = response.choices[0].message.content;
+        }
+      } catch (err) {
+        console.error(`[${getTimestamp()}] ❌ Error calling OpenAI: ${err.message}`);
+        reply = 'عذرًا، حدث خطأ أثناء معالجة طلبك. حاول مرة أخرى لاحقًا.';
       }
     }
 
@@ -232,7 +241,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         autoMessageEnabled = bot.facebookAutoMessageEnabled;
         autoMessageText = bot.facebookAutoMessageText;
         autoMessageImage = bot.facebookAutoMessageImage;
-        autoMessageDelay = bot.facebookAutoMessageDelay || 600000; // Default to 10 minutes if undefined
+        autoMessageDelay = bot.facebookAutoMessageDelay || 600000;
         sendMessageFn = sendFacebookMessage;
         recipientId = finalUserId.replace('facebook_', '');
         apiKey = bot.facebookApiKey;
@@ -241,14 +250,13 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         autoMessageEnabled = bot.instagramAutoMessageEnabled;
         autoMessageText = bot.instagramAutoMessageText;
         autoMessageImage = bot.instagramAutoMessageImage;
-        autoMessageDelay = bot.instagramAutoMessageDelay || 600000; // Default to 10 minutes if undefined
+        autoMessageDelay = bot.instagramAutoMessageDelay || 600000;
         sendMessageFn = sendInstagramMessage;
         recipientId = finalUserId.replace('instagram_', '');
         apiKey = bot.instagramApiKey;
         console.log(`[${getTimestamp()}] 📋 Instagram auto message settings | Bot ID: ${botId} | Enabled: ${autoMessageEnabled} | Text: ${autoMessageText} | Delay: ${autoMessageDelay}ms | Image: ${autoMessageImage || 'None'}`);
       }
 
-      // التحقق من إعدادات الرسالة التلقائية
       if (!autoMessageEnabled) {
         console.log(`[${getTimestamp()}] ⚠️ Auto message disabled for ${finalChannel} | Bot ID: ${botId} | User ID: ${finalUserId}`);
       }
@@ -266,14 +274,13 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       if (autoMessageEnabled && autoMessageText && autoMessageDelay && typeof sendMessageFn === 'function') {
         console.log(`[${getTimestamp()}] ✅ Auto message settings valid for ${finalChannel} | Bot ID: ${botId} | User ID: ${finalUserId}`);
         const now = new Date();
-        const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000); // 48 ساعة
+        const fortyEightHoursAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000);
 
         if (!conversation.lastAutoMessageSent || conversation.lastAutoMessageSent < fortyEightHoursAgo) {
           console.log(`[${getTimestamp()}] ⏰ Scheduling auto message for user ${finalUserId} to be sent after ${autoMessageDelay}ms`);
 
           setTimeout(async () => {
             try {
-              // التحقق مرة أخرى من حالة المحادثة
               const updatedConversation = await Conversation.findOne({ botId, userId: finalUserId, channel: finalChannel });
               if (!updatedConversation) {
                 console.log(`[${getTimestamp()}] ⚠️ المحادثة غير موجودة عند إرسال الرسالة التلقائية | User ID: ${finalUserId}`);
@@ -284,7 +291,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
                 console.log(`[${getTimestamp()}] 📤 Attempting to send auto message to ${finalUserId} after delay`);
                 await sendMessageFn(recipientId, autoMessageText, apiKey, autoMessageImage);
 
-                // تحديث وقت آخر رسالة تلقائية
                 updatedConversation.lastAutoMessageSent = new Date();
                 await updatedConversation.save();
                 console.log(`[${getTimestamp()}] ✅ Auto message sent to ${finalUserId} and lastAutoMessageSent updated`);
