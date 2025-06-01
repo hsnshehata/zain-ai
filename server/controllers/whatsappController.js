@@ -39,6 +39,8 @@ const processWebhook = async (req, res) => {
         body.entry[0].changes[0].value.messages[0]
       ) {
         const messageData = body.entry[0].changes[0].value.messages[0];
+        console.log("📩 WhatsApp message data:", JSON.stringify(messageData, null, 2));
+
         const userId = messageData.from; // WhatsApp user ID
         const messageId = messageData.id; // Unique message ID
         let message = "";
@@ -47,14 +49,18 @@ const processWebhook = async (req, res) => {
         let mediaUrl = null;
 
         // Check message type and extract content
+        console.log(`📩 Message type: ${messageData.type}`);
         if (messageData.type === "text") {
           message = messageData.text.body;
+          console.log(`📩 Text message content: ${message}`);
         } else if (messageData.type === "image") {
           isImage = true;
           mediaUrl = messageData.image.id; // Get the media ID
+          console.log(`📩 Image message detected, media ID: ${mediaUrl}`);
         } else if (messageData.type === "audio") {
           isVoice = true;
           mediaUrl = messageData.audio.id; // Get the media ID
+          console.log(`📩 Audio message detected, media ID: ${mediaUrl}`);
         } else {
           console.log(`⚠️ Unsupported message type: ${messageData.type}`);
           return res.sendStatus(200); // Acknowledge but don't process
@@ -69,6 +75,7 @@ const processWebhook = async (req, res) => {
               return res.sendStatus(200);
             }
 
+            console.log(`📩 Fetching media URL for ID: ${mediaUrl}`);
             const response = await fetch(
               `https://graph.facebook.com/v20.0/${mediaUrl}`,
               {
@@ -78,6 +85,7 @@ const processWebhook = async (req, res) => {
               }
             );
             const mediaData = await response.json();
+            console.log(`📩 Media fetch response:`, JSON.stringify(mediaData, null, 2));
             if (mediaData.url) {
               mediaUrl = mediaData.url; // Update mediaUrl with the actual URL
               console.log(`📥 Media URL fetched: ${mediaUrl}`);
@@ -106,7 +114,7 @@ const processWebhook = async (req, res) => {
         console.log(
           `📬 Processing WhatsApp message: user=${userId}, message=${
             message || "[Media]"
-          }, botId=${bot._id}, messageId=${messageId}`
+          }, botId=${bot._id}, messageId=${messageId}, isImage=${isImage}, isVoice=${isVoice}`
         );
 
         // Process the message using botEngine
