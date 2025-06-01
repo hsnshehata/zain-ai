@@ -1,6 +1,6 @@
 // public/service-worker.js
 
-const CACHE_NAME = 'zain-ai-v0.0002'; // غيرنا الاسم عشان الكاش يتجدد
+const CACHE_NAME = 'zain-ai-v0.0003'; // غيرنا الاسم عشان الكاش يتجدد
 const urlsToCache = [
   '/',
   '/index.html',
@@ -33,11 +33,18 @@ const urlsToCache = [
   '/js/messages.js',
   '/js/assistantBot.js',
   '/js/chat.js',
+  '/js/instagram.js',
+  '/js/whatsapp.js',
   '/manifest.json',
   '/favicon.ico',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css', // إضافة Font Awesome
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css', // Font Awesome CSS
+  // Font Awesome Fonts
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/webfonts/fa-brands-400.woff2',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/webfonts/fa-brands-400.woff',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/webfonts/fa-solid-900.woff2',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/webfonts/fa-solid-900.woff',
 ];
 
 self.addEventListener('install', (event) => {
@@ -46,10 +53,13 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE_NAME)
       .then((cache) => {
         console.log('Service Worker: Caching app shell');
-        return cache.addAll(urlsToCache);
+        return cache.addAll(urlsToCache)
+          .catch(error => {
+            console.error('Service Worker: Failed to cache resource:', error);
+          });
       })
       .catch(error => {
-        console.error('Service Worker: Failed to cache app shell:', error);
+        console.error('Service Worker: Failed to open cache:', error);
       })
   );
 });
@@ -75,13 +85,15 @@ self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
   const pathname = requestUrl.pathname;
 
-  // Network-first strategy for all cached assets and external CSS
+  // Network-first strategy for cached assets, fonts, and external resources
   if (
-    urlsToCache.includes(event.request.url) || // ملفات في urlsToCache (بما فيها Font Awesome)
+    urlsToCache.includes(event.request.url) || // ملفات في urlsToCache (بما فيها Font Awesome و Fonts)
     urlsToCache.includes(pathname) || // ملفات محلية
     pathname.endsWith('.css') || // أي ملف CSS
     pathname.endsWith('.js') || // أي ملف JS
-    pathname.endsWith('.png') // أي صور PNG
+    pathname.endsWith('.png') || // أي صور PNG
+    pathname.endsWith('.woff2') || // Font Awesome Fonts
+    pathname.endsWith('.woff') // Font Awesome Fonts
   ) {
     event.respondWith(
       fetch(event.request)
@@ -105,6 +117,14 @@ self.addEventListener('fetch', (event) => {
                 return cacheResponse;
               }
               console.error(`Service Worker: No cache available for ${event.request.url}`);
+              // Fallback for Font Awesome CSS
+              if (event.request.url.includes('font-awesome')) {
+                console.warn(`Service Worker: Font Awesome failed, serving fallback`);
+                return new Response(
+                  '@font-face { font-family: "Font Awesome"; src: url("/public/fonts/fa-brands-400.woff2") format("woff2"); }',
+                  { headers: { 'Content-Type': 'text/css' } }
+                );
+              }
               return new Response('Resource not found', { status: 404 });
             });
         })
@@ -117,6 +137,14 @@ self.addEventListener('fetch', (event) => {
                 return cacheResponse;
               }
               console.error(`Service Worker: Offline and no cache for ${event.request.url}`);
+              // Fallback for Font Awesome CSS
+              if (event.request.url.includes('font-awesome')) {
+                console.warn(`Service Worker: Font Awesome failed, serving fallback`);
+                return new Response(
+                  '@font-face { font-family: "Font Awesome"; src: url("/public/fonts/fa-brands-400.woff2") format("woff2"); }',
+                  { headers: { 'Content-Type': 'text/css' } }
+                );
+              }
               return caches.match('/index.html'); // Fallback to index.html
             });
         })
@@ -127,7 +155,7 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request)
         .catch(() => {
           console.log(`Service Worker: Network failed for non-cached resource ${pathname}, falling back to index.html`);
-          return caches.match('/index.html'); // Fallback to index.html
+          return caches.match('/index.html');
         })
     );
   }
