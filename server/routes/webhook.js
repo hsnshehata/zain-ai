@@ -3,8 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { handleMessage: handleFacebookMessage } = require('../controllers/facebookController');
 const { handleMessage: handleInstagramMessage, verifyWebhook: verifyInstagramWebhook } = require('../controllers/instagramController');
-const { handleMessage: handleWhatsAppMessage, verifyWebhook: verifyWhatsAppWebhook } = require('../controllers/whatsappController');
-
+const { processWebhook: handleWhatsAppMessage, verifyWebhook: verifyWhatsAppWebhook } = require('../controllers/whatsappController');
 // Webhook لفيسبوك
 router.get('/facebook', (req, res) => {
   const VERIFY_TOKEN = 'hassanshehata';
