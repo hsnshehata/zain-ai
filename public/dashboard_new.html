@@ -1,186 +1,214 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="لوحة تحكم زين بوت لإدارة البوتات الذكية والمحادثات.">
+  <meta name="keywords" content="Zain AI, لوحة تحكم, بوتات ذكية">
+  <meta name="theme-color" content="#00C4B4">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-touch-icon" sizes="180x180" href="/icons/icon-180x180.png">
+  <meta name="msapplication-TileImage" content="/icons/icon-150x150.png">
+  <!-- Cache Control Meta Tags -->
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>لوحة التحكم - زين بوت</title>
+  <!-- تحميل Font Awesome أولاً مع preload -->
+  <link rel="stylesheet preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" as="style" onload="this.rel='stylesheet'">
+  <!-- باقي ملفات CSS -->
+  <link rel="stylesheet" href="/css/common.css">
   <link rel="stylesheet" href="/css/dashboard.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <!-- Add Chartist CSS and JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chartist@0.11.4/dist/chartist.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chartist@0.11.4/dist/chartist.min.js"></script>
+  <link rel="manifest" href="/manifest.json">
 </head>
-<body class="dark-mode">
-  <div class="container">
-    <!-- Sidebar -->
-    <div class="sidebar">
+<body class="dark-mode dashboard-page">
+  <div class="dashboard-layout">
+    <aside class="sidebar">
       <div class="sidebar-header">
-        <h2 class="logo">
-          <i class="fas fa-robot"></i> زين بوت
-        </h2>
+        <div class="logo">زين بوت</div>
       </div>
       <nav class="sidebar-nav">
-        <div class="nav-item" data-page="bots">
-          <i class="fas fa-robot"></i> إدارة البوتات
-        </div>
-        <div class="nav-item active" data-page="rules">
-          <i class="fas fa-book"></i> القواعد
-        </div>
-        <div class="nav-item" data-page="chat-page">
-          <i class="fas fa-comment-alt"></i> صفحة الدردشة
-        </div>
-        <div class="nav-item" data-page="analytics">
-          <i class="fas fa-chart-line"></i> الإحصائيات
-        </div>
-        <div class="nav-item" data-page="messages">
-          <i class="fas fa-envelope"></i> الرسائل
-        </div>
-        <div class="nav-item" data-page="feedback">
-          <i class="fas fa-star"></i> التقييمات
-        </div>
-        <div class="nav-item" data-page="facebook">
-          <i class="fab fa-facebook-square"></i> فيسبوك
-        </div>
-        <div class="nav-item" data-page="instagram">
-          <i class="fab fa-instagram"></i> إنستجرام
-        </div>
-        <div class="nav-item" data-page="whatsapp">
-          <i class="fab fa-whatsapp"></i> واتساب
-        </div>
+        <button class="nav-item" data-page="bots" aria-label="إدارة البوتات"><i class="fas fa-robot"></i> <span>إدارة البوتات</span></button>
+        <button class="nav-item" data-page="rules" aria-label="إدارة القواعد"><i class="fas fa-book"></i> <span>القواعد</span></button>
+        <button class="nav-item" data-page="chat-page" aria-label="إدارة صفحات الدردشة"><i class="fas fa-comment-alt"></i> <span>صفحة الدردشة</span></button>
+        <button class="nav-item" data-page="analytics" aria-label="الإحصائيات"><i class="fas fa-chart-line"></i> <span>الإحصائيات</span></button>
+        <button class="nav-item" data-page="messages" aria-label="إدارة الرسائل"><i class="fas fa-envelope"></i> <span>الرسائل</span></button>
+        <button class="nav-item" data-page="feedback" aria-label="إدارة التقييمات"><i class="fas fa-star"></i> <span>التقييمات</span></button>
+        <button class="nav-item" data-page="whatsapp" aria-label="إدارة التقييمات"><i class="fas fa-star"></i> <span>واتساب</span></button>
+        <button class="nav-item" data-page="facebook" aria-label="إعدادات فيسبوك"><i class="fab fa-facebook-square"></i> <span>فيسبوك</span></button>
+        <button class="nav-item" data-page="instagram" aria-label="إعدادات إنستجرام"><i class="fab fa-instagram"></i> <span>إنستجرام</span></button>
       </nav>
       <div class="sidebar-footer">
-        <button class="logout-btn">
-          <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
-        </button>
+        <button class="nav-item logout-btn" aria-label="تسجيل الخروج"><i class="fas fa-sign-out-alt"></i> <span>تسجيل الخروج</span></button>
       </div>
-    </div>
+    </aside>
 
-    <!-- Main Content -->
-    <div class="main-content">
-      <div class="navbar">
-        <div class="navbar-left">
-          <button id="sidebar-toggle" class="sidebar-toggle">
-            <i class="fas fa-bars"></i>
-          </button>
-          <button id="mobile-nav-toggle" class="mobile-nav-toggle">
-            <i class="fas fa-bars"></i>
-          </button>
-          <div class="welcome-message">
-            مرحباً: <span id="welcome-username">جاري التحميل...</span>
+    <main class="main-content">
+      <header class="main-header">
+        <div class="header-left">
+          <button id="sidebar-toggle" class="sidebar-toggle-btn" aria-label="تبديل الشريط الجانبي"><i class="fas fa-bars"></i></button>
+          <div class="bot-selector-container">
+            <div class="form-group bot-selector">
+              <label for="botSelectDashboard"><i class="fas fa-robot"></i> </label>
+              <select id="botSelectDashboard"></select>
+            </div>
           </div>
         </div>
-        <div class="navbar-right">
-          <button id="notifications-btn" class="notifications-btn">
+        <div class="header-right">
+          <button id="notifications-btn" class="header-icon-btn" aria-label="الإشعارات">
             <i class="fas fa-bell"></i>
-            <span id="notifications-count" class="badge">0</span>
+            <span id="notifications-count" class="notifications-count">0</span>
           </button>
-          <button id="theme-toggle" class="theme-toggle">
+          <button id="assistantButton" class="header-icon-btn" aria-label="مساعد الذكاء الاصطناعي"><i class="fas fa-headset"></i></button>
+          <button id="settings-btn" class="header-icon-btn" aria-label="الإعدادات"><i class="fas fa-cog"></i></button>
+          <button id="theme-toggle" class="theme-toggle-btn" aria-label="تبديل الوضع الداكن/الفاتح">
+            <i class="fas fa-sun"></i>
             <i class="fas fa-moon"></i>
           </button>
-          <button id="settings-btn" class="settings-btn">
-            <i class="fas fa-cog"></i>
-          </button>
-          <button id="assistantButton" class="assistant-btn" onclick="toggleAssistantModal()">
-            <i class="fas fa-robot"></i>
-          </button>
+        </div>
+      </header>
+
+      <div class="welcome-bar">
+        <div class="info-item">
+          <i class="fas fa-user"></i>
+          <span>مرحباً: <span id="welcome-username">جاري التحميل...</span></span>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-tags"></i>
+          <span>نوع الاشتراك: <span id="subscription-type">جاري التحميل...</span></span>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-calendar-alt"></i>
+          <span>انتهاء الاشتراك: <span id="subscription-end">جاري التحميل...</span></span>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-clock"></i>
+          <span>الأيام المتبقية: <span id="remaining-days">جاري التحميل...</span></span>
         </div>
       </div>
 
-      <div id="notifications-modal" class="modal" style="display: none;">
-        <div class="modal-content notifications-modal">
-          <div class="modal-header">
-            <h3>الإشعارات</h3>
-            <button id="close-notifications-btn" class="close-button">×</button>
+      <div id="content" class="page-content" aria-live="polite"></div>
+
+      <div id="notifications-modal" class="notifications-modal" style="display: none;">
+        <div class="notifications-modal-content">
+          <div class="notifications-header">
+            <h3><i class="fas fa-bell"></i> الإشعارات</h3>
+            <button id="close-notifications-btn" aria-label="إغلاق الإشعارات"><i class="fas fa-times"></i></button>
           </div>
           <div id="notifications-list" class="notifications-list"></div>
         </div>
       </div>
 
-      <div class="welcome-bar">
-        <div class="welcome-card">
-          <h3>مرحباً: <span id="welcome-username">جاري التحميل...</span></h3>
-        </div>
-        <div class="welcome-card">
-          <h3>نوع الاشتراك: <span id="subscription-type">جاري التحميل...</span></h3>
-        </div>
-        <div class="welcome-card">
-          <h3>انتهاء الاشتراك: <span id="subscription-end">جاري التحميل...</span></h3>
-        </div>
-        <div class="welcome-card">
-          <h3>الأيام المتبقية: <span id="remaining-days">جاري التحميل...</span></h3>
-        </div>
-      </div>
-
-      <div class="bot-selector">
-        <select id="botSelectDashboard" class="form-control">
-          <option value="">اختر بوت</option>
-        </select>
-      </div>
-
-      <div id="content" class="content">
-        <!-- Page content will be loaded dynamically -->
-      </div>
-
-      <div id="assistantModal" class="modal assistant-modal" style="display: none;">
-        <div class="modal-content assistant-modal-content">
-          <div class="modal-header">
+      <!-- Assistant Chat Modal -->
+      <div class="chat-modal" id="assistantChatModal">
+        <div class="chat-modal-content">
+          <div class="chat-header">
             <h3>المساعد الذكي</h3>
-            <button class="modal-close-btn" onclick="toggleAssistantModal()"><i class="fas fa-times"></i></button>
+            <button id="closeAssistantChatBtn" class="chat-close-btn"><i class="fas fa-times"></i></button>
           </div>
-          <div id="assistantChat" class="assistant-chat">
-            <div class="chat-messages">
-              <div class="message bot-message">
-                <p>مرحبًا! أنا المساعد الذكي، كيف يمكنني مساعدتك اليوم؟</p>
-              </div>
+          <div id="assistantChatMessages" class="chat-messages">
+            <div class="message bot-message">
+              <p>مرحبًا! أنا المساعد الذكي، كيف يمكنني مساعدتك اليوم؟</p>
+              <small id="welcomeTimestamp"></small>
             </div>
+          </div>
+          <div class="chat-footer">
             <div class="chat-input">
-              <textarea id="assistantInput" placeholder="اكتب سؤالك هنا..."></textarea>
-              <button onclick="sendAssistantMessage()"><i class="fas fa-paper-plane"></i></button>
+              <input type="text" id="assistantMessageInput" placeholder="اكتب رسالتك هنا..." />
+              <button id="assistantSendMessageBtn"><i class="fas fa-paper-plane"></i></button>
             </div>
           </div>
         </div>
       </div>
 
-      <footer class="footer">
-        <p>&copy; 2025 Zain AI. جميع الحقوق محفوظة.</p>
+      <footer class="dashboard-footer">
+        <p>© 2025 Zain AI. جميع الحقوق محفوظة.</p>
       </footer>
-    </div>
+    </main>
 
-    <!-- Mobile Navigation -->
     <nav class="mobile-nav-bottom collapsed">
-      <div class="nav-item-mobile active" data-page="rules">
-        <i class="fas fa-book"></i> القواعد
-      </div>
-      <div class="nav-item-mobile" data-page="chat-page">
-        <i class="fas fa-comment-alt"></i> الدردشة
-      </div>
-      <div class="nav-item-mobile" data-page="analytics">
-        <i class="fas fa-chart-line"></i> الإحصائيات
-      </div>
-      <div class="nav-item-mobile" data-page="messages">
-        <i class="fas fa-envelope"></i> الرسائل
-      </div>
-      <div class="nav-item-mobile" data-page="feedback">
-        <i class="fas fa-star"></i> التقييمات
-      </div>
-      <div class="nav-item-mobile" data-page="facebook">
-        <i class="fab fa-facebook-square"></i> فيسبوك
-      </div>
-      <div class="nav-item-mobile" data-page="instagram">
-        <i class="fab fa-instagram"></i> إنستجرام
-      </div>
-      <div class="nav-item-mobile" data-page="whatsapp">
-        <i class="fab fa-whatsapp"></i> واتساب
-      </div>
-      <div class="nav-item-mobile" data-page="bots">
-        <i class="fas fa-robot"></i> البوتات
-      </div>
-      <div class="logout-btn">
-        <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
-      </div>
+      <button class="nav-item-mobile" data-page="rules" aria-label="إدارة القواعد">
+        <i class="fas fa-book"></i>
+        <span>القواعد</span>
+      </button>
+      <button class="nav-item-mobile" data-page="chat-page" aria-label="إدارة صفحات الدردشة">
+        <i class="fas fa-comment-alt"></i>
+        <span>الدردشة</span>
+      </button>
+      <button class="nav-item-mobile" data-page="analytics" aria-label="الإحصائيات">
+        <i class="fas fa-chart-line"></i>
+        <span>الإحصائيات</span>
+      </button>
+      <button class="nav-item-mobile" data-page="messages" aria-label="إدارة الرسائل">
+        <i class="fas fa-envelope"></i>
+        <span>الرسائل</span>
+      </button>
+      <button class="nav-item-mobile" data-page="feedback" aria-label="إدارة التقييمات">
+        <i class="fas fa-star"></i>
+        <span>التقييمات</span>
+       <button class="nav-item-mobile" data-page="whatsapp" aria-label="إعدادات إنستجرام">
+        <i class="fab fa-instagram"></i>
+        <span>واتساب</span>
+      </button>
+      </button>
+      <button class="nav-item-mobile" data-page="facebook" aria-label="إعدادات فيسبوك">
+        <i class="fab fa-facebook-square"></i>
+        <span>فيسبوك</span>
+      </button>
+      <button class="nav-item-mobile" data-page="instagram" aria-label="إعدادات إنستجرام">
+        <i class="fab fa-instagram"></i>
+        <span>إنستجرام</span>
+      </button>
+      <button class="nav-item-mobile" data-page="bots" aria-label="إدارة البوتات">
+        <i class="fas fa-robot"></i>
+        <span>البوتات</span>
+      </button>
+      <button class="nav-item-mobile logout-btn" aria-label="تسجيل الخروج">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>تسجيل الخروج</span>
+      </button>
+      <button id="mobile-nav-toggle" class="nav-toggle-btn" aria-label="تبديل القائمة"><i class="fas fa-chevron-up"></i></button>
     </nav>
   </div>
 
-  <script src="/js/dashboard_new.js"></script>
-  <script src="/js/assistantBot.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+          .then(registration => {
+            console.log('Service Worker Registered');
+          })
+          .catch(err => {
+            console.error('Service Worker Registration Failed:', err);
+          });
+      });
+    }
+
+    const currentTheme = localStorage.getItem("theme") || "dark";
+    document.body.classList.add(currentTheme === "light" ? "light-mode" : "dark-mode");
+    if (currentTheme === "light") {
+      document.body.classList.remove("dark-mode");
+    }
+  </script>
+  <!-- Load utils.js first for shared functions -->
+  <script defer src="/js/utils.js"></script>
+  <!-- Load dashboard_new.js second to control navigation and bot selection -->
+  <script defer src="/js/dashboard_new.js"></script>
+  <!-- Load other page-specific scripts after dashboard_new.js -->
+  <script defer src="/js/bots.js"></script>
+  <script defer src="/js/rules.js"></script>
+  <script defer src="/js/whatsapp.js"></script>
+  <script defer src="/js/chatPage.js"></script>
+  <script defer src="/js/analytics.js"></script>
+  <script defer src="/js/messages.js"></script>
+  <script defer src="/js/feedback.js"></script>
+  <script defer src="/js/facebook.js"></script>
+  <script defer src="/js/instagram.js"></script>
+  <script defer src="/js/settings.js"></script>
+  <script defer src="/js/assistantBot.js"></script>
 </body>
+  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'939cb667e8bf674f',t:'MTc0NjI0MzM3MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'93e0006989f57bc6',t:'MTc0Njk0ODk0Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
