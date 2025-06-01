@@ -145,9 +145,9 @@ async function loadFacebookPage() {
         let errorMessage = defaultErrorMessage;
         const contentType = response.headers.get("content-type");
         if (response.status === 404) {
-          errorMessage = "الـ endpoint غير موجود. تأكد إن البوت مربوط بصفحة فيسبوك أو تواصل مع الدعم.";
+          errorMessage = "الإعدادات غير متوفرة حاليًا. جرب لاحقًا أو تواصل مع الدعم.";
         } else if (!contentType || !contentType.includes("application/json")) {
-          errorMessage = "الرد غير متوقع (مش JSON). يمكن إن الـ endpoint مش موجود.";
+          errorMessage = "الرد غير متوقع (مش JSON). يمكن إن الخدمة مش متاحة.";
         } else {
           const errorData = await response.json();
           errorMessage = errorData.message || defaultErrorMessage;
@@ -169,8 +169,17 @@ async function loadFacebookPage() {
     settingsContainer.style.display = "none";
     errorMessage.style.display = "none";
 
+    // Default settings in case the API fails
+    const defaultSettings = {
+      messagingOptinsEnabled: false,
+      messageReactionsEnabled: false,
+      messagingReferralsEnabled: false,
+      messageEditsEnabled: false,
+      feedCommentsEnabled: false,
+    };
+
     try {
-      const response = await handleApiRequest(`/api/bots/${botId}/facebook-settings`, {
+      const response = await handleApiRequest(`/api/bots/${botId}/settings`, {
         headers: { Authorization: `Bearer ${token}` },
       }, errorMessage, "حدث خطأ أثناء تحميل الإعدادات");
 
@@ -185,7 +194,8 @@ async function loadFacebookPage() {
             toggle.checked = settings[key];
             console.log(`Toggle ${key} set to: ${settings[key]}`);
           } else {
-            console.warn(`Key ${key} not found in settings or undefined`);
+            console.warn(`Key ${key} not found in settings, using default`);
+            toggle.checked = defaultSettings[key] || false;
           }
         });
 
@@ -195,9 +205,14 @@ async function loadFacebookPage() {
       }
     } catch (err) {
       console.error('خطأ في تحميل الإعدادات:', err);
-      if (err.message.includes("endpoint غير موجود")) {
-        instructionsContainer.style.display = "block";
-      }
+      // Use default settings if API fails
+      toggles.forEach(toggle => {
+        const key = toggle.dataset.settingKey;
+        toggle.checked = defaultSettings[key] || false;
+      });
+      settingsContainer.style.display = "grid";
+      errorMessage.textContent = "تعذر تحميل الإعدادات، يتم استخدام الإعدادات الافتراضية. حاول لاحقًا أو تواصل مع الدعم.";
+      errorMessage.style.display = "block";
     } finally {
       loadingSpinner.style.display = "none";
     }
@@ -319,7 +334,7 @@ async function loadFacebookPage() {
     togglesError.style.display = "none";
 
     try {
-      const response = await handleApiRequest(`/api/bots/${botId}/facebook-settings`, {
+      const response = await handleApiRequest(`/api/bots/${botId}/settings`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -388,7 +403,7 @@ async function loadFacebookPage() {
       }
     }, { 
       scope: 'pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement,pages_manage_posts',
-      auth_type: 'reauthenticate' // Force re-authentication to show permission prompt
+      auth_type: 'reauthenticate'
     });
   }
 
