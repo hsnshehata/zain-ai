@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <strong>تحميل تطبيق سطح المكتب:</strong> لازم تحمل تطبيق زين بوت لسطح المكتب عشان تقدر تربط حسابك على واتساب.
               <br>
               <span style="display: block; margin-top: 5px;">
-                <a href="https://drive.google.com/file/d/1-HDwyesR0x0MZCw7gxmtyFQp1uPTxkTF/view?usp=sharing" target="_blank" class="btn btn-primary" style="margin-top: 10px;">
+                <a href="[GOOGLE_DRIVE_LINK]" target="_blank" class="btn btn-primary" style="margin-top: 10px; color: #000000;">
                   <i class="fas fa-download"></i> تحميل تطبيق زين بوت لسطح المكتب
                 </a>
               </span>
@@ -51,10 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <strong>تسجيل الدخول:</strong> افتح التطبيق وسجل دخول بنفس اسم المستخدم وكلمة المرور اللي بتستخدمها هنا.
             </li>
             <li>
-              <strong>اختيار البوت:</strong> اختار البوت اللي عايز تربطه من قايمة البوتات في التطبيق.
-            </li>
-            <li>
-              <strong>ربط الحساب:</strong> اضغط على زرار "ربط واتساب" في التطبيق، وامسح الـ QR Code اللي هيظهرلك باستخدام تطبيق واتساب على موبايلك.
+              <strong>ربط الحساب:</strong>  في التطبيق، امسح الـ QR Code اللي هيظهرلك باستخدام تطبيق واتساب على موبايلك.
             </li>
             <li>
               <strong>التواصل معانا:</strong> لو واجهت أي مشكلة أثناء الربط، تواصل معانا على واتساب على الرقم 
