@@ -106,10 +106,6 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
 
 // نقطة النهاية للتحقق من التوكن
-const jwt = require('jsonwebtoken');
-const authenticate = require('./middleware/authenticate');
-const User = require('./models/User');
-
 app.get('/api/auth/check', authenticate, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
