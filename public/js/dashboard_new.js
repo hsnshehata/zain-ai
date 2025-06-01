@@ -19,7 +19,7 @@ try {
       { id: 'analytics', name: 'الإحصائيات', icon: 'fa-chart-bar', description: 'عرض تحليلات أداء البوت' },
       { id: 'messages', name: 'الرسائل', icon: 'fa-envelope', description: 'مراجعة محادثات المستخدمين' },
       { id: 'feedback', name: 'التقييمات', icon: 'fa-comments', description: 'رؤية تقييمات المستخدمين' },
-      { id: 'facebook', name: 'فيسبوك', icon: 'fa-facebook-square', description: 'ربط وإدارة حساب فيسبوك' },
+      { id: 'facebook', name: 'فيسبوك', icon: 'fa-facebook', description: 'ربط وإدارة حساب فيسبوك' },
       { id: 'instagram', name: 'إنستجرام', icon: 'fa-instagram', description: 'ربط وإدارة حساب إنستجرام' },
       { id: 'whatsapp', name: 'واتساب', icon: 'fa-whatsapp', description: 'ربط وإدارة حساب واتساب' },
     ];
@@ -157,9 +157,6 @@ try {
     const botSelect = document.getElementById("botSelectDashboard");
     const logoutBtn = document.querySelector(".logout-btn");
     const themeToggleButton = document.getElementById("theme-toggle");
-    const sidebar = document.querySelector(".sidebar");
-    const sidebarToggleBtn = document.getElementById("sidebar-toggle");
-    const mainContent = document.querySelector(".main-content");
     const notificationsBtn = document.getElementById("notifications-btn");
     const notificationsModal = document.getElementById("notifications-modal");
     const notificationsList = document.getElementById("notifications-list");
@@ -299,13 +296,6 @@ try {
       console.log("themeToggleButton clicked...");
       const newTheme = document.body.classList.contains("dark-mode") ? "light" : "dark";
       applyTheme(newTheme);
-    });
-
-    // Sidebar Toggle for Desktop
-    sidebarToggleBtn.addEventListener("click", () => {
-      console.log("sidebarToggleBtn clicked...");
-      sidebar.classList.toggle("collapsed");
-      mainContent.classList.toggle("collapsed");
     });
 
     // Bot Selector
