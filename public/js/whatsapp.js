@@ -47,6 +47,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 </a>
               </span>
             </li>
+           <li>
+              <strong>فك الضغط :</strong> قم بفك ضغط التطبيق في مجلد امن ، بعد فك الضغط افتح التطبيق من خلال ZainBotWA.exe 
+            </li>
+
             <li>
               <strong>تسجيل الدخول:</strong> افتح التطبيق وسجل دخول بنفس اسم المستخدم وكلمة المرور اللي بتستخدمها هنا.
             </li>
