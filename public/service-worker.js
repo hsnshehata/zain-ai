@@ -1,6 +1,6 @@
 // public/service-worker.js
 
-const CACHE_NAME = 'zain-ai-v0.0003'; // غيرنا الاسم عشان الكاش يتجدد
+const CACHE_NAME = 'zain-ai-v0.0004'; // غيرنا الاسم عشان الكاش يتجدد
 const urlsToCache = [
   '/',
   '/index.html',
@@ -20,6 +20,7 @@ const urlsToCache = [
   '/css/assistantBot.css',
   '/css/dashboard.css',
   '/css/chat.css',
+  '/css/font-awesome.min.css', // Local Font Awesome CSS as fallback
   '/js/utils.js',
   '/js/landing.js',
   '/js/auth.js',
@@ -116,15 +117,19 @@ self.addEventListener('fetch', (event) => {
                 console.log(`Service Worker: Serving cached content for ${event.request.url}`);
                 return cacheResponse;
               }
-              console.error(`Service Worker: No cache available for ${event.request.url}`);
-              // Fallback for Font Awesome CSS
+              // Fallback to local Font Awesome CSS if CDN fails
               if (event.request.url.includes('font-awesome')) {
-                console.warn(`Service Worker: Font Awesome failed, serving fallback`);
-                return new Response(
-                  '@font-face { font-family: "Font Awesome"; src: url("/public/fonts/fa-brands-400.woff2") format("woff2"); }',
-                  { headers: { 'Content-Type': 'text/css' } }
-                );
+                console.log(`Service Worker: Font Awesome CDN failed, serving local fallback`);
+                return caches.match('/css/font-awesome.min.css')
+                  .then((localResponse) => {
+                    if (localResponse) {
+                      return localResponse;
+                    }
+                    console.error(`Service Worker: No local fallback available for Font Awesome`);
+                    return new Response('Font Awesome not available', { status: 404 });
+                  });
               }
+              console.error(`Service Worker: No cache available for ${event.request.url}`);
               return new Response('Resource not found', { status: 404 });
             });
         })
@@ -136,15 +141,19 @@ self.addEventListener('fetch', (event) => {
               if (cacheResponse) {
                 return cacheResponse;
               }
-              console.error(`Service Worker: Offline and no cache for ${event.request.url}`);
-              // Fallback for Font Awesome CSS
+              // Fallback to local Font Awesome CSS if CDN fails
               if (event.request.url.includes('font-awesome')) {
-                console.warn(`Service Worker: Font Awesome failed, serving fallback`);
-                return new Response(
-                  '@font-face { font-family: "Font Awesome"; src: url("/public/fonts/fa-brands-400.woff2") format("woff2"); }',
-                  { headers: { 'Content-Type': 'text/css' } }
-                );
+                console.log(`Service Worker: Font Awesome CDN failed (offline), serving local fallback`);
+                return caches.match('/css/font-awesome.min.css')
+                  .then((localResponse) => {
+                    if (localResponse) {
+                      return localResponse;
+                    }
+                    console.error(`Service Worker: No local fallback available for Font Awesome (offline)`);
+                    return new Response('Font Awesome not available', { status: 404 });
+                  });
               }
+              console.error(`Service Worker: Offline and no cache for ${event.request.url}`);
               return caches.match('/index.html'); // Fallback to index.html
             });
         })
