@@ -6,10 +6,23 @@ try {
   document.addEventListener("DOMContentLoaded", async () => {
     // Global variable to store available bots
     let availableBots = [];
-    let isInitialLoad = true; // Flag to control initial page load
+    let isInitialLoad = true; // Flag to control initial load
 
     // Valid pages to prevent unexpected page loads
     const validPages = ['bots', 'rules', 'chat-page', 'analytics', 'messages', 'feedback', 'facebook', 'instagram', 'whatsapp', 'settings'];
+
+    // Pages configuration for dashboard cards
+    const pages = [
+      { id: 'bots', name: 'إدارة البوتات', icon: 'fa-robot', description: 'تحكم في إنشاء وتعديل البوتات الخاصة بك', role: 'superadmin' },
+      { id: 'rules', name: 'القواعد', icon: 'fa-book', description: 'إضافة وتعديل قواعد الردود التلقائية' },
+      { id: 'chat-page', name: 'صفحة الدردشة', icon: 'fa-comment-alt', description: 'تخصيص واجهة الدردشة' },
+      { id: 'analytics', name: 'الإحصائيات', icon: 'fa-chart-bar', description: 'عرض تحليلات أداء البوت' },
+      { id: 'messages', name: 'الرسائل', icon: 'fa-envelope', description: 'مراجعة محادثات المستخدمين' },
+      { id: 'feedback', name: 'التقييمات', icon: 'fa-comments', description: 'رؤية تقييمات المستخدمين' },
+      { id: 'facebook', name: 'فيسبوك', icon: 'fa-facebook-square', description: 'ربط وإدارة حساب فيسبوك' },
+      { id: 'instagram', name: 'إنستجرام', icon: 'fa-instagram', description: 'ربط وإدارة حساب إنستجرام' },
+      { id: 'whatsapp', name: 'واتساب', icon: 'fa-whatsapp', description: 'ربط وإدارة حساب واتساب' },
+    ];
 
     // Check for token in URL (from /verify/:token redirect)
     const urlParams = new URLSearchParams(window.location.search);
@@ -142,15 +155,10 @@ try {
 
     const content = document.getElementById("content");
     const botSelect = document.getElementById("botSelectDashboard");
-    const navItems = document.querySelectorAll(".sidebar-nav .nav-item");
-    const mobileNavItems = document.querySelectorAll(".mobile-nav-bottom .nav-item-mobile");
-    const logoutBtn = document.querySelector(".sidebar-footer .logout-btn");
-    const mobileLogoutBtn = document.querySelector(".mobile-nav-bottom .logout-btn");
+    const logoutBtn = document.querySelector(".logout-btn");
     const themeToggleButton = document.getElementById("theme-toggle");
     const sidebar = document.querySelector(".sidebar");
     const sidebarToggleBtn = document.getElementById("sidebar-toggle");
-    const mobileNav = document.querySelector(".mobile-nav-bottom");
-    const mobileNavToggle = document.getElementById("mobile-nav-toggle");
     const mainContent = document.querySelector(".main-content");
     const notificationsBtn = document.getElementById("notifications-btn");
     const notificationsModal = document.getElementById("notifications-modal");
@@ -158,6 +166,7 @@ try {
     const notificationsCount = document.getElementById("notifications-count");
     const closeNotificationsBtn = document.getElementById("close-notifications-btn");
     const settingsBtn = document.getElementById("settings-btn");
+    const backToHomeBtn = document.getElementById("back-to-home-btn");
 
     // Map of pages to their respective CSS files
     const pageCssMap = {
@@ -187,6 +196,9 @@ try {
       settings: "/js/settings.js",
     };
 
+    // Cache for loaded scripts
+    const loadedScripts = new Map();
+
     // Load CSS dynamically
     function loadPageCss(page) {
       console.log(`loadPageCss called for page: ${page}`);
@@ -205,7 +217,12 @@ try {
       console.log(`loadPageJs called for page: ${page}`);
       if (!pageJsMap[page]) return;
 
-      // Check if the script is already loaded
+      // Check if the script is already loaded or cached
+      if (loadedScripts.has(pageJsMap[page])) {
+        console.log(`${pageJsMap[page]} already loaded from cache at`, new Date().toISOString());
+        return;
+      }
+
       let script = document.querySelector(`script[src="${pageJsMap[page]}"]`);
       if (!script) {
         console.log(`Loading script for page ${page}: ${pageJsMap[page]}`);
@@ -218,6 +235,7 @@ try {
         await new Promise((resolve, reject) => {
           script.onload = () => {
             console.log(`${pageJsMap[page]} loaded successfully at`, new Date().toISOString());
+            loadedScripts.set(pageJsMap[page], true);
             resolve();
           };
           script.onerror = () => {
@@ -226,23 +244,16 @@ try {
           };
         });
       } else {
-        console.log(`${pageJsMap[page]} already loaded at`, new Date().toISOString());
+        console.log(`${pageJsMap[page]} already loaded in DOM at`, new Date().toISOString());
+        loadedScripts.set(pageJsMap[page], true);
       }
 
       // Check if the function is defined after loading
-      let funcName;
-      // Special case for chat-page to match loadChatPage instead of loadChatPagePage
-      if (page === 'chat-page') {
-        funcName = 'loadChatPage';
-      } else {
-        funcName = `load${page.charAt(0).toUpperCase() + page.slice(1).replace(/-([a-z])/g, (g) => g[1].toUpperCase())}Page`;
-      }
-
+      let funcName = page === 'chat-page' ? 'loadChatPage' : `load${page.charAt(0).toUpperCase() + page.slice(1).replace(/-([a-z])/g, (g) => g[1].toUpperCase())}Page`;
       if (typeof window[funcName] !== "function") {
-        console.error(`${funcName} still not defined after loading ${pageJsMap[page]} at`, new Date().toISOString());
-        console.log("Available properties on window:", Object.keys(window).filter(key => key.startsWith('load')));
+        console.error(`${funcName} not defined after loading ${pageJsMap[page]} at`, new Date().toISOString());
       } else {
-        console.log(`${funcName} is now available after loading ${pageJsMap[page]} at`, new Date().toISOString());
+        console.log(`${funcName} is now available at`, new Date().toISOString());
       }
     }
 
@@ -297,19 +308,11 @@ try {
       mainContent.classList.toggle("collapsed");
     });
 
-    // Mobile Navigation Toggle
-    if (mobileNavToggle) {
-      mobileNavToggle.addEventListener("click", () => {
-        console.log("mobileNavToggle clicked...");
-        mobileNav.classList.toggle("collapsed");
-      });
-    }
-
     // Bot Selector
     async function populateBotSelect() {
       console.log("populateBotSelect called...");
       try {
-        content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`; // Show loader until bots are fetched
+        content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`;
         const bots = await handleApiRequest("/api/bots", {
           headers: { Authorization: `Bearer ${token}` },
         }, content, "فشل في جلب البوتات");
@@ -328,13 +331,12 @@ try {
         if (userBots.length === 0) {
           content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-robot"></i> لا يوجد بوتات متاحة</h2><p>يرجى التواصل مع المسؤول لإضافة بوت لحسابك أو إنشاء بوت جديد.</p></div>`;
           botSelect.disabled = true;
-          localStorage.removeItem("selectedBotId"); // Clear invalid bot ID
-          availableBots = []; // Clear available bots
-          await loadWelcomeBar(); // Update welcome bar with no bots
+          localStorage.removeItem("selectedBotId");
+          availableBots = [];
+          await loadWelcomeBar();
           return;
         }
 
-        // Store available bots
         availableBots = userBots;
         userBots.forEach((bot) => {
           botSelect.innerHTML += `<option value="${bot._id}">${bot.name}</option>`;
@@ -356,17 +358,16 @@ try {
           }
         }
 
-        // Load initial page only after bot selection is complete
         await loadInitialPage();
-        await loadWelcomeBar(); // Update welcome bar after bots are loaded
-        isInitialLoad = false; // Mark initial load as complete
+        await loadWelcomeBar();
+        isInitialLoad = false;
       } catch (err) {
         console.error('Error in populateBotSelect:', err);
         content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>خطأ في جلب البوتات: ${err.message}. حاول تحديث الصفحة.</p></div>`;
         botSelect.disabled = true;
-        localStorage.removeItem("selectedBotId"); // Clear invalid bot ID
-        availableBots = []; // Clear available bots
-        await loadWelcomeBar(); // Update welcome bar with error
+        localStorage.removeItem("selectedBotId");
+        availableBots = [];
+        await loadWelcomeBar();
         isInitialLoad = false;
       }
     }
@@ -378,30 +379,35 @@ try {
       if (selectedBotId) {
         localStorage.setItem("selectedBotId", selectedBotId);
         await loadInitialPage();
-        await loadWelcomeBar(); // Update welcome bar when bot changes
+        await loadWelcomeBar();
       } else {
         localStorage.removeItem("selectedBotId");
         content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض المحتوى.</p></div>`;
-        await loadWelcomeBar(); // Update welcome bar with no bot selected
+        backToHomeBtn.classList.remove("active");
+        await loadWelcomeBar();
       }
     });
 
-    // Navigation Helpers
-    const setActiveButton = (page) => {
-      console.log(`setActiveButton called for page: ${page}`);
-      navItems.forEach(item => {
-        item.classList.remove("active");
-        if (item.dataset.page === page) {
-          item.classList.add("active");
-        }
+    // Render Dashboard Cards
+    function renderDashboardCards() {
+      console.log("renderDashboardCards called...");
+      content.innerHTML = '';
+      const filteredPages = pages.filter(page => !page.role || page.role === role);
+      filteredPages.forEach((page, index) => {
+        const card = document.createElement('div');
+        card.className = 'dashboard-card';
+        card.style.setProperty('--index', index);
+        card.dataset.tooltip = page.description;
+        card.innerHTML = `
+          <i class="fas ${page.icon}"></i>
+          <h3>${page.name}</h3>
+          <p>${page.description}</p>
+          <button class="btn btn-primary" onclick="window.location.hash='${page.id}'">الذهاب إلى الصفحة</button>
+        `;
+        content.appendChild(card);
       });
-      mobileNavItems.forEach(item => {
-        item.classList.remove("active");
-        if (item.dataset.page === page) {
-          item.classList.add("active");
-        }
-      });
-    };
+      backToHomeBtn.classList.remove("active");
+    }
 
     // دالة مساعدة للانتظار حتى تتعرف الدالة المطلوبة
     async function waitForFunction(funcName, maxAttempts = 100, interval = 100) {
@@ -425,17 +431,14 @@ try {
         return;
       }
 
-      // Prevent page load during initial load
       if (isInitialLoad && page !== (role === "superadmin" ? "bots" : "rules")) {
         console.warn(`⚠️ Attempted to load ${page} during initial load, ignoring`);
         return;
       }
 
-      console.log(`Attempting to load page: ${page}`);
       content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`;
       const selectedBotId = localStorage.getItem("selectedBotId");
 
-      // Load the corresponding CSS and JS for the page
       loadPageCss(page);
       try {
         await loadPageJs(page);
@@ -447,12 +450,12 @@ try {
 
       if (!selectedBotId && !(role === "superadmin" && page === "bots")) {
         content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض هذا القسم.</p></div>`;
-        setActiveButton(page);
+        backToHomeBtn.classList.add("active");
         window.location.hash = page;
         return;
       }
 
-      setActiveButton(page);
+      backToHomeBtn.classList.add("active");
       window.location.hash = page;
 
       try {
@@ -511,6 +514,11 @@ try {
             console.log(`Loading whatsapp page`);
             await loadWhatsAppPage();
             break;
+          case "settings":
+            const loadSettingsPage = await waitForFunction("loadSettingsPage");
+            console.log(`Loading settings page`);
+            await loadSettingsPage();
+            break;
           default:
             throw new Error("الصفحة المطلوبة غير متوفرة.");
         }
@@ -520,7 +528,7 @@ try {
       }
     };
 
-    // Debounce function to prevent rapid hashchange events
+    // Debounce function
     function debounce(func, wait) {
       console.log(`debounce called with wait: ${wait}`);
       let timeout;
@@ -537,18 +545,16 @@ try {
     // Initial Page Load
     const loadInitialPage = async () => {
       console.log("loadInitialPage called...");
-      // Check if there's a hash in the URL (e.g., #rules, #analytics)
-      let pageToLoad = initialHash || (role === "superadmin" ? "bots" : "rules");
-
-      // Validate pageToLoad to ensure it's a valid page
+      let pageToLoad = initialHash || '';
       if (!validPages.includes(pageToLoad)) {
-        console.warn(`⚠️ Invalid pageToLoad: ${pageToLoad}, defaulting to ${role === "superadmin" ? "bots" : "rules"}`);
-        pageToLoad = role === "superadmin" ? "bots" : "rules";
-        window.location.hash = pageToLoad;
+        console.log(`Loading dashboard cards as default view`);
+        renderDashboardCards();
+        backToHomeBtn.classList.remove("active");
+        window.location.hash = '';
+      } else {
+        console.log(`Loading page: ${pageToLoad}`);
+        await loadPageContent(pageToLoad);
       }
-
-      console.log(`Loading initial page: ${pageToLoad}`);
-      await loadPageContent(pageToLoad);
     };
 
     // Handle hash change with debounce
@@ -558,33 +564,20 @@ try {
         console.log(`Hash changed, loading page: ${hash}`);
         await loadPageContent(hash);
       } else {
-        console.warn(`⚠️ Invalid hash: ${hash}, ignoring`);
+        console.log(`Hash empty or invalid, loading dashboard cards`);
+        renderDashboardCards();
+        backToHomeBtn.classList.remove("active");
+        window.location.hash = '';
       }
     }, 100);
 
     window.addEventListener('hashchange', debouncedHashChange);
 
-    // Add event listeners for nav items
-    navItems.forEach(item => {
-      if (item.dataset.page === "bots" && role !== "superadmin") {
-        item.style.display = "none";
-      }
-      item.addEventListener("click", async (e) => {
-        const page = item.dataset.page;
-        console.log(`Nav item clicked: ${page}`);
-        await loadPageContent(page);
-      });
-    });
-
-    mobileNavItems.forEach(item => {
-      if (item.dataset.page === "bots" && role !== "superadmin") {
-        item.style.display = "none";
-      }
-      item.addEventListener("click", async (e) => {
-        const page = item.dataset.page;
-        console.log(`Mobile nav item clicked: ${page}`);
-        await loadPageContent(page);
-      });
+    // Back to Home Button
+    backToHomeBtn.addEventListener("click", () => {
+      console.log("Back to home button clicked...");
+      window.location.hash = '';
+      renderDashboardCards();
     });
 
     // Settings Button Event
@@ -628,9 +621,6 @@ try {
     }
 
     logoutBtn.addEventListener("click", logoutUser);
-    if (mobileLogoutBtn) {
-      mobileLogoutBtn.addEventListener("click", logoutUser);
-    }
 
     // Notifications Handling
     let showAllNotifications = false;
@@ -758,8 +748,8 @@ try {
 
     // Initialize
     console.log("Initializing dashboard...");
-    await fetchNotifications(); // Load notifications first
-    await populateBotSelect(); // Load bots and select bot before any page load
+    await fetchNotifications();
+    await populateBotSelect();
   });
 
   // Simple JWT decode function
