@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", () => {
               </span>
             </li>
            <li>
-              <strong>فك الضغط :</strong> قم بفك ضغط التطبيق في مجلد امن ، بعد فك الضغط افتح التطبيق من خلال ZainBotWA.exe 
+              <strong>فك الضغط :</strong> قم بفك ضغط التطبيق في مجلد امن ، بعد فك الضغط افتح التطبيق من خلال WAZainBot.exe 
             </li>
 
             <li>
