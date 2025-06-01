@@ -142,12 +142,17 @@ async function loadFacebookPage() {
     try {
       const response = await fetch(url, options);
       if (!response.ok) {
+        let errorMessage = defaultErrorMessage;
         const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("الرد غير متوقع (مش JSON). يمكن إن الـ endpoint مش موجود.");
+        if (response.status === 404) {
+          errorMessage = "الـ endpoint غير موجود. تأكد إن البوت مربوط بصفحة فيسبوك أو تواصل مع الدعم.";
+        } else if (!contentType || !contentType.includes("application/json")) {
+          errorMessage = "الرد غير متوقع (مش JSON). يمكن إن الـ endpoint مش موجود.";
+        } else {
+          const errorData = await response.json();
+          errorMessage = errorData.message || defaultErrorMessage;
         }
-        const errorData = await response.json();
-        throw new Error(errorData.message || defaultErrorMessage);
+        throw new Error(errorMessage);
       }
       return await response.json();
     } catch (err) {
@@ -190,8 +195,9 @@ async function loadFacebookPage() {
       }
     } catch (err) {
       console.error('خطأ في تحميل الإعدادات:', err);
-      errorMessage.textContent = "خطأ في تحميل الإعدادات: " + (err.message || "غير معروف");
-      errorMessage.style.display = "block";
+      if (err.message.includes("endpoint غير موجود")) {
+        instructionsContainer.style.display = "block";
+      }
     } finally {
       loadingSpinner.style.display = "none";
     }
