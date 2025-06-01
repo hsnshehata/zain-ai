@@ -205,6 +205,10 @@ try {
       let iconClass = "fas fa-envelope";
 
       if (currentChannel === "web") {
+        // Check if userId contains @c.us, if so, skip this conversation
+        if (conv.userId.includes("@c.us")) {
+          return null; // Skip rendering this conversation in web channel
+        }
         userName = conv.username || `زائر ويب ${webUserCounter++}`;
         userIdentifier = conv.userId.replace("web_", "web-");
         iconClass = "fas fa-globe";
@@ -234,9 +238,16 @@ try {
           userIdentifier = conv.userId;
         }
       } else if (currentChannel === "whatsapp") {
-        userName =
-          conv.username || `واتساب ${conv.userId.replace("whatsapp_", "")}`;
-        userIdentifier = conv.userId;
+        // Extract phone number from userId if it contains @c.us
+        if (conv.userId.includes("@c.us")) {
+          const phoneNumber = conv.userId.split("@c.us")[0];
+          userName = conv.username || phoneNumber;
+          userIdentifier = conv.userId;
+        } else {
+          userName =
+            conv.username || `واتساب ${conv.userId.replace("whatsapp_", "")}`;
+          userIdentifier = conv.userId;
+        }
         iconClass = "fab fa-whatsapp";
       }
 
