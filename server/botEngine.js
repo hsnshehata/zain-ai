@@ -76,10 +76,13 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       }
     }
 
-    console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', channel);
-
-    // تحديد القناة
-    const finalChannel = channel || 'web';
+    // تحديد القناة بناءً على userId إذا كان فيه @c.us
+    let finalChannel = channel || 'web';
+    if (finalUserId.includes('@c.us')) {
+      finalChannel = 'whatsapp';
+      console.log(`📋 Overriding channel to 'whatsapp' because userId contains @c.us`);
+    }
+    console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', finalChannel);
 
     let conversation = await Conversation.findOne({ botId, userId: finalUserId, channel: finalChannel });
     if (!conversation) {
