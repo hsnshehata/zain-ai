@@ -187,7 +187,9 @@ try {
 
       conversations.forEach((conv) => {
         const card = createConversationCard(conv);
-        conversationsContainer.appendChild(card);
+        if (card) { // Check if card is not null before appending
+          conversationsContainer.appendChild(card);
+        }
       });
 
       renderPagination(totalPages);
