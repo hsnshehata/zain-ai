@@ -84,6 +84,12 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     }
     console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', finalChannel);
 
+    // التحقق من وجود بيانات الميديا إذا كانت الرسالة صورة أو صوت
+    if (!message && !isImage && !isVoice) {
+      console.log(`❌ Missing message content and no media specified for botId=${botId}, userId=${finalUserId}`);
+      throw new Error('Missing required fields');
+    }
+
     let conversation = await Conversation.findOne({ botId, userId: finalUserId, channel: finalChannel });
     if (!conversation) {
       console.log('📋 Creating new conversation for bot:', botId, 'user:', finalUserId, 'channel:', finalChannel);
@@ -130,11 +136,17 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     let userMessageContent = message;
 
     if (isVoice) {
-      userMessageContent = await transcribeAudio(message);
-      if (!userMessageContent) {
-        throw new Error('Failed to transcribe audio: No text returned');
+      if (!message) {
+        userMessageContent = "[Voice message]";
+      } else {
+        userMessageContent = await transcribeAudio(message);
+        if (!userMessageContent) {
+          throw new Error('Failed to transcribe audio: No text returned');
+        }
+        console.log('💬 Transcribed audio message:', userMessageContent);
       }
-      console.log('💬 Transcribed audio message:', userMessageContent);
+    } else if (isImage && !message) {
+      userMessageContent = "[Image message]";
     }
 
     // إضافة رسالة المستخدم للمحادثة
@@ -159,24 +171,26 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     let reply = '';
 
     // البحث عن قاعدة مطابقة قبل استدعاء OpenAI
-    for (const rule of rules) {
-      if (rule.type === 'qa' && userMessageContent.toLowerCase().includes(rule.content.question.toLowerCase())) {
-        reply = rule.content.answer;
-        break;
-      } else if (rule.type === 'general' || rule.type === 'global') {
-        if (userMessageContent.toLowerCase().includes(rule.content.toLowerCase())) {
-          reply = rule.content;
+    if (message && !isImage && !isVoice) { // Process rules only for text messages
+      for (const rule of rules) {
+        if (rule.type === 'qa' && userMessageContent.toLowerCase().includes(rule.content.question.toLowerCase())) {
+          reply = rule.content.answer;
           break;
-        }
-      } else if (rule.type === 'products') {
-        if (userMessageContent.toLowerCase().includes(rule.content.product.toLowerCase())) {
-          reply = `المنتج: ${rule.content.product}، السعر: ${rule.content.price} ${rule.content.currency}`;
-          break;
-        }
-      } else if (rule.type === 'channels') {
-        if (userMessageContent.toLowerCase().includes(rule.content.platform.toLowerCase())) {
-          reply = `قناة التواصل: ${rule.content.platform}\nالوصف: ${rule.content.description}\nالرابط/الرقم: ${rule.content.value}`;
-          break;
+        } else if (rule.type === 'general' || rule.type === 'global') {
+          if (userMessageContent.toLowerCase().includes(rule.content.toLowerCase())) {
+            reply = rule.content;
+            break;
+          }
+        } else if (rule.type === 'products') {
+          if (userMessageContent.toLowerCase().includes(rule.content.product.toLowerCase())) {
+            reply = `المنتج: ${rule.content.product}، السعر: ${rule.content.price} ${rule.content.currency}`;
+            break;
+          }
+        } else if (rule.type === 'channels') {
+          if (userMessageContent.toLowerCase().includes(rule.content.platform.toLowerCase())) {
+            reply = `قناة التواصل: ${rule.content.platform}\nالوصف: ${rule.content.description}\nالرابط/الرقم: ${rule.content.value}`;
+            break;
+          }
         }
       }
     }
@@ -201,6 +215,9 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         });
         reply = response.output_text || 'عذرًا، لم أتمكن من تحليل الصورة.';
         console.log('🖼️ Image processed:', reply);
+      } else if (isVoice && userMessageContent === "[Voice message]") {
+        reply = 'عذرًا، لم أتمكن من تحليل الصوت. ممكن تبعتلي نص بدل الصوت؟';
+        console.log('🎙️ Voice message not transcribed, replying with fallback message');
       } else {
         const messages = [
           { role: 'system', content: systemPrompt },
