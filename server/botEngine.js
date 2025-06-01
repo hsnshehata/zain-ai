@@ -53,11 +53,27 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     // تحقق من userId
     let finalUserId = userId;
+    let finalUsername = undefined;
+
     if (!userId || userId === 'anonymous' || userId === null || userId === undefined) {
-      finalUserId = `web_${uuidv4()}`;
-      console.log(`📋 Generated new userId for channel ${channel} due to missing or invalid userId: ${finalUserId}`);
+      if (channel === 'whatsapp' && userId && userId.includes('@c.us')) {
+        // For WhatsApp, use the phone number as userId and username
+        finalUserId = userId; // Keep the full userId (e.g., 123456789@c.us)
+        finalUsername = userId.split('@c.us')[0]; // Extract phone number as username (e.g., 123456789)
+        console.log(`📋 Using WhatsApp userId: ${finalUserId}, username: ${finalUsername}`);
+      } else {
+        finalUserId = `web_${uuidv4()}`;
+        console.log(`📋 Generated new userId for channel ${channel} due to missing or invalid userId: ${finalUserId}`);
+      }
     } else {
-      console.log(`📋 Using provided userId: ${finalUserId}`);
+      if (channel === 'whatsapp' && userId.includes('@c.us')) {
+        // For WhatsApp, use the phone number as userId and username
+        finalUserId = userId; // Keep the full userId (e.g., 123456789@c.us)
+        finalUsername = userId.split('@c.us')[0]; // Extract phone number as username (e.g., 123456789)
+        console.log(`📋 Using WhatsApp userId: ${finalUserId}, username: ${finalUsername}`);
+      } else {
+        console.log(`📋 Using provided userId: ${finalUserId}`);
+      }
     }
 
     console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', channel);
@@ -73,12 +89,15 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         userId: finalUserId, 
         channel: finalChannel, 
         messages: [],
-        username: finalChannel === 'web' ? `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}` : undefined 
+        username: finalUsername || (finalChannel === 'web' ? `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}` : undefined) 
       });
     } else {
       console.log('📋 Found existing conversation for user:', finalUserId, 'conversationId:', conversation._id);
       if (finalChannel === 'web' && !conversation.username) {
         conversation.username = `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}`;
+        await conversation.save();
+      } else if (finalChannel === 'whatsapp' && finalUsername && conversation.username !== finalUsername) {
+        conversation.username = finalUsername;
         await conversation.save();
       }
     }
