@@ -1,4 +1,3 @@
-// server/server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
@@ -105,6 +104,31 @@ app.use('/api/chat-page', chatPageRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
+
+// نقطة النهاية للتحقق من التوكن
+const jwt = require('jsonwebtoken');
+const authenticate = require('./middleware/authenticate');
+const User = require('./models/User');
+
+app.get('/api/auth/check', authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
+    }
+    res.json({
+      success: true,
+      token: req.header('Authorization')?.replace('Bearer ', ''),
+      role: user.role,
+      userId: user._id,
+      username: user.username,
+    });
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Error in /api/auth/check:`, err.message, err.stack);
+    res.status(500).json({ success: false, message: 'خطأ في السيرفر', error: err.message });
+  }
+});
+
 app.use('/', indexRoutes);
 
 // Route لإدارة التقييمات
