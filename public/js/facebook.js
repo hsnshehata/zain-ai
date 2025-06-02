@@ -358,7 +358,7 @@ async function loadFacebookPage() {
   // Initialize Facebook SDK
   window.fbAsyncInit = function () {
     FB.init({
-      appId: '2288330081539329',
+      appId: '499020366015281',
       cookie: true,
       xfbml: true,
       version: 'v20.0'
