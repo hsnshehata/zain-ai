@@ -13,16 +13,16 @@ try {
 
     // Pages configuration for dashboard cards
     const pages = [
-      { id: 'bots', name: 'إدارة البوتات', icon: 'fa-robot', description: 'تحكم في إنشاء وتعديل البوتات الخاصة بك', role: 'superadmin' },
-      { id: 'rules', name: 'القواعد', icon: 'fa-book', description: 'إضافة وتعديل قواعد الردود التلقائية' },
-      { id: 'chat-page', name: 'صفحة الدردشة', icon: 'fa-comment-alt', description: 'تخصيص واجهة الدردشة' },
-      { id: 'analytics', name: 'الإحصائيات', icon: 'fa-chart-bar', description: 'عرض تحليلات أداء البوت' },
-      { id: 'messages', name: 'الرسائل', icon: 'fa-envelope', description: 'مراجعة محادثات المستخدمين' },
-      { id: 'feedback', name: 'التقييمات', icon: 'fa-comments', description: 'رؤية تقييمات المستخدمين' },
-      { id: 'facebook', name: 'فيسبوك', icon: 'fa-facebook', description: 'ربط وإدارة حساب فيسبوك' },
-      { id: 'instagram', name: 'إنستجرام', icon: 'fa-instagram', description: 'ربط وإدارة حساب إنستجرام' },
-      { id: 'whatsapp', name: 'واتساب', icon: 'fa-whatsapp', description: 'ربط وإدارة حساب واتساب' },
-      { id: 'settings', name: 'الإعدادات', icon: 'fa-cog', description: 'إدارة إعدادات الحساب' },
+      { id: 'bots', name: 'إدارة البوتات', icon: 'fab fa-robot', description: 'تحكم في إنشاء وتعديل البوتات الخاصة بك', role: 'superadmin' },
+      { id: 'rules', name: 'القواعد', icon: 'fas fa-book', description: 'إضافة وتعديل قواعد الردود التلقائية' },
+      { id: 'chat-page', name: 'صفحة الدردشة', icon: 'fas fa-comment-alt', description: 'تخصيص واجهة الدردشة' },
+      { id: 'analytics', name: 'الإحصائيات', icon: 'fas fa-chart-bar', description: 'عرض تحليلات أداء البوت' },
+      { id: 'messages', name: 'الرسائل', icon: 'fas fa-envelope', description: 'مراجعة محادثات المستخدمين' },
+      { id: 'feedback', name: 'التقييمات', icon: 'fas fa-comments', description: 'رؤية تقييمات المستخدمين' },
+      { id: 'facebook', name: 'فيسبوك', icon: 'fab fa-facebook', description: 'ربط وإدارة حساب فيسبوك' },
+      { id: 'instagram', name: 'إنستجرام', icon: 'fab fa-instagram', description: 'ربط وإدارة حساب إنستجرام' },
+      { id: 'whatsapp', name: 'واتساب', icon: 'fab fa-whatsapp', description: 'ربط وإدارة حساب واتساب' },
+      { id: 'settings', name: 'الإعدادات', icon: 'fas fa-cog', description: 'إدارة إعدادات الحساب' },
     ];
 
     // Check for token in URL (from /verify/:token redirect)
@@ -163,8 +163,7 @@ try {
     const notificationsList = document.getElementById("notifications-list");
     const notificationsCount = document.getElementById("notifications-count");
     const closeNotificationsBtn = document.getElementById("close-notifications-btn");
-    const settingsBtn = document.getElementById("settings-btn");
-    const backToHomeBtn = document.getElementById("back-to-home-btn");
+    const homeBtn = document.getElementById("home-btn");
 
     // Map of pages to their respective CSS files
     const pageCssMap = {
@@ -226,7 +225,7 @@ try {
         console.log(`Loading script for page ${page}: ${pageJsMap[page]}`);
         script = document.createElement("script");
         script.src = pageJsMap[page];
-        script.async = false; // Ensure synchronous loading for settings.js
+        script.async = false; // Ensure synchronous loading
         document.body.appendChild(script);
 
         // Wait for the script to load
@@ -284,9 +283,17 @@ try {
       if (theme === "light") {
         document.body.classList.remove("dark-mode");
         document.body.classList.add("light-mode");
+        // Update theme toggle icon to show moon (for switching to dark)
+        const themeIcon = themeToggleButton.querySelector('i');
+        themeIcon.classList.remove('fa-moon');
+        themeIcon.classList.add('fa-sun');
       } else {
         document.body.classList.remove("light-mode");
         document.body.classList.add("dark-mode");
+        // Update theme toggle icon to show sun (for switching to light)
+        const themeIcon = themeToggleButton.querySelector('i');
+        themeIcon.classList.remove('fa-sun');
+        themeIcon.classList.add('fa-moon');
       }
       localStorage.setItem("theme", theme);
     };
@@ -375,7 +382,7 @@ try {
       } else {
         localStorage.removeItem("selectedBotId");
         content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض المحتوى.</p></div>`;
-        backToHomeBtn.classList.remove("active");
+        window.location.hash = '';
         await loadWelcomeBar();
       }
     });
@@ -391,14 +398,13 @@ try {
         card.style.setProperty('--index', index);
         card.dataset.tooltip = page.description;
         card.innerHTML = `
-          <i class="fas ${page.icon}"></i>
+          <i class="${page.icon}"></i>
           <h3>${page.name}</h3>
           <p>${page.description}</p>
           <button class="btn btn-primary" onclick="window.location.hash='${page.id}'">الذهاب إلى الصفحة</button>
         `;
         content.appendChild(card);
       });
-      backToHomeBtn.classList.remove("active");
     }
 
     // دالة مساعدة للانتظار حتى تتعرف الدالة المطلوبة
@@ -442,12 +448,10 @@ try {
 
       if (!selectedBotId && !(role === "superadmin" && page === "bots")) {
         content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض هذا القسم.</p></div>`;
-        backToHomeBtn.classList.add("active");
         window.location.hash = page;
         return;
       }
 
-      backToHomeBtn.classList.add("active");
       window.location.hash = page;
 
       try {
@@ -541,7 +545,6 @@ try {
       if (!validPages.includes(pageToLoad)) {
         console.log(`Loading dashboard cards as default view`);
         renderDashboardCards();
-        backToHomeBtn.classList.remove("active");
         window.location.hash = '';
       } else {
         console.log(`Loading page: ${pageToLoad}`);
@@ -558,33 +561,17 @@ try {
       } else {
         console.log(`Hash empty or invalid, loading dashboard cards`);
         renderDashboardCards();
-        backToHomeBtn.classList.remove("active");
         window.location.hash = '';
       }
     }, 100);
 
     window.addEventListener('hashchange', debouncedHashChange);
 
-    // Back to Home Button
-    backToHomeBtn.addEventListener("click", () => {
-      console.log("Back to home button clicked...");
+    // Home Button Event
+    homeBtn.addEventListener("click", () => {
+      console.log("Home button clicked...");
       window.location.hash = '';
       renderDashboardCards();
-    });
-
-    // Settings Button Event
-    settingsBtn.addEventListener("click", async () => {
-      console.log("Settings button clicked, attempting to load settings page");
-      content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`;
-      loadPageCss("settings");
-      try {
-        const loadSettingsPage = await waitForFunction("loadSettingsPage");
-        await loadSettingsPage();
-        console.log("loadSettingsPage executed successfully");
-      } catch (error) {
-        console.error("Error loading settings page:", error.message);
-        content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>${error.message || "حدث خطأ أثناء تحميل إعدادات المستخدم."}</p></div>`;
-      }
     });
 
     // Logout
