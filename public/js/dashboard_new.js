@@ -405,6 +405,13 @@ try {
         `;
         content.appendChild(card);
       });
+      // Wrap cards in dashboard-cards-container
+      const container = document.createElement('div');
+      container.className = 'dashboard-cards-container';
+      while (content.firstChild) {
+        container.appendChild(content.firstChild);
+      }
+      content.appendChild(container);
     }
 
     // دالة مساعدة للانتظار حتى تتعرف الدالة المطلوبة
