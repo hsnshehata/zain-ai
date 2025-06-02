@@ -3,7 +3,7 @@
 async function loadFacebookPage() {
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = "/css/facebook.css";
+  link.href = "/css/social.css";
   document.head.appendChild(link);
   const content = document.getElementById("content");
   const token = localStorage.getItem("token");
