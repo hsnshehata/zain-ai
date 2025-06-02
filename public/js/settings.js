@@ -118,7 +118,14 @@ window.loadSettingsPage = loadSettingsPage;
 console.log("✅ loadSettingsPage defined in global scope at", new Date().toISOString());
 
 if (window.loadSettingsPage) {
-  console.log('✅ loadSettingsPage is defined and ready');
+  console.log('✅ loadSettingsPage is defined and ready at', new Date().toISOString());
 } else {
-  console.error('❌ loadSettingsPage is not defined');
+  console.error('❌ loadSettingsPage is not defined at', new Date().toISOString());
+}
+
+// Add error handling for script execution
+try {
+  console.log("✅ settings.js fully executed at", new Date().toISOString());
+} catch (err) {
+  console.error("❌ Error during settings.js execution:", err);
 }
