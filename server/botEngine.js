@@ -18,11 +18,23 @@ function getCurrentTime() {
 }
 
 async function transcribeAudio(audioUrl) {
-  const body = new FormData();
-  body.append('file', audioUrl);
-  body.append('language', 'arabic');
-  body.append('response_format', 'json');
   try {
+    console.log('🎙️ Starting audio transcription with LemonFox, audioUrl:', audioUrl);
+    if (!audioUrl || !audioUrl.startsWith('http')) {
+      console.error('❌ Invalid or missing audioUrl:', audioUrl);
+      throw new Error('Invalid audio URL');
+    }
+
+    // جلب ملف الصوت من الـ URL
+    console.log('📥 Fetching audio file from:', audioUrl);
+    const audioResponse = await axios.get(audioUrl, { responseType: 'arraybuffer' });
+    const audioBuffer = Buffer.from(audioResponse.data);
+
+    const body = new FormData();
+    body.append('file', audioBuffer, { filename: 'audio.ogg', contentType: 'audio/ogg' });
+    body.append('language', 'arabic');
+    body.append('response_format', 'json');
+
     console.log(
       'LemonFox API Key: ' +
         (process.env.LEMONFOX_API_KEY ? 'تم جلب المفتاح' : 'المفتاح فاضي!')
@@ -37,6 +49,7 @@ async function transcribeAudio(audioUrl) {
         },
       }
     );
+
     console.log('✅ Audio transcribed with LemonFox:', response.data.text);
     return response.data.text;
   } catch (err) {
@@ -78,10 +91,10 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     }
     console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', finalChannel, 'isImage:', isImage, 'isVoice:', isVoice, 'mediaUrl:', mediaUrl);
 
-    // تعديل الشرط لقبول الصور حتى لو message فاضي
+    // تعديل الشرط لقبول الصور والصوت حتى لو message فاضي
     if (!botId || !finalUserId || (!message && !isImage && !isVoice)) {
       console.log(`❌ Missing required fields: botId=${botId}, userId=${finalUserId}, message=${message}`);
-      throw new Error('Bot ID, message, and user ID are required');
+      throw new Error('Bot ID, message or media, and user ID are required');
     }
 
     let conversation = await Conversation.findOne({ botId, userId: finalUserId, channel: finalChannel });
@@ -129,8 +142,16 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     let userMessageContent = message;
 
     if (isVoice) {
-      if (!message) {
+      if (!message && mediaUrl) {
+        console.log('🎙️ Voice message with mediaUrl, transcribing:', mediaUrl);
+        userMessageContent = await transcribeAudio(mediaUrl);
+        if (!userMessageContent) {
+          throw new Error('Failed to transcribe audio: No text returned');
+        }
+        console.log('💬 Transcribed audio message:', userMessageContent);
+      } else if (!message) {
         userMessageContent = '[Voice message]';
+        console.log('⚠️ No message or mediaUrl for voice, using fallback content');
       } else {
         userMessageContent = message;
         console.log('💬 Using pre-transcribed audio message:', userMessageContent);
