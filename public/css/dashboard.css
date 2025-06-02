@@ -211,8 +211,8 @@
     overflow-x: hidden;
   }
 
-  /* Cards Container */
-  .cards-container {
+  /* Dashboard Cards Container */
+  .dashboard-cards-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 15px;
@@ -220,13 +220,13 @@
   }
 
   @media (max-width: 768px) {
-    .cards-container {
+    .dashboard-cards-container {
       grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     }
   }
 
   @media (max-width: 576px) {
-    .cards-container {
+    .dashboard-cards-container {
       grid-template-columns: 1fr;
     }
   }
@@ -541,62 +541,21 @@
       padding-bottom: calc(var(--footer-height) + 20px);
     }
     .welcome-bar {
-      font-size: 0.5em;
-      padding: 4px 7.5px;
-      gap: 4px;
-    }
-    .welcome-bar i {
-      font-size: 0.6em;
-    }
-    .welcome-bar .info-item {
-      gap: 4px;
+      font-size: 0.9em;
+      padding: 6px 10px;
+      gap: 10px;
     }
     .bot-selector-container {
-      min-width: 100px;
-    }
-    .form-group.bot-selector label {
-      font-size: 0.45em;
+      min-width: 150px;
     }
     #botSelectDashboard {
-      font-size: 0.5em;
-      padding: 5px 17.5px 5px 7.5px;
-      min-width: 90px;
-    }
-  }
-
-  @media (min-width: 993px) {
-    .fixed-footer {
-      display: flex;
+      min-width: 140px;
     }
   }
 
   @media (max-width: 768px) {
-    .welcome-bar {
-      font-size: 0.45em;
-      padding: 3px 5px;
-      gap: 3px;
-    }
-    .page-header {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-    .header-actions {
-      width: 100%;
-      justify-content: flex-start;
-      gap: 8px;
-    }
-    .bot-selector-container {
-      width: 100%;
-    }
-    #botSelectDashboard {
-      width: 100%;
-      min-width: 75px;
-      font-size: 0.45em;
-      padding: 4px 15px 4px 6px;
-    }
-    .modal-content {
-      max-width: 95vw;
-      padding: 15px;
+    .main-header {
+      padding: 0 15px;
     }
     .page-content {
       padding: 15px;
@@ -608,14 +567,14 @@
       font-size: 1.8em;
     }
     .dashboard-card h3 {
-      font-size: 1em;
+      font-size: 1.1em;
     }
     .dashboard-card p {
-      font-size: 0.8em;
+      font-size: 0.85em;
     }
     .dashboard-card .btn {
       padding: 6px 12px;
-      font-size: 0.8em;
+      font-size: 0.85em;
     }
     .floating-back-btn {
       top: 15px;
@@ -625,13 +584,9 @@
     }
     .fixed-footer .footer-btn {
       font-size: 1em;
-      padding: 6px;
     }
     .fixed-footer .footer-btn span {
       font-size: 0.65em;
-    }
-    .theme-toggle-btn {
-      font-size: 1em;
     }
   }
 
@@ -649,58 +604,31 @@
       font-size: 1.6em;
     }
     .dashboard-card h3 {
-      font-size: 0.9em;
+      font-size: 1em;
     }
     .dashboard-card p {
-      font-size: 0.75em;
+      font-size: 0.8em;
     }
     .dashboard-card .btn {
       padding: 5px 10px;
-      font-size: 0.75em;
+      font-size: 0.8em;
     }
     .header-right {
-      gap: 10px;
+      gap: 8px;
     }
     .welcome-bar {
-      font-size: 0.425em;
-      padding: 2.5px 4px;
-      gap: 3px;
-    }
-    .welcome-bar .info-item {
-      gap: 3px;
+      font-size: 0.85em;
+      padding: 5px 8px;
     }
     .modal-content {
-      max-width: 98vw;
-      padding: 10px;
-    }
-    .modal-header h3 {
-      font-size: 1.2em;
+      padding: 15px;
     }
     .btn-secondary {
       padding: 8px 15px;
       font-size: 0.9em;
-      min-width: 90px;
     }
     #botSelectDashboard {
-      font-size: 0.425em;
-      padding: 3px 12px 3px 5px;
-      min-width: 70px;
-    }
-    .floating-back-btn {
-      top: 10px;
-      right: 10px;
-      width: 30px;
-      height: 30px;
-    }
-    .fixed-footer .footer-btn {
-      font-size: 0.9em;
-      padding: 5px;
-    }
-    .fixed-footer .footer-btn span {
-      font-size: 0.6em;
-    }
-    .theme-toggle-btn {
-      font-size: 0.9em;
+      min-width: 120px;
     }
   }
 
@@ -715,44 +643,21 @@
       font-size: 1.4em;
     }
     .dashboard-card h3 {
-      font-size: 0.85em;
+      font-size: 0.9em;
     }
     .dashboard-card p {
-      font-size: 0.7em;
+      font-size: 0.75em;
     }
     .dashboard-card .btn {
       padding: 4px 8px;
-      font-size: 0.7em;
+      font-size: 0.75em;
     }
     .welcome-bar {
-      font-size: 0.4em;
-    }
-    #botSelectDashboard {
-      font-size: 0.4em;
-      padding: 2.5px 10px 2.5px 4px;
-      min-width: 65px;
+      font-size: 0.8em;
+      padding: 4px 6px;
     }
     .modal-content {
-      padding: 8px;
-    }
-    .modal-header h3 {
-      font-size: 1.1em;
-    }
-    .floating-back-btn {
-      top: 8px;
-      right: 8px;
-      width: 28px;
-      height: 28px;
-    }
-    .fixed-footer .footer-btn {
-      font-size: 0.8em;
-      padding: 4px;
-    }
-    .fixed-footer .footer-btn span {
-      font-size: 0.55em;
-    }
-    .theme-toggle-btn {
-      font-size: 0.8em;
+      padding: 10px;
     }
   }
 }
