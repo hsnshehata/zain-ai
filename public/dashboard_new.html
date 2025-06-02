@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="لوحة تحكم زين بوت لإدارة البوتات والمحادثات">
+  <meta name="theme-color" content="#00C4B4">
+  <title>زين بوت</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="manifest" href="/manifest.json">
+  <!-- Preload critical CSS for performance -->
+  <link rel="preload" href="/css/common.css" as="style">
+  <link rel="preload" href="/css/dashboard.css" as="style">
+  <link rel="stylesheet" href="/css/common.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <script src="/js/utils.js"></script>
+  <script src="/js/assistantBot.js"></script>
+  <script src="/js/dashboard_new.js"></script>
+</head>
+
+<body class="dashboard-page dark-mode">
+  <div class="dashboard-layout">
+    <!-- Main Content -->
+    <main class="main-content">
+      <header class="main-header">
+        <div class="header-left">
+          <div class="form-group bot-selector">
+            <label for="botSelectDashboard">البوت:</label>
+            <select id="botSelectDashboard">
+              <option value="">جاري التحميل...</option>
+            </select>
+          </div>
+        </div>
+        <div class="header-right">
+          <button id="notifications-btn" class="header-icon-btn" title="الإشعارات">
+            <i class="fas fa-bell"></i>
+            <span id="notifications-count" class="notifications-count">0</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Welcome Bar -->
+      <div class="welcome-bar">
+        <div class="info-item">
+          <i class="fas fa-user"></i>
+          <span>مرحباً: <span id="welcome-username">جاري التحميل...</span></span>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-robot"></i>
+          <span>نوع الاشتراك: <span id="subscription-type">جاري التحميل...</span></span>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-calendar-alt"></i>
+          <span>انتهاء الاشتراك: <span id="subscription-end">جاري التحميل...</span></span>
+        </div>
+        <div class="info-item">
+          <i class="fas fa-clock"></i>
+          <span>الأيام المتبقية: <span id="remaining-days">جاري التحميل...</span></span>
+        </div>
+      </div>
+
+      <!-- Notifications Modal -->
+      <div id="notifications-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3><i class="fas fa-bell"></i> الإشعارات</h3>
+            <button id="close-notifications-btn" class="close-button"><i class="fas fa-times"></i></button>
+          </div>
+          <div id="notifications-list" class="notifications-list"></div>
+        </div>
+      </div>
+
+      <!-- Page Content -->
+      <div class="page-content">
+        <div id="content" class="cards-container">
+          <!-- Dashboard cards will be rendered here -->
+        </div>
+      </div>
+    </main>
+
+    <!-- Fixed Footer -->
+    <footer class="fixed-footer">
+      <button id="home-btn" class="footer-btn" title="الرئيسية">
+        <i class="fas fa-home"></i>
+        <span>الرئيسية</span>
+      </button>
+      <button class="logout-btn footer-btn" title="تسجيل الخروج">
+        <i class="fas fa-sign-out-alt"></i>
+        <span>خروج</span>
+      </button>
+      <button id="assistantButton" class="footer-btn" title="المساعد الذكي">
+        <i class="fas fa-headset"></i>
+        <span>دعم</span>
+      </button>
+      <button id="theme-toggle" class="footer-btn" title="تبديل الوضع">
+        <i class="fas fa-moon"></i>
+        <span>الوضع</span>
+      </button>
+    </footer>
+
+    <!-- Assistant Chat Modal -->
+    <div id="assistantChatModal" class="modal assistant-chat-modal" style="display: none;">
+      <div class="modal-content assistant-chat-content">
+        <div class="modal-header">
+          <h3><i class="fas fa-headset"></i> المساعد الذكي</h3>
+          <button id="closeAssistantChatBtn" class="close-button"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="welcome-message">
+          <p>مرحبًا! أنا المساعد الذكي، كيف يمكنني مساعدتك اليوم؟</p>
+          <small id="welcomeTimestamp"></small>
+        </div>
+        <div id="assistantChatMessages" class="chat-messages"></div>
+        <div class="chat-input">
+          <input type="text" id="assistantMessageInput" placeholder="اكتب رسالتك...">
+          <button id="assistantSendMessageBtn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+
+</html>
