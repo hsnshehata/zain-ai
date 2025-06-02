@@ -1,4 +1,3 @@
-// server/routes/bot.js
 const express = require('express');
 const router = express.Router();
 const { getSettings, updateSettings, getWhatsAppSettings, updateWhatsAppSettings } = require('../controllers/botController');
@@ -22,11 +21,19 @@ router.patch('/:botId/whatsapp-settings', authenticate, updateWhatsAppSettings);
 // معالجة رسايل الدردشة
 router.post('/', async (req, res) => {
   try {
-    const { botId, message, userId, isImage } = req.body;
+    const { botId, message, userId, isImage, isVoice, channel, mediaUrl } = req.body;
     console.log(`[POST /api/bot] 📥 Raw request body:`, req.body);
-    if (!botId || !message || !userId) {
+
+    // فحص الحقول المطلوبة
+    if (!botId || !userId || (!message && !isImage && !isVoice)) {
       console.error(`[POST /api/bot] ❌ Missing required fields: botId=${botId}, message=${message}, userId=${userId}`);
-      return res.status(400).json({ message: 'Bot ID, message, and user ID are required' });
+      return res.status(400).json({ message: 'Bot ID, message or media, and user ID are required' });
+    }
+
+    // فحص إن mediaUrl موجود لو isImage: true
+    if (isImage && !mediaUrl) {
+      console.error(`[POST /api/bot] ❌ Missing mediaUrl for image message`);
+      return res.status(400).json({ message: 'Image URL is required for image messages' });
     }
 
     // التحقق من حالة البوت
@@ -49,14 +56,14 @@ router.post('/', async (req, res) => {
     apiCache.set(messageKey, true);
 
     // جلب المحادثة
-    let conversation = await Conversation.findOne({ botId, userId, channel: 'web' });
+    let conversation = await Conversation.findOne({ botId, userId, channel: channel || 'web' });
     if (!conversation) {
-      console.log('📋 Creating new conversation for bot:', botId, 'user:', userId, 'channel: web');
+      console.log('📋 Creating new conversation for bot:', botId, 'user:', userId, 'channel:', channel || 'web');
       conversation = new Conversation({
         botId,
         userId,
         messages: [],
-        channel: 'web'
+        channel: channel || 'web'
       });
       await conversation.save();
     }
@@ -71,7 +78,9 @@ router.post('/', async (req, res) => {
       return res.status(200).json({ reply: 'تم معالجة هذه الرسالة من قبل' });
     }
 
-    const reply = await botEngine.processMessage(botId, userId, message, isImage, false, null, 'web');
+    // تمرير mediaUrl لدالة processMessage
+    console.log(`[POST /api/bot] 📤 Calling botEngine with mediaUrl: ${mediaUrl}`);
+    const reply = await botEngine.processMessage(botId, userId, message, isImage, isVoice, null, channel || 'web', mediaUrl);
     res.status(200).json({ reply });
   } catch (err) {
     console.error(`[POST /api/bot] ❌ خطأ في معالجة رسالة البوت:`, err.message, err.stack);
