@@ -26,11 +26,6 @@ body.light-mode .page-header h2 {
   color: var(--light-text);
 }
 
-.page-header h2 i {
-  font-family: "Font Awesome 6 Free";
-  font-weight: 900;
-}
-
 .header-actions {
   display: flex;
   flex-direction: column;
@@ -99,6 +94,8 @@ body.light-mode .instructions-container {
   flex-direction: column;
   gap: 20px;
   width: 100%;
+  /* Use grid-container to ensure vertical stacking */
+  composes: grid-container;
 }
 
 /* Card Styles */
@@ -130,11 +127,6 @@ body.light-mode .card {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.card-header h3 i {
-  font-family: "Font Awesome 6 Free";
-  font-weight: 900;
 }
 
 body.dark-mode .card-header h3 {
