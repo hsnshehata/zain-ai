@@ -31,7 +31,7 @@ async function transcribeAudio(audioUrl) {
     const audioBuffer = Buffer.from(audioResponse.data);
 
     const body = new FormData();
-    body.append('file', audioBuffer, { filename: 'audio.mp4', contentType: 'audio/mp4' }); // تغيير الامتداد لـ mp4
+    body.append('file', audioBuffer, { filename: 'audio.mp4', contentType: 'audio/mp4' });
     body.append('language', 'arabic');
     body.append('response_format', 'json');
 
@@ -91,7 +91,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     }
     console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', finalChannel, 'isImage:', isImage, 'isVoice:', isVoice, 'mediaUrl:', mediaUrl);
 
-    // تعديل الشرط لقبول الصور والصوت حتى لو message فاضي
     if (!botId || !finalUserId || (!message && !isImage && !isVoice)) {
       console.log(`❌ Missing required fields: botId=${botId}, userId=${finalUserId}, message=${message}`);
       throw new Error('Bot ID, message or media, and user ID are required');
@@ -142,19 +141,19 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     let userMessageContent = message;
 
     if (isVoice) {
-      if (message && !message.startsWith('http')) {
-        userMessageContent = message;
-        console.log('💬 Using pre-transcribed audio message from WhatsApp:', userMessageContent);
-      } else if (mediaUrl) {
+      if (!message && mediaUrl) {
         console.log('🎙️ Voice message with mediaUrl, transcribing:', mediaUrl);
         userMessageContent = await transcribeAudio(mediaUrl);
         if (!userMessageContent) {
           throw new Error('Failed to transcribe audio: No text returned');
         }
         console.log('💬 Transcribed audio message:', userMessageContent);
+      } else if (message && !message.startsWith('http')) {
+        userMessageContent = message;
+        console.log('💬 Using pre-transcribed audio message from WhatsApp:', userMessageContent);
       } else {
         userMessageContent = '[Voice message]';
-        console.log('⚠️ No message or mediaUrl for voice, using fallback content');
+        console.log('⚠️ No valid message or mediaUrl for voice, using fallback content');
       }
     } else if (isImage) {
       userMessageContent = message || '[صورة]';
