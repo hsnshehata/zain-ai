@@ -1,7 +1,9 @@
-/* public/css/facebook.css */
+/* public/css/social.css */
+
+/* Styles for Facebook, Instagram, and WhatsApp settings pages */
 
 /* Page Header */
-.page-header {
+.social-page-header {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -10,7 +12,7 @@
   width: 100%;
 }
 
-.page-header h2 {
+.social-page-header h2 {
   font-size: 1.8em;
   margin: 0;
   display: flex;
@@ -18,20 +20,12 @@
   gap: 10px;
 }
 
-body.dark-mode .page-header h2 {
+body.dark-mode .social-page-header h2 {
   color: var(--dark-text);
 }
 
-body.light-mode .page-header h2 {
+body.light-mode .social-page-header h2 {
   color: var(--light-text);
-}
-
-.header-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-  width: 100%;
 }
 
 /* Instructions Container */
@@ -74,7 +68,16 @@ body.light-mode .instructions-container {
   font-size: 1em;
 }
 
-/* Page Status */
+/* Header Actions */
+.header-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Page/Account Status */
 .page-status {
   font-size: 1em;
   line-height: 1.5;
@@ -87,15 +90,15 @@ body.light-mode .instructions-container {
   flex-direction: column;
   gap: 20px;
   width: 100%;
+  composes: grid-container; /* Ensure vertical stacking from common.css */
 }
 
-.facebook-settings-grid {
+.facebook-settings-grid,
+.instagram-settings-grid {
   display: flex;
   flex-direction: column;
   gap: 20px;
   width: 100%;
-  /* Use grid-container to ensure vertical stacking */
-  composes: grid-container;
 }
 
 /* Card Styles */
@@ -234,6 +237,121 @@ input:checked + .slider:before {
   transform: translateX(26px);
 }
 
+/* Button Styles */
+.btn-primary,
+.btn-danger,
+.download-btn {
+  padding: 12px 24px;
+  font-size: 1rem;
+  min-width: 150px;
+  text-align: center;
+  transition: transform 0.2s, background-color var(--transition-speed);
+}
+
+.download-btn {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.download-btn:hover {
+  background-color: var(--button-hover-bg);
+  transform: scale(1.05);
+}
+
+/* Modal Styles */
+.modal {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background-color: var(--dark-card);
+  border-radius: 8px;
+  padding: 20px;
+  width: 100%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+body.light-mode .modal-content {
+  background-color: var(--light-card);
+  box-shadow: 0 8px 20px var(--shadow-light);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 1.4em;
+  color: var(--dark-text);
+}
+
+body.light-mode .modal-header h3 {
+  color: var(--light-text);
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.3em;
+  cursor: pointer;
+  color: var(--dark-text);
+  transition: color var(--transition-speed), transform 0.2s;
+}
+
+body.light-mode .modal-close-btn {
+  color: var(--light-text);
+}
+
+.modal-close-btn:hover {
+  color: var(--primary-color);
+  transform: scale(1.1);
+}
+
+.modal-body select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--dark-border);
+  border-radius: 8px;
+  font-size: 1em;
+  background-color: var(--input-bg-dark);
+  color: var(--dark-text);
+}
+
+body.light-mode .modal-body select {
+  border-color: var(--light-border);
+  background-color: var(--input-bg-light);
+  color: var(--light-text);
+}
+
+.modal-body select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(37, 211, 102, 0.3);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
 /* Error Message */
 .error-message {
   color: var(--error-color);
@@ -271,7 +389,7 @@ body.light-mode .loader {
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
-  .page-header {
+  .social-page-header {
     gap: 10px;
   }
 
@@ -298,10 +416,22 @@ body.light-mode .loader {
   .instructions-container {
     padding: 15px;
   }
+
+  .btn-primary,
+  .btn-danger,
+  .download-btn {
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    min-width: 120px;
+  }
+
+  .modal-content {
+    padding: 15px;
+  }
 }
 
 @media (max-width: 576px) {
-  .page-header h2 {
+  .social-page-header h2 {
     font-size: 1.5em;
   }
 
@@ -340,10 +470,27 @@ body.light-mode .loader {
   input:checked + .slider:before {
     transform: translateX(22px);
   }
+
+  .btn-primary,
+  .btn-danger,
+  .download-btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    min-width: 100px;
+  }
+
+  .modal-content {
+    padding: 12px;
+    max-width: 95%;
+  }
+
+  .modal-body select {
+    font-size: 0.9em;
+  }
 }
 
 @media (max-width: 360px) {
-  .page-header h2 {
+  .social-page-header h2 {
     font-size: 1.3em;
   }
 
@@ -365,5 +512,21 @@ body.light-mode .loader {
 
   .setting-info p {
     font-size: 0.75em;
+  }
+
+  .btn-primary,
+  .btn-danger,
+  .download-btn {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    min-width: 90px;
+  }
+
+  .modal-content {
+    padding: 10px;
+  }
+
+  .modal-header h3 {
+    font-size: 1.2em;
   }
 }
