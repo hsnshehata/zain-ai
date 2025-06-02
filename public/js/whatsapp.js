@@ -3,7 +3,7 @@
 async function loadWhatsAppPage() {
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = "/css/facebook.css";
+  link.href = "/css/social.css"; // Changed to social.css
   document.head.appendChild(link);
   const content = document.getElementById("content");
   const token = localStorage.getItem("token");
@@ -31,7 +31,7 @@ async function loadWhatsAppPage() {
 
   // Main structure for the WhatsApp settings page
   content.innerHTML = `
-    <div class="page-header">
+    <div class="social-page-header">
       <h2><i class="fab fa-whatsapp"></i> إعدادات ربط واتساب</h2>
       <div id="instructionsContainer" class="instructions-container">
         <h3>📋 خطوات بسيطة لربط حسابك على واتساب</h3>
@@ -41,22 +41,22 @@ async function loadWhatsAppPage() {
             <strong>تحميل تطبيق سطح المكتب:</strong> لازم تحمل تطبيق زين بوت لسطح المكتب عشان تقدر تربط حسابك على واتساب.
             <br>
             <span style="display: block; margin-top: 5px;">
-              <a href="https://drive.google.com/file/d/1r-qegWXx6uTBYtEs44SeJp7fmDVR8Z_n/view?usp=drive_link" target="_blank" class="btn btn-primary" style="margin-top: 10px; color: #000000;">
+              <a href="https://drive.google.com/file/d/1r-qegWXx6uTBYtEs44SeJp7fmDVR8Z_n/view?usp=drive_link" target="_blank" class="btn btn-primary download-btn">
                 <i class="fas fa-download"></i> تحميل تطبيق زين بوت لسطح المكتب
               </a>
             </span>
           </li>
           <li>
-            <strong>فك الضغط :</strong> قم بفك ضغط التطبيق في مجلد امن ، بعد فك الضغط افتح التطبيق من خلال WAZainBot.exe 
+            <strong>فك الضغط:</strong> قم بفك ضغط التطبيق في مجلد آمن، بعد فك الضغط افتح التطبيق من خلال WAZainBot.exe
           </li>
           <li>
             <strong>تسجيل الدخول:</strong> افتح التطبيق وسجل دخول بنفس اسم المستخدم وكلمة المرور اللي بتستخدمها هنا.
           </li>
           <li>
-            <strong>ربط الحساب:</strong>  في التطبيق، امسح الـ QR Code اللي هيظهرلك باستخدام تطبيق واتساب على موبايلك.
+            <strong>ربط الحساب:</strong> في التطبيق، امسح الـ QR Code اللي هيظهرلك باستخدام تطبيق واتساب على موبايلك.
           </li>
           <li>
-            <strong>التواصل معانا:</strong> لو واجهت أي مشكلة أثناء الربط، تواصل معانا على واتساب على الرقم 
+            <strong>التواصل معانا:</strong> لو واجهت أي مشكلة أثناء الربط، تواصل معانا على واتساب على الرقم
             <a href="https://wa.me/01279425543" target="_blank">01279425543</a>.
           </li>
         </ul>
