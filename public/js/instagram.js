@@ -3,7 +3,7 @@
 async function loadInstagramPage() {
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = "/css/facebook.css";
+  link.href = "/css/social.css"; // Changed to social.css
   document.head.appendChild(link);
   const content = document.getElementById("content");
   const token = localStorage.getItem("token");
@@ -31,7 +31,7 @@ async function loadInstagramPage() {
 
   // Main structure for the Instagram settings page
   content.innerHTML = `
-    <div class="page-header">
+    <div class="social-page-header">
       <h2><i class="fab fa-instagram"></i> إعدادات ربط إنستجرام</h2>
       <div id="instructionsContainer" class="instructions-container" style="display: none;">
         <h3>📋 خطوات بسيطة لربط حسابك على إنستجرام</h3>
@@ -49,7 +49,7 @@ async function loadInstagramPage() {
             </span>
           </li>
           <li>
-            <strong>تواصل معانا:</strong> بعد ما تعمل حساب مهني، ابعتلنا رسالة على واتساب على الرقم 
+            <strong>تواصل معانا:</strong> بعد ما تعمل حساب مهني، ابعتلنا رسالة على واتساب على الرقم
             <a href="https://wa.me/01279425543" target="_blank">01279425543</a>، وهنبعتلك دعوة لتطبيقنا عشان تقدر تستخدمه.
           </li>
           <li>
@@ -59,7 +59,7 @@ async function loadInstagramPage() {
       </div>
       <div class="header-actions">
         <button id="connectInstagramBtn" class="btn btn-primary"><i class="fab fa-instagram"></i> ربط حسابك على إنستجرام</button>
-        <div id="accountStatus" class="page-status" style="margin-left: 20px;"></div>
+        <div id="accountStatus" class="page-status"></div>
       </div>
     </div>
 
@@ -153,8 +153,8 @@ async function loadInstagramPage() {
       return await response.json();
     } catch (err) {
       if (errorElement) {
-        errorElement.textContent = err.message;
-        errorElement.style.display = "block";
+        errorMessage.textContent = err.message;
+        errorMessage.style.display = "block";
       }
       throw err;
     }
@@ -243,9 +243,6 @@ async function loadInstagramPage() {
           const unlinkInstagramBtn = document.createElement("button");
           unlinkInstagramBtn.id = "unlinkInstagramBtn";
           unlinkInstagramBtn.className = "btn btn-danger";
-          unlinkInstagramBtn.style.marginLeft = "10px";
-          unlinkInstagramBtn.style.backgroundColor = "#dc3545";
-          unlinkInstagramBtn.style.borderColor = "#dc3545";
           unlinkInstagramBtn.textContent = "إلغاء الربط";
 
           // Add event listener for unlink button
@@ -381,7 +378,7 @@ async function loadInstagramPage() {
         errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ';
         errorMessage.style.display = 'block';
       }
-    }, { 
+    }, {
       scope: 'instagram_business_basic,instagram_business_manage_messages,instagram_business_manage_comments',
       auth_type: 'reauthenticate' // Force re-authentication to show permission prompt
     });
