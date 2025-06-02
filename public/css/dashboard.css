@@ -235,7 +235,7 @@
 
   /* Dashboard Card */
   .dashboard-card {
-    background: linear-gradient(135deg, var(--turquoise), #1eb752); /* WhatsApp green gradient */
+    background: linear-gradient(135deg, var(--turquoise), #0a6157); /* WhatsApp green gradient */
     color: white;
     border-radius: 8px; /* Updated border-radius */
     padding: 15px;
@@ -514,7 +514,7 @@
   }
 
   &.light-mode .btn-secondary:hover {
-    background-color: #1eb752; /* Slightly darker WhatsApp green */
+    background-color: #0a6157; /* Slightly darker WhatsApp green */
     color: var(--light-sidebar);
   }
 
