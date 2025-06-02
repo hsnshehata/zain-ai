@@ -22,6 +22,9 @@
   align-items: flex-start;
   gap: 15px;
   margin-bottom: 20px;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .page-header h2 {
@@ -46,6 +49,7 @@
   align-items: flex-start;
   gap: 10px;
   width: 100%;
+  max-width: 100%;
 }
 
 /* Instructions Container */
@@ -56,6 +60,8 @@
   margin-bottom: 20px;
   border: 1px solid var(--dark-border);
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .light-mode .instructions-container {
@@ -88,6 +94,7 @@
   font-size: 1em;
   line-height: 1.5;
   width: 100%;
+  max-width: 100%;
 }
 
 /* Settings Container */
@@ -96,6 +103,8 @@
   flex-direction: column; /* Stack all elements vertically */
   gap: 20px;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .facebook-settings-grid,
@@ -104,6 +113,8 @@
   flex-direction: column; /* Stack grid elements vertically */
   gap: 20px;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Card Styles */
@@ -116,6 +127,8 @@
   display: flex;
   flex-direction: column; /* Ensure card content is vertical */
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .light-mode .card {
@@ -149,6 +162,7 @@
   flex-direction: column; /* Stack card body content vertically */
   gap: 15px;
   width: 100%;
+  max-width: 100%;
 }
 
 /* Toggles Grid */
@@ -157,6 +171,8 @@
   flex-direction: column; /* Stack toggles vertically */
   gap: 20px;
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .setting-item {
@@ -164,6 +180,7 @@
   flex-direction: column; /* Stack setting items vertically */
   gap: 10px;
   width: 100%;
+  max-width: 100%;
 }
 
 .toggle-item {
@@ -172,6 +189,7 @@
   align-items: flex-start;
   padding: 10px 0;
   width: 100%;
+  max-width: 100%;
 }
 
 .setting-info h4 {
@@ -248,10 +266,7 @@ input:checked + .slider:before {
   margin-top: 10px;
   display: none;
   width: 100%;
-}
-
-.small-error {
-  font-size: 0.8em;
+  max-width: 100%;
 }
 
 /* Spinner */
@@ -261,6 +276,7 @@ input:checked + .slider:before {
   align-items: center;
   margin: 20px 0;
   width: 100%;
+  max-width: 100%;
 }
 
 .loader {
