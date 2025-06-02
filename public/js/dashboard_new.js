@@ -22,6 +22,7 @@ try {
       { id: 'facebook', name: 'فيسبوك', icon: 'fa-facebook', description: 'ربط وإدارة حساب فيسبوك' },
       { id: 'instagram', name: 'إنستجرام', icon: 'fa-instagram', description: 'ربط وإدارة حساب إنستجرام' },
       { id: 'whatsapp', name: 'واتساب', icon: 'fa-whatsapp', description: 'ربط وإدارة حساب واتساب' },
+      { id: 'settings', name: 'الإعدادات', icon: 'fa-cog', description: 'إدارة إعدادات الحساب' },
     ];
 
     // Check for token in URL (from /verify/:token redirect)
@@ -211,7 +212,7 @@ try {
 
     // Load JS dynamically if not already loaded
     async function loadPageJs(page) {
-      console.log(`loadPageJs called for page: ${page}`);
+      console.log(`loadPageJs called for page: ${page} at`, new Date().toISOString());
       if (!pageJsMap[page]) return;
 
       // Check if the script is already loaded or cached
@@ -225,7 +226,7 @@ try {
         console.log(`Loading script for page ${page}: ${pageJsMap[page]}`);
         script = document.createElement("script");
         script.src = pageJsMap[page];
-        script.async = true;
+        script.async = false; // Ensure synchronous loading for settings.js
         document.body.appendChild(script);
 
         // Wait for the script to load
@@ -233,7 +234,8 @@ try {
           script.onload = () => {
             console.log(`${pageJsMap[page]} loaded successfully at`, new Date().toISOString());
             loadedScripts.set(pageJsMap[page], true);
-            resolve();
+            // Add a slight delay to ensure global functions are defined
+            setTimeout(resolve, 100);
           };
           script.onerror = () => {
             console.error(`Failed to load script ${pageJsMap[page]} at`, new Date().toISOString());
