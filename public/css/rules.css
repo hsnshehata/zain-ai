@@ -2,288 +2,420 @@
 
 /* Styles specific to the Rules page (loaded by loadRulesPage) */
 
-.rules-management-container {
-  margin-top: 20px;
+.rules-page-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 15px;
+  margin-bottom: 20px;
+  width: 100%;
 }
 
-.rules-management-container h3 {
-  font-size: 1.5em;
-  margin-bottom: 15px;
+.rules-page-header h2 {
+  font-size: 1.8em;
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-/* Rule Card */
-.rule-card {
+body.dark-mode .rules-page-header h2 {
+  color: var(--dark-text);
+}
+
+body.light-mode .rules-page-header h2 {
+  color: var(--light-text);
+}
+
+.rules-management-container {
   display: flex;
   flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.rules-management-container h3 {
+  font-size: 1.4em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+body.dark-mode .rules-management-container h3 {
+  color: var(--dark-text);
+}
+
+body.light-mode .rules-management-container h3 {
+  color: var(--light-text);
+}
+
+.filters-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.filters-bar .form-group {
+  margin-bottom: 0;
+  width: 100%;
+}
+
+.filters-bar .actions-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.rules-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  composes: grid-container; /* Ensure vertical stacking from common.css */
+}
+
+.rule-card {
+  background-color: var(--dark-card);
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid var(--dark-border);
+  box-shadow: 0 4px 10px var(--shadow-dark);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+body.light-mode .rule-card {
+  background-color: var(--light-card);
+  border-color: var(--light-border);
+  box-shadow: 0 4px 10px var(--shadow-light);
 }
 
 .rule-card .card-body {
-  padding-bottom: 10px;
+  flex-grow: 1;
 }
 
-.rule-card p {
-  margin: 8px 0;
+.rule-card .card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 15px;
+  border-top: 1px solid;
 }
 
-.rule-card p strong {
-  font-weight: 600;
-  margin-left: 5px; /* RTL */
+body.dark-mode .rule-card .card-footer {
+  border-top-color: var(--dark-border);
+}
+
+body.light-mode .rule-card .card-footer {
+  border-top-color: var(--light-border);
 }
 
 .rule-type-badge {
   font-size: 0.9em;
   padding: 5px 10px;
   border-radius: 4px;
-  background-color: var(--turquoise);
+  background-color: var(--primary-color);
   color: white;
 }
 
 .rule-actions {
   display: flex;
-  gap: 5px;
+  gap: 10px;
 }
 
-/* Edit/Delete Buttons in Rule Card */
 .btn-icon {
   background: none;
   border: none;
+  font-size: 1.2em;
   cursor: pointer;
+  transition: color var(--transition-speed), transform 0.2s;
   padding: 5px;
-  font-size: 1em;
-  transition: color 0.3s ease;
 }
 
-.btn-edit {
-  color: #17a2b8; /* نفس لون الـ qa badge عشان يبقى متناسق */
+body.dark-mode .btn-icon {
+  color: var(--dark-text);
+}
+
+body.light-mode .btn-icon {
+  color: var(--light-text);
+}
+
+.btn-icon:hover {
+  color: var(--primary-color);
+  transform: scale(1.1);
 }
 
 .btn-edit:hover {
-  color: #138496;
-}
-
-.btn-delete {
-  color: #dc3545; /* نفس لون الـ global badge عشان يبقى متناسق */
+  color: var(--success-color);
 }
 
 .btn-delete:hover {
-  color: #c82333;
+  color: var(--error-color);
 }
 
-.rule-type-general .rule-type-badge {
-  background-color: #6c757d;
-}
-
-.rule-type-products .rule-type-badge {
-  background-color: #28a745;
-}
-
-.rule-type-qa .rule-type-badge {
-  background-color: #17a2b8;
-}
-
-.rule-type-channels .rule-type-badge {
-  background-color: #ffc107;
-}
-
-.rule-type-global .rule-type-badge {
-  background-color: #dc3545;
-}
-
-/* Form Card for Add/Edit Rule */
-.form-card {
-  margin-bottom: 20px;
-  padding: 20px;
-}
-
-.form-card h3 {
-  font-size: 1.4em;
-  margin-bottom: 20px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.form-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-/* Filters Bar (already in common.css but can override specifics here) */
-.filters-bar {
-  margin-bottom: 25px;
-}
-
-/* Rules Grid */
-.rules-grid {
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-}
-
-/* Spinner Adjustments for Rules Page */
-.hidden-spinner {
-  visibility: hidden !important; /* بنخفي الـ Spinner بصرياً */
-  position: absolute; /* بنحطه برا الصفحة عشان ميأثرش على الـ Layout */
-  top: -9999px;
-  left: -9999px;
-}
-
-.spinner[style*="display: none"] .loader {
-  display: none !important; /* بنخفي الـ loader كمان لما الـ spinner يبقى مخفي */
-}
-
-/* Buttons (Export/Import and Modal Buttons) */
-.btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1em;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  transition: background-color 0.3s ease;
-}
-
-.btn-primary {
-  background: #00c4b4;
-  color: #fff;
-}
-
-.btn-primary:hover {
-  background: #00a89a;
-}
-
-.btn-secondary {
-  background: #6c757d;
-  color: #fff;
-}
-
-.btn-secondary:hover {
-  background: #5a6268;
-}
-
-.btn-sm {
-  padding: 5px 10px;
-  font-size: 0.9em;
-}
-
-/* Modal Styles */
 .modal {
+  display: flex;
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
+  background-color: rgba(0, 0, 0, 0.6);
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 2000;
 }
 
 .modal-content {
-  background: #fff;
+  background-color: var(--dark-card);
   border-radius: 8px;
-  width: 90%;
-  max-width: 600px;
+  padding: 20px;
+  width: 100%;
+  max-width: 500px;
   max-height: 80vh;
   overflow-y: auto;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
-/* Form inside Modal */
-.modal-content .form-card {
-  margin: 0;
-  padding: 20px;
+body.light-mode .modal-content {
+  background-color: var(--light-card);
+  box-shadow: 0 8px 20px var(--shadow-light);
 }
 
-.modal-content .form-group {
+.rules-form-card {
+  padding: 0; /* Already padded by modal-content */
+}
+
+.rules-form-card h3 {
+  font-size: 1.4em;
   margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.modal-content .form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: 500;
+body.dark-mode .rules-form-card h3 {
+  color: var(--dark-text);
 }
 
-.modal-content .form-group input,
-.modal-content .form-group textarea,
-.modal-content .form-group select {
+body.light-mode .rules-form-card h3 {
+  color: var(--light-text);
+}
+
+.rules-form-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.rules-form-card .form-group {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  box-sizing: border-box;
+}
+
+.rules-form-card .form-group label {
+  display: block;
   font-size: 1em;
+  margin-bottom: 8px;
+  font-weight: 600;
 }
 
-.modal-content .form-group textarea {
-  resize: vertical;
+.rules-form-card .form-group input,
+.rules-form-card .form-group textarea,
+.rules-form-card .form-group select {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: var(--primary-font);
+  transition: border-color var(--transition-speed), background-color var(--transition-speed), color var(--transition-speed);
+}
+
+body.dark-mode .rules-form-card .form-group input,
+body.dark-mode .rules-form-card .form-group textarea,
+body.dark-mode .rules-form-card .form-group select {
+  border-color: var(--dark-border);
+  background-color: var(--input-bg-dark);
+  color: var(--dark-text);
+}
+
+body.light-mode .rules-form-card .form-group input,
+body.light-mode .rules-form-card .form-group textarea,
+body.light-mode .rules-form-card .form-group select {
+  border-color: var(--light-border);
+  background-color: var(--input-bg-light);
+  color: var(--light-text);
+}
+
+.rules-form-card .form-group input:focus,
+.rules-form-card .form-group textarea:focus,
+.rules-form-card .form-group select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 5px rgba(37, 211, 102, 0.3);
+}
+
+.rules-form-card .form-group textarea {
   min-height: 100px;
+  resize: vertical;
 }
 
-.modal-content .form-actions {
+.form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  margin-top: 20px;
+  margin-top: 15px;
 }
 
-.modal-content .error-message {
-  color: red;
-  margin-top: 10px;
-  font-size: 0.9em;
+.placeholder-card {
+  background-color: var(--dark-card);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  width: 100%;
+  box-shadow: 0 4px 10px var(--shadow-dark);
+}
+
+body.light-mode .placeholder-card {
+  background-color: var(--light-card);
+  box-shadow: 0 4px 10px var(--shadow-light);
+}
+
+.hidden-spinner {
+  display: none;
 }
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
-  .rules-grid {
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  .rules-page-header {
+    gap: 10px;
+  }
+
+  .rules-page-header h2 {
+    font-size: 1.6em;
+  }
+
+  .rules-management-container h3 {
+    font-size: 1.2em;
   }
 
   .filters-bar {
-    flex-direction: column;
-    align-items: stretch;
+    gap: 10px;
   }
 
-  .filters-bar .form-group {
-    min-width: 100%;
+  .rule-card {
+    padding: 15px;
   }
 
   .modal-content {
-    width: 95%;
-    max-width: none;
+    padding: 15px;
+    max-width: 95%;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    padding: 10px 20px;
+    font-size: 0.95rem;
+    min-width: 120px;
+  }
+
+  .btn-icon {
+    font-size: 1.1em;
   }
 }
 
 @media (max-width: 576px) {
-  .rule-card p {
-    font-size: 0.95em;
+  .rules-page-header h2 {
+    font-size: 1.4em;
   }
 
-  .rule-type-badge {
-    font-size: 0.85em;
+  .rules-management-container h3 {
+    font-size: 1.1em;
   }
 
-  .modal-content .form-card {
-    padding: 15px;
+  .rule-card {
+    padding: 12px;
   }
 
-  .modal-content .form-card h3 {
+  .filters-bar .form-group input,
+  .filters-bar .form-group select {
+    font-size: 0.9em;
+    padding: 8px 12px;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    min-width: 100px;
+  }
+
+  .btn-icon {
+    font-size: 1em;
+  }
+
+  .modal-content {
+    padding: 12px;
+  }
+
+  .rules-form-card h3 {
     font-size: 1.2em;
   }
 
-  .modal-content .btn {
-    padding: 8px 15px;
+  .rules-form-card .form-group input,
+  .rules-form-card .form-group textarea,
+  .rules-form-card .form-group select {
     font-size: 0.9em;
+    padding: 8px 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .rules-page-header h2 {
+    font-size: 1.2em;
   }
 
-  .btn-sm {
-    padding: 4px 8px;
+  .rules-management-container h3 {
+    font-size: 1em;
+  }
+
+  .rule-card {
+    padding: 10px;
+  }
+
+  .filters-bar .form-group input,
+  .filters-bar .form-group select {
     font-size: 0.85em;
+    padding: 6px 10px;
+  }
+
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger {
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    min-width: 90px;
+  }
+
+  .modal-content {
+    padding: 10px;
+  }
+
+  .rules-form-card h3 {
+    font-size: 1.1em;
+  }
+
+  .rules-form-card .form-group input,
+  .rules-form-card .form-group textarea,
+  .rules-form-card .form-group select {
+    font-size: 0.85em;
+    padding: 6px 10px;
   }
 }
