@@ -78,9 +78,14 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     }
     console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', finalChannel, 'isImage:', isImage, 'isVoice:', isVoice);
 
-    if (!message && !isImage && !isVoice) {
-      console.log(`❌ Missing message content and no media specified for botId=${botId}, userId=${finalUserId}`);
-      throw new Error('Missing required fields');
+    // تعديل الشرط لقبول الصور حتى لو message فاضي
+    if (!botId || !finalUserId || (!message && !isImage && !isVoice)) {
+      console.log(`❌ Missing required fields: botId=${botId}, userId=${finalUserId}, message=${message}`);
+      throw new Error('Bot ID, message, and user ID are required');
+    }
+
+    if (isImage && !message) {
+      console.log('🖼️ Image message detected with no text, proceeding with mediaUrl');
     }
 
     let conversation = await Conversation.findOne({ botId, userId: finalUserId, channel: finalChannel });
@@ -135,8 +140,9 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         userMessageContent = message;
         console.log('💬 Using pre-transcribed audio message:', userMessageContent);
       }
-    } else if (isImage && !message) {
-      userMessageContent = "[Image message]";
+    } else if (isImage) {
+      userMessageContent = message || '[صورة]'; // نص افتراضي لو الصورة بدون نص
+      console.log('🖼️ Image message, content:', userMessageContent);
     }
 
     conversation.messages.push({ 
@@ -185,9 +191,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     if (!reply) {
       if (isImage) {
         if (!message) {
-          console.log('❌ No image URL provided for image message');
-          reply = 'عذرًا، لم أتمكن من تحليل الصورة. ارفع الصورة مرة تانية.';
-        } else {
+          console.log('🖼️ Processing image with mediaUrl:', message);
           const response = await openai.chat.completions.create({
             model: 'gpt-4-vision-preview',
             messages: [
@@ -197,6 +201,25 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
                 role: 'user',
                 content: [
                   { type: 'text', text: 'رد على حسب محتوى الصورة' },
+                  { type: 'image_url', image_url: { url: message } },
+                ],
+              },
+            ],
+            max_tokens: 5000,
+          });
+          reply = response.choices[0].message.content || 'عذرًا، لم أتمكن من تحليل الصورة.';
+          console.log('🖼️ Image processed:', reply);
+        } else {
+          console.log('🖼️ Processing image with mediaUrl:', message);
+          const response = await openai.chat.completions.create({
+            model: 'gpt-4-vision-preview',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...context,
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: userMessageContent || 'رد على حسب محتوى الصورة' },
                   { type: 'image_url', image_url: { url: message } },
                 ],
               },
