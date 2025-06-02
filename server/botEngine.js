@@ -31,7 +31,7 @@ async function transcribeAudio(audioUrl) {
     const audioBuffer = Buffer.from(audioResponse.data);
 
     const body = new FormData();
-    body.append('file', audioBuffer, { filename: 'audio.ogg', contentType: 'audio/ogg' });
+    body.append('file', audioBuffer, { filename: 'audio.mp4', contentType: 'audio/mp4' }); // تغيير الامتداد لـ mp4
     body.append('language', 'arabic');
     body.append('response_format', 'json');
 
@@ -142,19 +142,19 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     let userMessageContent = message;
 
     if (isVoice) {
-      if (!message && mediaUrl) {
+      if (message && !message.startsWith('http')) {
+        userMessageContent = message;
+        console.log('💬 Using pre-transcribed audio message from WhatsApp:', userMessageContent);
+      } else if (mediaUrl) {
         console.log('🎙️ Voice message with mediaUrl, transcribing:', mediaUrl);
         userMessageContent = await transcribeAudio(mediaUrl);
         if (!userMessageContent) {
           throw new Error('Failed to transcribe audio: No text returned');
         }
         console.log('💬 Transcribed audio message:', userMessageContent);
-      } else if (!message) {
+      } else {
         userMessageContent = '[Voice message]';
         console.log('⚠️ No message or mediaUrl for voice, using fallback content');
-      } else {
-        userMessageContent = message;
-        console.log('💬 Using pre-transcribed audio message:', userMessageContent);
       }
     } else if (isImage) {
       userMessageContent = message || '[صورة]';
@@ -180,7 +180,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     let reply = '';
 
-    if (message && !isImage && !isVoice) {
+    if (userMessageContent && !isImage && !isVoice) {
       for (const rule of rules) {
         if (rule.type === 'qa' && userMessageContent.toLowerCase().includes(rule.content.question.toLowerCase())) {
           reply = rule.content.answer;
