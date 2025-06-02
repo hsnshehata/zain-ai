@@ -1,7 +1,6 @@
-// server/controllers/facebookController.js
 const axios = require('axios');
 const Bot = require('../models/Bot');
-const Conversation = require('../models/Conversation'); // السطر اللي ناقص
+const Conversation = require('../models/Conversation');
 const { processMessage, processFeedback } = require('../botEngine');
 
 // دالة مساعدة لإضافة timestamp للـ logs
@@ -35,7 +34,7 @@ const handleMessage = async (req, res) => {
 
     if (body.object !== 'page') {
       console.log('⚠️ Ignored non-page webhook event:', body.object);
-      return res.status(200).send('EVENT_RECEIVED'); // تجاهل الطلب من غير خطأ
+      return res.status(200).send('EVENT_RECEIVED');
     }
 
     for (const entry of body.entry) {
@@ -47,7 +46,6 @@ const handleMessage = async (req, res) => {
         continue;
       }
 
-      // التحقق من حالة البوت
       if (!bot.isActive) {
         console.log(`⚠️ Bot ${bot.name} (ID: ${bot._id}) is inactive, skipping message processing.`);
         continue;
@@ -63,31 +61,25 @@ const handleMessage = async (req, res) => {
           continue;
         }
 
-        // إضافة بادئة facebook_ لمعرف المستخدم (للرسايل)
         const prefixedSenderId = `facebook_${senderPsid}`;
 
-        // Validate that senderId is not the page itself
         if (senderPsid === bot.facebookPageId) {
           console.log(`⚠️ Skipping message because senderId (${senderPsid}) is the page itself`);
           continue;
         }
 
-        // Validate that recipientId matches the page
         if (recipientId !== bot.facebookPageId) {
           console.log(`⚠️ Skipping message because recipientId (${recipientId}) does not match pageId (${bot.facebookPageId})`);
           continue;
         }
 
-        // Check if the message is an echo (sent by the bot itself)
         if (webhookEvent.message && webhookEvent.message.is_echo) {
           console.log(`⚠️ Ignoring echo message from bot: ${webhookEvent.message.text}`);
           continue;
         }
 
-        // جلب اسم المستخدم من فيسبوك
         const username = await getFacebookUsername(prefixedSenderId, bot.facebookApiKey);
 
-        // إنشاء أو تحديث المحادثة
         let conversation = await Conversation.findOne({
           botId: bot._id,
           channel: 'facebook',
@@ -99,17 +91,15 @@ const handleMessage = async (req, res) => {
             botId: bot._id,
             channel: 'facebook',
             userId: prefixedSenderId,
-            username: username, // حفظ اسم المستخدم
+            username: username,
             messages: []
           });
           await conversation.save();
         } else if (!conversation.username || conversation.username === "مستخدم فيسبوك") {
-          // لو الـ username مش موجود أو قيمته مش كويسة، نحدثه
           conversation.username = username;
           await conversation.save();
         }
 
-        // معالجة رسائل الترحيب (messaging_optins)
         if (webhookEvent.optin && bot.messagingOptinsEnabled) {
           console.log(`📩 Processing opt-in event from ${prefixedSenderId}`);
           const welcomeMessage = bot.welcomeMessage || 'مرحبًا! كيف يمكنني مساعدتك اليوم؟';
@@ -120,7 +110,6 @@ const handleMessage = async (req, res) => {
           continue;
         }
 
-        // معالجة ردود الفعل (message_reactions)
         if (webhookEvent.reaction && bot.messageReactionsEnabled) {
           console.log(`📩 Processing reaction event from ${prefixedSenderId}: ${webhookEvent.reaction.reaction}`);
           const responseText = `شكرًا على تفاعلك (${webhookEvent.reaction.reaction})!`;
@@ -131,7 +120,6 @@ const handleMessage = async (req, res) => {
           continue;
         }
 
-        // معالجة تتبع المصدر (messaging_referrals)
         if (webhookEvent.referral && bot.messagingReferralsEnabled) {
           console.log(`📩 Processing referral event from ${prefixedSenderId}: ${webhookEvent.referral.ref}`);
           const responseText = `مرحبًا! وصلتني من ${webhookEvent.referral.source}، كيف يمكنني مساعدتك؟`;
@@ -142,7 +130,6 @@ const handleMessage = async (req, res) => {
           continue;
         }
 
-        // معالجة تعديلات الرسائل (message_edits)
         if (webhookEvent.message_edit && bot.messageEditsEnabled) {
           const editedMessage = webhookEvent.message_edit.message;
           const mid = editedMessage.mid || `temp_${Date.now()}`;
@@ -155,34 +142,39 @@ const handleMessage = async (req, res) => {
           continue;
         }
 
-        // التعامل مع الرسائل العادية
         if (webhookEvent.message) {
           const message = webhookEvent.message;
           const mid = message.mid || `temp_${Date.now()}`;
-          const messageContent = message.text || (message.attachments ? JSON.stringify(message.attachments) : 'رسالة غير نصية');
-
-          let responseText = '';
+          let text = message.text || '';
+          let isImage = false;
+          let isVoice = false;
+          let mediaUrl = null;
 
           if (message.text) {
-            console.log(`📝 Text message received from ${prefixedSenderId}: ${message.text}`);
-            responseText = await processMessage(bot._id, prefixedSenderId, message.text, false, false, mid, 'facebook');
+            console.log(`📝 Text message received from ${prefixedSenderId}: ${text}`);
           } else if (message.attachments) {
             const attachment = message.attachments[0];
             if (attachment.type === 'image') {
-              console.log(`🖼️ Image received from ${prefixedSenderId}: ${attachment.payload.url}`);
-              responseText = await processMessage(bot._id, prefixedSenderId, attachment.payload.url, true, false, mid, 'facebook');
+              isImage = true;
+              mediaUrl = attachment.payload.url;
+              text = '[صورة]';
+              console.log(`🖼️ Image received from ${prefixedSenderId}: ${mediaUrl}`);
             } else if (attachment.type === 'audio') {
-              console.log(`🎙️ Audio received from ${prefixedSenderId}: ${attachment.payload.url}`);
-              responseText = await processMessage(bot._id, prefixedSenderId, attachment.payload.url, false, true, mid, 'facebook');
+              isVoice = true;
+              mediaUrl = attachment.payload.url;
+              text = '';
+              console.log(`🎙️ Audio received from ${prefixedSenderId}: ${mediaUrl}`);
             } else {
               console.log(`📎 Unsupported attachment type from ${prefixedSenderId}: ${attachment.type}`);
-              responseText = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
+              text = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
             }
           } else {
             console.log(`❓ Unknown message type from ${prefixedSenderId}`);
-            responseText = 'عذرًا، لا أستطيع فهم هذه الرسالة.';
+            text = 'عذرًا، لا أستطيع فهم هذه الرسالة.';
           }
 
+          console.log(`📤 Sending to botEngine: botId=${bot._id}, userId=${prefixedSenderId}, message=${text}, isImage=${isImage}, isVoice=${isVoice}, mediaUrl=${mediaUrl}`);
+          const responseText = await processMessage(bot._id, prefixedSenderId, text, isImage, isVoice, mid, 'facebook', mediaUrl);
           await sendMessage(senderPsid, responseText, bot.facebookApiKey);
         } else if (webhookEvent.response_feedback) {
           const feedbackData = webhookEvent.response_feedback;
@@ -202,7 +194,6 @@ const handleMessage = async (req, res) => {
       }
 
       if (entry.changes && entry.changes.length > 0) {
-        // التحقق من تفعيل ميزة الرد على الكومنتات
         if (!bot.commentsRepliesEnabled) {
           console.log(`⚠️ Comment replies disabled for bot ${bot.name} (ID: ${bot._id}), skipping comment processing.`);
           continue;
@@ -222,21 +213,17 @@ const handleMessage = async (req, res) => {
               continue;
             }
 
-            // إضافة بادئة facebook_comment_ لمعرف المستخدم (للتعليقات)
             const prefixedCommenterId = `facebook_comment_${commenterId}`;
 
-            // تجاهل الكومنتات من الصفحة نفسها (ردود البوت)
             if (commenterId === bot.facebookPageId) {
               console.log(`⚠️ Skipping comment because commenterId (${commenterId}) is the page itself`);
               continue;
             }
 
-            // جلب اسم المستخدم من فيسبوك
             const username = await getFacebookUsername(prefixedCommenterId, bot.facebookApiKey);
 
             console.log(`💬 Comment received on post ${postId} from ${commenterName} (${prefixedCommenterId}): ${message}`);
 
-            // إنشاء أو تحديث المحادثة
             let conversation = await Conversation.findOne({
               botId: bot._id,
               channel: 'facebook',
@@ -248,12 +235,11 @@ const handleMessage = async (req, res) => {
                 botId: bot._id,
                 channel: 'facebook',
                 userId: prefixedCommenterId,
-                username: username, // حفظ اسم المستخدم
+                username: username,
                 messages: []
               });
               await conversation.save();
             } else if (!conversation.username || conversation.username === "مستخدم فيسبوك") {
-              // لو الـ username مش موجود أو قيمته مش كويسة، نحدثه
               conversation.username = username;
               await conversation.save();
             }
