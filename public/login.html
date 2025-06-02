@@ -21,10 +21,12 @@
     <form id="loginForm">
       <div class="form-group">
         <input type="text" id="username" required placeholder=" " aria-label="اسم المستخدم">
+        <i class="fas fa-user"></i>
         <label for="username">اسم المستخدم</label>
       </div>
       <div class="form-group">
         <input type="password" id="password" required placeholder=" " aria-label="كلمة المرور">
+        <i class="fas fa-lock"></i>
         <label for="password">كلمة المرور</label>
       </div>
       <button type="submit" aria-label="تسجيل الدخول">تسجيل الدخول</button>
@@ -127,8 +129,8 @@
         google.accounts.id.renderButton(
           document.getElementById("googleSignInButton"),
           { 
-            type: "standard", // Use standard button type
-            theme: "filled_blue", // Base color for consistency
+            type: "standard",
+            theme: "filled_blue",
             size: "large",
             text: "signin_with",
             shape: "rectangular",
