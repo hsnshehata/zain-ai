@@ -1,9 +1,10 @@
 // public/js/settings.js
 
-console.log("✅ settings.js loaded successfully");
+console.log("✅ settings.js started loading at", new Date().toISOString());
 
+// Define loadSettingsPage in the global scope
 async function loadSettingsPage() {
-  console.log("✅ loadSettingsPage called");
+  console.log("✅ loadSettingsPage called at", new Date().toISOString());
   const content = document.getElementById("content");
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
@@ -88,7 +89,7 @@ async function loadSettingsPage() {
         if (response.ok) {
           localStorage.setItem('username', username);
           console.log("User data updated successfully, reloading page");
-          loadSettingsPage();
+          await loadSettingsPage();
         } else {
           errorDiv.style.display = 'block';
           errorDiv.textContent = data.message || 'فشل في تحديث بيانات المستخدم';
@@ -111,4 +112,13 @@ async function loadSettingsPage() {
   }
 }
 
+// Make loadSettingsPage globally accessible
 window.loadSettingsPage = loadSettingsPage;
+
+console.log("✅ loadSettingsPage defined in global scope at", new Date().toISOString());
+
+if (window.loadSettingsPage) {
+  console.log('✅ loadSettingsPage is defined and ready');
+} else {
+  console.error('❌ loadSettingsPage is not defined');
+}
