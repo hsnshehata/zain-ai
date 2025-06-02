@@ -5,7 +5,7 @@
   --header-height: 70px;
   --footer-height: 60px;
   --transition-speed: 0.3s;
-  --turquoise: #00C4B4;
+  --turquoise: #25D366; /* WhatsApp green */
   --dark-sidebar: #1A1A2E;
   --dark-card: #2A2A3E;
   --dark-text: #E0E0E0;
@@ -219,8 +219,8 @@
     overflow-x: hidden;
   }
 
-  /* Cards Container */
-  .cards-container {
+  /* Dashboard Cards Container */
+  .dashboard-cards-container {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 15px;
@@ -228,16 +228,16 @@
   }
 
   @media (min-width: 768px) {
-    .cards-container {
+    .dashboard-cards-container {
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     }
   }
 
   /* Dashboard Card */
   .dashboard-card {
-    background: linear-gradient(135deg, var(--turquoise), var(--button-hover-bg));
+    background: linear-gradient(135deg, var(--turquoise), #1eb752); /* WhatsApp green gradient */
     color: white;
-    border-radius: 12px;
+    border-radius: 8px; /* Updated border-radius */
     padding: 15px;
     display: flex;
     flex-direction: column;
@@ -248,11 +248,12 @@
     overflow: hidden;
     animation: fadeInUp 0.5s ease forwards;
     animation-delay: calc(var(--index) * 0.1s);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Light shadow */
   }
 
   .dashboard-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 20px rgba(0, 196, 180, 0.3);
+    transform: scale(1.05); /* Animation on hover */
+    box-shadow: 0 8px 20px rgba(37, 211, 102, 0.3); /* WhatsApp green shadow */
   }
 
   .dashboard-card i {
@@ -276,6 +277,7 @@
     color: var(--turquoise);
     padding: 8px 16px;
     font-size: 0.9em;
+    border-radius: 8px; /* Match border-radius */
   }
 
   .dashboard-card .btn:hover {
@@ -492,7 +494,7 @@
   .btn-secondary {
     padding: 10px 20px;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px; /* Match border-radius */
     cursor: pointer;
     font-size: 1em;
     background-color: var(--dark-border);
@@ -512,7 +514,7 @@
   }
 
   &.light-mode .btn-secondary:hover {
-    background-color: #00a89c;
+    background-color: #1eb752; /* Slightly darker WhatsApp green */
     color: var(--light-sidebar);
   }
 
@@ -598,7 +600,7 @@
     .page-content {
       padding: 15px;
     }
-    .cards-container {
+    .dashboard-cards-container {
       grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
       gap: 10px;
     }
@@ -643,7 +645,7 @@
     .page-content {
       padding: 10px;
     }
-    .cards-container {
+    .dashboard-cards-container {
       grid-template-columns: minmax(100%, 1fr);
     }
     .dashboard-card {
@@ -712,7 +714,7 @@
     .page-content {
       padding: 8px;
     }
-    .cards-container {
+    .dashboard-cards-container {
       gap: 8px;
     }
     .dashboard-card {
