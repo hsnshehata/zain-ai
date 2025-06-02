@@ -9,7 +9,7 @@ try {
     let isInitialLoad = true; // Flag to control initial load
 
     // Valid pages to prevent unexpected page loads
-    const validPages = ['bots', 'rules', 'chat-page', 'analytics', 'messages', 'feedback', 'facebook', 'instagram', 'whatsapp', 'settings'];
+    const validPages = ['bots', 'rules', 'chat-page', 'analytics', 'messages', 'feedback', 'facebook', 'instagram', 'whatsapp', 'wasenderpro', 'settings'];
 
     // Pages configuration for dashboard cards
     const pages = [
@@ -21,6 +21,7 @@ try {
       { id: 'whatsapp', name: 'واتساب', icon: 'fab fa-whatsapp', description: 'ربط وإدارة حساب واتساب' },
       { id: 'messages', name: 'الرسائل', icon: 'fas fa-envelope', description: 'مراجعة محادثات المستخدمين' },
       { id: 'feedback', name: 'التقييمات', icon: 'fas fa-comments', description: 'رؤية تقييمات المستخدمين' },
+      { id: 'wasenderpro', name: 'Wasender Pro', icon: 'fas fa-bolt', description: 'مجاني طوال فترة الاشتراك' },
       { id: 'settings', name: 'الإعدادات', icon: 'fas fa-cog', description: 'إدارة إعدادات الحساب' },
     ];
 
@@ -174,6 +175,7 @@ try {
       facebook: "/css/facebook.css",
       instagram: "/css/facebook.css",
       whatsapp: "/css/facebook.css",
+      wasenderpro: "/css/facebook.css",
       settings: "/css/settings.css",
     };
 
@@ -187,6 +189,7 @@ try {
       facebook: "/js/facebook.js",
       instagram: "/js/instagram.js",
       whatsapp: "/js/whatsapp.js",
+      wasenderpro: "/js/wasenderpro.js",
       settings: "/js/settings.js",
     };
 
@@ -507,6 +510,11 @@ try {
             const loadWhatsAppPage = await waitForFunction("loadWhatsAppPage");
             console.log(`Loading whatsapp page`);
             await loadWhatsAppPage();
+            break;
+          case "wasenderpro":
+            const loadWasenderProPage = await waitForFunction("loadWasenderProPage");
+            console.log(`Loading wasenderpro page`);
+            await loadWasenderProPage();
             break;
           case "settings":
             const loadSettingsPage = await waitForFunction("loadSettingsPage");
