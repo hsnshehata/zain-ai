@@ -41,7 +41,7 @@ async function loadWhatsAppPage() {
             <strong>تحميل تطبيق سطح المكتب:</strong> لازم تحمل تطبيق زين بوت لسطح المكتب عشان تقدر تربط حسابك على واتساب.
             <br>
             <span style="display: block; margin-top: 5px;">
-              <a href="https://drive.google.com/file/d/1r-qegWXx6uTBYtEs44SeJp7fmDVR8Z_n/view?usp=drive_link" target="_blank" class="btn btn-primary" style="margin-top: 10px; color: #000000;">
+              <a href="https://drive.google.com/file/d/1S66j00RE5n4WcnccflxYklNLfvW4Er5D/view?usp=drive_link" target="_blank" class="btn btn-primary" style="margin-top: 10px; color: #000000;">
                 <i class="fas fa-download"></i> تحميل تطبيق زين بوت لسطح المكتب
               </a>
             </span>
