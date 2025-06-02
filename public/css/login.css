@@ -1,250 +1,275 @@
 /* public/css/login.css */
 
-/* Styles for Login Page (login.html) */
-
-/* Apply base styles from common.css for consistency */
-body {
-  margin: 0;
-  padding: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-}
-
-/* Dark/Light mode body styles are in common.css */
+/* Styles specific to the Login page */
 
 .login-container {
-  padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  width: 100%;
   max-width: 400px;
-  text-align: center;
-  transition: background-color 0.3s;
-}
-
-body.dark-mode .login-container {
-  background-color: var(--dark-card-bg, var(--dark-card));
+  margin: 40px auto;
+  padding: 30px;
+  background-color: var(--dark-card);
+  border: 1px solid var(--dark-border);
+  border-radius: 8px;
+  box-shadow: 0 4px 10px var(--shadow-dark);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
 }
 
 body.light-mode .login-container {
-  background-color: var(--light-card-bg, var(--light-card));
+  background-color: var(--light-card);
+  border-color: var(--light-border);
+  box-shadow: 0 4px 10px var(--shadow-light);
 }
 
 .login-container h1 {
-  margin-bottom: 30px;
-  font-size: 2rem;
-  font-weight: 700;
-  color: var(--turquoise);
+  font-size: 2em;
+  text-align: center;
+  margin: 0 0 20px;
 }
 
-/* form-group styles are mostly in common.css */
+body.dark-mode .login-container h1 {
+  color: var(--dark-heading);
+}
+
+body.light-mode .login-container h1 {
+  color: var(--light-heading);
+}
+
+.login-container form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
+
 .form-group {
   position: relative;
-}
-
-/* input styles are mostly in common.css */
-.form-group input {
   width: 100%;
-  padding: 12px 15px;
-  border: 1px solid;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: border-color 0.3s, box-shadow 0.3s;
-  box-sizing: border-box;
 }
 
-body.dark-mode .form-group input {
-  border-color: var(--dark-border);
-  background-color: var(--dark-card);
+.form-group i {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.2em;
   color: var(--dark-text);
+  transition: color var(--transition-speed);
 }
 
-body.light-mode .form-group input {
-  border-color: var(--light-border);
-  background-color: var(--light-card);
+body.light-mode .form-group i {
   color: var(--light-text);
 }
 
-.form-group input:focus {
-  border-color: var(--turquoise);
-  box-shadow: 0 0 5px rgba(26, 188, 156, 0.5);
-  outline: none;
-}
-
-.form-group input::placeholder {
-  color: transparent;
+.form-group input:focus + i {
+  color: var(--primary-color);
 }
 
 .form-group label {
   position: absolute;
   top: 12px;
-  right: 15px;
-  padding: 0 5px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
+  right: 40px; /* Adjusted for icon */
+  font-size: 1em;
+  color: var(--dark-text);
+  transition: all 0.2s ease;
   pointer-events: none;
 }
 
-body.dark-mode .form-group label {
-  color: rgba(224, 224, 224, 0.7);
-  background-color: var(--dark-card);
-}
-
 body.light-mode .form-group label {
-  color: #6c757d;
-  background-color: var(--light-card);
+  color: var(--light-text);
 }
 
-/* Float label effect */
 .form-group input:focus + label,
 .form-group input:not(:placeholder-shown) + label {
-  top: -10px;
-  right: 10px;
-  font-size: 0.85rem;
-  color: var(--turquoise);
+  top: -8px;
+  right: 12px;
+  font-size: 0.8em;
+  color: var(--primary-color);
 }
 
-/* Submit Button */
-button[type="submit"] {
-  background-color: var(--turquoise);
-  color: white;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1.1rem;
-  font-weight: 600;
+.form-group input {
   width: 100%;
-  transition: background-color 0.3s;
+  padding: 10px 15px 10px 40px; /* Adjusted for icon */
+  border: 1px solid;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: var(--primary-font);
+  background-color: var(--input-bg-dark);
+  color: var(--dark-text);
+  transition: border-color var(--transition-speed), background-color var(--transition-speed), color var(--transition-speed);
 }
 
-button[type="submit"]:hover {
-  background-color: var(--button-hover-bg);
+body.light-mode .form-group input {
+  background-color: var(--input-bg-light);
+  color: var(--light-text);
+  border-color: var(--light-border);
 }
 
-button[type="submit"]:focus {
-  outline: 2px solid var(--turquoise);
-  outline-offset: 2px;
+body.dark-mode .form-group input {
+  border-color: var(--dark-border);
 }
 
-/* Register Button */
+.form-group input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 5px rgba(37, 211, 102, 0.3);
+}
+
+button[type="submit"],
 .register-btn {
-  background-color: #ff6f61;
+  background-color: var(--primary-color);
   color: white;
-  padding: 10px 20px;
+  padding: 12px 24px;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-size: 1rem;
   font-weight: 600;
+  transition: background-color var(--transition-speed), transform 0.2s;
   width: 100%;
-  margin-top: 15px;
-  transition: background-color 0.3s;
+  max-width: 200px;
+  align-self: center;
+  box-shadow: 0 2px 5px var(--shadow-dark);
 }
 
+body.light-mode button[type="submit"],
+body.light-mode .register-btn {
+  box-shadow: 0 2px 5px var(--shadow-light);
+}
+
+button[type="submit"]:hover,
 .register-btn:hover {
-  background-color: #ff4f41;
+  background-color: var(--button-hover-bg);
+  transform: scale(1.05);
 }
 
+button[type="submit"]:focus,
 .register-btn:focus {
-  outline: 2px solid #ff6f61;
+  outline: 2px solid var(--primary-color);
   outline-offset: 2px;
 }
 
-/* Google Sign-In Button */
 .google-signin-container {
-  margin-top: 15px;
+  display: flex;
+  justify-content: center;
   width: 100%;
 }
 
 .custom-google-btn {
   width: 100%;
+  max-width: 200px;
 }
 
-.custom-google-btn > div {
-  width: 100% !important;
-  height: 48px !important;
-  border-radius: 8px !important;
-  background: linear-gradient(45deg, #4285f4, #5e95f7) !important;
-  color: white !important;
-  font-family: 'Cairo', sans-serif !important;
-  font-size: 1rem !important;
-  font-weight: 600 !important;
-  padding: 10px 20px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  transition: transform 0.2s ease, box-shadow 0.3s ease !important;
-  cursor: pointer !important;
-}
-
-.custom-google-btn > div:hover {
-  transform: translateY(-3px) !important;
-  box-shadow: 0 5px 15px rgba(66, 133, 244, 0.4) !important;
-}
-
-.custom-google-btn > div:focus {
-  outline: 2px solid #4285f4 !important;
-  outline-offset: 2px !important;
-}
-
-.custom-google-btn [data-text="signin_with"]::before {
-  content: "تسجيل الدخول بجوجل";
-}
-
-/* Error Message */
 #error {
   margin-top: 15px;
   color: var(--error-color);
   font-size: 0.9rem;
-  min-height: 1.2em;
-  visibility: hidden;
-}
-
-#error[style*="display: block"] {
-  visibility: visible;
-}
-
-/* Animation */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.login-container {
-  animation: fadeIn 0.5s ease-out;
-}
-
-/* Accessibility Improvements */
-@media (prefers-reduced-motion: reduce) {
-  .login-container {
-    animation: none;
-  }
+  text-align: center;
+  display: none;
 }
 
 /* Responsive Adjustments */
-@media (max-width: 576px) {
+@media (max-width: 768px) {
   .login-container {
-    margin: 20px;
+    margin: 20px auto;
     padding: 20px;
   }
 
   .login-container h1 {
-    font-size: 1.5rem;
+    font-size: 1.8em;
   }
 
-  .form-group input,
+  .form-group label {
+    font-size: 0.95em;
+  }
+
+  .form-group input {
+    padding: 8px 12px 8px 35px;
+    font-size: 0.95em;
+  }
+
   button[type="submit"],
-  .register-btn,
-  .custom-google-btn > div {
-    font-size: 0.95rem !important;
-    padding: 8px 15px !important;
-    height: 40px !important;
+  .register-btn {
+    padding: 10px 20px;
+    font-size: 0.95em;
+    max-width: 180px;
+  }
+
+  .form-group i {
+    right: 10px;
+    font-size: 1.1em;
+  }
+}
+
+@media (max-width: 576px) {
+  .login-container {
+    margin: 15px;
+    padding: 15px;
+  }
+
+  .login-container h1 {
+    font-size: 1.6em;
+  }
+
+  .form-group label {
+    font-size: 0.9em;
+  }
+
+  .form-group input {
+    padding: 7px 10px 7px 30px;
+    font-size: 0.9em;
+  }
+
+  button[type="submit"],
+  .register-btn {
+    padding: 8px 16px;
+    font-size: 0.9em;
+    max-width: 160px;
+  }
+
+  .form-group i {
+    right: 8px;
+    font-size: 1em;
   }
 
   #error {
-    font-size: 0.85rem;
+    font-size: 0.85em;
+  }
+}
+
+@media (max-width: 360px) {
+  .login-container {
+    margin: 10px;
+    padding: 12px;
+  }
+
+  .login-container h1 {
+    font-size: 1.4em;
+  }
+
+  .form-group label {
+    font-size: 0.85em;
+  }
+
+  .form-group input {
+    padding: 6px 8px 6px 28px;
+    font-size: 0.85em;
+  }
+
+  button[type="submit"],
+  .register-btn {
+    padding: 6px 14px;
+    font-size: 0.85em;
+    max-width: 140px;
+  }
+
+  .form-group i {
+    right: 6px;
+    font-size: 0.95em;
+  }
+
+  #error {
+    font-size: 0.8em;
   }
 }
