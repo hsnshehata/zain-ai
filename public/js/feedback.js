@@ -31,7 +31,7 @@ async function loadFeedbackPage() {
 
   // Main structure for the feedback page
   content.innerHTML = `
-    <div class="page-header">
+    <div class="feedback-page-header">
       <h2><i class="fas fa-comments"></i> مراجعة التقييمات</h2>
       <div class="header-actions">
          <p class="feedback-note"><i class="fas fa-info-circle"></i> تساعد مراجعة التقييمات في تحسين أداء البوت.</p>
@@ -375,10 +375,10 @@ function escapeCsvField(field) {
 function escapeHtml(unsafe) {
   if (typeof unsafe !== "string") return unsafe;
   return unsafe
-       .replace(/&/g, "&amp;")
-       .replace(/</g, "&lt;")
-       .replace(/>/g, "&gt;")
-       .replace(/"/g, "&quot;")
+       .replace(/&/g, "&")
+       .replace(/</g, "<")
+       .replace(/>/g, ">")
+       .replace(/"/g, """)
        .replace(/\n/g, "<br>");
 }
 
