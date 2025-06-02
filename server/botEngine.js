@@ -1,4 +1,3 @@
-// server/botEngine.js
 const OpenAI = require('openai');
 const mongoose = require('mongoose');
 const axios = require('axios');
@@ -48,43 +47,37 @@ async function transcribeAudio(audioUrl) {
 
 async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'web') {
   try {
-    // لوج لقيمة userId الخام
     console.log(`📢 Raw userId received: ${userId} (type: ${typeof userId})`);
 
-    // تحقق من userId
     let finalUserId = userId;
     let finalUsername = undefined;
 
     if (!userId || userId === 'anonymous' || userId === null || userId === undefined) {
       if (channel === 'whatsapp' && userId && userId.includes('@c.us')) {
-        // For WhatsApp, use the phone number as userId and username
-        finalUserId = userId; // Keep the full userId (e.g., 123456789@c.us)
-        finalUsername = userId.split('@c.us')[0]; // Extract phone number as username (e.g., 123456789)
+        finalUserId = userId;
+        finalUsername = userId.split('@c.us')[0];
         console.log(`📋 Using WhatsApp userId: ${finalUserId}, username: ${finalUsername}`);
       } else {
         finalUserId = `web_${uuidv4()}`;
-        console.log(`📋 Generated new userId for channel ${channel} due to missing or invalid userId: ${finalUserId}`);
+        console.log(`📋 Generated new userId for channel ${channel}: ${finalUserId}`);
       }
     } else {
       if (channel === 'whatsapp' && userId.includes('@c.us')) {
-        // For WhatsApp, use the phone number as userId and username
-        finalUserId = userId; // Keep the full userId (e.g., 123456789@c.us)
-        finalUsername = userId.split('@c.us')[0]; // Extract phone number as username (e.g., 123456789)
+        finalUserId = userId;
+        finalUsername = userId.split('@c.us')[0];
         console.log(`📋 Using WhatsApp userId: ${finalUserId}, username: ${finalUsername}`);
       } else {
         console.log(`📋 Using provided userId: ${finalUserId}`);
       }
     }
 
-    // تحديد القناة بناءً على userId إذا كان فيه @c.us
     let finalChannel = channel || 'web';
     if (finalUserId.includes('@c.us')) {
       finalChannel = 'whatsapp';
       console.log(`📋 Overriding channel to 'whatsapp' because userId contains @c.us`);
     }
-    console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', finalChannel);
+    console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', finalChannel, 'isImage:', isImage, 'isVoice:', isVoice);
 
-    // التحقق من وجود بيانات الميديا إذا كانت الرسالة صورة أو صوت
     if (!message && !isImage && !isVoice) {
       console.log(`❌ Missing message content and no media specified for botId=${botId}, userId=${finalUserId}`);
       throw new Error('Missing required fields');
@@ -114,7 +107,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
     console.log('📜 Rules found:', rules.length);
 
-    // بناء الـ systemPrompt مع إضافة الوقت الحالي
     let systemPrompt = `أنت بوت ذكي يساعد المستخدمين بناءً على القواعد التالية. الوقت الحالي هو: ${getCurrentTime()}.\n`;
     if (rules.length === 0) {
       systemPrompt += 'لا توجد قواعد محددة، قم بالرد بشكل عام ومفيد.\n';
@@ -137,19 +129,16 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     if (isVoice) {
       if (!message) {
+        console.log('❌ No transcribed text provided for voice message');
         userMessageContent = "[Voice message]";
       } else {
-        userMessageContent = await transcribeAudio(message);
-        if (!userMessageContent) {
-          throw new Error('Failed to transcribe audio: No text returned');
-        }
-        console.log('💬 Transcribed audio message:', userMessageContent);
+        userMessageContent = message;
+        console.log('💬 Using pre-transcribed audio message:', userMessageContent);
       }
     } else if (isImage && !message) {
       userMessageContent = "[Image message]";
     }
 
-    // إضافة رسالة المستخدم للمحادثة
     conversation.messages.push({ 
       role: 'user', 
       content: userMessageContent, 
@@ -160,7 +149,6 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     await conversation.save();
     console.log('💬 User message added to conversation:', userMessageContent);
 
-    // جلب السياق (آخر 20 رسالة قبل الرسالة الحالية)
     const contextMessages = conversation.messages.slice(-21, -1);
     const context = contextMessages.map(msg => ({
       role: msg.role,
@@ -170,8 +158,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     let reply = '';
 
-    // البحث عن قاعدة مطابقة قبل استدعاء OpenAI
-    if (message && !isImage && !isVoice) { // Process rules only for text messages
+    if (message && !isImage && !isVoice) {
       for (const rule of rules) {
         if (rule.type === 'qa' && userMessageContent.toLowerCase().includes(rule.content.question.toLowerCase())) {
           reply = rule.content.answer;
@@ -195,26 +182,30 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       }
     }
 
-    // إذا لم يتم العثور على قاعدة، استدعاء OpenAI
     if (!reply) {
       if (isImage) {
-        const response = await openai.responses.create({
-          model: 'gpt-4.1-mini-2025-04-14',
-          input: [
-            { role: 'system', content: systemPrompt },
-            ...context,
-            {
-              role: 'user',
-              content: [
-                { type: 'input_text', text: 'رد على حسب محتوى الصورة' },
-                { type: 'input_image', image_url: message },
-              ],
-            },
-          ],
-          max_output_tokens: 5000,
-        });
-        reply = response.output_text || 'عذرًا، لم أتمكن من تحليل الصورة.';
-        console.log('🖼️ Image processed:', reply);
+        if (!message) {
+          console.log('❌ No image URL provided for image message');
+          reply = 'عذرًا، لم أتمكن من تحليل الصورة. ارفع الصورة مرة تانية.';
+        } else {
+          const response = await openai.chat.completions.create({
+            model: 'gpt-4-vision-preview',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              ...context,
+              {
+                role: 'user',
+                content: [
+                  { type: 'text', text: 'رد على حسب محتوى الصورة' },
+                  { type: 'image_url', image_url: { url: message } },
+                ],
+              },
+            ],
+            max_tokens: 5000,
+          });
+          reply = response.choices[0].message.content || 'عذرًا، لم أتمكن من تحليل الصورة.';
+          console.log('🖼️ Image processed:', reply);
+        }
       } else if (isVoice && userMessageContent === "[Voice message]") {
         reply = 'عذرًا، لم أتمكن من تحليل الصوت. ممكن تبعتلي نص بدل الصوت؟';
         console.log('🎙️ Voice message not transcribed, replying with fallback message');
@@ -230,10 +221,10 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
           max_tokens: 5000,
         });
         reply = response.choices[0].message.content;
+        console.log('💬 Assistant reply:', reply);
       }
     }
 
-    // حفظ رد البوت
     const responseMessageId = `response_${messageId || uuidv4()}`;
     conversation.messages.push({ 
       role: 'assistant', 
