@@ -243,17 +243,19 @@
     flex-direction: column;
     align-items: center;
     text-align: center;
-    transition: transform 0.3s, box-shadow 0.3s;
+    transition: transform 0.3s, box-shadow 0.3s, background 0.3s;
     position: relative;
     overflow: hidden;
     animation: fadeInUp 0.5s ease forwards;
     animation-delay: calc(var(--index) * 0.1s);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Light shadow */
+    cursor: pointer; /* إضافة مؤشر الزرار */
   }
 
   .dashboard-card:hover {
     transform: scale(1.05); /* Animation on hover */
     box-shadow: 0 8px 20px rgba(37, 211, 102, 0.3); /* WhatsApp green shadow */
+    background: linear-gradient(135deg, #0a6157, var(--turquoise)); /* تدرج عكسي عند الهوفر */
   }
 
   .dashboard-card i {
@@ -283,6 +285,47 @@
   .dashboard-card .btn:hover {
     background: white;
     color: var(--turquoise);
+  }
+
+  /* ألوان مخصصة للأيقونات حسب المنصة */
+  .dashboard-card[data-page="facebook"] i {
+    color: #1877F2; /* لون فيسبوك الأزرق */
+  }
+
+  .dashboard-card[data-page="instagram"] i {
+    color: #E1306C; /* لون إنستجرام الوردي/الأحمر */
+  }
+
+  .dashboard-card[data-page="whatsapp"] i {
+    color: #25D366; /* لون واتساب الأخضر */
+  }
+
+  .dashboard-card[data-page="bots"] i {
+    color: #00C4B4; /* لون مميز للبوتات (نفس لون الـ turquoise) */
+  }
+
+  .dashboard-card[data-page="rules"] i {
+    color: #FFD700; /* لون ذهبي للقواعد */
+  }
+
+  .dashboard-card[data-page="chat-page"] i {
+    color: #1E90FF; /* لون أزرق فاتح لصفحة الدردشة */
+  }
+
+  .dashboard-card[data-page="messages"] i {
+    color: #4682B4; /* لون أزرق داكن للرسائل */
+  }
+
+  .dashboard-card[data-page="feedback"] i {
+    color: #FF4500; /* لون برتقالي للتقييمات */
+  }
+
+  .dashboard-card[data-page="wasenderpro"] i {
+    color: #FF8C00; /* لون برتقالي غامق لـ Wasender Pro */
+  }
+
+  .dashboard-card[data-page="settings"] i {
+    color: #6A5ACD; /* لون بنفسجي للإعدادات */
   }
 
   /* Tooltip for Cards */
@@ -646,7 +689,7 @@
       padding: 10px;
     }
     .dashboard-cards-container {
-      grid-template-columns: minmax(100%, 1fr);
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     }
     .dashboard-card {
       padding: 10px;
