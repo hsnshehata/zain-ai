@@ -390,7 +390,8 @@ try {
     // Render Dashboard Cards
     function renderDashboardCards() {
       console.log("renderDashboardCards called...");
-      content.innerHTML = '';
+      content.innerHTML = '<div class="dashboard-cards-container"></div>';
+      const container = content.querySelector('.dashboard-cards-container');
       const filteredPages = pages.filter(page => !page.role || page.role === role);
       filteredPages.forEach((page, index) => {
         const card = document.createElement('div');
@@ -403,7 +404,7 @@ try {
           <p>${page.description}</p>
           <button class="btn btn-primary" onclick="window.location.hash='${page.id}'">الذهاب إلى الصفحة</button>
         `;
-        content.appendChild(card);
+        container.appendChild(card);
       });
     }
 
