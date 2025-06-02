@@ -13,7 +13,7 @@ try {
 
     // Pages configuration for dashboard cards
     const pages = [
-      { id: 'bots', name: 'إدارة البوتات', icon: 'fab fa-robot', description: 'تحكم في إنشاء وتعديل البوتات الخاصة بك', role: 'superadmin' },
+      { id: 'bots', name: 'إدارة البوتات', icon: 'fas fa-robot', description: 'تحكم في إنشاء وتعديل البوتات الخاصة بك', role: 'superadmin' },
       { id: 'rules', name: 'القواعد', icon: 'fas fa-book', description: 'إضافة وتعديل قواعد الردود التلقائية' },
       { id: 'chat-page', name: 'صفحة الدردشة', icon: 'fas fa-comment-alt', description: 'تخصيص واجهة الدردشة' },
       { id: 'analytics', name: 'الإحصائيات', icon: 'fas fa-chart-bar', description: 'عرض تحليلات أداء البوت' },
