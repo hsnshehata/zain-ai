@@ -72,7 +72,7 @@ body.light-mode h2, body.light-mode h3, body.light-mode h4, body.light-mode h5, 
 /* Forms */
 .form-group {
   margin-bottom: 15px;
-  width: 100%; /* Ensure full width */
+  width: 100%;
 }
 
 .form-group label {
@@ -101,7 +101,7 @@ select {
   max-width: 100%;
   padding: 10px 15px;
   border: 1px solid;
-  border-radius: 8px; /* More rounded */
+  border-radius: 8px;
   font-size: 1rem;
   font-family: var(--primary-font);
   transition: border-color var(--transition-speed), background-color var(--transition-speed), color var(--transition-speed);
@@ -162,8 +162,6 @@ body.light-mode .btn {
 
 .btn i {
   margin: 0 !important;
-  font-family: "Font Awesome 6 Free";
-  font-weight: 900; /* Ensure Solid icons */
 }
 
 .btn:hover {
@@ -220,7 +218,7 @@ button:disabled, .btn:disabled {
 /* Input Groups */
 .input-group {
   display: flex;
-  flex-direction: column; /* Stack vertically */
+  flex-direction: column;
   align-items: stretch;
   gap: 8px;
   width: 100%;
@@ -235,7 +233,7 @@ button:disabled, .btn:disabled {
 .input-group button,
 .input-group a.btn {
   flex-shrink: 0;
-  width: 100%; /* Full width buttons */
+  width: 100%;
 }
 
 .code-group textarea {
@@ -252,8 +250,8 @@ button:disabled, .btn:disabled {
   transition: background-color var(--transition-speed), box-shadow var(--transition-speed);
   display: flex;
   flex-direction: column;
-  width: 100%; /* Full width */
-  margin-bottom: 20px; /* Space between cards */
+  width: 100%;
+  margin-bottom: 20px;
   box-shadow: 0 4px 10px var(--shadow-dark);
 }
 
@@ -290,10 +288,10 @@ body.light-mode .card-footer {
   border-top-color: var(--light-border);
 }
 
-/* Grid Container for Cards */
+/* Grid Container for Cards (Not for Dashboard) */
 .grid-container {
   display: flex;
-  flex-direction: column; /* Stack vertically */
+  flex-direction: column;
   gap: 20px;
   margin-top: 20px;
   width: 100%;
@@ -339,7 +337,7 @@ th {
 /* Switch Toggle */
 .toggle-group {
   display: flex;
-  flex-direction: column; /* Stack vertically */
+  flex-direction: column;
   align-items: stretch;
   width: 100%;
 }
@@ -460,7 +458,7 @@ body.light-mode .pagination button:not(:disabled):not(.active):hover {
 /* Filters Bar */
 .filters-bar {
   display: flex;
-  flex-direction: column; /* Stack vertically */
+  flex-direction: column;
   gap: 15px;
   margin-bottom: 20px;
   width: 100%;
@@ -473,7 +471,7 @@ body.light-mode .pagination button:not(:disabled):not(.active):hover {
 
 .filters-bar .actions-group {
   display: flex;
-  flex-direction: column; /* Stack vertically */
+  flex-direction: column;
   gap: 10px;
   width: 100%;
 }
@@ -602,7 +600,7 @@ body.dark-mode .loader {
     min-width: 90px;
   }
   .btn-sm {
-    padding: 5px;
+    padding: 5px 10px;
     font-size: 0.8rem;
   }
   .pagination {
@@ -635,7 +633,7 @@ body.dark-mode .loader {
   textarea,
   select {
     padding: 6px 10px;
-    font-size: 0.85em;
+    font-size: 0.85rem;
   }
   .btn {
     padding: 6px 14px;
