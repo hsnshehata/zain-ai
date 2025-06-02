@@ -37,7 +37,7 @@ async function loadRulesPage() {
     <!-- Modal Structure for Delete Confirmation -->
     <div id="deleteModal" class="modal" style="display: none;">
       <div class="modal-content">
-        <div class="form-card">
+        <div class="rules-form-card">
           <h3><i class="fas fa-exclamation-triangle"></i> تأكيد الحذف</h3>
           <p>هل أنت متأكد من حذف هذه القاعدة؟</p>
           <div class="form-actions">
@@ -48,7 +48,7 @@ async function loadRulesPage() {
       </div>
     </div>
 
-    <div class="page-header">
+    <div class="rules-page-header">
       <h2><i class="fas fa-book"></i> إدارة القواعد ${selectedBotId ? 'للبوت المحدد' : 'الموحدة'}</h2>
       <div class="header-actions">
         <button id="showAddRuleBtn" class="btn btn-primary"><i class="fas fa-plus-circle"></i> إضافة قاعدة جديدة</button>
@@ -348,7 +348,7 @@ function closeModal(modal) {
 
 function showAddRuleForm(modal, modalContent, botId, role) {
   modalContent.innerHTML = `
-    <div class="form-card">
+    <div class="rules-form-card">
       <h3><i class="fas fa-plus-circle"></i> إضافة قاعدة جديدة</h3>
       <form id="addRuleForm">
         <div class="form-group">
@@ -430,7 +430,7 @@ async function showEditRuleForm(modal, modalContent, ruleId) {
   const token = localStorage.getItem("token");
   const errorEl = document.getElementById("errorMessage");
   errorEl.style.display = "none";
-  modalContent.innerHTML = '<div class="form-card"><div class="spinner"><div class="loader"></div></div></div>';
+  modalContent.innerHTML = '<div class="rules-form-card"><div class="spinner"><div class="loader"></div></div></div>';
   openModal(modal);
 
   try {
@@ -439,7 +439,7 @@ async function showEditRuleForm(modal, modalContent, ruleId) {
     }, errorEl, "فشل في جلب تفاصيل القاعدة");
 
     modalContent.innerHTML = `
-      <div class="form-card">
+      <div class="rules-form-card">
         <h3><i class="fas fa-edit"></i> تعديل القاعدة (النوع: ${getRuleTypeName(rule.type)})</h3>
         <form id="editRuleForm">
           <div id="editRuleContentFields"></div>
@@ -535,6 +535,7 @@ async function deleteRule(ruleId) {
     const currentSearch = document.getElementById("searchInput").value;
     const rulesList = document.getElementById("rulesList");
     const loadingSpinner = document.getElementById("loadingSpinner");
+    const errorMessage = document.getElementById("errorMessage");
     const paginationContainer = document.getElementById("pagination");
     currentPage = 1; // Reset to first page
     console.log("بيحاول يعمل ريلود بعد الحذف...");
@@ -720,11 +721,11 @@ function escapeHtml(unsafe) {
     return String(unsafe);
   }
   return unsafe
-       .replace(/&/g, "&amp;")
-       .replace(/</g, "&lt;")
-       .replace(/>/g, "&gt;")
-       .replace(/"/g, "&quot;")
-       .replace(/'/g, "&#039;");
+       .replace(/&/g, "&")
+       .replace(/</g, "<")
+       .replace(/>/g, ">")
+       .replace(/"/g, """)
+       .replace(/'/g, "'");
 }
 
 // Make functions globally accessible
