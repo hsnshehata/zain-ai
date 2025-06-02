@@ -398,12 +398,15 @@ try {
         card.className = 'dashboard-card';
         card.style.setProperty('--index', index);
         card.dataset.tooltip = page.description;
+        card.dataset.page = page.id; // إضافة data-page لتحديد المنصة
         card.innerHTML = `
           <i class="${page.icon}"></i>
           <h3>${page.name}</h3>
           <p>${page.description}</p>
-          <button class="btn btn-primary" onclick="window.location.hash='${page.id}'">الذهاب إلى الصفحة</button>
         `;
+        card.addEventListener('click', () => {
+          window.location.hash = page.id;
+        });
         container.appendChild(card);
       });
     }
