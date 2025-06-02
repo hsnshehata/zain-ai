@@ -187,9 +187,9 @@ try {
       analytics: "/js/analytics.js",
       messages: "/js/messages.js",
       feedback: "/js/feedback.js",
-      facebook: "/js/facebook.js",
-      instagram: "/js/instagram.js",
-      whatsapp: "/js/whatsapp.js",
+      facebook: "/js/social.js",
+      instagram: "/js/social.js",
+      whatsapp: "/js/social.js",
       settings: "/js/settings.js",
     };
 
