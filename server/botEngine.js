@@ -54,7 +54,7 @@ async function transcribeAudio(audioUrl) {
     return response.data.text;
   } catch (err) {
     console.error('❌ Error transcribing audio with LemonFox:', err.message, err.stack);
-    throw new Error(`Failed to transcribe audio: ${err.message}`);
+    throw new Error('عذرًا، لم أتمكن من تحليل الصوت. ممكن تبعتلي نص بدل الصوت؟');
   }
 }
 
@@ -91,9 +91,9 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     }
     console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', finalChannel, 'isImage:', isImage, 'isVoice:', isVoice, 'mediaUrl:', mediaUrl);
 
-    if (!botId || !finalUserId || (!message && !isImage && !isVoice)) {
-      console.log(`❌ Missing required fields: botId=${botId}, userId=${finalUserId}, message=${message}`);
-      throw new Error('Bot ID, message or media, and user ID are required');
+    if (!botId || !finalUserId || (!message && !isImage && !isVoice && !mediaUrl)) {
+      console.log(`❌ Missing required fields: botId=${botId}, userId=${finalUserId}, message=${message}, mediaUrl=${mediaUrl}`);
+      return 'عذرًا، حدث خطأ في معالجة الطلب. حاول مرة أخرى.';
     }
 
     let conversation = await Conversation.findOne({ botId, userId: finalUserId, channel: finalChannel });
@@ -141,19 +141,25 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     let userMessageContent = message;
 
     if (isVoice) {
-      if (!message && mediaUrl) {
-        console.log('🎙️ Voice message with mediaUrl, transcribing:', mediaUrl);
-        userMessageContent = await transcribeAudio(mediaUrl);
-        if (!userMessageContent) {
-          throw new Error('Failed to transcribe audio: No text returned');
+      try {
+        if (mediaUrl && mediaUrl.startsWith('http')) {
+          console.log('🎙️ Voice message with mediaUrl, transcribing:', mediaUrl);
+          userMessageContent = await transcribeAudio(mediaUrl);
+          console.log('💬 Transcribed audio message:', userMessageContent);
+        } else if (message && message.startsWith('http')) {
+          console.log('🎙️ Voice message with URL in message, transcribing:', message);
+          userMessageContent = await transcribeAudio(message);
+          console.log('💬 Transcribed audio message:', userMessageContent);
+        } else if (message && !message.startsWith('http')) {
+          userMessageContent = message;
+          console.log('💬 Using pre-transcribed audio message from WhatsApp:', userMessageContent);
+        } else {
+          console.log('⚠️ No valid message or mediaUrl for voice');
+          return 'عذرًا، لم أتمكن من تحليل الصوت. ممكن تبعتلي نص بدل الصوت؟';
         }
-        console.log('💬 Transcribed audio message:', userMessageContent);
-      } else if (message && !message.startsWith('http')) {
-        userMessageContent = message;
-        console.log('💬 Using pre-transcribed audio message from WhatsApp:', userMessageContent);
-      } else {
-        userMessageContent = '[Voice message]';
-        console.log('⚠️ No valid message or mediaUrl for voice, using fallback content');
+      } catch (err) {
+        console.error('❌ Failed to transcribe audio:', err.message);
+        return err.message; // رجّع رسالة الخطأ للمستخدم مباشرة
       }
     } else if (isImage) {
       userMessageContent = message || '[صورة]';
@@ -207,36 +213,33 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       if (isImage) {
         if (!mediaUrl || !mediaUrl.startsWith('http')) {
           console.error('❌ Invalid or missing mediaUrl for image:', mediaUrl);
-          reply = 'عذرًا، لم أتمكن من تحليل الصورة بسبب رابط غير صالح.';
-        } else {
-          console.log('🖼️ Processing image with mediaUrl:', mediaUrl);
-          const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
-            messages: [
-              { role: 'system', content: systemPrompt },
-              ...context,
-              {
-                role: 'user',
-                content: [
-                  { type: 'text', text: userMessageContent || 'رد على حسب محتوى الصورة' },
-                  { type: 'image_url', image_url: { url: mediaUrl } },
-                ],
-              },
-            ],
-            max_tokens: 5000,
-          });
-          reply = response.choices[0].message.content || 'عذرًا، لم أتمكن من تحليل الصورة.';
-          console.log('🖼️ Image processed:', reply);
+          return 'عذرًا، لم أتمكن من تحليل الصورة بسبب رابط غير صالح.';
         }
-      } else if (isVoice && userMessageContent === '[Voice message]') {
-        reply = 'عذرًا، لم أتمكن من تحليل الصوت. ممكن تبعتلي نص بدل الصوت؟';
-        console.log('🎙️ Voice message not transcribed, replying with fallback message');
+        console.log('🖼️ Processing image with mediaUrl:', mediaUrl);
+        const response = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...context,
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: userMessageContent || 'رد على حسب محتوى الصورة' },
+                { type: 'image_url', image_url: { url: mediaUrl } },
+              ],
+            },
+          ],
+          max_tokens: 5000,
+        });
+        reply = response.choices[0].message.content || 'عذرًا، لم أتمكن من تحليل الصورة.';
+        console.log('🖼️ Image processed:', reply);
       } else {
         const messages = [
           { role: 'system', content: systemPrompt },
           ...context,
           { role: 'user', content: userMessageContent },
         ];
+        console.log('📤 Sending to OpenAI for processing:', userMessageContent);
         const response = await openai.chat.completions.create({
           model: 'gpt-4.1-mini-2025-04-14',
           messages,
@@ -261,7 +264,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     return reply;
   } catch (err) {
     console.error('❌ Error processing message:', err.message, err.stack);
-    return 'عذرًا، حدث خطأ أثناء معالجة طلبك.';
+    return 'عذرًا، حدث خطأ أثناء معالجة طلبك. حاول مرة أخرى.';
   }
 }
 
