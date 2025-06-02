@@ -5,6 +5,13 @@ console.log("✅ settings.js started loading at", new Date().toISOString());
 // Define loadSettingsPage in the global scope
 async function loadSettingsPage() {
   console.log("✅ loadSettingsPage called at", new Date().toISOString());
+
+  // Load settings.css
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = "/css/settings.css";
+  document.head.appendChild(link);
+
   const content = document.getElementById("content");
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
@@ -29,7 +36,7 @@ async function loadSettingsPage() {
 
     console.log("User data fetched successfully:", user);
     content.innerHTML = `
-      <div class="page-header">
+      <div class="settings-page-header">
         <h2><i class="fas fa-cog"></i> إعدادات المستخدم</h2>
       </div>
       <div class="form-card">
