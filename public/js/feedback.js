@@ -215,14 +215,17 @@ async function clearFeedback(type) {
     document.getElementById(errorId).style.display = "none";
 
     try {
-      await handleApiRequest(`/api/bots/${botId}/feedback/clear/${type}`, {
+      console.log(`📡 Sending DELETE request to /api/bots/${botId}/feedback/clear/${type}`); // لوج جديد
+      const response = await handleApiRequest(`/api/bots/${botId}/feedback/clear/${type}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       }, document.getElementById(errorId), `فشل في حذف التقييمات ${typeName}`);
+      console.log(`✅ Server response:`, response); // لوج جديد
       alert(`تم حذف التقييمات ${typeName} بنجاح`);
       document.getElementById(listId).innerHTML = 
         `<div class="card placeholder-card"><p>لا توجد تقييمات ${typeName}.</p></div>`;
     } catch (err) {
+      console.error(`❌ Error in clearFeedback:`, err); // لوج جديد
       console.error("خطأ في حذف التقييمات:", err);
     } finally {
       document.getElementById(spinnerId).style.display = "none";
