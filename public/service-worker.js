@@ -1,12 +1,11 @@
 // public/service-worker.js
 
-const CACHE_NAME = 'zain-ai-v0.0004'; // غيرنا الاسم عشان الكاش يتجدد
+const CACHE_NAME = 'zain-ai-v0.0005'; // غيرنا الاسم عشان الكاش يتجدد
 const urlsToCache = [
   '/',
   '/index.html',
   '/login.html',
   '/dashboard_new.html',
-  '/chat.html',
   '/css/common.css',
   '/css/index.css',
   '/css/login.css',
@@ -19,7 +18,6 @@ const urlsToCache = [
   '/css/messages.css',
   '/css/assistantBot.css',
   '/css/dashboard.css',
-  '/css/chat.css',
   '/css/font-awesome.min.css', // Local Font Awesome CSS as fallback
   '/js/utils.js',
   '/js/landing.js',
@@ -33,7 +31,6 @@ const urlsToCache = [
   '/js/facebook.js',
   '/js/messages.js',
   '/js/assistantBot.js',
-  '/js/chat.js',
   '/js/instagram.js',
   '/js/whatsapp.js',
   '/manifest.json',
@@ -85,6 +82,18 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
   const pathname = requestUrl.pathname;
+
+  // تجاهل أي طلبات للـ /chat/ وخلّيها تتحمل من الشبكة دايمًا
+  if (pathname.startsWith('/chat/')) {
+    event.respondWith(
+      fetch(event.request)
+        .catch(() => {
+          console.log(`Service Worker: Network failed for ${pathname}, no fallback for chat page`);
+          return new Response('الصفحة غير متاحة حاليًا، حاول مرة أخرى.', { status: 503 });
+        })
+    );
+    return;
+  }
 
   // Network-first strategy for cached assets, fonts, and external resources
   if (
