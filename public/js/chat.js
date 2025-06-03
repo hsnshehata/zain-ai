@@ -197,7 +197,7 @@ try {
           body: formData,
         });
         console.log('📤 Image uploaded successfully:', response);
-        return response;
+        return response; // توقع إن الـ response فيه { imageUrl, thumbUrl }
       } catch (err) {
         console.error('❌ خطأ في رفع الصورة:', err);
         throw err;
@@ -271,9 +271,10 @@ try {
         const requestBody = {
           botId,
           userId,
-          message: isImage ? imageData.imageUrl : message,
+          message: isImage ? null : message, // لو صورة، خلّي message null
           isImage,
-          channel: 'web'
+          channel: 'web',
+          mediaUrl: isImage ? imageData.imageUrl : null // ضيف mediaUrl لو صورة
         };
         console.log('📤 Request body:', requestBody);
 
