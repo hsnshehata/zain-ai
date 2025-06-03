@@ -41,7 +41,8 @@ async function uploadToImgbb(file) {
     }
 
     return {
-      url: response.data.data.url,
+      imageUrl: response.data.data.url, // رابط الصورة الأصلي
+      thumbUrl: response.data.data.thumb.url, // رابط الصورة المصغرة
       deleteUrl: response.data.data.delete_url,
     };
   } catch (err) {
@@ -167,7 +168,7 @@ exports.updateChatPage = async (req, res) => {
         }
 
         const uploadResult = await uploadToImgbb(req.file);
-        logoUrl = uploadResult.url;
+        logoUrl = uploadResult.imageUrl;
         logoDeleteUrl = uploadResult.deleteUrl;
       } catch (err) {
         return res.status(500).json({ message: `فشل في رفع الشعار: ${err.message}` });
