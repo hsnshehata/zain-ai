@@ -30,59 +30,58 @@ async function loadFacebookPage() {
   }
 
   // Main structure for the Facebook settings page
-// Main structure for the Facebook settings page
-content.innerHTML = `
-  <div class="page-header">
-    <h2><i class="fab fa-facebook"></i> إعدادات ربط فيسبوك</h2>
-    <div id="instructionsContainer" class="instructions-container" style="display: none;">
-      <h3>📋 خطوات ربط صفحتك على فيسبوك بالبوت</h3>
-      <p>عشان تربط صفحتك بالبوت بسهولة، اتّبع الخطوات دي بعناية:</p>
-      <ul>
-        <li>
-          <strong>1. لازم يكون عندك صفحة فيسبوك:</strong> لازم تكون مدير صفحة فيسبوك مربوطة بحسابك الشخصي.
-          <br>
-          <span style="display: block; margin-top: 5px;">
-            <strong>إزاي تعمل صفحة لو معندكش؟</strong><br>
-            - افتح فيسبوك واضغط على "إنشاء" من القايمة الجانبية.<br>
-            - اختار "صفحة"، واملّي بيانات زي اسم الصفحة ونوعها (مثل: بيزنس أو مجتمع).<br>
-            - انشر الصفحة وتأكد إنك أنت المدير بتاعها من إعدادات الصفحة.
-          </span>
-        </li>
-        <li>
-          <strong>2. إنشاء حساب مطور فيسبوك:</strong> لازم يكون عندك حساب مطور على موقع فيسبوك للمطورين عشان تقدر تربط التطبيق.
-          <br>
-          <span style="display: block; margin-top: 5px;">
-            <strong>إزاي تعمل حساب مطور؟</strong><br>
-            - اضغط على الزرار ده وروح على موقع فيسبوك للمطورين:
+  content.innerHTML = `
+    <div class="page-header">
+      <h2><i class="fab fa-facebook"></i> إعدادات ربط فيسبوك</h2>
+      <div id="instructionsContainer" class="instructions-container" style="display: none;">
+        <h3>📋 خطوات ربط صفحتك على فيسبوك بالبوت</h3>
+        <p>عشان تربط صفحتك بالبوت بسهولة، اتّبع الخطوات دي بعناية:</p>
+        <ul>
+          <li>
+            <strong>1. لازم يكون عندك صفحة فيسبوك:</strong> لازم تكون مدير صفحة فيسبوك مربوطة بحسابك الشخصي.
             <br>
-            <a href="https://developers.facebook.com/" target="_blank" class="btn btn-primary btn-developer" style="display: inline-block; margin: 10px 0; padding: 8px 16px; background-color: #1877F2; color: white; border-radius: 5px; text-decoration: none;">
-              <i class="fab fa-facebook"></i> موقع فيسبوك للمطورين
-            </a><br>
-            - لو أول مرة تدخل، اضغط على "Get Started" أو "التسجيل".<br>
-            - سجّل بحسابك في فيسبوك، ووافق على شروط المطورين.<br>
-          </span>
-        </li>
-        <li>
-          <strong>3. ابعتلنا رابط صفحتك على واتساب:</strong> بعد ما تعمل الصفحة وحساب المطور، ابعتلنا رابط صفحتك على واتساب.
-          <br>
-          <span style="display: block; margin-top: 5px;">
-            - ابعت الرابط على الرقم: <a href="https://wa.me/01279425543" target="_blank">01279425543</a>.<br>
-            - هنبعتلك دعوة لتطبيقنا على فيسبوك عشان تقدر تستخدمه.<br>
-            - افتح الدعوة من إشعارات فيسبوك، واضغط "قبول" عشان تفعّل التطبيق.
-          </span>
-        </li>
-        <li>
-          <strong>4. ارجع واربط الصفحة:</strong> بعد ما تقبل الدعوة، ارجع هنا واضغط على زر "ربط الصفحة".
-          <br>
-          <span style="display: block; margin-top: 5px;">
-            - هيظهرلك قايمة بالصفحات اللي بتديرها.<br>
-            - اختار الصفحة اللي عايز تربطها، واضغط "تأكيد".<br>
-            - لو كل حاجة تمام، هيتربط البوت بصفحتك بنجاح!
-          </span>
-        </li>
-      </ul>
-    </div>
-  <div class="header-actions">
+            <span style="display: block; margin-top: 5px;">
+              <strong>إزاي تعمل صفحة لو معندكش؟</strong><br>
+              - افتح فيسبوك واضغط على "إنشاء" من القايمة الجانبية.<br>
+              - اختار "صفحة"، واملّي بيانات زي اسم الصفحة ونوعها (مثل: بيزنس أو مجتمع).<br>
+              - انشر الصفحة وتأكد إنك أنت المدير بتاعها من إعدادات الصفحة.
+            </span>
+          </li>
+          <li>
+            <strong>2. إنشاء حساب مطور فيسبوك:</strong> لازم يكون عندك حساب مطور على موقع فيسبوك للمطورين عشان تقدر تربط التطبيق.
+            <br>
+            <span style="display: block; margin-top: 5px;">
+              <strong>إزاي تعمل حساب مطور؟</strong><br>
+              - اضغط على الزرار ده وروح على موقع فيسبوك للمطورين:
+              <br>
+              <a href="https://developers.facebook.com/" target="_blank" class="btn btn-primary btn-developer" style="display: inline-block; margin: 10px 0; padding: 8px 16px; background-color: #1877F2; color: white; border-radius: 5px; text-decoration: none;">
+                <i class="fab fa-facebook"></i> موقع فيسبوك للمطورين
+              </a><br>
+              - لو أول مرة تدخل، اضغط على "Get Started" أو "التسجيل".<br>
+              - سجّل بحسابك في فيسبوك، ووافق على شروط المطورين.<br>
+            </span>
+          </li>
+          <li>
+            <strong>3. ابعتلنا رابط صفحتك على واتساب:</strong> بعد ما تعمل الصفحة وحساب المطور، ابعتلنا رابط صفحتك على واتساب.
+            <br>
+            <span style="display: block; margin-top: 5px;">
+              - ابعت الرابط على الرقم: <a href="https://wa.me/01279425543" target="_blank">01279425543</a>.<br>
+              - هنبعتلك دعوة لتطبيقنا على فيسبوك عشان تقدر تستخدمه.<br>
+              - افتح الدعوة من إشعارات فيسبوك، واضغط "قبول" عشان تفعّل التطبيق.
+            </span>
+          </li>
+          <li>
+            <strong>4. ارجع واربط الصفحة:</strong> بعد ما تقبل الدعوة، ارجع هنا واضغط على زر "ربط الصفحة".
+            <br>
+            <span style="display: block; margin-top: 5px;">
+              - هيظهرلك قايمة بالصفحات اللي بتديرها.<br>
+              - اختار الصفحة اللي عايز تربطها، واضغط "تأكيد".<br>
+              - لو كل حاجة تمام، هيتربط البوت بصفحتك بنجاح!
+            </span>
+          </li>
+        </ul>
+      </div>
+      <div class="header-actions">
         <button id="connectFacebookBtn" class="btn btn-primary"><i class="fab fa-facebook"></i> ربط صفحتك على فيسبوك</button>
         <div id="pageStatus" class="page-status" style="margin-left: 20px;"></div>
       </div>
@@ -400,19 +399,14 @@ content.innerHTML = `
   document.head.appendChild(fbScript);
 
   function loginWithFacebook() {
-    // First, check the login status
-    FB.getLoginStatus(function(response) {
+    console.log('📡 جاري التحقق من حالة تسجيل الدخول في فيسبوك...');
+    FB.getLoginStatus(function (response) {
+      console.log('📋 حالة تسجيل الدخول:', response);
       if (response.status === 'connected') {
-        // If user is logged in, log them out first
-        console.log('المستخدم مسجّل دخوله، جاري تسجيل الخروج...');
-        FB.logout(function(logoutResponse) {
-          console.log('تم تسجيل الخروج من فيسبوك:', logoutResponse);
-          // Proceed with login after logout
-          performFacebookLogin();
-        });
+        console.log('✅ المستخدم مسجّل دخوله، جاري جلب الصفحات...');
+        getUserPages(response.authResponse.accessToken);
       } else {
-        // If user is not logged in, proceed with login directly
-        console.log('المستخدم غير مسجّل دخوله، جاري تسجيل الدخول...');
+        console.log('🔐 المستخدم غير مسجّل دخوله، جاري طلب تسجيل الدخول...');
         performFacebookLogin();
       }
     });
@@ -421,29 +415,32 @@ content.innerHTML = `
   function performFacebookLogin() {
     FB.login(function (response) {
       if (response.authResponse) {
-        console.log('تم تسجيل الدخول!');
+        console.log('✅ تم تسجيل الدخول بنجاح:', response.authResponse);
         getUserPages(response.authResponse.accessToken);
       } else {
-        errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ';
+        console.error('❌ تم إلغاء تسجيل الدخول أو حدث خطأ:', response);
+        errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ، جرب تاني.';
         errorMessage.style.display = 'block';
       }
     }, { 
       scope: 'pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement,pages_manage_posts',
-      auth_type: 'reauthenticate'
+      auth_type: 'rerequest' // استخدام rerequest عشان ما يطلبش كلمة المرور لو مسجّل
     });
   }
 
   function getUserPages(accessToken) {
+    console.log('📑 جاري جلب الصفحات باستخدام التوكن:', accessToken.slice(0, 10) + '...');
     FB.api('/me/accounts', { access_token: accessToken }, function (response) {
       if (response && !response.error) {
-        console.log('الصفحات:', response.data);
+        console.log('✅ الصفحات:', response.data);
         if (response.data.length === 0) {
-          errorMessage.textContent = 'لم يتم العثور على صفحات مرتبطة بحسابك';
+          errorMessage.textContent = 'لم يتم العثور على صفحات مرتبطة بحسابك، تأكد إنك مدير صفحة.';
           errorMessage.style.display = 'block';
           return;
         }
         displayPageSelectionModal(response.data);
       } else {
+        console.error('❌ خطأ في جلب الصفحات:', response.error);
         errorMessage.textContent = 'خطأ في جلب الصفحات: ' + (response.error.message || 'غير معروف');
         errorMessage.style.display = 'block';
       }
@@ -452,7 +449,7 @@ content.innerHTML = `
 
   function displayPageSelectionModal(pages) {
     if (pages.length === 0) {
-      errorMessage.textContent = 'لم يتم العثور على صفحات مرتبطة بحسابك';
+      errorMessage.textContent = 'لم يتم العثور على صفحات مرتبطة بحسابك، تأكد إنك مدير صفحة.';
       errorMessage.style.display = 'block';
       return;
     }
@@ -498,7 +495,7 @@ content.innerHTML = `
           return;
         }
 
-        console.log('بيانات الصفحة المختارة:', { access_token: accessToken, page_id: selectedPageId });
+        console.log('📋 بيانات الصفحة المختارة:', { page_id: selectedPageId, access_token: accessToken.slice(0, 10) + '...' });
         saveApiKeys(selectedBotId, accessToken, selectedPageId);
         modal.remove();
       });
@@ -518,9 +515,10 @@ content.innerHTML = `
       return;
     }
 
-    console.log('البيانات المرسلة:', { facebookApiKey, facebookPageId });
+    console.log('📡 جاري حفظ بيانات الربط:', { facebookPageId, facebookApiKey: facebookApiKey.slice(0, 10) + '...' });
 
     try {
+      // حفظ مفتاح API ومعرف الصفحة
       const saveResponse = await handleApiRequest(`/api/bots/${botId}/link-social`, {
         method: "POST",
         headers: {
@@ -530,13 +528,47 @@ content.innerHTML = `
         body: JSON.stringify({ facebookApiKey, facebookPageId }),
       }, errorMessage, "فشل حفظ معلومات الربط");
 
-      console.log('✅ التوكن تم حفظه بنجاح:', facebookApiKey.slice(0, 10) + '...');
-      errorMessage.textContent = "تم ربط الصفحة بنجاح!";
+      // الاشتراك في Webhook Events
+      const subscribedFields = [
+        'messages',
+        'messaging_postbacks',
+        'messaging_optins',
+        'messaging_optouts',
+        'messaging_referrals',
+        'message_edits',
+        'message_reactions',
+        'inbox_labels',
+        'messaging_customer_information',
+        'response_feedback',
+        'messaging_integrity',
+        'feed'
+      ].join(',');
+
+      console.log('📡 جاري الاشتراك في Webhook Events:', subscribedFields);
+      const subscriptionResponse = await fetch(`https://graph.facebook.com/v20.0/${facebookPageId}/subscribed_apps`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `subscribed_fields=${encodeURIComponent(subscribedFields)}&access_token=${encodeURIComponent(facebookApiKey)}`
+      });
+
+      const subscriptionData = await subscriptionResponse.json();
+      if (!subscriptionData.success) {
+        console.error('❌ فشل في الاشتراك في Webhook Events:', subscriptionData);
+        throw new Error('فشل في الاشتراك في أحداث Webhook: ' + (subscriptionData.error?.message || 'غير معروف'));
+      }
+
+      console.log('✅ تم الاشتراك في Webhook Events بنجاح:', subscriptionData);
+      console.log('✅ تم ربط الصفحة بنجاح:', saveResponse);
+      errorMessage.textContent = "تم ربط الصفحة والاشتراك في الأحداث بنجاح!";
       errorMessage.style.color = "green";
       errorMessage.style.display = "block";
       await loadPageStatus(botId);
     } catch (err) {
-      console.error('❌ خطأ في حفظ التوكن:', err);
+      console.error('❌ خطأ في حفظ الربط أو الاشتراك في الأحداث:', err);
+      errorMessage.textContent = err.message || "خطأ في ربط الصفحة أو الاشتراك في الأحداث، جرب تاني.";
+      errorMessage.style.display = "block";
     } finally {
       loadingSpinner.style.display = "none";
     }
