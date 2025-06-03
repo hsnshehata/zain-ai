@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>صفحة الدردشة</title>
-  <link rel="stylesheet" href="/css/chat.css">
+<link rel="stylesheet" href="/css/chat.css?v=<%= Date.now() %>" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style id="customStyles"></style>
 </head>
@@ -35,6 +35,6 @@
   <!-- تحميل utils.js كسكربت عادي -->
   <script defer src="/js/utils.js"></script>
   <!-- تحميل chat.js -->
-  <script defer src="/js/chat.js"></script>
+<script src="/js/chat.js?v=<%= Date.now() %>"></script>
 </body>
 </html>
