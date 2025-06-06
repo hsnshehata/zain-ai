@@ -105,7 +105,7 @@ body {
 }
 
 /* Login Container */
-.container {
+.login-container {
   padding: 40px;
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
@@ -118,15 +118,15 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-body.dark-mode .container {
+body.dark-mode .login-container {
   background: rgba(255, 255, 255, 0.05);
 }
 
-body.light-mode .container {
+body.light-mode .login-container {
   background: rgba(255, 255, 255, 0.9);
 }
 
-.container h1 {
+.login-container h1 {
   margin-bottom: 30px;
   font-size: 2rem;
   font-weight: 700;
@@ -154,25 +154,30 @@ body.light-mode .container {
 }
 
 /* Success Message */
-#success {
-  margin-top: 15px;
-  color: var(--success-color, #28a745);
-  font-size: 0.9rem;
-  min-height: 1.2em;
-  visibility: hidden;
+#successMessage {
+  text-align: center;
 }
 
-#success[style*="display: block"] {
-  visibility: visible;
+#successMessage h2 {
+  font-size: 1.8em;
+  color: white;
+  margin-bottom: 15px;
+  text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);
 }
 
-/* form-group styles */
+#successMessage p {
+  font-size: 1.1em;
+  color: #d3d3d3;
+  opacity: 0.9;
+}
+
+/* form-group styles are mostly in common.css */
 .form-group {
   position: relative;
   margin-bottom: 20px;
 }
 
-/* input styles */
+/* input styles are mostly in common.css */
 .form-group input,
 .form-group textarea {
   width: 100%;
@@ -298,13 +303,13 @@ button[type="submit"]:focus {
   to { opacity: 1; transform: translateY(0); }
 }
 
-.container {
+.login-container {
   animation: fadeIn 0.5s ease-out;
 }
 
 /* Accessibility Improvements */
 @media (prefers-reduced-motion: reduce) {
-  .container {
+  .login-container {
     animation: none;
   }
 }
@@ -368,7 +373,7 @@ button[type="submit"]:focus {
 }
 
 @media (max-width: 576px) {
-  .container {
+  .login-container {
     margin: 20px;
     padding: 20px;
   }
@@ -382,7 +387,7 @@ button[type="submit"]:focus {
     font-size: 1.5em;
   }
 
-  .container h1 {
+  .login-container h1 {
     font-size: 1.5rem;
   }
 
@@ -391,15 +396,19 @@ button[type="submit"]:focus {
     font-size: 0.95rem;
   }
 
-  .gmail-warning {
-    font-size: 0.85rem;
+  #successMessage h2 {
+    font-size: 1.5em;
   }
 
-  #success {
-    font-size: 0.85rem;
+  #successMessage p {
+    font-size: 0.95em;
   }
 
   #error {
+    font-size: 0.85rem;
+  }
+
+  .login-link {
     font-size: 0.85rem;
   }
 }
