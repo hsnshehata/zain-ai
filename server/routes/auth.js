@@ -1,4 +1,3 @@
-// /server/routes/auth.js
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
@@ -22,12 +21,20 @@ const transporter = nodemailer.createTransport({
 // مسار التسجيل
 router.post('/register', async (req, res) => {
   const { email, username, password, botName, whatsapp } = req.body;
-  if (!email || !username || !password || !botName || !whatsapp) {
-    console.log('❌ Registration failed: All fields are required', { email, username, password, botName, whatsapp });
-    return res.status(400).json({ message: 'جميع الحقول مطلوبة', success: false });
+  if (!email || !username || !password || !botName) {
+    console.log('❌ Registration failed: Required fields missing', { email, username, password, botName, whatsapp });
+    return res.status(400).json({ message: 'جميع الحقول مطلوبة ما عدا رقم الواتساب', success: false });
+  }
+  if (email.endsWith('@gmail.com')) {
+    console.log(`❌ Registration failed: Gmail email ${email} used in regular registration`);
+    return res.status(400).json({ message: 'يرجى استخدام زرار تسجيل الدخول بجوجل لبريد Gmail', success: false });
   }
   try {
-    const normalizedUsername = username.toLowerCase(); // تحويل الـ username للحروف الصغيرة
+    const normalizedUsername = username.toLowerCase();
+    if (!/^[a-z0-9_-]+$/.test(normalizedUsername)) {
+      console.log(`❌ Registration failed: Invalid username ${normalizedUsername}`);
+      return res.status(400).json({ message: 'اسم المستخدم يجب أن يحتوي على حروف إنجليزية، أرقام، _ أو - فقط', success: false });
+    }
     const existingUser = await User.findOne({ $or: [{ username: normalizedUsername }, { email }] });
     if (existingUser) {
       console.log(`❌ Registration failed: Username ${normalizedUsername} or email ${email} already exists`);
@@ -36,9 +43,9 @@ router.post('/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({
       email,
-      username: normalizedUsername, // تخزين الـ username بحروف صغيرة
+      username: normalizedUsername,
       password: hashedPassword,
-      whatsapp,
+      whatsapp: whatsapp || null,
       role: 'user',
       isVerified: false,
     });
@@ -107,7 +114,7 @@ router.get('/verify/:token', async (req, res) => {
     const authToken = jwt.sign(
       { userId: user._id, role: user.role, username: user.username },
       process.env.JWT_SECRET || 'your_jwt_secret',
-      { expiresIn: '30d' } // تغيير لمدة 30 يوم
+      { expiresIn: '30d' }
     );
 
     console.log(`✅ Account verified and bot created for user ${user.username}, token valid for 30 days`);
@@ -126,7 +133,7 @@ router.post('/login', async (req, res) => {
     return res.status(400).json({ message: 'اسم المستخدم وكلمة المرور مطلوبان', success: false });
   }
   try {
-    const normalizedUsername = username.toLowerCase(); // تحويل الـ username للحروف الصغيرة
+    const normalizedUsername = username.toLowerCase();
     const user = await User.findOne({ username: normalizedUsername });
     if (!user) {
       console.log(`❌ Login failed: Username ${normalizedUsername} not found`);
@@ -144,7 +151,7 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign(
       { userId: user._id, role: user.role, username: user.username },
       process.env.JWT_SECRET || 'your_jwt_secret',
-      { expiresIn: '30d' } // تغيير لمدة 30 يوم
+      { expiresIn: '30d' }
     );
     console.log(`✅ Login successful for username ${normalizedUsername}, token valid for 30 days`);
     res.status(200).json({ token, role: user.role, userId: user._id, username: user.username, success: true });
@@ -183,7 +190,7 @@ router.post('/google', async (req, res) => {
       const token = jwt.sign(
         { userId: user._id, role: user.role, username: user.username },
         process.env.JWT_SECRET || 'your_jwt_secret',
-        { expiresIn: '30d' } // تغيير لمدة 30 يوم
+        { expiresIn: '30d' }
       );
       console.log(`✅ Google login successful for email ${email}, token valid for 30 days`);
       res.json({ token, role: user.role, userId: user._id, username: user.username, newUser: false, success: true });
@@ -193,18 +200,16 @@ router.post('/google', async (req, res) => {
         console.log(`❌ Google login failed: Email ${email} already registered`);
         return res.status(400).json({ message: 'البريد الإلكتروني مسجل بالفعل', success: false });
       }
-      let username = payload['given_name'] + '_' + payload['family_name'];
-      username = username.toLowerCase().replace(/\s/g, '_'); // تحويل الـ username للحروف الصغيرة
+      let username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_-]/g, '_');
       let count = 1;
       while (await User.findOne({ username })) {
-        username = `${payload['given_name']}_${payload['family_name']}${count}`;
-        username = username.toLowerCase(); // التأكد من التحويل للحروف الصغيرة
+        username = `${email.split('@')[0]}${count}`.toLowerCase().replace(/[^a-z0-9_-]/g, '_');
         count++;
       }
       user = new User({
         email,
         username,
-        whatsapp: 'غير محدد', // يمكن طلب رقم واتساب لاحقًا
+        whatsapp: null,
         googleId,
         role: 'user',
         isVerified: true,
@@ -224,7 +229,7 @@ router.post('/google', async (req, res) => {
       const token = jwt.sign(
         { userId: user._id, role: user.role, username: user.username },
         process.env.JWT_SECRET || 'your_jwt_secret',
-        { expiresIn: '30d' } // تغيير لمدة 30 يوم
+        { expiresIn: '30d' }
       );
       console.log(`✅ Google registration successful for email ${email}, username ${username}, token valid for 30 days`);
       res.json({ token, role: user.role, userId: user._id, username: user.username, newUser: true, success: true });
