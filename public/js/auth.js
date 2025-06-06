@@ -1,6 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.querySelector('#loginForm');
+  const registerForm = document.querySelector('#registerForm');
   const logoutButtons = document.querySelectorAll('.logout-btn');
+  const errorDiv = document.querySelector('#error');
+  const successDiv = document.querySelector('#success');
 
   // Check if token exists and redirect to dashboard if on login page
   const token = localStorage.getItem("token");
@@ -9,34 +12,34 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // Handle API requests with error handling
-  async function handleApiRequest(url, options, errorDiv, defaultErrorMessage) {
+  // Handle Google Sign-In
+  window.handleGoogleSignIn = async (response) => {
+    const idToken = response.credential;
     try {
-      const response = await fetch(url, options);
-      const data = await response.json();
-      if (!response.ok) {
-        // Check for token expiration error
-        if (response.status === 401 && data.error === 'TokenExpiredError') {
-          console.log('❌ Token expired, initiating auto-logout');
-          localStorage.removeItem('token');
-          localStorage.removeItem('role');
-          localStorage.removeItem('userId');
-          localStorage.removeItem('username');
-          console.log('✅ Auto-logout successful, redirecting to login page');
-          window.location.href = '/login.html';
-          throw new Error('التوكن منتهي الصلاحية، يرجى تسجيل الدخول مرة أخرى');
-        }
-        throw new Error(data.message || defaultErrorMessage);
-      }
-      return data;
-    } catch (err) {
-      if (errorDiv) {
+      const data = await handleApiRequest('/api/auth/google', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ idToken }),
+      }, errorDiv, 'فشل تسجيل الدخول بجوجل');
+
+      if (data.success) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('role', data.role);
+        localStorage.setItem('userId', data.userId);
+        localStorage.setItem('username', data.username);
+        console.log(`✅ Google login successful for ${data.username}`);
+        window.location.href = '/dashboard_new.html';
+      } else {
         errorDiv.style.display = 'block';
-        errorDiv.textContent = err.message || defaultErrorMessage;
+        errorDiv.textContent = data.message || 'فشل تسجيل الدخول بجوجل، حاول مرة أخرى';
       }
-      throw err;
+    } catch (err) {
+      errorDiv.style.display = 'block';
+      errorDiv.textContent = err.message || 'حدث خطأ أثناء تسجيل الدخول بجوجل';
     }
-  }
+  };
 
   // Handle login form submission
   if (loginForm) {
@@ -45,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const username = document.querySelector('#username').value.trim();
       const password = document.querySelector('#password').value.trim();
-      const errorDiv = document.querySelector('#error');
 
       if (!username || !password) {
         errorDiv.style.display = 'block';
@@ -63,13 +65,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }, errorDiv, 'فشل تسجيل الدخول');
 
         if (data.success) {
-          // Store user data in localStorage
           localStorage.setItem('token', data.token);
           localStorage.setItem('role', data.role);
           localStorage.setItem('userId', data.userId);
           localStorage.setItem('username', data.username);
-
-          // Redirect to the new dashboard file
           window.location.href = '/dashboard_new.html';
         } else {
           errorDiv.style.display = 'block';
@@ -82,11 +81,75 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+  // Handle register form submission
+  if (registerForm) {
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = document.querySelector('#username').value.trim();
+      const password = document.querySelector('#password').value.trim();
+      const confirmPassword = document.querySelector('#confirmPassword').value.trim();
+      const botName = document.querySelector('#botName').value.trim();
+      const whatsapp = document.querySelector('#whatsapp').value.trim();
+      const email = document.querySelector('#email').value.trim();
+
+      // Reset error message
+      errorDiv.style.display = 'none';
+      errorDiv.textContent = '';
+
+      // Validate inputs
+      if (!username || !password || !confirmPassword || !botName || !email) {
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = 'جميع الحقول مطلوبة ما عدا رقم الواتساب';
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = 'كلمات المرور غير متطابقة';
+        return;
+      }
+
+      if (!/^[a-z0-9_-]+$/.test(username)) {
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = 'اسم المستخدم يجب أن يحتوي على حروف إنجليزية، أرقام، _ أو - فقط';
+        return;
+      }
+
+      if (email.endsWith('@gmail.com')) {
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = 'يرجى استخدام زرار تسجيل الدخول بجوجل في صفحة تسجيل الدخول لبريد Gmail';
+        return;
+      }
+
+      try {
+        const data = await handleApiRequest('/api/auth/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ username, password, botName, whatsapp, email }),
+        }, errorDiv, 'فشل التسجيل');
+
+        if (data.success) {
+          successDiv.style.display = 'block';
+          errorDiv.style.display = 'none';
+          registerForm.reset();
+        } else {
+          errorDiv.style.display = 'block';
+          errorDiv.textContent = data.message || 'فشل التسجيل، حاول مرة أخرى';
+        }
+      } catch (err) {
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = err.message || 'حدث خطأ أثناء التسجيل، حاول مرة أخرى';
+      }
+    });
+  }
+
   // Handle logout buttons
   logoutButtons.forEach((btn) => {
     btn.addEventListener('click', async () => {
       const username = localStorage.getItem('username');
-      const errorDiv = document.querySelector('#error');
 
       try {
         await handleApiRequest('/api/auth/logout', {
@@ -97,7 +160,6 @@ document.addEventListener('DOMContentLoaded', () => {
           body: JSON.stringify({ username }),
         }, errorDiv, 'فشل تسجيل الخروج');
 
-        // Clear localStorage
         localStorage.removeItem('token');
         localStorage.removeItem('role');
         localStorage.removeItem('userId');
