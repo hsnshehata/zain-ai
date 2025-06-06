@@ -7,104 +7,14 @@ body {
   margin: 0;
   padding: 0;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   min-height: 100vh;
   background: linear-gradient(135deg, #1a1a2e 0%, #2a2a4e 100%);
-  color: white;
 }
 
 /* Dark/Light mode body styles are in common.css */
 
-/* Landing Header */
-.landing-header {
-  background-color: rgba(26, 26, 46, 0.95);
-  padding: 20px 0;
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-}
-
-.landing-header .container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  width: 90%;
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.landing-header .logo {
-  font-size: 2em;
-  font-weight: bold;
-  color: var(--turquoise);
-  display: flex;
-  align-items: center;
-}
-
-.landing-header .logo i {
-  margin-right: 10px;
-  color: #ffd700;
-}
-
-.landing-header .menu-toggle {
-  background: none;
-  border: none;
-  color: white;
-  font-size: 1.5em;
-  cursor: pointer;
-  display: none;
-}
-
-.landing-header nav.nav-menu {
-  transition: transform 0.3s ease-in-out;
-}
-
-.landing-header nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 25px;
-}
-
-.landing-header nav a {
-  color: white;
-  text-decoration: none;
-  font-weight: 600;
-  padding: 8px 12px;
-  border-radius: 5px;
-  transition: background 0.3s ease, color 0.3s ease;
-}
-
-.landing-header nav a:hover {
-  background-color: var(--turquoise);
-  color: #1a1a2e;
-}
-
-.landing-header .always-visible {
-  background-color: var(--turquoise);
-  color: #1a1a2e;
-  font-weight: bold;
-  padding: 8px 18px;
-  border-radius: 5px;
-  text-decoration: none;
-}
-
-.landing-header .always-visible:hover {
-  background-color: #00e0c4;
-  color: white;
-}
-
-/* Login Container */
 .login-container {
   padding: 40px;
   border-radius: 12px;
@@ -112,7 +22,6 @@ body {
   width: 100%;
   max-width: 400px;
   text-align: center;
-  margin: 40px auto;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -123,7 +32,7 @@ body.dark-mode .login-container {
 }
 
 body.light-mode .login-container {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .login-container h1 {
@@ -154,57 +63,62 @@ body.light-mode .login-container {
 }
 
 /* Success Message */
-#successMessage {
-  text-align: center;
+#success {
+  margin-top: 15px;
+  color: var(--success-color, #28a745);
+  font-size: 0.9rem;
+  min-height: 1.2em;
+  visibility: hidden;
 }
 
-#successMessage h2 {
-  font-size: 1.8em;
-  color: white;
-  margin-bottom: 15px;
-  text-shadow: 1px 1px 5px rgba(0, 0, 0, 0.2);
+#success[style*="display: block"] {
+  visibility: visible;
 }
 
-#successMessage p {
-  font-size: 1.1em;
-  color: #d3d3d3;
-  opacity: 0.9;
+/* Error Message */
+#error {
+  margin-top: 15px;
+  color: var(--error-color);
+  font-size: 0.9rem;
+  min-height: 1.2em;
+  visibility: hidden;
 }
 
-/* form-group styles are mostly in common.css */
+#error[style*="display: block"] {
+  visibility: visible;
+}
+
+/* Form Group */
 .form-group {
   position: relative;
   margin-bottom: 20px;
 }
 
-/* input styles are mostly in common.css */
-.form-group input,
-.form-group textarea {
+/* Input Styles */
+.form-group input {
   width: 100%;
   padding: 12px 15px;
   border: 1px solid;
   border-radius: 8px;
   font-size: 1rem;
+  font-family: 'Cairo', sans-serif;
   transition: border-color 0.3s, box-shadow 0.3s;
   box-sizing: border-box;
 }
 
-body.dark-mode .form-group input,
-body.dark-mode .form-group textarea {
-  border-color: var(--input-border-dark) !important;
-  background-color: var(--input-bg-dark) !important;
-  color: var(--dark-text) !important;
+body.dark-mode .form-group input {
+  border-color: var(--input-border-dark);
+  background-color: var(--input-bg-dark);
+  color: var(--dark-text);
 }
 
-body.light-mode .form-group input,
-body.light-mode .form-group textarea {
-  border-color: var(--input-border-light) !important;
-  background-color: var(--input-bg-light) !important;
-  color: var(--light-text) !important;
+body.light-mode .form-group input {
+  border-color: var(--input-border-light);
+  background-color: var(--input-bg-light);
+  color: var(--light-text);
 }
 
-.form-group input:focus,
-.form-group textarea:focus {
+.form-group input:focus {
   border-color: var(--turquoise);
   box-shadow: 0 0 5px rgba(26, 188, 156, 0.5);
   outline: none;
@@ -220,6 +134,7 @@ body.light-mode .form-group textarea {
   right: 15px;
   padding: 0 5px;
   font-size: 1rem;
+  font-family: 'Cairo', sans-serif;
   transition: all 0.3s ease;
   pointer-events: none;
 }
@@ -234,11 +149,9 @@ body.light-mode .form-group label {
   background-color: var(--input-bg-light);
 }
 
-/* Float label effect */
+/* Float Label Effect */
 .form-group input:focus + label,
-.form-group input:not(:placeholder-shown) + label,
-.form-group textarea:focus + label,
-.form-group textarea:not(:placeholder-shown) + label {
+.form-group input:not(:placeholder-shown) + label {
   top: -10px;
   right: 10px;
   font-size: 0.85rem;
@@ -255,6 +168,7 @@ button[type="submit"] {
   cursor: pointer;
   font-size: 1.1rem;
   font-weight: 600;
+  font-family: 'Cairo', sans-serif;
   width: 100%;
   transition: transform 0.2s ease, box-shadow 0.3s ease;
 }
@@ -273,6 +187,7 @@ button[type="submit"]:focus {
 .login-link {
   margin-top: 15px;
   font-size: 0.9rem;
+  font-family: 'Cairo', sans-serif;
 }
 
 .login-link a {
@@ -282,19 +197,7 @@ button[type="submit"]:focus {
 
 .login-link a:hover {
   text-decoration: underline;
-}
-
-/* Error Message */
-#error {
-  margin-top: 15px;
-  color: var(--error-color);
-  font-size: 0.9rem;
-  min-height: 1.2em;
-  visibility: hidden;
-}
-
-#error[style*="display: block"] {
-  visibility: visible;
+  color: #ff4f41;
 }
 
 /* Animation */
@@ -315,76 +218,10 @@ button[type="submit"]:focus {
 }
 
 /* Responsive Adjustments */
-@media (max-width: 992px) {
-  .landing-header .menu-toggle {
-    display: block;
-  }
-
-  .landing-header nav.nav-menu {
-    position: absolute;
-    top: 100%;
-    right: 0;
-    width: 100%;
-    background: linear-gradient(45deg, #1a1a2e, #2a2a4e);
-    transform: translateY(-100%);
-    opacity: 0;
-    visibility: hidden;
-  }
-
-  .landing-header nav.nav-menu.active {
-    transform: translateY(0);
-    opacity: 1;
-    visibility: visible;
-  }
-
-  .landing-header nav ul {
-    flex-direction: column;
-    padding: 15px;
-    gap: 15px;
-  }
-
-  .landing-header nav ul li {
-    width: 100%;
-    text-align: center;
-  }
-
-  .landing-header nav a {
-    display: block;
-    padding: 12px;
-    font-size: 1.1em;
-  }
-
-  .landing-header .always-visible {
-    padding: 6px 12px;
-    font-size: 0.9em;
-  }
-}
-
-@media (min-width: 993px) {
-  .landing-header nav.nav-menu {
-    transform: none !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-  }
-
-  .landing-header nav ul {
-    flex-direction: row;
-  }
-}
-
 @media (max-width: 576px) {
   .login-container {
     margin: 20px;
     padding: 20px;
-  }
-
-  .landing-header .container {
-    flex-direction: row;
-    gap: 8px;
-  }
-
-  .landing-header .logo {
-    font-size: 1.5em;
   }
 
   .login-container h1 {
@@ -396,12 +233,12 @@ button[type="submit"]:focus {
     font-size: 0.95rem;
   }
 
-  #successMessage h2 {
-    font-size: 1.5em;
+  .gmail-warning {
+    font-size: 0.85rem;
   }
 
-  #successMessage p {
-    font-size: 0.95em;
+  #success {
+    font-size: 0.85rem;
   }
 
   #error {
