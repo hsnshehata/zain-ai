@@ -44,12 +44,12 @@ body.light-mode .login-container {
 
 /* Gmail Warning Message */
 .gmail-warning {
-  margin-bottom: 20px;
+  margin-bottom: 15px; /* هامش سفلي عشان ما يلزقش في الزرار */
   padding: 10px;
   background-color: rgba(255, 75, 75, 0.2);
   border: 1px solid var(--error-color);
   border-radius: 8px;
-  color: white; /* تغيير اللون لأبيض عشان يبان على الخلفية */
+  color: white;
   font-size: 0.9rem;
 }
 
