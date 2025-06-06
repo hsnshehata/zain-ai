@@ -20,10 +20,18 @@ const transporter = nodemailer.createTransport({
 
 // مسار التسجيل
 router.post('/register', async (req, res) => {
-  const { email, username, password, botName, whatsapp } = req.body;
-  if (!email || !username || !password || !botName) {
+  const { email, username, password, confirmPassword, botName, whatsapp } = req.body;
+  if (!email || !username || !password || !confirmPassword || !botName) {
     console.log('❌ Registration failed: Required fields missing', { email, username, password, botName, whatsapp });
     return res.status(400).json({ message: 'جميع الحقول مطلوبة ما عدا رقم الواتساب', success: false });
+  }
+  if (password !== confirmPassword) {
+    console.log('❌ Registration failed: Passwords do not match', { username });
+    return res.status(400).json({ message: 'كلمات المرور غير متطابقة', success: false });
+  }
+  if (password.length < 6) {
+    console.log('❌ Registration failed: Password too short', { username });
+    return res.status(400).json({ message: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل', success: false });
   }
   if (email.endsWith('@gmail.com')) {
     console.log(`❌ Registration failed: Gmail email ${email} used in regular registration`);
@@ -34,6 +42,10 @@ router.post('/register', async (req, res) => {
     if (!/^[a-z0-9_-]+$/.test(normalizedUsername)) {
       console.log(`❌ Registration failed: Invalid username ${normalizedUsername}`);
       return res.status(400).json({ message: 'اسم المستخدم يجب أن يحتوي على حروف إنجليزية، أرقام، _ أو - فقط', success: false });
+    }
+    if (normalizedUsername.length < 3 || normalizedUsername.length > 20) {
+      console.log(`❌ Registration failed: Username length invalid ${normalizedUsername}`);
+      return res.status(400).json({ message: 'اسم المستخدم يجب أن يكون بين 3 و20 حرفًا', success: false });
     }
     const existingUser = await User.findOne({ $or: [{ username: normalizedUsername }, { email }] });
     if (existingUser) {
@@ -77,7 +89,7 @@ router.post('/register', async (req, res) => {
     console.log(`✅ Verification email sent to ${email}`);
     res.status(201).json({ message: 'تم إرسال رابط تفعيل إلى بريدك الإلكتروني', success: true });
   } catch (err) {
-    console.error('❌ خطأ في التسجيل:', err.message, err.stack);
+    console.error('❌ خطأ في التسجيل:', { error: err.message, stack: err.stack, requestBody: req.body });
     res.status(500).json({ message: 'خطأ في السيرفر، حاول مرة أخرى', success: false });
   }
 });
@@ -120,7 +132,7 @@ router.get('/verify/:token', async (req, res) => {
     console.log(`✅ Account verified and bot created for user ${user.username}, token valid for 30 days`);
     res.redirect(`/dashboard_new.html?token=${authToken}`);
   } catch (err) {
-    console.error('❌ خطأ في تفعيل الحساب:', err.message, err.stack);
+    console.error('❌ خطأ في تفعيل الحساب:', { error: err.message, stack: err.stack, token });
     res.status(500).json({ message: 'خطأ في السيرفر أو رابط تفعيل غير صالح', success: false });
   }
 });
@@ -156,7 +168,7 @@ router.post('/login', async (req, res) => {
     console.log(`✅ Login successful for username ${normalizedUsername}, token valid for 30 days`);
     res.status(200).json({ token, role: user.role, userId: user._id, username: user.username, success: true });
   } catch (err) {
-    console.error('❌ خطأ في تسجيل الدخول:', err.message, err.stack);
+    console.error('❌ خطأ في تسجيل الدخول:', { error: err.message, stack: err.stack, requestBody: req.body });
     res.status(500).json({ message: 'خطأ في السيرفر، حاول مرة أخرى', success: false });
   }
 });
@@ -201,9 +213,15 @@ router.post('/google', async (req, res) => {
         return res.status(400).json({ message: 'البريد الإلكتروني مسجل بالفعل', success: false });
       }
       let username = email.split('@')[0].toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+      if (username.length < 3 || username.length > 20) {
+        username = `user_${googleId.slice(0, 8)}`.toLowerCase();
+      }
       let count = 1;
       while (await User.findOne({ username })) {
         username = `${email.split('@')[0]}${count}`.toLowerCase().replace(/[^a-z0-9_-]/g, '_');
+        if (username.length < 3 || username.length > 20) {
+          username = `user_${googleId.slice(0, 8)}${count}`.toLowerCase();
+        }
         count++;
       }
       user = new User({
@@ -235,7 +253,7 @@ router.post('/google', async (req, res) => {
       res.json({ token, role: user.role, userId: user._id, username: user.username, newUser: true, success: true });
     }
   } catch (error) {
-    console.error('❌ خطأ في تسجيل الدخول بجوجل:', error.message, error.stack);
+    console.error('❌ خطأ في تسجيل الدخول بجوجل:', { error: error.message, stack: error.stack, requestBody: req.body });
     res.status(401).json({ message: 'فشل في التحقق من بيانات جوجل، حاول مرة أخرى', success: false });
   }
 });
