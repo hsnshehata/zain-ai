@@ -11,7 +11,6 @@ const urlsToCache = [
   '/css/login.css',
   '/css/bots.css',
   '/css/rules.css',
-  '/css/chatPage.css',
   '/css/analytics.css',
   '/css/feedback.css',
   '/css/facebook.css',
