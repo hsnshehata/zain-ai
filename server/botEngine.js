@@ -19,34 +19,24 @@ function getCurrentTime() {
   return new Date().toLocaleString('ar-EG', { timeZone: 'Africa/Cairo' });
 }
 
-// دالة لتحميل الصورة وتخزينها مؤقتًا
-async function downloadImage(imageUrl) {
+// دالة لتحميل الصورة وتحويلها إلى base64
+async function downloadImageToBase64(imageUrl) {
   try {
     console.log('📥 جاري تحميل الصورة من:', imageUrl);
     const response = await axios.get(imageUrl, {
       responseType: 'arraybuffer',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        Authorization: `Bearer ${process.env.FACEBOOK_ACCESS_TOKEN}`, // إضافة توكن فيسبوك
       },
     });
     const imageBuffer = Buffer.from(response.data);
-    const tempFilePath = path.join(__dirname, `temp_image_${uuidv4()}.jpg`);
-    await fs.writeFile(tempFilePath, imageBuffer);
-    console.log('✅ تم تحميل الصورة وحفظها مؤقتاً في:', tempFilePath);
-    return tempFilePath;
+    const base64Image = imageBuffer.toString('base64');
+    console.log('✅ تم تحميل الصورة وتحويلها إلى base64');
+    return `data:image/jpeg;base64,${base64Image}`;
   } catch (err) {
     console.error('❌ خطأ أثناء تحميل الصورة:', err.message);
     throw new Error('عذرًا، لم أتمكن من تحميل الصورة. حاول مرة أخرى أو أرسل صورة أخرى.');
-  }
-}
-
-// دالة لتنظيف الملفات المؤقتة
-async function cleanupTempFile(filePath) {
-  try {
-    await fs.unlink(filePath);
-    console.log('🗑️ تم حذف الملف المؤقت:', filePath);
-  } catch (err) {
-    console.error('❌ خطأ أثناء حذف الملف المؤقت:', err.message);
   }
 }
 
@@ -248,26 +238,14 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
           return 'عذرًا، لم أتمكن من تحليل الصورة بسبب رابط غير صالح.';
         }
         console.log('🖼️ Processing image with mediaUrl:', mediaUrl);
-        let imageUrlToUse = mediaUrl;
-        let tempFilePath = null;
+        let imageDataUrl;
 
-        // التحقق من إمكانية الوصول للرابط
         try {
-          await axios.head(mediaUrl, {
-            headers: {
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            },
-          });
-          console.log('✅ Image URL is accessible:', mediaUrl);
+          // تحميل الصورة وتحويلها إلى base64
+          imageDataUrl = await downloadImageToBase64(mediaUrl);
         } catch (err) {
-          console.log('⚠️ Image URL is not accessible directly, attempting to download:', mediaUrl);
-          try {
-            tempFilePath = await downloadImage(mediaUrl);
-            imageUrlToUse = `file://${tempFilePath}`;
-          } catch (downloadErr) {
-            console.error('❌ Failed to download image:', downloadErr.message);
-            return downloadErr.message;
-          }
+          console.error('❌ Failed to download image:', err.message);
+          return err.message;
         }
 
         try {
@@ -280,7 +258,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
                 role: 'user',
                 content: [
                   { type: 'text', text: userMessageContent || 'رد على حسب محتوى الصورة' },
-                  { type: 'image_url', image_url: { url: imageUrlToUse } },
+                  { type: 'image_url', image_url: { url: imageDataUrl } },
                 ],
               },
             ],
@@ -290,11 +268,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
           console.log('🖼️ Image processed:', reply);
         } catch (err) {
           console.error('❌ Error processing image with OpenAI:', err.message);
-          reply = 'عذرًا، لم أتمكن من تحليل الصورة. حاول مرة أخرى أو أرسل صورة أخرى.';
-        } finally {
-          if (tempFilePath) {
-            await cleanupTempFile(tempFilePath);
-          }
+          return 'عذرًا، لم أتمكن من تحليل الصورة. حاول مرة أخرى أو أرسل صورة أخرى.';
         }
       } else {
         const messages = [
@@ -304,7 +278,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         ];
         console.log('📤 Sending to OpenAI for processing:', userMessageContent);
         const response = await openai.chat.completions.create({
-          model: 'gpt-4o', // غيرنا المودل لـ gpt-4o بدل gpt-4.1-mini-2025-04-14 عشان المودل ده مش موجود
+          model: 'gpt-4o',
           messages,
           max_tokens: 5000,
         });
