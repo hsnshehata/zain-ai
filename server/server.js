@@ -20,12 +20,13 @@ const uploadRoutes = require('./routes/upload');
 const notificationRoutes = require('./routes/notifications');
 const storesRoutes = require('./routes/stores');
 const productsRoutes = require('./routes/products');
-const ordersRoutes = require('./routes/orders'); // إضافة الروت الجديد للطلبات
+const ordersRoutes = require('./routes/orders');
 const connectDB = require('./db');
 const Conversation = require('./models/Conversation');
 const Bot = require('./models/Bot');
 const User = require('./models/User');
 const Feedback = require('./models/Feedback');
+const Store = require('./models/Store'); // إضافة نموذج المتجر
 const NodeCache = require('node-cache');
 const bcrypt = require('bcryptjs');
 const request = require('request');
@@ -62,7 +63,7 @@ app.use((req, res, next) => {
 
 // Middleware لإضافة Cache-Control headers
 app.use((req, res, next) => {
-  if (req.path.match(/\.(html)$/i) || ['/', '/dashboard', '/dashboard_new', '/login', '/register', '/set-whatsapp', '/chat/'].some(path => req.path.startsWith(path))) {
+  if (req.path.match(/\.(html)$/i) || ['/', '/dashboard', '/dashboard_new', '/login', '/register', '/set-whatsapp', '/chat/', '/store/'].some(path => req.path.startsWith(path))) {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
@@ -113,7 +114,53 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/stores', storesRoutes);
 app.use('/api', productsRoutes);
-app.use('/api', ordersRoutes); // إضافة الروت الجديد للطلبات
+app.use('/api', ordersRoutes);
+
+// Route لصفحة المتجر
+app.get('/store/:storeLink', async (req, res) => {
+  try {
+    const { storeLink } = req.params;
+    const store = await Store.findOne({ storeLink });
+    if (!store) {
+      console.log(`[${getTimestamp()}] ❌ Store not found for link: ${storeLink}`);
+      return res.status(404).json({ message: 'المتجر غير موجود' });
+    }
+    const filePath = path.join(__dirname, '../public/store.html');
+    console.log(`[${getTimestamp()}] Serving store.html from: ${filePath}`);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error(`[${getTimestamp()}] Error serving store.html:`, err);
+        res.status(500).json({ message: 'Failed to load store page' });
+      }
+    });
+  } catch (err) {
+    console.error(`[${getTimestamp()}] Error in store route:`, err);
+    res.status(500).json({ message: 'Something went wrong!' });
+  }
+});
+
+// Route للاندينج بيج
+app.get('/store/:storeLink/landing', async (req, res) => {
+  try {
+    const { storeLink } = req.params;
+    const store = await Store.findOne({ storeLink });
+    if (!store) {
+      console.log(`[${getTimestamp()}] ❌ Store not found for link: ${storeLink}`);
+      return res.status(404).json({ message: 'المتجر غير موجود' });
+    }
+    const filePath = path.join(__dirname, '../public/landing.html');
+    console.log(`[${getTimestamp()}] Serving landing.html from: ${filePath}`);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error(`[${getTimestamp()}] Error serving landing.html:`, err);
+        res.status(500).json({ message: 'Failed to load landing page' });
+      }
+    });
+  } catch (err) {
+    console.error(`[${getTimestamp()}] Error in landing route:`, err);
+    res.status(500).json({ message: 'Something went wrong!' });
+  }
+});
 
 // نقطة النهاية للتحقق من التوكن
 app.get('/api/auth/check', authenticate, async (req, res) => {
