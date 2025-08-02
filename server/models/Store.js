@@ -7,14 +7,14 @@ const storeSchema = new mongoose.Schema({
     type: String, 
     required: true, 
     trim: true,
-    unique: true, // لضمان عدم تكرار اسم المتجر
+    unique: true,
     minlength: [3, 'اسم المتجر يجب أن يكون 3 أحرف على الأقل'],
     maxlength: [50, 'اسم المتجر يجب ألا يتجاوز 50 حرفًا']
   },
   storeLink: { 
     type: String, 
     required: true, 
-    unique: true, // رابط فريد
+    unique: true,
     match: [/^[a-zA-Z0-9_-]+$/, 'رابط المتجر يجب أن يحتوي فقط على حروف، أرقام، - أو _']
   },
   templateId: { 
@@ -53,9 +53,15 @@ const storeSchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
-// تحقق من رابط المتجر قبل الحفظ
-storeSchema.pre('save', async function (next) {
-  this.storeLink = this.storeLink.toLowerCase(); // تحويل الرابط للحروف الصغيرة
+// توليد storeLink قبل التحقق (Validation)
+storeSchema.pre('validate', function (next) {
+  if (!this.storeName) {
+    return next(new Error('اسم المتجر مطلوب لتوليد الرابط'));
+  }
+  this.storeLink = this.storeName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  if (this.storeLink.length < 3) {
+    return next(new Error('رابط المتجر يجب أن يكون 3 أحرف على الأقل'));
+  }
   this.updatedAt = Date.now();
   next();
 });
