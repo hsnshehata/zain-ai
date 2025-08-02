@@ -35,9 +35,11 @@ const botSchema = new mongoose.Schema({
   whatsappMessageReactionsEnabled: { type: Boolean, default: true },
   whatsappMessagingReferralsEnabled: { type: Boolean, default: true },
   whatsappMessageEditsEnabled: { type: Boolean, default: true },
-    // تواريخ الربط
+  // تواريخ الربط
   lastFacebookTokenRefresh: { type: Date }, // أضفنا الحقل هنا
   lastInstagramTokenRefresh: { type: Date },
+  // إضافة حقل لربط المتجر (جديد)
+  storeId: { type: mongoose.Schema.Types.ObjectId, ref: 'Store' },
   createdAt: { type: Date, default: Date.now },
 });
 
