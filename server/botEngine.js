@@ -250,7 +250,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
         try {
           const response = await openai.chat.completions.create({
-            model: 'openai/gpt-4.1-nano-2025-04-14',
+            model: 'gpt-4.1-nano-2025-04-14',
             messages: [
               { role: 'system', content: systemPrompt },
               ...context,
