@@ -19,7 +19,8 @@ const indexRoutes = require('./routes/index');
 const uploadRoutes = require('./routes/upload');
 const notificationRoutes = require('./routes/notifications');
 const storesRoutes = require('./routes/stores');
-const productsRoutes = require('./routes/products'); // إضافة الروت الجديد للمنتجات
+const productsRoutes = require('./routes/products');
+const ordersRoutes = require('./routes/orders'); // إضافة الروت الجديد للطلبات
 const connectDB = require('./db');
 const Conversation = require('./models/Conversation');
 const Bot = require('./models/Bot');
@@ -111,7 +112,8 @@ app.use('/api/messages', messagesRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/stores', storesRoutes);
-app.use('/api', productsRoutes); // إضافة الروت الجديد للمنتجات
+app.use('/api', productsRoutes);
+app.use('/api', ordersRoutes); // إضافة الروت الجديد للطلبات
 
 // نقطة النهاية للتحقق من التوكن
 app.get('/api/auth/check', authenticate, async (req, res) => {
