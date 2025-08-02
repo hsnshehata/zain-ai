@@ -28,6 +28,7 @@ const bcrypt = require('bcryptjs');
 const request = require('request');
 const { checkAutoStopBots, refreshInstagramTokens } = require('./cronJobs');
 const authenticate = require('./middleware/authenticate');
+const storesRoutes = require('./routes/stores'); // إضافة الروت الجديد للمتاجر
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
@@ -108,6 +109,7 @@ app.use('/api/chat-page', chatPageRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/stores', storesRoutes); // إضافة الروت الجديد للمتاجر
 
 // نقطة النهاية للتحقق من التوكن
 app.get('/api/auth/check', authenticate, async (req, res) => {
