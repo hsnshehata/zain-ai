@@ -18,6 +18,8 @@ const messagesRoutes = require('./routes/messages');
 const indexRoutes = require('./routes/index');
 const uploadRoutes = require('./routes/upload');
 const notificationRoutes = require('./routes/notifications');
+const storesRoutes = require('./routes/stores');
+const productsRoutes = require('./routes/products'); // إضافة الروت الجديد للمنتجات
 const connectDB = require('./db');
 const Conversation = require('./models/Conversation');
 const Bot = require('./models/Bot');
@@ -28,7 +30,6 @@ const bcrypt = require('bcryptjs');
 const request = require('request');
 const { checkAutoStopBots, refreshInstagramTokens } = require('./cronJobs');
 const authenticate = require('./middleware/authenticate');
-const storesRoutes = require('./routes/stores'); // إضافة الروت الجديد للمتاجر
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
@@ -109,7 +110,8 @@ app.use('/api/chat-page', chatPageRoutes);
 app.use('/api/messages', messagesRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
-app.use('/api/stores', storesRoutes); // إضافة الروت الجديد للمتاجر
+app.use('/api/stores', storesRoutes);
+app.use('/api', productsRoutes); // إضافة الروت الجديد للمنتجات
 
 // نقطة النهاية للتحقق من التوكن
 app.get('/api/auth/check', authenticate, async (req, res) => {
