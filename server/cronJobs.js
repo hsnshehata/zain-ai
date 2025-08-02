@@ -2,6 +2,8 @@
 const cron = require('node-cron');
 const Bot = require('./models/Bot');
 const Notification = require('./models/Notification');
+const Product = require('./models/Product');
+const Store = require('./models/Store');
 const axios = require('axios');
 
 // دالة مساعدة لإضافة timestamp للـ logs
@@ -234,4 +236,50 @@ const refreshFacebookTokens = () => {
   });
 };
 
-module.exports = { checkAutoStopBots, refreshInstagramTokens, refreshFacebookTokens };
+// وظيفة دورية للتحقق من المخزون المنخفض
+const checkLowStock = () => {
+  // جدولة المهمة لتعمل كل يوم الساعة 12:00 صباحًا
+  cron.schedule('0 0 * * *', async () => {
+    try {
+      console.log(`[${getTimestamp()}] ⏰ Starting low stock check...`);
+
+      // جلب المنتجات اللي مخزونها أقل من أو يساوي العتبة
+      const lowStockProducts = await Product.find({
+        stock: { $lte: mongoose.Types.Long.fromString('lowStockThreshold') },
+        isActive: true
+      });
+
+      if (lowStockProducts.length === 0) {
+        console.log(`[${getTimestamp()}] ✅ No products found with low stock.`);
+        return;
+      }
+
+      console.log(`[${getTimestamp()}] 🔄 Found ${lowStockProducts.length} products with low stock.`);
+
+      for (const product of lowStockProducts) {
+        const store = await Store.findById(product.storeId);
+        if (!store) {
+          console.log(`[${getTimestamp()}] ⚠️ Store ${product.storeId} not found for product ${product._id}`);
+          continue;
+        }
+
+        const notification = new Notification({
+          user: store.userId,
+          title: `انخفاض مخزون ${product.productName}`,
+          message: `المنتج ${product.productName} في متجر ${store.storeName} وصل إلى المخزون المنخفض (${product.stock} وحدة). يرجى إعادة تعبئة المخزون.`,
+          isRead: false
+        });
+        await notification.save();
+        console.log(`[${getTimestamp()}] ✅ Notification sent to user ${store.userId} for low stock of product ${product._id}`);
+      }
+
+      console.log(`[${getTimestamp()}] ⏰ Low stock check completed successfully.`);
+    } catch (err) {
+      console.error(`[${getTimestamp()}] ❌ Error in low stock check:`, err.message, err.stack);
+    }
+  }, {
+    timezone: 'Africa/Cairo'
+  });
+};
+
+module.exports = { checkAutoStopBots, refreshInstagramTokens, refreshFacebookTokens, checkLowStock };
