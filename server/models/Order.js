@@ -8,7 +8,7 @@ const orderSchema = new mongoose.Schema({
     productId: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
     quantity: { 
       type: Number, 
-     -required: true, 
+      required: true, // إصلاح الخطأ: إزالة الـ -
       min: [1, 'الكمية يجب أن تكون 1 على الأقل']
     },
     price: { 
