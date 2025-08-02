@@ -1,5 +1,4 @@
-// public/js/dashboard_new.js
-
+// /public/js/dashboard_new.js
 try {
   console.log("dashboard_new.js started loading at", new Date().toISOString());
 
@@ -9,7 +8,7 @@ try {
     let isInitialLoad = true; // Flag to control initial load
 
     // Valid pages to prevent unexpected page loads
-    const validPages = ['bots', 'rules', 'chat-page', 'analytics', 'messages', 'feedback', 'facebook', 'instagram', 'whatsapp', 'wasenderpro', 'settings'];
+    const validPages = ['bots', 'rules', 'chat-page', 'analytics', 'messages', 'feedback', 'facebook', 'instagram', 'whatsapp', 'wasenderpro', 'settings', 'store-manager'];
 
     // Pages configuration for dashboard cards
     const pages = [
@@ -23,6 +22,7 @@ try {
       { id: 'feedback', name: 'التقييمات', icon: 'fas fa-comments', description: 'رؤية تقييمات المستخدمين' },
       { id: 'wasenderpro', name: 'Wasender Pro', icon: 'fas fa-bolt', description: 'مجاني طوال فترة الاشتراك' },
       { id: 'settings', name: 'الإعدادات', icon: 'fas fa-cog', description: 'إدارة إعدادات الحساب' },
+      { id: 'store-manager', name: 'المتجر الذكي', icon: 'fas fa-store', description: 'إدارة متجرك الذكي ومنتجاتك' }
     ];
 
     // Check for token in URL (from /verify/:token redirect)
@@ -177,6 +177,7 @@ try {
       whatsapp: "/css/facebook.css",
       wasenderpro: "/css/facebook.css",
       settings: "/css/settings.css",
+      "store-manager": "/css/storeManager.css"
     };
 
     // Map of pages to their respective JS files
@@ -191,6 +192,7 @@ try {
       whatsapp: "/js/whatsapp.js",
       wasenderpro: "/js/wasenderpro.js",
       settings: "/js/settings.js",
+      "store-manager": "/js/storeManager.js"
     };
 
     // Cache for loaded scripts
@@ -247,7 +249,9 @@ try {
       }
 
       // Check if the function is defined after loading
-      let funcName = page === 'chat-page' ? 'loadChatPage' : `load${page.charAt(0).toUpperCase() + page.slice(1).replace(/-([a-z])/g, (g) => g[1].toUpperCase())}Page`;
+      let funcName = page === 'chat-page' ? 'loadChatPage' : 
+                     page === 'store-manager' ? 'loadStoreManagerPage' : 
+                     `load${page.charAt(0).toUpperCase() + page.slice(1).replace(/-([a-z])/g, (g) => g[1].toUpperCase())}Page`;
       if (typeof window[funcName] !== "function") {
         console.error(`${funcName} not defined after loading ${pageJsMap[page]} at`, new Date().toISOString());
       } else {
@@ -523,6 +527,11 @@ try {
             const loadSettingsPage = await waitForFunction("loadSettingsPage");
             console.log(`Loading settings page`);
             await loadSettingsPage();
+            break;
+          case "store-manager":
+            const loadStoreManagerPage = await waitForFunction("loadStoreManagerPage");
+            console.log(`Loading store-manager page`);
+            await loadStoreManagerPage();
             break;
           default:
             throw new Error("الصفحة المطلوبة غير متوفرة.");
