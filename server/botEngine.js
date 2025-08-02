@@ -9,6 +9,8 @@ const Bot = require('./models/Bot');
 const Rule = require('./models/Rule');
 const Conversation = require('./models/Conversation');
 const Feedback = require('./models/Feedback');
+const Store = require('./models/Store');
+const Product = require('./models/Product');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -158,6 +160,25 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         }
       });
     }
+
+    // إضافة بيانات المتجر إذا كان البوت مرتبط بمتجر
+    const bot = await Bot.findById(botId);
+    if (bot && bot.storeId) {
+      const store = await Store.findById(bot.storeId);
+      if (store) {
+        systemPrompt += `\nبيانات المتجر: الاسم: ${store.storeName}، الرابط: zainbot.com/${store.storeLink}.\n`;
+        const products = await Product.find({ storeId: store._id });
+        if (products.length > 0) {
+          systemPrompt += 'المنتجات المتاحة:\n';
+          products.forEach((product) => {
+            systemPrompt += `المنتج: ${product.productName}، السعر: ${product.price} ${product.currency}، الوصف: ${product.description || 'غير متوفر'}، الصورة: ${product.imageUrl || 'غير متوفرة'}، المخزون: ${product.stock}.\n`;
+          });
+        } else {
+          systemPrompt += 'لا توجد منتجات متاحة حاليًا في المتجر.\n';
+        }
+      }
+    }
+
     console.log('📝 System prompt:', systemPrompt);
 
     let userMessageContent = message;
@@ -225,6 +246,12 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         } else if (rule.type === 'channels') {
           if (userMessageContent.toLowerCase().includes(rule.content.platform.toLowerCase())) {
             reply = `قناة التواصل: ${rule.content.platform}\nالوصف: ${rule.content.description}\nالرابط/الرقم: ${rule.content.value}`;
+            break;
+          }
+        } else if (rule.type === 'store') {
+          const productName = rule.content.productName.toLowerCase();
+          if (userMessageContent.toLowerCase().includes(productName)) {
+            reply = `المنتج: ${rule.content.productName}، السعر: ${rule.content.price} ${rule.content.currency}، الوصف: ${rule.content.description || 'غير متوفر'}، الصورة: ${rule.content.imageUrl || 'غير متوفرة'}، المخزون: ${rule.content.stock}.`;
             break;
           }
         }
