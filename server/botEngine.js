@@ -250,19 +250,19 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
         try {
           const response = await openai.chat.completions.create({
-            model: 'gpt-4o',
+            model: 'openai/gpt-4.1-nano-2025-04-14',
             messages: [
               { role: 'system', content: systemPrompt },
               ...context,
               {
                 role: 'user',
                 content: [
-                  { type: 'text', text: userMessageContent || 'رد على حسب محتوى الصورة' },
+                  { type: 'text', text: userMessageContent || 'أوصف محتوى الصورة باختصار' },
                   { type: 'image_url', image_url: { url: imageDataUrl } },
                 ],
               },
             ],
-            max_tokens: 5000,
+            max_tokens: 1000,
           });
           reply = response.choices[0].message.content || 'عذرًا، لم أتمكن من تحليل الصورة.';
           console.log('🖼️ Image processed:', reply);
