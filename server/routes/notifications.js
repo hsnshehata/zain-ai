@@ -1,15 +1,20 @@
+// /server/routes/notifications.js
 const express = require('express');
-const router = express.Router();
-const { sendGlobalNotification, getNotifications, markAsRead } = require('../controllers/notificationsController');
 const authenticate = require('../middleware/authenticate');
+const notificationsController = require('../controllers/notificationsController');
 
-// روت لإرسال إشعار عام لكل المستخدمين (للسوبر أدمن بس)
-router.post('/global', authenticate, sendGlobalNotification);
+const router = express.Router();
 
-// روت لجلب إشعارات المستخدم الحالي
-router.get('/', authenticate, getNotifications);
+// إرسال إشعار للجميع (للـ superadmin فقط)
+router.post('/global', authenticate, notificationsController.sendGlobalNotification);
 
-// روت لتعليم إشعار كمقروء
-router.put('/:id/read', authenticate, markAsRead);
+// إرسال إشعار لمستخدم واحد
+router.post('/single', authenticate, notificationsController.sendNotification);
+
+// جلب الإشعارات
+router.get('/', authenticate, notificationsController.getNotifications);
+
+// تعليم الإشعار كمقروء
+router.put('/:id/read', authenticate, notificationsController.markAsRead);
 
 module.exports = router;
