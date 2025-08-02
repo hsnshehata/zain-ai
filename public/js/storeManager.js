@@ -368,8 +368,15 @@ async function loadStoreManagerPage() {
 
   async function saveStoreSettings(botId) {
     storeError.style.display = "none";
+    const storeName = document.getElementById("storeName").value.trim();
+    if (!storeName) {
+      storeError.textContent = "اسم المتجر مطلوب";
+      storeError.style.display = "block";
+      return;
+    }
+
     const formData = new FormData(storeForm);
-    const storeData = Object.fromEntries(formData);
+    formData.append('botId', botId); // إضافة botId للربط
 
     try {
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
@@ -382,13 +389,12 @@ async function loadStoreManagerPage() {
       const response = await handleApiRequest(url, {
         method,
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(storeData),
+        body: formData,
       }, storeError, "فشل في حفظ المتجر");
 
-      storeError.textContent = "تم حفظ المتجر بنجاح!";
+      storeError.textContent = `تم حفظ المتجر وربطه بالبوت بنجاح!`;
       storeError.style.color = "green";
       storeError.style.display = "block";
       await loadStoreStatus(botId);
