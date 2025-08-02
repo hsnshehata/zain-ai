@@ -8,7 +8,7 @@ try {
     let isInitialLoad = true; // Flag to control initial load
 
     // Valid pages to prevent unexpected page loads
-    const validPages = ['bots', 'rules', 'chat-page', 'analytics', 'messages', 'feedback', 'facebook', 'instagram', 'whatsapp', 'wasenderpro', 'settings', 'store-manager'];
+    const validPages = ['bots', 'rules', 'chat-page', 'store-manager', 'facebook', 'instagram', 'whatsapp', 'messages', 'feedback', 'wasenderpro', 'settings'];
 
     // Pages configuration for dashboard cards
     const pages = [
@@ -170,14 +170,12 @@ try {
       bots: "/css/bots.css",
       rules: "/css/rules.css",
       "chat-page": "/css/chatPage.css",
-      messages: "/css/messages.css",
-      feedback: "/css/feedback.css",
+      "store-manager": "/css/storeManager.css",
       facebook: "/css/facebook.css",
       instagram: "/css/facebook.css",
       whatsapp: "/css/facebook.css",
       wasenderpro: "/css/facebook.css",
       settings: "/css/settings.css",
-      "store-manager": "/css/storeManager.css"
     };
 
     // Map of pages to their respective JS files
@@ -185,6 +183,7 @@ try {
       bots: "/js/bots.js",
       rules: "/js/rules.js",
       "chat-page": "/js/chatPage.js",
+      "store-manager": "/js/storeManager.js",
       messages: "/js/messages.js",
       feedback: "/js/feedback.js",
       facebook: "/js/facebook.js",
@@ -192,7 +191,6 @@ try {
       whatsapp: "/js/whatsapp.js",
       wasenderpro: "/js/wasenderpro.js",
       settings: "/js/settings.js",
-      "store-manager": "/js/storeManager.js"
     };
 
     // Cache for loaded scripts
@@ -402,7 +400,7 @@ try {
         card.className = 'dashboard-card';
         card.style.setProperty('--index', index);
         card.dataset.tooltip = page.description;
-        card.dataset.page = page.id; // إضافة data-page لتحديد المنصة
+        card.dataset.page = page.id;
         card.innerHTML = `
           <i class="${page.icon}"></i>
           <h3>${page.name}</h3>
@@ -483,25 +481,10 @@ try {
             console.log(`Loading chat-page`);
             await loadChatPage();
             break;
-          case "analytics":
-            const loadAnalyticsPage = await waitForFunction("loadAnalyticsPage");
-            console.log(`Loading analytics page`);
-            try {
-              await loadAnalyticsPage();
-            } catch (analyticsErr) {
-              console.error('Error executing loadAnalyticsPage:', analyticsErr);
-              throw new Error(`Failed to load analytics page: ${analyticsErr.message}`);
-            }
-            break;
-          case "messages":
-            const loadMessagesPage = await waitForFunction("loadMessagesPage");
-            console.log(`Loading messages page`);
-            await loadMessagesPage();
-            break;
-          case "feedback":
-            const loadFeedbackPage = await waitForFunction("loadFeedbackPage");
-            console.log(`Loading feedback page`);
-            await loadFeedbackPage();
+          case "store-manager":
+            const loadStoreManagerPage = await waitForFunction("loadStoreManagerPage");
+            console.log(`Loading store-manager page`);
+            await loadStoreManagerPage();
             break;
           case "facebook":
             const loadFacebookPage = await waitForFunction("loadFacebookPage");
@@ -518,6 +501,16 @@ try {
             console.log(`Loading whatsapp page`);
             await loadWhatsAppPage();
             break;
+          case "messages":
+            const loadMessagesPage = await waitForFunction("loadMessagesPage");
+            console.log(`Loading messages page`);
+            await loadMessagesPage();
+            break;
+          case "feedback":
+            const loadFeedbackPage = await waitForFunction("loadFeedbackPage");
+            console.log(`Loading feedback page`);
+            await loadFeedbackPage();
+            break;
           case "wasenderpro":
             const loadWasenderProPage = await waitForFunction("loadWasenderProPage");
             console.log(`Loading wasenderpro page`);
@@ -527,11 +520,6 @@ try {
             const loadSettingsPage = await waitForFunction("loadSettingsPage");
             console.log(`Loading settings page`);
             await loadSettingsPage();
-            break;
-          case "store-manager":
-            const loadStoreManagerPage = await waitForFunction("loadStoreManagerPage");
-            console.log(`Loading store-manager page`);
-            await loadStoreManagerPage();
             break;
           default:
             throw new Error("الصفحة المطلوبة غير متوفرة.");
