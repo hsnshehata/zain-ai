@@ -58,12 +58,14 @@ exports.createStore = async (req, res) => {
     await newStore.save();
     console.log(`[${getTimestamp()}] ✅ Store created: ${newStore.storeName} for user ${userId}`);
 
-    // ربط المتجر بالبوت إذا كان موجود (اختياري)
-    const bot = await Bot.findOne({ userId });
+    // ربط المتجر بالبوت إذا كان موجود
+    const bot = await Bot.findOne({ _id: selectedBotId, userId });
     if (bot) {
       bot.storeId = newStore._id;
       await bot.save();
       console.log(`[${getTimestamp()}] ✅ Linked store ${newStore._id} to bot ${bot._id}`);
+    } else {
+      console.log(`[${getTimestamp()}] ⚠️ No bot found for linking, skipping...`);
     }
 
     // إنشاء قاعدة افتراضية للمتجر في Rules
