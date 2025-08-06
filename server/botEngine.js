@@ -305,7 +305,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         ];
         console.log('📤 Sending to OpenAI for processing:', userMessageContent);
         const response = await openai.chat.completions.create({
-          model: 'o4-mini-2025-04-16',
+          model: 'gpt-o4-mini-2025-04-16',
           messages,
           max_tokens: 5000,
         });
