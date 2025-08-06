@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Ensure the modal is hidden initially
   assistantChatModal.style.display = 'none';
 
-  const ASSISTANT_BOT_ID = '68087d93c0124c9fe05a6996';
+  const ASSISTANT_BOT_ID = '688ebdc24f6bd5cf70cb071b';
   const selectedBotId = localStorage.getItem('selectedBotId');
   let userId = localStorage.getItem('userId') || 'dashboard_user_' + Date.now();
   let conversationHistory = JSON.parse(localStorage.getItem(`conversationHistory_${userId}`)) || [];
