@@ -2,17 +2,15 @@ const axios = require('axios');
 const Bot = require('../models/Bot');
 const Conversation = require('../models/Conversation');
 const { processMessage, processFeedback } = require('../botEngine');
+const { convertToLongLivedToken, getTimestamp } = require('../cronJobs'); // استيراد convertToLongLivedToken و getTimestamp
 
-// دالة مساعدة لإضافة timestamp للـ logs
-const getTimestamp = () => new Date().toISOString();
-
-// دالة لجلب اسم المستخدم من فيسبوك
-const getFacebookUsername = async (userId, accessToken) => {
+// دالة لجلب اسم المستخدم من فيسبوك مع محاولة تجديد التوكين لو منتهي
+const getFacebookUsername = async (userId, bot) => {
   try {
     const cleanUserId = userId.replace(/^(facebook_|facebook_comment_)/, '');
-    console.log(`[${getTimestamp()}] 📋 محاولة جلب اسم المستخدم لـ ${cleanUserId} من فيسبوك باستخدام التوكن: ${accessToken.slice(0, 10)}...`);
+    console.log(`[${getTimestamp()}] 📋 محاولة جلب اسم المستخدم لـ ${cleanUserId} من فيسبوك باستخدام التوكن: ${bot.facebookApiKey.slice(0, 10)}...`);
     const response = await axios.get(
-      `https://graph.facebook.com/v22.0/${cleanUserId}?fields=name&access_token=${accessToken}`
+      `https://graph.facebook.com/v22.0/${cleanUserId}?fields=name&access_token=${bot.facebookApiKey}`
     );
     if (response.data.name) {
       console.log(`[${getTimestamp()}] ✅ تم جلب اسم المستخدم من فيسبوك: ${response.data.name}`);
@@ -22,6 +20,25 @@ const getFacebookUsername = async (userId, accessToken) => {
     return cleanUserId;
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم من فيسبوك لـ ${userId}:`, err.message, err.response?.data);
+    // لو الخطأ بسبب توكين منتهي (كود 190 أو 400 مع رسالة معينة)، نحاول نجدد التوكين
+    if (err.response?.data?.error?.code === 190 || err.response?.status === 400) {
+      console.log(`[${getTimestamp()}] 🔄 محاولة تجديد التوكين للبوت ${bot._id}...`);
+      try {
+        const newToken = await convertToLongLivedToken(bot.facebookApiKey);
+        bot.facebookApiKey = newToken;
+        await bot.save();
+        console.log(`[${getTimestamp()}] ✅ تم تجديد التوكين بنجاح: ${newToken.slice(0, 10)}...`);
+        // إعادة المحاولة مع التوكين الجديد
+        const retryResponse = await axios.get(
+          `https://graph.facebook.com/v22.0/${cleanUserId}?fields=name&access_token=${newToken}`
+        );
+        if (retryResponse.data.name) {
+          return retryResponse.data.name;
+        }
+      } catch (renewErr) {
+        console.error(`[${getTimestamp()}] ❌ فشل في تجديد التوكين:`, renewErr.message);
+      }
+    }
     return userId.replace(/^(facebook_|facebook_comment_)/, '');
   }
 };
@@ -78,7 +95,7 @@ const handleMessage = async (req, res) => {
           continue;
         }
 
-        const username = await getFacebookUsername(prefixedSenderId, bot.facebookApiKey);
+        const username = await getFacebookUsername(prefixedSenderId, bot); // مررنا البوت نفسه عشان نحدث التوكين لو لازم
 
         let conversation = await Conversation.findOne({
           botId: bot._id,
@@ -220,7 +237,7 @@ const handleMessage = async (req, res) => {
               continue;
             }
 
-            const username = await getFacebookUsername(prefixedCommenterId, bot.facebookApiKey);
+            const username = await getFacebookUsername(prefixedCommenterId, bot); // مررنا البوت نفسه
 
             console.log(`💬 Comment received on post ${postId} from ${commenterName} (${prefixedCommenterId}): ${message}`);
 
