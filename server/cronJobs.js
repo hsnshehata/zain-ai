@@ -1,4 +1,3 @@
-// server/cronJobs.js
 const cron = require('node-cron');
 const Bot = require('./models/Bot');
 const Notification = require('./models/Notification');
@@ -8,6 +7,18 @@ const axios = require('axios');
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
+
+// دالة للتحقق من صلاحية التوكين
+const isTokenValid = async (accessToken, pageId) => {
+  try {
+    await axios.get(`https://graph.facebook.com/v20.0/${pageId}?fields=id&access_token=${accessToken}`);
+    console.log(`[${getTimestamp()}] ✅ Token is valid for page ${pageId}`);
+    return true;
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Token validation failed for page ${pageId}:`, err.response?.data || err.message);
+    return false;
+  }
+};
 
 // دالة لتحويل توكن قصير أو تجديد توكن طويل لفيسبوك
 const convertToLongLivedToken = async (shortLivedToken) => {
@@ -30,13 +41,11 @@ const convertToLongLivedToken = async (shortLivedToken) => {
 
 // وظيفة دورية للتحقق من تاريخ الإيقاف التلقائي
 const checkAutoStopBots = () => {
-  // جدولة المهمة لتعمل كل يوم الساعة 12:00 صباحًا
   cron.schedule('0 0 * * *', async () => {
     try {
       console.log(`[${getTimestamp()}] ⏰ Starting auto-stop bot check...`);
       const currentDate = new Date();
 
-      // جلب البوتات النشطة اللي اشتراكها خلّص
       const expiredBots = await Bot.find({
         isActive: true,
         autoStopDate: { $ne: null, $lte: currentDate }
@@ -47,7 +56,6 @@ const checkAutoStopBots = () => {
         return;
       }
 
-      // تحديث حالة البوتات إلى متوقفة
       const updateResult = await Bot.updateMany(
         {
           _id: { $in: expiredBots.map(bot => bot._id) },
@@ -58,7 +66,6 @@ const checkAutoStopBots = () => {
 
       console.log(`[${getTimestamp()}] ✅ Updated ${updateResult.modifiedCount} bots to inactive due to expired subscriptions.`);
 
-      // إنشاء إشعارات للمستخدمين
       for (const bot of expiredBots) {
         const notification = new Notification({
           user: bot.userId,
@@ -81,12 +88,10 @@ const checkAutoStopBots = () => {
 
 // وظيفة دورية لتجديد توكنات إنستجرام
 const refreshInstagramTokens = () => {
-  // جدولة المهمة لتعمل كل يوم الساعة 12:00 صباحًا
   cron.schedule('0 0 * * *', async () => {
     try {
       console.log(`[${getTimestamp()}] ⏰ Starting Instagram token refresh check...`);
 
-      // جلب البوتات اللي عندها توكن إنستجرام
       const botsWithInstagram = await Bot.find({
         instagramApiKey: { $ne: null },
         instagramPageId: { $ne: null }
@@ -99,8 +104,7 @@ const refreshInstagramTokens = () => {
 
       console.log(`[${getTimestamp()}] 🔄 Found ${botsWithInstagram.length} bots with Instagram tokens to refresh.`);
 
-      // تجديد التوكن لكل بوت لو مرّ 50 يوم
-      const fiftyDaysInMs = 50 * 24 * 60 * 60 * 1000; // 50 يوم بالمللي ثانية
+      const fiftyDaysInMs = 50 * 24 * 60 * 60 * 1000;
       const currentDate = new Date();
 
       for (const bot of botsWithInstagram) {
@@ -116,14 +120,12 @@ const refreshInstagramTokens = () => {
           const currentToken = bot.instagramApiKey;
           console.log(`[${getTimestamp()}] 🔄 Attempting to refresh Instagram token for bot ${bot._id}...`);
 
-          // طلب تجديد التوكن
           const refreshResponse = await axios.get(
             `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${currentToken}`
           );
 
           if (!refreshResponse.data.access_token) {
             console.error(`[${getTimestamp()}] ❌ Failed to refresh Instagram token for bot ${bot._id}:`, refreshResponse.data);
-            // إنشاء إشعار للمستخدم
             const notification = new Notification({
               user: bot.userId,
               title: `فشل تجديد توكن إنستجرام للبوت ${bot.name}`,
@@ -138,7 +140,6 @@ const refreshInstagramTokens = () => {
           const newToken = refreshResponse.data.access_token;
           const expiresIn = refreshResponse.data.expires_in;
 
-          // تحديث التوكن وتاريخ التجديد في البوت
           bot.instagramApiKey = newToken;
           bot.lastInstagramTokenRefresh = new Date();
           await bot.save();
@@ -146,7 +147,6 @@ const refreshInstagramTokens = () => {
           console.log(`[${getTimestamp()}] ✅ Successfully refreshed Instagram token for bot ${bot._id} | New Token: ${newToken.slice(0, 10)}... | Expires In: ${expiresIn} seconds`);
         } catch (err) {
           console.error(`[${getTimestamp()}] ❌ Error refreshing Instagram token for bot ${bot._id}:`, err.message, err.response?.data);
-          // إنشاء إشعار للمستخدم
           const notification = new Notification({
             user: bot.userId,
             title: `فشل تجديد توكن إنستجرام للبوت ${bot.name}`,
@@ -169,12 +169,10 @@ const refreshInstagramTokens = () => {
 
 // وظيفة دورية لتجديد توكنات فيسبوك
 const refreshFacebookTokens = () => {
-  // جدولة المهمة لتعمل كل أسبوع (الأحد الساعة 12:00 صباحًا)
   cron.schedule('0 0 * * 0', async () => {
     try {
       console.log(`[${getTimestamp()}] ⏰ Starting Facebook token refresh check...`);
 
-      // جلب البوتات اللي عندها توكن فيسبوك
       const botsWithFacebook = await Bot.find({
         facebookApiKey: { $ne: null },
         facebookPageId: { $ne: null }
@@ -187,8 +185,7 @@ const refreshFacebookTokens = () => {
 
       console.log(`[${getTimestamp()}] 🔄 Found ${botsWithFacebook.length} bots with Facebook tokens to refresh.`);
 
-      // تجديد التوكن لكل بوت لو مرّ 50 يوم
-      const fiftyDaysInMs = 50 * 24 * 60 * 60 * 1000; // 50 يوم بالمللي ثانية
+      const fiftyDaysInMs = 50 * 24 * 60 * 60 * 1000;
       const currentDate = new Date();
 
       for (const bot of botsWithFacebook) {
@@ -202,12 +199,18 @@ const refreshFacebookTokens = () => {
           }
 
           const currentToken = bot.facebookApiKey;
-          console.log(`[${getTimestamp()}] 🔄 Attempting to refresh Facebook token for bot ${bot._id}...`);
+          console.log(`[${getTimestamp()}] 🔄 Attempting to validate Facebook token for bot ${bot._id}...`);
 
-          // تجديد التوكن
+          // التحقق من صلاحية التوكين
+          const isValid = await isTokenValid(currentToken, bot.facebookPageId);
+          if (isValid) {
+            console.log(`[${getTimestamp()}] ✅ Token for bot ${bot._id} is still valid, no refresh needed`);
+            continue;
+          }
+
+          console.log(`[${getTimestamp()}] ⚠️ Token for bot ${bot._id} is invalid, attempting to refresh...`);
           const newToken = await convertToLongLivedToken(currentToken);
 
-          // تحديث التوكن وتاريخ التجديد في البوت
           bot.facebookApiKey = newToken;
           bot.lastFacebookTokenRefresh = new Date();
           await bot.save();
@@ -215,7 +218,6 @@ const refreshFacebookTokens = () => {
           console.log(`[${getTimestamp()}] ✅ Successfully refreshed Facebook token for bot ${bot._id} | New Token: ${newToken.slice(0, 10)}...`);
         } catch (err) {
           console.error(`[${getTimestamp()}] ❌ Error refreshing Facebook token for bot ${bot._id}:`, err.message, err.response?.data);
-          // إنشاء إشعار للمستخدم
           const notification = new Notification({
             user: bot.userId,
             title: `فشل تجديد توكن فيسبوك للبوت ${bot.name}`,
@@ -238,12 +240,10 @@ const refreshFacebookTokens = () => {
 
 // وظيفة دورية للتحقق من المخزون المنخفض
 const checkLowStock = () => {
-  // جدولة المهمة لتعمل كل يوم الساعة 12:00 صباحًا
   cron.schedule('0 0 * * *', async () => {
     try {
       console.log(`[${getTimestamp()}] ⏰ Starting low stock check...`);
 
-      // جلب المنتجات اللي مخزونها أقل من أو يساوي العتبة
       const lowStockProducts = await Product.find({
         stock: { $lte: mongoose.Types.Long.fromString('lowStockThreshold') },
         isActive: true
