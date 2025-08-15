@@ -404,7 +404,7 @@ async function loadFacebookPage() {
       console.log('📋 حالة تسجيل الدخول:', response);
       if (response.status === 'connected') {
         console.log('✅ المستخدم مسجّل دخوله، جاري جلب الصفحات...');
-        getUserPages(response.authResponse.accessToken);
+        getUserPagesFromServer(response.authResponse.accessToken);
       } else {
         console.log('🔐 المستخدم غير مسجّل دخوله، جاري طلب تسجيل الدخول...');
         performFacebookLogin();
@@ -416,7 +416,7 @@ async function loadFacebookPage() {
     FB.login(function (response) {
       if (response.authResponse) {
         console.log('✅ تم تسجيل الدخول بنجاح:', response.authResponse);
-        getUserPages(response.authResponse.accessToken);
+        getUserPagesFromServer(response.authResponse.accessToken);
       } else {
         console.error('❌ تم إلغاء تسجيل الدخول أو حدث خطأ:', response);
         errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ، جرب تاني.';
@@ -428,23 +428,34 @@ async function loadFacebookPage() {
     });
   }
 
-  function getUserPages(accessToken) {
-    console.log('📑 جاري جلب الصفحات باستخدام التوكن:', accessToken.slice(0, 10) + '...');
-    FB.api('/me/accounts', { access_token: accessToken }, function (response) {
-      if (response && !response.error) {
-        console.log('✅ الصفحات:', response.data);
-        if (response.data.length === 0) {
+  async function getUserPagesFromServer(shortLivedUserToken) {
+    console.log('📑 جاري جلب الصفحات من السيرفر باستخدام التوكن القصير:', shortLivedUserToken.slice(0, 10) + '...');
+    try {
+      const response = await handleApiRequest('/api/bots/facebook/get-pages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ shortLivedUserToken }),
+      }, errorMessage, 'خطأ في جلب الصفحات من السيرفر');
+
+      if (response.success && response.pages) {
+        console.log('✅ الصفحات:', response.pages);
+        if (response.pages.length === 0) {
           errorMessage.textContent = 'لم يتم العثور على صفحات مرتبطة بحسابك، تأكد إنك مدير صفحة.';
           errorMessage.style.display = 'block';
           return;
         }
-        displayPageSelectionModal(response.data);
+        displayPageSelectionModal(response.pages);
       } else {
-        console.error('❌ خطأ في جلب الصفحات:', response.error);
-        errorMessage.textContent = 'خطأ في جلب الصفحات: ' + (response.error.message || 'غير معروف');
-        errorMessage.style.display = 'block';
+        throw new Error('فشل في جلب الصفحات');
       }
-    });
+    } catch (err) {
+      console.error('❌ خطأ في جلب الصفحات من السيرفر:', err);
+      errorMessage.textContent = 'خطأ في جلب الصفحات: ' + (err.message || 'غير معروف');
+      errorMessage.style.display = 'block';
+    }
   }
 
   function displayPageSelectionModal(pages) {
