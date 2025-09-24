@@ -58,10 +58,7 @@ storeSchema.pre('validate', function (next) {
   if (!this.storeName) {
     return next(new Error('اسم المتجر مطلوب لتوليد الرابط'));
   }
-  this.storeLink = this.storeName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-  if (this.storeLink.length < 3) {
-    return next(new Error('رابط المتجر يجب أن يكون 3 أحرف على الأقل'));
-  }
+  // إزالة التحقق من طول storeLink لأن storeController.js بيضمن رابط صالح
   this.updatedAt = Date.now();
   next();
 });
