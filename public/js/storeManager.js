@@ -6,7 +6,7 @@ async function loadStoreManagerPage() {
   link.href = "/css/storeManager.css";
   document.head.appendChild(link);
 
-  // إضافة CSS للإشعارات فقط
+  // إضافة CSS للإشعارات والبطاقات
   const style = document.createElement("style");
   style.innerHTML = `
     .toast {
@@ -17,6 +17,37 @@ async function loadStoreManagerPage() {
     .toast.success { background-color: #28a745; }
     .toast.error { background-color: #dc3545; }
     .offer-fields { display: none; margin-top: 10px; }
+    .products-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      justify-content: flex-start;
+    }
+    .product-item {
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 15px;
+      width: 200px;
+      background-color: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .product-item img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 5px;
+    }
+    .product-item h4 {
+      margin: 10px 0;
+      font-size: 16px;
+    }
+    .product-item p {
+      margin: 5px 0;
+      font-size: 14px;
+    }
+    .product-item button {
+      margin-top: 10px;
+      width: 100%;
+    }
   `;
   document.head.appendChild(style);
 
@@ -409,8 +440,8 @@ async function loadStoreManagerPage() {
                   <div>
                     <h4>${cat.name}</h4>
                     <p>${cat.description || "لا يوجد وصف"}</p>
-                    <button onclick="loadCategoryProducts('${cat._id}')" class="btn btn-secondary"><i class="fas fa-box"></i> عرض المنتجات</button>
-                    <button onclick="deleteCategory('${cat._id}')" class="btn btn-danger"><i class="fas fa-trash"></i> حذف</button>
+                    <button onclick="window.loadCategoryProducts('${cat._id}')" class="btn btn-secondary"><i class="fas fa-box"></i> عرض المنتجات</button>
+                    <button onclick="window.deleteCategory('${cat._id}')" class="btn btn-danger"><i class="fas fa-trash"></i> حذف</button>
                   </div>
                 </div>
               `
@@ -423,7 +454,7 @@ async function loadStoreManagerPage() {
     }
   }
 
-  async function loadCategoryProducts(categoryId) {
+  window.loadCategoryProducts = async (categoryId) => {
     try {
       const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -442,10 +473,11 @@ async function loadStoreManagerPage() {
                   <img src="${product.imageUrl || "/images/default-product.png"}" alt="${product.productName}" style="max-width: 100px;">
                   <div>
                     <h4>${product.productName}</h4>
+                    <p>القسم: ${product.category ? product.category.name : "غير مصنف"}</p>
                     <p>السعر: ${product.hasOffer ? `${product.discountedPrice} ${product.currency} (قبل: ${product.originalPrice} ${product.currency})` : `${product.price} ${product.currency}`}</p>
                     <p>المخزون: ${product.stock}</p>
-                    <button onclick="editProduct('${product._id}')" class="btn btn-secondary"><i class="fas fa-edit"></i> تعديل</button>
-                    <button onclick="deleteProduct('${product._id}')" class="btn btn-danger"><i class="fas fa-trash"></i> حذف</button>
+                    <button onclick="window.editProduct('${product._id}')" class="btn btn-secondary"><i class="fas fa-edit"></i> تعديل</button>
+                    <button onclick="window.deleteProduct('${product._id}')" class="btn btn-danger"><i class="fas fa-trash"></i> حذف</button>
                   </div>
                 </div>
               `
@@ -456,9 +488,9 @@ async function loadStoreManagerPage() {
       console.error("خطأ في تحميل منتجات القسم:", err);
       showNotification("فشل في تحميل منتجات القسم", "error");
     }
-  }
+  };
 
-  async function loadProducts(botId) {
+  window.loadProducts = async (botId) => {
     try {
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -482,10 +514,11 @@ async function loadStoreManagerPage() {
                   <img src="${product.imageUrl || "/images/default-product.png"}" alt="${product.productName}" style="max-width: 100px;">
                   <div>
                     <h4>${product.productName}</h4>
+                    <p>القسم: ${product.category ? product.category.name : "غير مصنف"}</p>
                     <p>السعر: ${product.hasOffer ? `${product.discountedPrice} ${product.currency} (قبل: ${product.originalPrice} ${product.currency})` : `${product.price} ${product.currency}`}</p>
                     <p>المخزون: ${product.stock}</p>
-                    <button onclick="editProduct('${product._id}')" class="btn btn-secondary"><i class="fas fa-edit"></i> تعديل</button>
-                    <button onclick="deleteProduct('${product._id}')" class="btn btn-danger"><i class="fas fa-trash"></i> حذف</button>
+                    <button onclick="window.editProduct('${product._id}')" class="btn btn-secondary"><i class="fas fa-edit"></i> تعديل</button>
+                    <button onclick="window.deleteProduct('${product._id}')" class="btn btn-danger"><i class="fas fa-trash"></i> حذف</button>
                   </div>
                 </div>
               `
@@ -496,7 +529,7 @@ async function loadStoreManagerPage() {
       console.error("خطأ في تحميل المنتجات:", err);
       showNotification("فشل في تحميل المنتجات", "error");
     }
-  }
+  };
 
   async function saveStoreSettings(botId) {
     const formData = new FormData(storeForm);
@@ -592,7 +625,7 @@ async function loadStoreManagerPage() {
     }
   }
 
-  async function deleteCategory(categoryId) {
+  window.deleteCategory = async (categoryId) => {
     if (confirm("هل أنت متأكد من حذف القسم؟")) {
       try {
         const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
@@ -611,58 +644,9 @@ async function loadStoreManagerPage() {
         showNotification("فشل في حذف القسم", "error");
       }
     }
-  }
+  };
 
   let editingProductId = null;
-  async function saveProduct(botId) {
-    const formData = new FormData(productForm);
-    const formDataEntries = {};
-    for (const [key, value] of formData.entries()) {
-      formDataEntries[key] = value instanceof File ? value.name : value;
-    }
-    console.log(`[${new Date().toISOString()}] 📡 Sending FormData for product:`, formDataEntries);
-
-    if (!formData.get('productName') || !formData.get('price') || !formData.get('currency') || !formData.get('stock')) {
-      showNotification("اسم المنتج، السعر، العملة، والمخزون مطلوبة", "error");
-      return;
-    }
-
-    if (formData.get('hasOffer') === "yes" && (!formData.get('originalPrice') || !formData.get('discountedPrice'))) {
-      showNotification("السعر قبل وبعد الخصم مطلوبان إذا كان هناك عرض", "error");
-      return;
-    }
-
-    try {
-      const bot = await handleApiRequest(`/api/bots/${botId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }, "فشل في جلب بيانات البوت");
-
-      if (!bot.storeId) {
-        showNotification("أنشئ متجر أولاً قبل إضافة المنتجات.", "error");
-        return;
-      }
-
-      const method = editingProductId ? "PUT" : "POST";
-      const url = editingProductId
-        ? `/api/stores/${bot.storeId}/products/${editingProductId}`
-        : `/api/stores/${bot.storeId}/products`;
-
-      await handleApiRequest(url, {
-        method,
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      }, "فشل في حفظ المنتج");
-
-      showNotification("تم حفظ المنتج بنجاح!", "success");
-      productForm.reset();
-      offerFields.style.display = "none";
-      editingProductId = null;
-      await loadProducts(botId);
-    } catch (err) {
-      console.error("خطأ في حفظ المنتج:", err);
-    }
-  }
-
   window.editProduct = async (productId) => {
     try {
       const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
@@ -683,7 +667,7 @@ async function loadStoreManagerPage() {
       document.getElementById("currency").value = product.currency;
       document.getElementById("stock").value = product.stock;
       document.getElementById("lowStockThreshold").value = product.lowStockThreshold;
-      document.getElementById("category").value = product.category;
+      document.getElementById("category").value = product.category ? product.category._id : "";
       editingProductId = productId;
     } catch (err) {
       console.error("خطأ في تحميل المنتج:", err);
