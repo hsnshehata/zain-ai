@@ -6,12 +6,9 @@ async function loadStoreManagerPage() {
   link.href = "/css/storeManager.css";
   document.head.appendChild(link);
 
-  // إضافة CSS للأزرار والإشعارات
+  // إضافة CSS للإشعارات فقط
   const style = document.createElement("style");
   style.innerHTML = `
-    .section-buttons { display: flex; gap: 10px; margin-bottom: 20px; }
-    .section-btn { padding: 10px 20px; font-size: 16px; cursor: pointer; border: 1px solid #ccc; border-radius: 5px; background-color: #f8f9fa; }
-    .section-btn.active { background-color: #007bff; color: white; }
     .toast {
       position: fixed; top: 20px; left: 20px; z-index: 1000;
       padding: 15px; border-radius: 5px; color: white; max-width: 300px;
@@ -56,9 +53,9 @@ async function loadStoreManagerPage() {
         <div id="storeStatus" class="page-status" style="margin-left: 20px;"></div>
       </div>
       <div class="section-buttons">
-        <button id="storeSettingsBtn" class="section-btn active">إعدادات المتجر</button>
-        <button id="productsBtn" class="section-btn">إضافة منتج</button>
-        <button id="categoriesBtn" class="section-btn">الأقسام</button>
+        <button id="storeSettingsBtn" class="btn btn-primary active">إعدادات المتجر</button>
+        <button id="productsBtn" class="btn btn-primary">إضافة منتج</button>
+        <button id="categoriesBtn" class="btn btn-primary">الأقسام</button>
       </div>
     </div>
 
@@ -722,7 +719,10 @@ async function loadStoreManagerPage() {
   });
 
   storeSettingsBtn.addEventListener("click", () => showSection("storeSettings"));
-  productsBtn.addEventListener("click", () => showSection("products"));
+  productsBtn.addEventListener("click", () => {
+    showSection("products");
+    loadCategories(selectedBotId);
+  });
   categoriesBtn.addEventListener("click", () => {
     showSection("categories");
     loadCategories(selectedBotId);
