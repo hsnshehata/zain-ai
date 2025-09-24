@@ -24,13 +24,17 @@ const upload = multer({
     }
   },
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB
-}).any();
+}).single('image'); // استخدام single بدل any لتطابق uploadToImgbb
 
 // Middleware لتسجيل الطلبات
 router.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] 📡 Product Route: ${req.method} ${req.url}`);
-  if (req.files && req.files.length > 0) {
-    console.log(`[${new Date().toISOString()}] 📸 File received:`, req.files);
+  if (req.file) {
+    console.log(`[${new Date().toISOString()}] 📸 File received:`, {
+      originalname: req.file.originalname,
+      mimetype: req.file.mimetype,
+      size: req.file.size
+    });
   } else {
     console.log(`[${new Date().toISOString()}] 📸 No file received`);
   }
