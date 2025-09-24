@@ -190,7 +190,12 @@ async function loadStoreManagerPage() {
     try {
       const response = await fetch(url, options);
       if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          throw new Error("خطأ في السيرفر، الرجاء المحاولة لاحقًا");
+        }
         throw new Error(errorData.message || errorMessage);
       }
       return await response.json();
@@ -268,7 +273,7 @@ async function loadStoreManagerPage() {
 
       const products = await handleApiRequest(`/api/stores/${bot.storeId}/products`, {
         headers: { Authorization: `Bearer ${token}` },
-      }, productError, "فشل في جلب المنتجات");
+      }, productError, "لم يتم العثور على منتجات، أضف منتجك الأول!");
 
       const productsList = document.getElementById("productsList");
       productsList.innerHTML = products.length
@@ -288,9 +293,10 @@ async function loadStoreManagerPage() {
               `
             )
             .join("")
-        : "<p>لا توجد منتجات بعد.</p>";
+        : "<p>لم يتم العثور على منتجات، أضف منتجك الأول!</p>";
     } catch (err) {
       console.error("خطأ في تحميل المنتجات:", err);
+      document.getElementById("productsList").innerHTML = "<p>لم يتم العثور على منتجات، أضف منتجك الأول!</p>";
     }
   }
 
