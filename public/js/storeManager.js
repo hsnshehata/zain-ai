@@ -33,7 +33,7 @@ async function loadStoreManagerPage() {
   content.innerHTML = `
     <div class="page-header">
       <h2><i class="fas fa-store"></i> إدارة المتجر الذكي</h2>
-      <div id="instructionsContainer" class="instructions-container" style="display: none;">
+      <div id="instructionsContainer" class="instructions-container">
         <h3>📋 خطوات إنشاء وإدارة متجرك الذكي</h3>
         <p>عشان تقدر تدير متجرك بسهولة، اتّبع الخطوات دي:</p>
         <ul>
@@ -57,7 +57,7 @@ async function loadStoreManagerPage() {
         </ul>
       </div>
       <div class="header-actions">
-        <button id="toggleInstructionsBtn" class="btn btn-secondary"><i class="fas fa-info-circle"></i> إظهار التعليمات</button>
+        <button id="toggleInstructionsBtn" class="btn btn-secondary"><i class="fas fa-info-circle"></i> إخفاء التعليمات</button>
         <div id="storeStatus" class="page-status" style="margin-left: 20px;"></div>
       </div>
     </div>
