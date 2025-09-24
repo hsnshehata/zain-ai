@@ -47,9 +47,14 @@ exports.createProduct = async (req, res) => {
     // رفع الصورة إلى imgbb إذا كانت موجودة
     let imageUrl = '';
     if (file) {
-      const uploadResult = await uploadToImgbb(file);
-      imageUrl = uploadResult.url;
-      console.log(`[${getTimestamp()}] 📸 Image uploaded to imgbb: ${imageUrl}`);
+      try {
+        const uploadResult = await uploadToImgbb(file);
+        imageUrl = uploadResult.url;
+        console.log(`[${getTimestamp()}] 📸 Image uploaded to imgbb: ${imageUrl}`);
+      } catch (err) {
+        console.error(`[${getTimestamp()}] ❌ Error uploading image to imgbb:`, err.message);
+        return res.status(400).json({ message: `فشل في رفع الصورة: ${err.message}` });
+      }
     }
 
     // إنشاء المنتج
@@ -57,10 +62,10 @@ exports.createProduct = async (req, res) => {
       storeId,
       productName,
       description: description || '',
-      price,
+      price: parseFloat(price), // التأكد من تحويل السعر إلى عدد
       currency,
-      stock,
-      lowStockThreshold: lowStockThreshold || 10,
+      stock: parseInt(stock), // التأكد من تحويل المخزون إلى عدد
+      lowStockThreshold: lowStockThreshold ? parseInt(lowStockThreshold) : 10,
       category: category || '',
       imageUrl
     });
@@ -99,18 +104,23 @@ exports.updateProduct = async (req, res) => {
 
     // رفع الصورة إلى imgbb إذا كانت موجودة
     if (file) {
-      const uploadResult = await uploadToImgbb(file);
-      product.imageUrl = uploadResult.url;
-      console.log(`[${getTimestamp()}] 📸 Image uploaded to imgbb: ${product.imageUrl}`);
+      try {
+        const uploadResult = await uploadToImgbb(file);
+        product.imageUrl = uploadResult.url;
+        console.log(`[${getTimestamp()}] 📸 Image uploaded to imgbb: ${product.imageUrl}`);
+      } catch (err) {
+        console.error(`[${getTimestamp()}] ❌ Error uploading image to imgbb:`, err.message);
+        return res.status(400).json({ message: `فشل في رفع الصورة: ${err.message}` });
+      }
     }
 
     // تحديث الحقول
     if (productName) product.productName = productName;
     if (description) product.description = description;
-    if (price) product.price = price;
+    if (price) product.price = parseFloat(price);
     if (currency) product.currency = currency;
-    if (stock !== undefined) product.stock = stock;
-    if (lowStockThreshold) product.lowStockThreshold = lowStockThreshold;
+    if (stock !== undefined) product.stock = parseInt(stock);
+    if (lowStockThreshold) product.lowStockThreshold = parseInt(lowStockThreshold);
     if (category) product.category = category;
 
     await product.save();
