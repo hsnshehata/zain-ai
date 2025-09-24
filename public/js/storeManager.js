@@ -38,7 +38,7 @@ async function loadStoreManagerPage() {
         <p>عشان تقدر تدير متجرك بسهولة، اتّبع الخطوات دي:</p>
         <ul>
           <li>
-            <strong>1. إنشاء المتجر:</strong> لو لسه ماعملتش متجر، املأ بيانات المتجر (الاسم، القالب، الألوان) واضغط "حفظ المتجر".
+            <strong>1. إنشاء المتجر:</strong> اضغط على زرار "إنشاء المتجر" عشان تعمل متجر جديد بإعدادات افتراضية، وبعدين عدّل الإعدادات زي ما تحب.
           </li>
           <li>
             <strong>2. إضافة المنتجات:</strong> أضف منتجاتك بالاسم، الوصف، السعر، الصورة، والمخزون.
@@ -72,7 +72,7 @@ async function loadStoreManagerPage() {
           <form id="store-form">
             <div class="form-group">
               <label for="storeName">اسم المتجر</label>
-              <input type="text" id="storeName" name="storeName" class="form-control" required>
+              <input type="text" id="storeName" name="storeName" class="form-control" placeholder="متجري الجديد">
             </div>
             <div class="form-group">
               <label for="templateId">القالب</label>
@@ -86,11 +86,11 @@ async function loadStoreManagerPage() {
             </div>
             <div class="form-group">
               <label for="primaryColor">اللون الأساسي</label>
-              <input type="color" id="primaryColor" name="primaryColor" class="form-control">
+              <input type="color" id="primaryColor" name="primaryColor" class="form-control" value="#000000">
             </div>
             <div class="form-group">
               <label for="secondaryColor">اللون الثانوي</label>
-              <input type="color" id="secondaryColor" name="secondaryColor" class="form-control">
+              <input type="color" id="secondaryColor" name="secondaryColor" class="form-control" value="#ffffff">
             </div>
             <div class="form-group">
               <label for="headerHtml">كود HTML للهيدر</label>
@@ -110,226 +110,145 @@ async function loadStoreManagerPage() {
               <label for="landingHtml">كود HTML للاندينج بيج</label>
               <textarea id="landingHtml" name="landingHtml" class="form-control" rows="4"></textarea>
             </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary">حفظ المتجر</button>
-            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ الإعدادات</button>
           </form>
-          <p id="storeError" class="error-message" style="display: none;"></p>
         </div>
       </div>
+    </div>
+
+    <div id="createStoreContainer" class="settings-container" style="display: none;">
       <div class="card settings-card">
-        <div class="card-header"><h3><i class="fas fa-box"></i> إدارة المنتجات</h3></div>
+        <div class="card-header"><h3><i class="fas fa-store-alt"></i> إنشاء متجر جديد</h3></div>
         <div class="card-body">
-          <form id="product-form">
-            <div class="form-group">
-              <label for="productName">اسم المنتج</label>
-              <input type="text" id="productName" name="productName" class="form-control" required>
-            </div>
-            <div class="form-group">
-              <label for="description">الوصف</label>
-              <textarea id="description" name="description" class="form-control" rows="3"></textarea>
-            </div>
-            <div class="form-group">
-              <label for="price">السعر</label>
-              <input type="number" id="price" name="price" class="form-control" required min="0">
-            </div>
-            <div class="form-group">
-              <label for="currency">العملة</label>
-              <select id="currency" name="currency" class="form-control">
-                <option value="EGP">جنيه مصري</option>
-                <option value="USD">دولار أمريكي</option>
-                <option value="SAR">ريال سعودي</option>
-                <option value="AED">درهم إماراتي</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="image">صورة المنتج</label>
-              <input type="file" id="image" name="image" class="form-control" accept="image/*">
-            </div>
-            <div class="form-group">
-              <label for="stock">المخزون</label>
-              <input type="number" id="stock" name="stock" class="form-control" required min="0">
-            </div>
-            <div class="form-group">
-              <label for="lowStockThreshold">عتبة المخزون المنخفض</label>
-              <input type="number" id="lowStockThreshold" name="lowStockThreshold" class="form-control" min="0" value="10">
-            </div>
-            <div class="form-group">
-              <label for="category">التصنيف</label>
-              <input type="text" id="category" name="category" class="form-control">
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary">إضافة المنتج</button>
-            </div>
-          </form>
-          <p id="productError" class="error-message" style="display: none;"></p>
-          <div id="productsList" class="products-grid"></div>
+          <p>اضغط على الزر أدناه لإنشاء متجر جديد بإعدادات افتراضية. بعد الإنشاء، يمكنك تعديل الإعدادات من هنا.</p>
+          <button id="createStoreBtn" class="btn btn-primary"><i class="fas fa-plus"></i> إنشاء المتجر</button>
         </div>
+      </div>
+    </div>
+
+    <div class="card settings-card">
+      <div class="card-header"><h3><i class="fas fa-box"></i> إدارة المنتجات</h3></div>
+      <div class="card-body">
+        <form id="product-form" enctype="multipart/form-data">
+          <div class="form-group">
+            <label for="productName">اسم المنتج</label>
+            <input type="text" id="productName" name="productName" class="form-control" required>
+          </div>
+          <div class="form-group">
+            <label for="description">الوصف</label>
+            <textarea id="description" name="description" class="form-control" rows="4"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="price">السعر</label>
+            <input type="number" id="price" name="price" class="form-control" required min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label for="currency">العملة</label>
+            <select id="currency" name="currency" class="form-control">
+              <option value="EGP">جنيه مصري</option>
+              <option value="USD">دولار أمريكي</option>
+              <option value="SAR">ريال سعودي</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="stock">المخزون</label>
+            <input type="number" id="stock" name="stock" class="form-control" required min="0">
+          </div>
+          <div class="form-group">
+            <label for="lowStockThreshold">عتبة المخزون المنخفض</label>
+            <input type="number" id="lowStockThreshold" name="lowStockThreshold" class="form-control" min="0">
+          </div>
+          <div class="form-group">
+            <label for="category">التصنيف</label>
+            <input type="text" id="category" name="category" class="form-control">
+          </div>
+          <div class="form-group">
+            <label for="image">صورة المنتج</label>
+            <input type="file" id="image" name="image" class="form-control" accept="image/png,image/jpeg">
+          </div>
+          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ المنتج</button>
+        </form>
+        <div id="productError" class="error-message" style="display: none;"></div>
+        <div id="productsList" class="products-list"></div>
       </div>
     </div>
   `;
 
-  const loadingSpinner = document.getElementById("loadingSpinner");
-  const errorMessage = document.getElementById("errorMessage");
-  const storeSettingsContainer = document.getElementById("storeSettingsContainer");
-  const instructionsContainer = document.getElementById("instructionsContainer");
   const toggleInstructionsBtn = document.getElementById("toggleInstructionsBtn");
-  const storeStatus = document.getElementById("storeStatus");
+  const instructionsContainer = document.getElementById("instructionsContainer");
   const storeForm = document.getElementById("store-form");
   const productForm = document.getElementById("product-form");
-  const storeError = document.getElementById("storeError");
+  const storeError = document.getElementById("errorMessage");
   const productError = document.getElementById("productError");
-  const productsList = document.getElementById("productsList");
+  const createStoreBtn = document.getElementById("createStoreBtn");
+  const storeSettingsContainer = document.getElementById("storeSettingsContainer");
+  const createStoreContainer = document.getElementById("createStoreContainer");
+  const loadingSpinner = document.getElementById("loadingSpinner");
 
-  // --- Functions ---
-
-  async function handleApiRequest(url, options, errorElement, defaultErrorMessage) {
+  async function handleApiRequest(url, options, errorElement, errorMessage) {
     try {
       const response = await fetch(url, options);
       if (!response.ok) {
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          throw new Error("الرد غير متوقع (مش JSON). يمكن إن الخدمة مش متاحة.");
-        }
         const errorData = await response.json();
-        throw new Error(errorData.message || defaultErrorMessage);
+        throw new Error(errorData.message || errorMessage);
       }
       return await response.json();
     } catch (err) {
-      if (errorElement) {
-        errorElement.textContent = err.message;
-        errorElement.style.display = "block";
-      }
+      console.error("API Error:", err);
+      errorElement.textContent = err.message;
+      errorElement.style.display = "block";
       throw err;
     }
   }
 
   async function loadStoreStatus(botId) {
-    console.log(`جاري جلب بيانات البوت بالـ ID: ${botId}`);
     try {
+      loadingSpinner.style.display = "block";
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
-      }, storeStatus, "فشل في جلب بيانات البوت");
+      }, storeError, "فشل في جلب بيانات البوت");
 
-      if (!bot) {
-        console.log(`البوت بالـ ID ${botId} مش موجود`);
-        storeStatus.innerHTML = `
-          <div style="display: inline-block; color: red;">
-            <strong>حالة المتجر:</strong> غير موجود ❌<br>
-            <strong>السبب:</strong> البوت غير موجود أو تم حذفه
-          </div>
-        `;
-        instructionsContainer.style.display = "block";
-        return;
-      }
-
-      console.log(`بيانات البوت:`, bot);
-
+      const storeStatus = document.getElementById("storeStatus");
       if (bot.storeId) {
         const store = await handleApiRequest(`/api/stores/${bot.storeId}`, {
           headers: { Authorization: `Bearer ${token}` },
-        }, storeStatus, "فشل في جلب بيانات المتجر");
-
-        console.log(`تم جلب بيانات المتجر بنجاح:`, store);
-        const statusDiv = document.createElement("div");
-        statusDiv.style.display = "inline-block";
-        statusDiv.style.color = "green";
-        statusDiv.innerHTML = `
-          <strong>حالة المتجر:</strong> مفعّل ✅<br>
-          <strong>اسم المتجر:</strong> ${store.storeName}<br>
-          <strong>تاريخ الإنشاء:</strong> ${new Date(store.createdAt).toLocaleString('ar-EG')}
-        `;
-
-        const deleteStoreBtn = document.createElement("button");
-        deleteStoreBtn.id = "deleteStoreBtn";
-        deleteStoreBtn.className = "btn btn-danger";
-        deleteStoreBtn.style.marginLeft = "10px";
-        deleteStoreBtn.style.backgroundColor = "#dc3545";
-        deleteStoreBtn.style.borderColor = "#dc3545";
-        deleteStoreBtn.textContent = "حذف المتجر";
-
-        deleteStoreBtn.addEventListener("click", async () => {
-          if (confirm("هل أنت متأكد أنك تريد حذف هذا المتجر؟")) {
-            try {
-              await handleApiRequest(`/api/stores/${bot.storeId}`, {
-                method: "DELETE",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${token}`,
-                },
-              }, errorMessage, "فشل في حذف المتجر");
-
-              errorMessage.textContent = "تم حذف المتجر بنجاح!";
-              errorMessage.style.color = "green";
-              errorMessage.style.display = "block";
-              await loadStoreStatus(botId);
-              await loadStoreSettings(botId);
-            } catch (err) {
-              console.error('❌ خطأ في حذف المتجر:', err);
-              errorMessage.textContent = 'خطأ في حذف المتجر: ' + (err.message || 'غير معروف');
-              errorMessage.style.color = "red";
-              errorMessage.style.display = "block";
-            }
-          }
-        });
-
-        storeStatus.innerHTML = "";
-        storeStatus.appendChild(statusDiv);
-        storeStatus.appendChild(deleteStoreBtn);
-        instructionsContainer.style.display = "none";
+        }, storeError, "فشل في جلب بيانات المتجر");
+        storeStatus.innerHTML = `المتجر: <strong>${store.storeName}</strong> (نشط)`;
+        createStoreContainer.style.display = "none";
+        storeSettingsContainer.style.display = "grid";
       } else {
-        console.log(`البوت مش مرتبط بمتجر`);
-        storeStatus.innerHTML = `
-          <div style="display: inline-block; color: red;">
-            <strong>حالة المتجر:</strong> غير موجود ❌
-          </div>
-        `;
-        instructionsContainer.style.display = "block";
+        storeStatus.innerHTML = "لم يتم إنشاء متجر بعد.";
+        createStoreContainer.style.display = "block";
+        storeSettingsContainer.style.display = "none";
       }
+      loadingSpinner.style.display = "none";
     } catch (err) {
-      console.error('Error loading store status:', err);
-      storeStatus.innerHTML = `
-        <div style="display: inline-block; color: red;">
-          <strong>حالة المتجر:</strong> غير موجود ❌<br>
-          <strong>السبب:</strong> خطأ في جلب بيانات البوت: ${err.message || 'غير معروف'}
-        </div>
-      `;
-      instructionsContainer.style.display = "block";
+      console.error("خطأ في تحميل حالة المتجر:", err);
+      loadingSpinner.style.display = "none";
     }
   }
 
   async function loadStoreSettings(botId) {
-    loadingSpinner.style.display = "flex";
-    storeSettingsContainer.style.display = "none";
-    errorMessage.style.display = "none";
-
     try {
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
-      }, errorMessage, "فشل في جلب بيانات البوت");
+      }, storeError, "فشل في جلب بيانات البوت");
 
       if (bot.storeId) {
         const store = await handleApiRequest(`/api/stores/${bot.storeId}`, {
           headers: { Authorization: `Bearer ${token}` },
-        }, errorMessage, "فشل في جلب بيانات المتجر");
+        }, storeError, "فشل في جلب بيانات المتجر");
 
-        document.getElementById("storeName").value = store.storeName || '';
-        document.getElementById("templateId").value = store.templateId || '1';
-        document.getElementById("primaryColor").value = store.primaryColor || '#000000';
-        document.getElementById("secondaryColor").value = store.secondaryColor || '#ffffff';
-        document.getElementById("headerHtml").value = store.headerHtml || '';
-        document.getElementById("landingTemplateId").value = store.landingTemplateId || '1';
-        document.getElementById("landingHtml").value = store.landingHtml || '';
-        storeSettingsContainer.style.display = "grid";
-      } else {
-        storeSettingsContainer.style.display = "grid";
+        document.getElementById("storeName").value = store.storeName;
+        document.getElementById("templateId").value = store.templateId;
+        document.getElementById("primaryColor").value = store.primaryColor;
+        document.getElementById("secondaryColor").value = store.secondaryColor;
+        document.getElementById("headerHtml").value = store.headerHtml;
+        document.getElementById("landingTemplateId").value = store.landingTemplateId;
+        document.getElementById("landingHtml").value = store.landingHtml;
       }
     } catch (err) {
-      console.error('خطأ في تحميل إعدادات المتجر:', err);
-      errorMessage.textContent = "تعذر تحميل إعدادات المتجر، حاول لاحقًا أو تواصل مع الدعم.";
-      errorMessage.style.display = "block";
-    } finally {
-      loadingSpinner.style.display = "none";
+      console.error("خطأ في تحميل إعدادات المتجر:", err);
     }
   }
 
@@ -339,62 +258,62 @@ async function loadStoreManagerPage() {
         headers: { Authorization: `Bearer ${token}` },
       }, productError, "فشل في جلب بيانات البوت");
 
-      if (bot.storeId) {
-        const products = await handleApiRequest(`/api/stores/${bot.storeId}/products`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }, productError, "فشل في جلب المنتجات");
-
-        productsList.innerHTML = products.length === 0
-          ? '<p>لا توجد منتجات في المتجر.</p>'
-          : products.map(product => `
-              <div class="product-card">
-                <img src="${product.imageUrl || '/placeholder-bot.png'}" alt="${product.productName}">
-                <h3>${product.productName}</h3>
-                <p>السعر: ${product.price} ${product.currency}</p>
-                <p>المخزون: ${product.stock}</p>
-                <button onclick="editProduct('${product._id}')">تعديل</button>
-                <button onclick="deleteProduct('${product._id}')">حذف</button>
-              </div>
-            `).join('');
-      } else {
-        productsList.innerHTML = '<p>لا يوجد متجر مرتبط بالبوت، أنشئ متجر أولاً.</p>';
+      if (!bot.storeId) {
+        document.getElementById("productsList").innerHTML = "<p>أنشئ متجر أولاً قبل إضافة المنتجات.</p>";
+        return;
       }
+
+      const products = await handleApiRequest(`/api/stores/${bot.storeId}/products`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, productError, "فشل في جلب المنتجات");
+
+      const productsList = document.getElementById("productsList");
+      productsList.innerHTML = products.length
+        ? products
+            .map(
+              (product) => `
+                <div class="product-item">
+                  <img src="${product.imageUrl || "/placeholder-bot.png"}" alt="${product.productName}" style="max-width: 100px;">
+                  <div>
+                    <h4>${product.productName}</h4>
+                    <p>السعر: ${product.price} ${product.currency}</p>
+                    <p>المخزون: ${product.stock}</p>
+                    <button onclick="editProduct('${product._id}')" class="btn btn-secondary"><i class="fas fa-edit"></i> تعديل</button>
+                    <button onclick="deleteProduct('${product._id}')" class="btn btn-danger"><i class="fas fa-trash"></i> حذف</button>
+                  </div>
+                </div>
+              `
+            )
+            .join("")
+        : "<p>لا توجد منتجات بعد.</p>";
     } catch (err) {
-      console.error("خطأ في جلب المنتجات:", err);
-      productError.textContent = err.message || "فشل في جلب المنتجات";
-      productError.style.display = "block";
+      console.error("خطأ في تحميل المنتجات:", err);
     }
   }
 
   async function saveStoreSettings(botId) {
     storeError.style.display = "none";
-    const storeName = document.getElementById("storeName").value.trim();
-    if (!storeName) {
-      storeError.textContent = "اسم المتجر مطلوب";
-      storeError.style.display = "block";
-      return;
-    }
-
     const formData = new FormData(storeForm);
-    formData.append('botId', botId); // إضافة botId للربط
+    const data = Object.fromEntries(formData);
 
     try {
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, storeError, "فشل في جلب بيانات البوت");
 
-      const method = bot.storeId ? 'PUT' : 'POST';
-      const url = bot.storeId ? `/api/stores/${bot.storeId}` : '/api/stores';
+      const method = bot.storeId ? "PUT" : "POST";
+      const url = bot.storeId ? `/api/stores/${bot.storeId}` : "/api/stores";
 
-      const response = await handleApiRequest(url, {
+      await handleApiRequest(url, {
         method,
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
-        body: formData,
+        body: JSON.stringify({ ...data, selectedBotId: botId }),
       }, storeError, "فشل في حفظ المتجر");
 
-      storeError.textContent = `تم حفظ المتجر وربطه بالبوت بنجاح!`;
+      storeError.textContent = `تم حفظ المتجر بنجاح!`;
       storeError.style.color = "green";
       storeError.style.display = "block";
       await loadStoreStatus(botId);
@@ -402,6 +321,29 @@ async function loadStoreManagerPage() {
       await loadProducts(botId);
     } catch (err) {
       console.error("خطأ في حفظ المتجر:", err);
+    }
+  }
+
+  async function createStore(botId) {
+    storeError.style.display = "none";
+    try {
+      await handleApiRequest("/api/stores", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ selectedBotId: botId }),
+      }, storeError, "فشل في إنشاء المتجر");
+
+      storeError.textContent = "تم إنشاء المتجر بنجاح!";
+      storeError.style.color = "green";
+      storeError.style.display = "block";
+      await loadStoreStatus(botId);
+      await loadStoreSettings(botId);
+      await loadProducts(botId);
+    } catch (err) {
+      console.error("خطأ في إنشاء المتجر:", err);
     }
   }
 
@@ -421,7 +363,7 @@ async function loadStoreManagerPage() {
         return;
       }
 
-      const method = editingProductId ? 'PUT' : 'POST';
+      const method = editingProductId ? "PUT" : "POST";
       const url = editingProductId
         ? `/api/stores/${bot.storeId}/products/${editingProductId}`
         : `/api/stores/${bot.storeId}/products`;
@@ -474,7 +416,7 @@ async function loadStoreManagerPage() {
         }, productError, "فشل في جلب بيانات البوت");
 
         await handleApiRequest(`/api/stores/${bot.storeId}/products/${productId}`, {
-          method: 'DELETE',
+          method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         }, productError, "فشل في حذف المنتج");
 
@@ -502,6 +444,10 @@ async function loadStoreManagerPage() {
   productForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     await saveProduct(selectedBotId);
+  });
+
+  createStoreBtn.addEventListener("click", async () => {
+    await createStore(selectedBotId);
   });
 
   // --- Initial Load ---
