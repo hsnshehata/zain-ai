@@ -48,6 +48,17 @@ exports.createProduct = async (req, res) => {
     const userId = req.user.userId;
 
     try {
+      console.log(`[${getTimestamp()}] 📡 Creating product for store ${storeId} with data:`, {
+        productName,
+        description,
+        price,
+        currency,
+        stock,
+        lowStockThreshold,
+        category,
+        hasFile: !!req.file
+      });
+
       // التحقق من وجود المتجر وملكيته
       const store = await Store.findOne({ _id: storeId, userId });
       if (!store) {
@@ -56,8 +67,13 @@ exports.createProduct = async (req, res) => {
       }
 
       // التحقق من الحقول المطلوبة
-      if (!productName || !price || !currency || !stock) {
-        console.log(`[${getTimestamp()}] ❌ Create product failed: Missing required fields`);
+      if (!productName || !price || !currency || stock === undefined) {
+        console.log(`[${getTimestamp()}] ❌ Create product failed: Missing required fields`, {
+          productName,
+          price,
+          currency,
+          stock
+        });
         return res.status(400).json({ message: 'اسم المنتج، السعر، العملة، والمخزون مطلوبة' });
       }
 
@@ -117,7 +133,7 @@ exports.updateProduct = async (req, res) => {
       if (description) product.description = description;
       if (price) product.price = price;
       if (currency) product.currency = currency;
-      if (stock) product.stock = stock;
+      if (stock !== undefined) product.stock = stock;
       if (lowStockThreshold) product.lowStockThreshold = lowStockThreshold;
       if (category) product.category = category;
       if (req.file) product.imageUrl = `/uploads/products/${req.file.filename}`;
