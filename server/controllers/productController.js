@@ -11,7 +11,7 @@ exports.createProduct = async (req, res) => {
   const { storeId } = req.params;
   const { productName, description, price, currency, stock, lowStockThreshold, category } = req.body;
   const userId = req.user.userId;
-  const file = req.files && req.files.length > 0 ? req.files[0] : null;
+  const file = req.file; // استخدام req.file بدل req.files لأننا بنستخدم single('image')
 
   try {
     console.log(`[${getTimestamp()}] 📡 Creating product for store ${storeId} with data:`, {
@@ -52,7 +52,7 @@ exports.createProduct = async (req, res) => {
         imageUrl = uploadResult.url;
         console.log(`[${getTimestamp()}] 📸 Image uploaded to imgbb: ${imageUrl}`);
       } catch (err) {
-        console.error(`[${getTimestamp()}] ❌ Error uploading image to imgbb:`, err.message);
+        console.error(`[${getTimestamp()}] ❌ Error uploading image to imgbb:`, err.message, err.stack);
         return res.status(400).json({ message: `فشل في رفع الصورة: ${err.message}` });
       }
     }
@@ -62,16 +62,16 @@ exports.createProduct = async (req, res) => {
       storeId,
       productName,
       description: description || '',
-      price: parseFloat(price), // التأكد من تحويل السعر إلى عدد
+      price: parseFloat(price),
       currency,
-      stock: parseInt(stock), // التأكد من تحويل المخزون إلى عدد
+      stock: parseInt(stock),
       lowStockThreshold: lowStockThreshold ? parseInt(lowStockThreshold) : 10,
       category: category || '',
       imageUrl
     });
 
     await newProduct.save();
-    console.log(`[${getTimestamp()}] ✅ Product created: ${newProduct.productName} for store ${storeId}`);
+    console.log(`[${getTimestamp()}] ✅ Product created: ${newProduct.productName} for store ${storeId}, imageUrl: ${newProduct.imageUrl}`);
 
     res.status(201).json(newProduct);
   } catch (err) {
@@ -85,7 +85,7 @@ exports.updateProduct = async (req, res) => {
   const { storeId, productId } = req.params;
   const { productName, description, price, currency, stock, lowStockThreshold, category } = req.body;
   const userId = req.user.userId;
-  const file = req.files && req.files.length > 0 ? req.files[0] : null;
+  const file = req.file;
 
   try {
     // التحقق من وجود المتجر
@@ -109,7 +109,7 @@ exports.updateProduct = async (req, res) => {
         product.imageUrl = uploadResult.url;
         console.log(`[${getTimestamp()}] 📸 Image uploaded to imgbb: ${product.imageUrl}`);
       } catch (err) {
-        console.error(`[${getTimestamp()}] ❌ Error uploading image to imgbb:`, err.message);
+        console.error(`[${getTimestamp()}] ❌ Error uploading image to imgbb:`, err.message, err.stack);
         return res.status(400).json({ message: `فشل في رفع الصورة: ${err.message}` });
       }
     }
@@ -124,7 +124,7 @@ exports.updateProduct = async (req, res) => {
     if (category) product.category = category;
 
     await product.save();
-    console.log(`[${getTimestamp()}] ✅ Product updated: ${product.productName} for store ${storeId}`);
+    console.log(`[${getTimestamp()}] ✅ Product updated: ${product.productName} for store ${storeId}, imageUrl: ${product.imageUrl}`);
 
     res.status(200).json(product);
   } catch (err) {
@@ -209,7 +209,7 @@ exports.getProduct = async (req, res) => {
       return res.status(404).json({ message: 'المنتج غير موجود' });
     }
 
-    console.log(`[${getTimestamp()}] ✅ Fetched product: ${product.productName} for store ${storeId}`);
+    console.log(`[${getTimestamp()}] ✅ Fetched product: ${product.productName} for store ${storeId}, imageUrl: ${product.imageUrl}`);
     res.status(200).json(product);
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error fetching product:`, err.message, err.stack);
