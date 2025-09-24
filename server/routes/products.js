@@ -1,45 +1,38 @@
 // /server/routes/products.js
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const authenticate = require('../middleware/authenticate');
 const productController = require('../controllers/productController');
 
 const router = express.Router();
 
-// إعداد Multer لرفع الصور
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadPath = path.join(__dirname, '../../public/uploads/products');
-    fs.mkdirSync(uploadPath, { recursive: true }); // إنشاء المجلد إذا مش موجود
-    cb(null, uploadPath);
-  },
-  filename: (req, file, cb) => {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  }
-});
-
+// إعداد Multer لتخزين الملفات في الذاكرة
+const storage = multer.memoryStorage();
 const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
+    if (!file) {
+      return cb(null, true); // السماح بالطلبات بدون ملف
+    }
     const filetypes = /jpeg|jpg|png/;
-    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    const extname = filetypes.test(file.originalname.toLowerCase().split('.').pop());
     const mimetype = filetypes.test(file.mimetype);
     if (extname && mimetype) {
-      cb(null, true);
+      return cb(null, true);
     } else {
       cb(new Error('نوع الصورة غير مدعوم، يرجى رفع صورة بصيغة PNG أو JPEG'));
     }
   },
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB
-}).single('image');
+}).any();
 
 // Middleware لتسجيل الطلبات
 router.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] 📡 Product Route: ${req.method} ${req.url}`);
-  if (req.file) {
-    console.log(`[${new Date().toISOString()}] 📸 File received:`, req.file);
+  if (req.files && req.files.length > 0) {
+    console.log(`[${new Date().toISOString()}] 📸 File received:`, req.files);
+  } else {
+    console.log(`[${new Date().toISOString()}] 📸 No file received`);
   }
   next();
 });
