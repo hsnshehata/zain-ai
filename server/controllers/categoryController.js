@@ -55,7 +55,7 @@ exports.createCategory = async (req, res) => {
   }
 };
 
-// جلب كل الأقسام
+// جلب كل الأقسام بـ storeId (لصاحب المتجر)
 exports.getCategories = async (req, res) => {
   const { storeId } = req.params;
   const userId = req.user.userId;
@@ -76,6 +76,30 @@ exports.getCategories = async (req, res) => {
     res.status(200).json(categories || []);
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error fetching categories for store ${storeId}:`, err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في جلب الأقسام: ' + (err.message || 'غير معروف') });
+  }
+};
+
+// جلب الأقسام بالـ storeLink (public)
+exports.getCategoriesByStoreLink = async (req, res) => {
+  const { storeLink } = req.params;
+
+  try {
+    console.log(`[${getTimestamp()}] 📡 Attempting to fetch categories for storeLink ${storeLink}`);
+
+    // التحقق من وجود المتجر
+    const store = await Store.findOne({ storeLink });
+    if (!store) {
+      console.log(`[${getTimestamp()}] ❌ Get categories failed: Store link ${storeLink} not found`);
+      return res.status(404).json({ message: 'المتجر غير موجود' });
+    }
+
+    const categories = await Category.find({ storeId: store._id });
+    console.log(`[${getTimestamp()}] ✅ Fetched ${categories.length} categories for storeLink ${storeLink}`);
+
+    res.status(200).json(categories || []);
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Error fetching categories for storeLink ${storeLink}:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في جلب الأقسام: ' + (err.message || 'غير معروف') });
   }
 };
