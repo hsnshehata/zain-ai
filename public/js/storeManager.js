@@ -24,12 +24,17 @@ async function loadStoreManagerPage() {
       justify-content: flex-start;
     }
     .product-item {
-      border: 1px solid #ddd;
+      border: 1px solid var(--light-border);
       border-radius: 5px;
       padding: 15px;
       width: 200px;
-      background-color: #fff;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px var(--shadow-light);
+      background-color: var(--light-card);
+    }
+    body.dark-mode .product-item {
+      border: 1px solid var(--dark-border);
+      box-shadow: 0 2px 5px var(--shadow-dark);
+      background-color: var(--dark-card);
     }
     .product-item img {
       max-width: 100%;
@@ -440,7 +445,6 @@ async function loadStoreManagerPage() {
                   <div>
                     <h4>${cat.name}</h4>
                     <p>${cat.description || "لا يوجد وصف"}</p>
-                    <button onclick="window.loadCategoryProducts('${cat._id}')" class="btn btn-secondary"><i class="fas fa-box"></i> عرض المنتجات</button>
                     <button onclick="window.deleteCategory('${cat._id}')" class="btn btn-danger"><i class="fas fa-trash"></i> حذف</button>
                   </div>
                 </div>
@@ -453,42 +457,6 @@ async function loadStoreManagerPage() {
       showNotification("فشل في تحميل الأقسام", "error");
     }
   }
-
-  window.loadCategoryProducts = async (categoryId) => {
-    try {
-      const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }, "فشل في جلب بيانات البوت");
-
-      const products = await handleApiRequest(`/api/stores/${bot.storeId}/products?category=${categoryId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }, "لم يتم العثور على منتجات في هذا القسم!");
-
-      const productsList = document.getElementById("productsList");
-      productsList.innerHTML = products.length
-        ? products
-            .map(
-              (product) => `
-                <div class="product-item">
-                  <img src="${product.imageUrl || "/images/default-product.png"}" alt="${product.productName}" style="max-width: 100px;">
-                  <div>
-                    <h4>${product.productName}</h4>
-                    <p>القسم: ${product.category ? product.category.name : "غير مصنف"}</p>
-                    <p>السعر: ${product.hasOffer ? `${product.discountedPrice} ${product.currency} (قبل: ${product.originalPrice} ${product.currency})` : `${product.price} ${product.currency}`}</p>
-                    <p>المخزون: ${product.stock}</p>
-                    <button onclick="window.editProduct('${product._id}')" class="btn btn-secondary"><i class="fas fa-edit"></i> تعديل</button>
-                    <button onclick="window.deleteProduct('${product._id}')" class="btn btn-danger"><i class="fas fa-trash"></i> حذف</button>
-                  </div>
-                </div>
-              `
-            )
-            .join("")
-        : "<p>لم يتم العثور على منتجات في هذا القسم!</p>";
-    } catch (err) {
-      console.error("خطأ في تحميل منتجات القسم:", err);
-      showNotification("فشل في تحميل منتجات القسم", "error");
-    }
-  };
 
   window.loadProducts = async (botId) => {
     try {
