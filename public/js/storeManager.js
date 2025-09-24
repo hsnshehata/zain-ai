@@ -44,7 +44,7 @@ async function loadStoreManagerPage() {
             <strong>2. تعديل اسم المتجر:</strong> غيّر اسم المتجر من إعدادات المتجر، والرابط هيتحدث تلقائيًا بناءً على الاسم الجديد.
           </li>
           <li>
-            <strong>3. إضافة المنتجات:</strong> بعد إنشاء المتجر، أضف منتجاتك بالاسم، الوصف، السعر، الصورة، والمخزون.
+            <strong>3. إضافة المنتجات:</strong> بعد إنشاء المتجر، أضف منتجاتك بالاسم، الوصف، السعر، العملة، والمخزون.
             <br>
             <span style="display: block; margin-top: 5px;">
               - الصور لازم تكون بصيغة PNG أو JPG، ويفضل تكون مربعة.<br>
@@ -152,7 +152,7 @@ async function loadStoreManagerPage() {
             </div>
             <div class="form-group">
               <label for="currency">العملة</label>
-              <select id="currency" name="currency" class="form-control">
+              <select id="currency" name="currency" class="form-control" required>
                 <option value="EGP">جنيه مصري</option>
                 <option value="USD">دولار أمريكي</option>
                 <option value="SAR">ريال سعودي</option>
@@ -370,6 +370,20 @@ async function loadStoreManagerPage() {
   async function saveProduct(botId) {
     productError.style.display = "none";
     const formData = new FormData(productForm);
+    
+    // Log the FormData contents
+    const formDataEntries = {};
+    for (const [key, value] of formData.entries()) {
+      formDataEntries[key] = value instanceof File ? value.name : value;
+    }
+    console.log(`[${new Date().toISOString()}] 📡 Sending FormData for product:`, formDataEntries);
+
+    // Validate required fields
+    if (!formData.get('productName') || !formData.get('price') || !formData.get('currency') || !formData.get('stock')) {
+      productError.textContent = "اسم المنتج، السعر، العملة، والمخزون مطلوبة";
+      productError.style.display = "block";
+      return;
+    }
 
     try {
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
