@@ -20,6 +20,7 @@ const uploadRoutes = require('./routes/upload');
 const notificationRoutes = require('./routes/notifications');
 const storesRoutes = require('./routes/stores');
 const productsRoutes = require('./routes/products');
+const categoriesRoutes = require('./routes/categories'); // إضافة routes الأقسام
 const ordersRoutes = require('./routes/orders');
 const connectDB = require('./db');
 const Conversation = require('./models/Conversation');
@@ -27,6 +28,7 @@ const Bot = require('./models/Bot');
 const User = require('./models/User');
 const Feedback = require('./models/Feedback');
 const Store = require('./models/Store');
+const Category = require('./models/Category'); // إضافة موديل Category
 const NodeCache = require('node-cache');
 const bcrypt = require('bcryptjs');
 const request = require('request');
@@ -114,7 +116,8 @@ app.use('/api/messages', messagesRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/stores', storesRoutes);
-app.use('/api/stores', productsRoutes); // تعديل لتوصيل productsRoutes على /api/stores
+app.use('/api/stores', productsRoutes);
+app.use('/api/stores', categoriesRoutes); // إضافة routes الأقسام
 app.use('/api', ordersRoutes);
 app.use('/', indexRoutes);
 
