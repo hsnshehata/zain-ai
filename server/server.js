@@ -26,7 +26,7 @@ const Conversation = require('./models/Conversation');
 const Bot = require('./models/Bot');
 const User = require('./models/User');
 const Feedback = require('./models/Feedback');
-const Store = require('./models/Store'); // إضافة نموذج المتجر
+const Store = require('./models/Store');
 const NodeCache = require('node-cache');
 const bcrypt = require('bcryptjs');
 const request = require('request');
@@ -77,6 +77,7 @@ app.use((req, res, next) => {
   else if (req.path.match(/\.(png|jpg|jpeg|gif|ico|json)$/i)) {
     res.setHeader('Cache-Control', 'public, max-age=300');
   }
+  console.log(`[${getTimestamp()}] 📡 Request: ${req.method} ${req.url}`);
   next();
 });
 
@@ -113,8 +114,10 @@ app.use('/api/messages', messagesRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/stores', storesRoutes);
-app.use('/api', productsRoutes);
+app.use('/api/stores', productsRoutes); // تعديل لتوصيل productsRoutes على /api/stores
 app.use('/api', ordersRoutes);
+
+app.use('/', indexRoutes);
 
 // Route لصفحة المتجر
 app.get('/store/:storeLink', async (req, res) => {
@@ -181,8 +184,6 @@ app.get('/api/auth/check', authenticate, async (req, res) => {
     res.status(500).json({ success: false, message: 'خطأ في السيرفر', error: err.message });
   }
 });
-
-app.use('/', indexRoutes);
 
 // Route لإدارة التقييمات
 app.post('/api/feedback', async (req, res) => {
@@ -413,12 +414,14 @@ app.get('/chat/:linkId', (req, res) => {
   }
 });
 
-// Connect to MongoDB
-connectDB();
-
-// تشغيل وظايف التحقق الدورية
-checkAutoStopBots();
-refreshInstagramTokens();
+// Middleware لمعالجة 404 (يضمن رد JSON)
+app.use((req, res, next) => {
+  console.log(`[${getTimestamp()}] ❌ 404 Not Found: ${req.method} ${req.url}`);
+  res.status(404).json({
+    message: 'الطلب غير موجود',
+    error: 'NotFound',
+  });
+});
 
 // Global Error Handler
 app.use((err, req, res, next) => {
@@ -438,6 +441,13 @@ process.on('uncaughtException', (err) => {
 process.on('unhandledRejection', (reason, promise) => {
   console.error(`[${getTimestamp()}] ❌ Unhandled Rejection at:`, promise, 'reason:', reason);
 });
+
+// Connect to MongoDB
+connectDB();
+
+// تشغيل وظايف التحقق الدورية
+checkAutoStopBots();
+refreshInstagramTokens();
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, '0.0.0.0', () => {
