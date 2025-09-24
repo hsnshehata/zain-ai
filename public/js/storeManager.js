@@ -252,7 +252,7 @@ async function loadStoreManagerPage() {
               </select>
             </div>
             <div class="form-group">
-              <label for="image">صورة المنتج</label>
+              <label for="image">صورة المنتج (اختياري)</label>
               <input type="file" id="image" name="image" class="form-control" accept="image/png,image/jpeg">
             </div>
             <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ المنتج</button>
@@ -321,6 +321,7 @@ async function loadStoreManagerPage() {
 
   async function handleApiRequest(url, options, errorMessage) {
     try {
+      console.log(`[${new Date().toISOString()}] 📡 Sending request to ${url}`);
       const response = await fetch(url, options);
       if (!response.ok) {
         let errorData;
@@ -329,6 +330,7 @@ async function loadStoreManagerPage() {
         } catch (e) {
           throw new Error("خطأ في السيرفر، الرجاء المحاولة لاحقًا");
         }
+        console.error(`[${new Date().toISOString()}] ❌ API Error Response:`, errorData);
         throw new Error(errorData.message || errorMessage);
       }
       return await response.json();
@@ -465,6 +467,7 @@ async function loadStoreManagerPage() {
 
   window.loadProducts = async (botId) => {
     try {
+      console.log(`[${new Date().toISOString()}] 📡 Loading products for bot ${botId}`);
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "فشل في جلب بيانات البوت");
@@ -509,6 +512,7 @@ async function loadStoreManagerPage() {
     const data = Object.fromEntries(formData);
 
     try {
+      console.log(`[${new Date().toISOString()}] 📡 Saving store settings for bot ${botId}:`, data);
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "فشل في جلب بيانات البوت");
@@ -543,6 +547,7 @@ async function loadStoreManagerPage() {
 
   async function createStore(botId) {
     try {
+      console.log(`[${new Date().toISOString()}] 📡 Creating store for bot ${botId}`);
       await handleApiRequest("/api/stores", {
         method: "POST",
         headers: {
@@ -571,6 +576,7 @@ async function loadStoreManagerPage() {
     }
 
     try {
+      console.log(`[${new Date().toISOString()}] 📡 Saving category for bot ${botId}:`, data);
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "فشل في جلب بيانات البوت");
@@ -601,6 +607,7 @@ async function loadStoreManagerPage() {
   window.deleteCategory = async (categoryId) => {
     if (confirm("هل أنت متأكد من حذف القسم؟")) {
       try {
+        console.log(`[${new Date().toISOString()}] 📡 Deleting category ${categoryId} for bot ${selectedBotId}`);
         const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
           headers: { Authorization: `Bearer ${token}` },
         }, "فشل في جلب بيانات البوت");
@@ -622,6 +629,7 @@ async function loadStoreManagerPage() {
   let editingProductId = null;
   window.editProduct = async (productId) => {
     try {
+      console.log(`[${new Date().toISOString()}] 📡 Editing product ${productId} for bot ${selectedBotId}`);
       const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "فشل في جلب بيانات البوت");
@@ -651,6 +659,7 @@ async function loadStoreManagerPage() {
   window.deleteProduct = async (productId) => {
     if (confirm("هل أنت متأكد من حذف المنتج؟")) {
       try {
+        console.log(`[${new Date().toISOString()}] 📡 Deleting product ${productId} for bot ${selectedBotId}`);
         const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
           headers: { Authorization: `Bearer ${token}` },
         }, "فشل في جلب بيانات البوت");
@@ -677,6 +686,7 @@ async function loadStoreManagerPage() {
     }
     console.log(`[${new Date().toISOString()}] 📡 Sending FormData for product:`, formDataEntries);
 
+    // التحقق من الحقول المطلوبة
     if (!formData.get('productName') || !formData.get('price') || !formData.get('currency') || !formData.get('stock')) {
       showNotification("اسم المنتج، السعر، العملة، والمخزون مطلوبة", "error");
       return;
@@ -687,7 +697,15 @@ async function loadStoreManagerPage() {
       return;
     }
 
+    // التحقق من وجود صورة
+    const imageFile = formData.get('image');
+    if (imageFile && imageFile.size > 0 && !['image/png', 'image/jpeg'].includes(imageFile.type)) {
+      showNotification("الصورة يجب أن تكون بصيغة PNG أو JPEG", "error");
+      return;
+    }
+
     try {
+      console.log(`[${new Date().toISOString()}] 📡 Checking bot ${botId} for store association`);
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "فشل في جلب بيانات البوت");
@@ -697,12 +715,13 @@ async function loadStoreManagerPage() {
         return;
       }
 
+      console.log(`[${new Date().toISOString()}] 📡 Saving product for store ${bot.storeId}, editing: ${editingProductId || 'new'}`);
       const method = editingProductId ? "PUT" : "POST";
       const url = editingProductId
         ? `/api/stores/${bot.storeId}/products/${editingProductId}`
         : `/api/stores/${bot.storeId}/products`;
 
-      await handleApiRequest(url, {
+      const response = await handleApiRequest(url, {
         method,
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -715,6 +734,7 @@ async function loadStoreManagerPage() {
       await loadProducts(botId);
     } catch (err) {
       console.error("خطأ في حفظ المنتج:", err);
+      showNotification(err.message || "فشل في حفظ المنتج", "error");
     }
   };
 
@@ -741,7 +761,7 @@ async function loadStoreManagerPage() {
 
   productForm.addEventListener("submit", async (e) => {
     e.preventDefault();
-    await saveProduct(selectedBotId);
+    await window.saveProduct(selectedBotId);
   });
 
   categoryForm.addEventListener("submit", async (e) => {
@@ -783,6 +803,7 @@ async function loadStoreManagerPage() {
 
 async function checkStoreExists(botId) {
   try {
+    console.log(`[${new Date().toISOString()}] 📡 Checking store existence for bot ${botId}`);
     const response = await fetch(`/api/bots/${botId}`, {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
