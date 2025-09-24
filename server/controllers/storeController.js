@@ -57,32 +57,42 @@ exports.createStore = async (req, res) => {
       secondaryColor: secondaryColor || '#ffffff',
       headerHtml: cleanedHeaderHtml,
       landingTemplateId: landingTemplateId || 1,
-      landingHtml: cleanedLandingHtml
+      landingHtml: cleanedLandingHtml,
+      isActive: true
     });
 
     await newStore.save();
-    console.log(`[${getTimestamp()}] ✅ Store created: ${newStore.storeName} for user ${userId}`);
+    console.log(`[${getTimestamp()}] ✅ Store created: ${newStore.storeName} with link ${newStore.storeLink} for user ${userId}`);
 
-    // ربط المتجر بالبوت إذا كان موجود
+    // ربط البوت بالمتجر إذا تم تحديده
     if (selectedBotId) {
       const bot = await Bot.findOne({ _id: selectedBotId, userId });
       if (bot) {
         bot.storeId = newStore._id;
         await bot.save();
-        console.log(`[${getTimestamp()}] ✅ Linked store ${newStore._id} to bot ${bot._id}`);
+        console.log(`[${getTimestamp()}] ✅ Bot ${bot.name} linked to store ${newStore.storeName}`);
+
+        // إضافة قواعد افتراضية للمتجر في البوت
+        const defaultRules = [
+          { keyword: 'متجر', response: `مرحبا! يمكنك زيارة متجرنا على: ${process.env.BASE_URL}/store/${newStore.storeLink}` },
+          { keyword: 'منتجات', response: 'لرؤية منتجاتنا، قم بزيارة المتجر أو أخبرني بما تبحث عنه.' },
+          { keyword: 'طلب', response: 'يمكنك تقديم طلب من خلال المتجر مباشرة.' }
+        ];
+
+        for (const ruleData of defaultRules) {
+          const newRule = new Rule({
+            botId: selectedBotId,
+            keyword: ruleData.keyword,
+            response: ruleData.response,
+            isActive: true
+          });
+          await newRule.save();
+        }
+        console.log(`[${getTimestamp()}] ✅ Added ${defaultRules.length} default rules to bot ${bot.name} for store integration.`);
       } else {
-        console.log(`[${getTimestamp()}] ⚠️ No bot found for linking, skipping...`);
+        console.log(`[${getTimestamp()}] ⚠️ Selected bot ${selectedBotId} not found or not owned by user ${userId}. Skipping link.`);
       }
     }
-
-    // إنشاء قاعدة افتراضية للمتجر في Rules
-    const storeRule = new Rule({
-      storeId: newStore._id,
-      type: 'store',
-      content: { message: 'مرحبا بك في المتجر الذكي!' }
-    });
-    await storeRule.save();
-    console.log(`[${getTimestamp()}] ✅ Created default store rule for store ${newStore._id}`);
 
     res.status(201).json(newStore);
   } catch (err) {
@@ -91,29 +101,36 @@ exports.createStore = async (req, res) => {
   }
 };
 
-// تعديل المتجر
+// تعديل متجر
 exports.updateStore = async (req, res) => {
   const { storeId } = req.params;
-  const { storeName, storeLink, templateId, primaryColor, secondaryColor, headerHtml, landingTemplateId, landingHtml } = req.body;
+  let { storeName, templateId, primaryColor, secondaryColor, headerHtml, landingTemplateId, landingHtml, storeLink } = req.body;
   const userId = req.user.userId;
 
   try {
-    const store = await Store.findOne({ _id: storeId, userId });
+    console.log(`[${getTimestamp()}] 📡 Updating store ${storeId} for user ${userId} with data:`, {
+      storeName,
+      templateId,
+      primaryColor,
+      secondaryColor,
+      headerHtml: headerHtml ? `${headerHtml.slice(0, 50)}...` : null,
+      landingTemplateId,
+      landingHtml: landingHtml ? `${landingHtml.slice(0, 50)}...` : null,
+      storeLink
+    });
+
+    let store = await Store.findOne({ _id: storeId, userId });
     if (!store) {
       console.log(`[${getTimestamp()}] ❌ Update store failed: Store ${storeId} not found for user ${userId}`);
-      return res.status(404).json({ message: 'المتجر غير موجود' });
+      return res.status(404).json({ message: 'المتجر غير موجود أو لا تملكه' });
     }
 
-    // تنظيف HTML
+    // تنظيف HTML لو موجود
     const cleanedHeaderHtml = headerHtml ? sanitizeHtml(headerHtml, { allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], allowedAttributes: { a: ['href'], img: ['src'] } }) : store.headerHtml;
     const cleanedLandingHtml = landingHtml ? sanitizeHtml(landingHtml, { allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], allowedAttributes: { a: ['href'], img: ['src'] } }) : store.landingHtml;
 
-    // تحديث الحقول
-    if (storeName && storeName.trim() !== '') {
-      store.storeName = storeName;
-      store.storeLink = await generateUniqueStoreLink(storeName);
-    } else if (storeLink && storeLink.trim() !== '') {
-      // التحقق من صلاحية storeLink
+    if (storeName) store.storeName = storeName;
+    if (storeLink) {
       if (!/^[a-zA-Z0-9_-]+$/.test(storeLink)) {
         console.log(`[${getTimestamp()}] ❌ Update store failed: Invalid storeLink format ${storeLink}`);
         return res.status(400).json({ message: 'رابط المتجر يجب أن يحتوي على حروف، أرقام، - أو _ فقط' });
@@ -146,7 +163,7 @@ exports.updateStore = async (req, res) => {
   }
 };
 
-// جلب بيانات المتجر
+// جلب بيانات المتجر بـ _id (للصاحب)
 exports.getStore = async (req, res) => {
   const { storeId } = req.params;
   const userId = req.user.userId;
@@ -162,6 +179,25 @@ exports.getStore = async (req, res) => {
     res.status(200).json(store);
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error fetching store:`, err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في جلب المتجر: ' + (err.message || 'غير معروف') });
+  }
+};
+
+// جلب بيانات المتجر بالslug (public)
+exports.getStoreByLink = async (req, res) => {
+  const { storeLink } = req.params;
+
+  try {
+    const store = await Store.findOne({ storeLink });
+    if (!store) {
+      console.log(`[${getTimestamp()}] ❌ Get store by link failed: Store link ${storeLink} not found`);
+      return res.status(404).json({ message: 'المتجر غير موجود' });
+    }
+
+    console.log(`[${getTimestamp()}] ✅ Fetched store by link: ${store.storeName}`);
+    res.status(200).json(store);
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Error fetching store by link:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في جلب المتجر: ' + (err.message || 'غير معروف') });
   }
 };
