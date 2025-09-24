@@ -4,6 +4,7 @@ async function loadStoreManagerPage() {
   link.rel = "stylesheet";
   link.href = "/css/storeManager.css";
   document.head.appendChild(link);
+
   const content = document.getElementById("content");
   const token = localStorage.getItem("token");
   const selectedBotId = localStorage.getItem("selectedBotId");
@@ -210,21 +211,34 @@ async function loadStoreManagerPage() {
 
   async function loadStoreStatus(botId) {
     try {
-      const bot = await handleApiRequest(`/api/bots/${botId}`, { headers: { Authorization: `Bearer ${token}` } }, storeStatus, "فشل في جلب بيانات البوت");
+      const bot = await handleApiRequest(`/api/bots/${botId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, storeStatus, "فشل في جلب بيانات البوت");
 
       if (!bot) {
-        storeStatus.innerHTML = `<div style="color:red;">حالة المتجر: غير موجود ❌<br>السبب: البوت غير موجود أو تم حذفه</div>`;
+        storeStatus.innerHTML = `
+          <div style="display: inline-block; color: red;">
+            <strong>حالة المتجر:</strong> غير موجود ❌<br>
+            <strong>السبب:</strong> البوت غير موجود أو تم حذفه
+          </div>
+        `;
         instructionsContainer.style.display = "block";
         return;
       }
 
       if (bot.storeId) {
-        const store = await handleApiRequest(`/api/stores/${bot.storeId}`, { headers: { Authorization: `Bearer ${token}` } }, storeStatus, "فشل في جلب بيانات المتجر");
+        const store = await handleApiRequest(`/api/stores/${bot.storeId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }, storeStatus, "فشل في جلب بيانات المتجر");
 
         const statusDiv = document.createElement("div");
         statusDiv.style.display = "inline-block";
         statusDiv.style.color = "green";
-        statusDiv.innerHTML = `<strong>حالة المتجر:</strong> مفعّل ✅<br><strong>اسم المتجر:</strong> ${store.storeName}<br><strong>تاريخ الإنشاء:</strong> ${new Date(store.createdAt).toLocaleString('ar-EG')}`;
+        statusDiv.innerHTML = `
+          <strong>حالة المتجر:</strong> مفعّل ✅<br>
+          <strong>اسم المتجر:</strong> ${store.storeName}<br>
+          <strong>تاريخ الإنشاء:</strong> ${new Date(store.createdAt).toLocaleString('ar-EG')}
+        `;
 
         const deleteStoreBtn = document.createElement("button");
         deleteStoreBtn.id = "deleteStoreBtn";
@@ -237,7 +251,13 @@ async function loadStoreManagerPage() {
         deleteStoreBtn.addEventListener("click", async () => {
           if (confirm("هل أنت متأكد أنك تريد حذف هذا المتجر؟")) {
             try {
-              await handleApiRequest(`/api/stores/${bot.storeId}`, { method: "DELETE", headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` } }, errorMessage, "فشل في حذف المتجر");
+              await handleApiRequest(`/api/stores/${bot.storeId}`, {
+                method: "DELETE",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${token}`,
+                },
+              }, errorMessage, "فشل في حذف المتجر");
 
               errorMessage.textContent = "تم حذف المتجر بنجاح!";
               errorMessage.style.color = "green";
@@ -255,13 +275,23 @@ async function loadStoreManagerPage() {
         storeStatus.innerHTML = "";
         storeStatus.appendChild(statusDiv);
         storeStatus.appendChild(deleteStoreBtn);
+
         instructionsContainer.style.display = "none";
       } else {
-        storeStatus.innerHTML = `<div style="color:red;"><strong>حالة المتجر:</strong> غير موجود ❌</div>`;
+        storeStatus.innerHTML = `
+          <div style="display: inline-block; color: red;">
+            <strong>حالة المتجر:</strong> غير موجود ❌
+          </div>
+        `;
         instructionsContainer.style.display = "block";
       }
     } catch (err) {
-      storeStatus.innerHTML = `<div style="color:red;"><strong>حالة المتجر:</strong> غير موجود ❌<br><strong>السبب:</strong> خطأ في جلب بيانات البوت: ${err.message || "غير معروف"}</div>`;
+      storeStatus.innerHTML = `
+        <div style="display: inline-block; color: red;">
+          <strong>حالة المتجر:</strong> غير موجود ❌<br>
+          <strong>السبب:</strong> خطأ في جلب بيانات البوت: ${err.message || "غير معروف"}
+        </div>
+      `;
       instructionsContainer.style.display = "block";
     }
   }
@@ -272,10 +302,14 @@ async function loadStoreManagerPage() {
     errorMessage.style.display = "none";
 
     try {
-      const bot = await handleApiRequest(`/api/bots/${botId}`, { headers: { Authorization: `Bearer ${token}` } }, errorMessage, "فشل في جلب بيانات البوت");
+      const bot = await handleApiRequest(`/api/bots/${botId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, errorMessage, "فشل في جلب بيانات البوت");
 
       if (bot.storeId) {
-        const store = await handleApiRequest(`/api/stores/${bot.storeId}`, { headers: { Authorization: `Bearer ${token}` } }, errorMessage, "فشل في جلب بيانات المتجر");
+        const store = await handleApiRequest(`/api/stores/${bot.storeId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }, errorMessage, "فشل في جلب بيانات المتجر");
 
         document.getElementById("storeName").value = store.storeName || '';
         document.getElementById("templateId").value = store.templateId || '1';
@@ -298,10 +332,14 @@ async function loadStoreManagerPage() {
 
   async function loadProducts(botId) {
     try {
-      const bot = await handleApiRequest(`/api/bots/${botId}`, { headers: { Authorization: `Bearer ${token}` } }, productError, "فشل في جلب بيانات البوت");
+      const bot = await handleApiRequest(`/api/bots/${botId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, productError, "فشل في جلب بيانات البوت");
 
       if (bot.storeId) {
-        const products = await handleApiRequest(`/api/stores/${bot.storeId}/products`, { headers: { Authorization: `Bearer ${token}` } }, productError, "فشل في جلب المنتجات");
+        const products = await handleApiRequest(`/api/stores/${bot.storeId}/products`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }, productError, "فشل في جلب المنتجات");
 
         productsList.innerHTML = products.length === 0 ? '<p>لا توجد منتجات في المتجر.</p>' : products.map(product => `
           <div class="product-card">
@@ -330,11 +368,14 @@ async function loadStoreManagerPage() {
       storeError.style.display = "block";
       return;
     }
+
     const formData = new FormData(storeForm);
     formData.append("botId", botId);
 
     try {
-      const bot = await handleApiRequest(`/api/bots/${botId}`, { headers: { Authorization: `Bearer ${token}` } }, storeError, "فشل في جلب بيانات البوت");
+      const bot = await handleApiRequest(`/api/bots/${botId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, storeError, "فشل في جلب بيانات البوت");
 
       const method = bot.storeId ? "PUT" : "POST";
       const url = bot.storeId ? `/api/stores/${bot.storeId}` : "/api/stores";
@@ -352,7 +393,7 @@ async function loadStoreManagerPage() {
       await loadStoreSettings(botId);
       await loadProducts(botId);
     } catch (err) {
-      // لا حاجة لعرض الخطأ مرتين إذ أنه معروض في handleApiRequest
+      // Already displayed inside handleApiRequest
     }
   }
 
@@ -362,7 +403,9 @@ async function loadStoreManagerPage() {
     const formData = new FormData(productForm);
 
     try {
-      const bot = await handleApiRequest(`/api/bots/${botId}`, { headers: { Authorization: `Bearer ${token}` } }, productError, "فشل في جلب بيانات البوت");
+      const bot = await handleApiRequest(`/api/bots/${botId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, productError, "فشل في جلب بيانات البوت");
 
       if (!bot.storeId) {
         productError.textContent = "أنشئ متجر أولاً قبل إضافة المنتجات.";
@@ -388,15 +431,19 @@ async function loadStoreManagerPage() {
       editingProductId = null;
       await loadProducts(botId);
     } catch (err) {
-      // الخطأ معروض في handleApiRequest
+      // Already displayed inside handleApiRequest
     }
   }
 
   window.editProduct = async function(productId) {
     try {
-      const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, { headers: { Authorization: `Bearer ${token}` } }, productError, "فشل في جلب بيانات البوت");
+      const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, productError, "فشل في جلب بيانات البوت");
 
-      const product = await handleApiRequest(`/api/stores/${bot.storeId}/products/${productId}`, { headers: { Authorization: `Bearer ${token}` } }, productError, "فشل في جلب بيانات المنتج");
+      const product = await handleApiRequest(`/api/stores/${bot.storeId}/products/${productId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, productError, "فشل في جلب بيانات المنتج");
 
       document.getElementById("productName").value = product.productName;
       document.getElementById("description").value = product.description;
@@ -407,28 +454,32 @@ async function loadStoreManagerPage() {
       document.getElementById("category").value = product.category;
       editingProductId = productId;
     } catch (err) {
-      // الخطأ معروض في handleApiRequest
+      // Already displayed inside handleApiRequest
     }
   };
 
   window.deleteProduct = async function(productId) {
     if (confirm("هل أنت متأكد من حذف المنتج؟")) {
       try {
-        const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, { headers: { Authorization: `Bearer ${token}` } }, productError, "فشل في جلب بيانات البوت");
+        const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }, productError, "فشل في جلب بيانات البوت");
 
-        await handleApiRequest(`/api/stores/${bot.storeId}/products/${productId}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` } }, productError, "فشل في حذف المنتج");
+        await handleApiRequest(`/api/stores/${bot.storeId}/products/${productId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }, productError, "فشل في حذف المنتج");
 
         productError.textContent = "تم حذف المنتج بنجاح!";
         productError.style.color = "green";
         productError.style.display = "block";
         await loadProducts(selectedBotId);
       } catch (err) {
-        // الخطأ معروض في handleApiRequest
+        // Already displayed inside handleApiRequest
       }
     }
   };
 
-  // --- Event Listeners ---
   toggleInstructionsBtn.addEventListener("click", () => {
     if (instructionsContainer.style.display === "none") {
       instructionsContainer.style.display = "block";
@@ -449,7 +500,7 @@ async function loadStoreManagerPage() {
     await saveProduct(selectedBotId);
   });
 
-  // --- Initial Load ---
+  // Initial load
   await loadStoreStatus(selectedBotId);
   await loadStoreSettings(selectedBotId);
   await loadProducts(selectedBotId);
@@ -483,12 +534,5 @@ async function createStoreForUser() {
   }
 }
 
-// Make loadStoreManagerPage globally accessible
+// تعيين الدالة في النطاق العالمي
 window.loadStoreManagerPage = loadStoreManagerPage;
-
-// Ensure function is ready
-if (window.loadStoreManagerPage) {
-  console.log("✅ loadStoreManagerPage is defined and ready");
-} else {
-  console.error("❌ loadStoreManagerPage is not defined");
-}
