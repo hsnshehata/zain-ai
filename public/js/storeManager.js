@@ -41,7 +41,7 @@ async function loadStoreManagerPage() {
             <strong>1. إنشاء المتجر:</strong> اضغط على زرار "إنشاء المتجر" عشان تعمل متجر جديد بإعدادات افتراضية، وبعدين عدّل الإعدادات زي ما تحب.
           </li>
           <li>
-            <strong>2. إضافة المنتجات:</strong> أضف منتجاتك بالاسم، الوصف، السعر، الصورة، والمخزون.
+            <strong>2. إضافة المنتجات:</strong> بعد إنشاء المتجر، أضف منتجاتك بالاسم، الوصف، السعر، الصورة، والمخزون.
             <br>
             <span style="display: block; margin-top: 5px;">
               - الصور لازم تكون بصيغة PNG أو JPG، ويفضل تكون مربعة.<br>
@@ -65,6 +65,16 @@ async function loadStoreManagerPage() {
     <div id="loadingSpinner" class="spinner"><div class="loader"></div></div>
     <div id="errorMessage" class="error-message" style="display: none;"></div>
 
+    <div id="createStoreContainer" class="settings-container" style="display: none;">
+      <div class="card settings-card">
+        <div class="card-header"><h3><i class="fas fa-store-alt"></i> إنشاء متجر جديد</h3></div>
+        <div class="card-body">
+          <p>اضغط على الزر أدناه لإنشاء متجر جديد بإعدادات افتراضية. بعد الإنشاء، يمكنك تعديل الإعدادات وإضافة المنتجات.</p>
+          <button id="createStoreBtn" class="btn btn-primary"><i class="fas fa-plus"></i> إنشاء المتجر</button>
+        </div>
+      </div>
+    </div>
+
     <div id="storeSettingsContainer" class="settings-container store-settings-grid" style="display: none;">
       <div class="card settings-card">
         <div class="card-header"><h3><i class="fas fa-store-alt"></i> إعدادات المتجر</h3></div>
@@ -72,7 +82,7 @@ async function loadStoreManagerPage() {
           <form id="store-form">
             <div class="form-group">
               <label for="storeName">اسم المتجر</label>
-              <input type="text" id="storeName" name="storeName" class="form-control" placeholder="متجري الجديد">
+              <input type="text" id="storeName" name="storeName" class="form-control" placeholder="متجر-افتراضي">
             </div>
             <div class="form-group">
               <label for="templateId">القالب</label>
@@ -114,62 +124,52 @@ async function loadStoreManagerPage() {
           </form>
         </div>
       </div>
-    </div>
 
-    <div id="createStoreContainer" class="settings-container" style="display: none;">
-      <div class="card settings-card">
-        <div class="card-header"><h3><i class="fas fa-store-alt"></i> إنشاء متجر جديد</h3></div>
+      <div class="card settings-card" id="productsContainer" style="display: none;">
+        <div class="card-header"><h3><i class="fas fa-box"></i> إدارة المنتجات</h3></div>
         <div class="card-body">
-          <p>اضغط على الزر أدناه لإنشاء متجر جديد بإعدادات افتراضية. بعد الإنشاء، يمكنك تعديل الإعدادات من هنا.</p>
-          <button id="createStoreBtn" class="btn btn-primary"><i class="fas fa-plus"></i> إنشاء المتجر</button>
+          <form id="product-form" enctype="multipart/form-data">
+            <div class="form-group">
+              <label for="productName">اسم المنتج</label>
+              <input type="text" id="productName" name="productName" class="form-control" required>
+            </div>
+            <div class="form-group">
+              <label for="description">الوصف</label>
+              <textarea id="description" name="description" class="form-control" rows="4"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="price">السعر</label>
+              <input type="number" id="price" name="price" class="form-control" required min="0" step="0.01">
+            </div>
+            <div class="form-group">
+              <label for="currency">العملة</label>
+              <select id="currency" name="currency" class="form-control">
+                <option value="EGP">جنيه مصري</option>
+                <option value="USD">دولار أمريكي</option>
+                <option value="SAR">ريال سعودي</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="stock">المخزون</label>
+              <input type="number" id="stock" name="stock" class="form-control" required min="0">
+            </div>
+            <div class="form-group">
+              <label for="lowStockThreshold">عتبة المخزون المنخفض</label>
+              <input type="number" id="lowStockThreshold" name="lowStockThreshold" class="form-control" min="0">
+            </div>
+            <div class="form-group">
+              <label for="category">التصنيف</label>
+              <input type="text" id="category" name="category" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="image">صورة المنتج</label>
+              <input type="file" id="image" name="image" class="form-control" accept="image/png,image/jpeg">
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ المنتج</button>
+          </form>
+          <div id="productError" class="error-message" style="display: none;"></div>
+          <div id="productsList" class="products-list"></div>
         </div>
-      </div>
-    </div>
-
-    <div class="card settings-card">
-      <div class="card-header"><h3><i class="fas fa-box"></i> إدارة المنتجات</h3></div>
-      <div class="card-body">
-        <form id="product-form" enctype="multipart/form-data">
-          <div class="form-group">
-            <label for="productName">اسم المنتج</label>
-            <input type="text" id="productName" name="productName" class="form-control" required>
-          </div>
-          <div class="form-group">
-            <label for="description">الوصف</label>
-            <textarea id="description" name="description" class="form-control" rows="4"></textarea>
-          </div>
-          <div class="form-group">
-            <label for="price">السعر</label>
-            <input type="number" id="price" name="price" class="form-control" required min="0" step="0.01">
-          </div>
-          <div class="form-group">
-            <label for="currency">العملة</label>
-            <select id="currency" name="currency" class="form-control">
-              <option value="EGP">جنيه مصري</option>
-              <option value="USD">دولار أمريكي</option>
-              <option value="SAR">ريال سعودي</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="stock">المخزون</label>
-            <input type="number" id="stock" name="stock" class="form-control" required min="0">
-          </div>
-          <div class="form-group">
-            <label for="lowStockThreshold">عتبة المخزون المنخفض</label>
-            <input type="number" id="lowStockThreshold" name="lowStockThreshold" class="form-control" min="0">
-          </div>
-          <div class="form-group">
-            <label for="category">التصنيف</label>
-            <input type="text" id="category" name="category" class="form-control">
-          </div>
-          <div class="form-group">
-            <label for="image">صورة المنتج</label>
-            <input type="file" id="image" name="image" class="form-control" accept="image/png,image/jpeg">
-          </div>
-          <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ المنتج</button>
-        </form>
-        <div id="productError" class="error-message" style="display: none;"></div>
-        <div id="productsList" class="products-list"></div>
       </div>
     </div>
   `;
@@ -183,6 +183,7 @@ async function loadStoreManagerPage() {
   const createStoreBtn = document.getElementById("createStoreBtn");
   const storeSettingsContainer = document.getElementById("storeSettingsContainer");
   const createStoreContainer = document.getElementById("createStoreContainer");
+  const productsContainer = document.getElementById("productsContainer");
   const loadingSpinner = document.getElementById("loadingSpinner");
 
   async function handleApiRequest(url, options, errorElement, errorMessage) {
@@ -216,10 +217,12 @@ async function loadStoreManagerPage() {
         storeStatus.innerHTML = `المتجر: <strong>${store.storeName}</strong> (نشط)`;
         createStoreContainer.style.display = "none";
         storeSettingsContainer.style.display = "grid";
+        productsContainer.style.display = "block";
       } else {
         storeStatus.innerHTML = "لم يتم إنشاء متجر بعد.";
         createStoreContainer.style.display = "block";
         storeSettingsContainer.style.display = "none";
+        productsContainer.style.display = "none";
       }
       loadingSpinner.style.display = "none";
     } catch (err) {
@@ -453,7 +456,23 @@ async function loadStoreManagerPage() {
   // --- Initial Load ---
   await loadStoreStatus(selectedBotId);
   await loadStoreSettings(selectedBotId);
-  await loadProducts(selectedBotId);
+  if (await checkStoreExists(selectedBotId)) {
+    await loadProducts(selectedBotId);
+  }
+}
+
+// دالة مساعدة للتحقق من وجود متجر
+async function checkStoreExists(botId) {
+  try {
+    const response = await fetch(`/api/bots/${botId}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+    const bot = await response.json();
+    return !!bot.storeId;
+  } catch (err) {
+    console.error("خطأ في التحقق من وجود المتجر:", err);
+    return false;
+  }
 }
 
 // Make loadStoreManagerPage globally accessible
