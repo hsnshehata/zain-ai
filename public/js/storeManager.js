@@ -24,17 +24,22 @@ async function loadStoreManagerPage() {
       justify-content: flex-start;
     }
     .product-item {
-      border: 1px solid var(--light-border);
+      border: 1px solid #ddd;
       border-radius: 5px;
       padding: 15px;
       width: 200px;
-      box-shadow: 0 2px 5px var(--shadow-light);
-      background-color: var(--light-card);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      transition: background-color var(--transition-speed) ease;
     }
     body.dark-mode .product-item {
-      border: 1px solid var(--dark-border);
-      box-shadow: 0 2px 5px var(--shadow-dark);
       background-color: var(--dark-card);
+      color: var(--dark-text);
+      border-color: var(--dark-border);
+    }
+    body.light-mode .product-item {
+      background-color: var(--light-card);
+      color: var(--light-text);
+      border-color: var(--light-border);
     }
     .product-item img {
       max-width: 100%;
