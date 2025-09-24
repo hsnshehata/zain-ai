@@ -322,7 +322,7 @@ async function loadStoreManagerPage() {
             .map(
               (product) => `
                 <div class="product-item">
-                  <img src="${product.imageUrl || "/placeholder-bot.png"}" alt="${product.productName}" style="max-width: 100px;">
+                  <img src="${product.imageUrl || "/images/default-product.png"}" alt="${product.productName}" style="max-width: 100px;">
                   <div>
                     <h4>${product.productName}</h4>
                     <p>السعر: ${product.price} ${product.currency}</p>
@@ -337,6 +337,8 @@ async function loadStoreManagerPage() {
         : "<p>لم يتم العثور على منتجات، أضف منتجك الأول!</p>";
     } catch (err) {
       console.error("خطأ في تحميل المنتجات:", err);
+      productError.textContent = "فشل في تحميل المنتجات: " + (err.message || "غير معروف");
+      productError.style.display = "block";
       document.getElementById("productsList").innerHTML = "<p>لم يتم العثور على منتجات، أضف منتجك الأول!</p>";
     }
   }
@@ -477,6 +479,8 @@ async function loadStoreManagerPage() {
       editingProductId = productId;
     } catch (err) {
       console.error("خطأ في تحميل المنتج:", err);
+      productError.textContent = "فشل في تحميل المنتج: " + (err.message || "غير معروف");
+      productError.style.display = "block";
     }
   };
 
@@ -498,6 +502,8 @@ async function loadStoreManagerPage() {
         await loadProducts(selectedBotId);
       } catch (err) {
         console.error("خطأ في حذف المنتج:", err);
+        productError.textContent = "فشل في حذف المنتج: " + (err.message || "غير معروف");
+        productError.style.display = "block";
       }
     }
   };
