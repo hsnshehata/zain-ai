@@ -41,7 +41,10 @@ async function loadStoreManagerPage() {
             <strong>1. إنشاء المتجر:</strong> اضغط على زرار "إنشاء المتجر" عشان تعمل متجر جديد بإعدادات افتراضية، وبعدين عدّل الإعدادات زي ما تحب.
           </li>
           <li>
-            <strong>2. إضافة المنتجات:</strong> بعد إنشاء المتجر، أضف منتجاتك بالاسم، الوصف، السعر، الصورة، والمخزون.
+            <strong>2. تعديل اسم المتجر:</strong> غيّر اسم المتجر من إعدادات المتجر، والرابط هيتحدث تلقائيًا بناءً على الاسم الجديد.
+          </li>
+          <li>
+            <strong>3. إضافة المنتجات:</strong> بعد إنشاء المتجر، أضف منتجاتك بالاسم، الوصف، السعر، الصورة، والمخزون.
             <br>
             <span style="display: block; margin-top: 5px;">
               - الصور لازم تكون بصيغة PNG أو JPG، ويفضل تكون مربعة.<br>
@@ -49,10 +52,10 @@ async function loadStoreManagerPage() {
             </span>
           </li>
           <li>
-            <strong>3. تخصيص الواجهة:</strong> اختار قالب (كلاسيكي، مودرن، إلخ)، وعدّل الألوان أو أضف HTML مخصص للهيدر أو اللاندينج بيج.
+            <strong>4. تخصيص الواجهة:</strong> اختار قالب (كلاسيكي، مودرن، إلخ)، وعدّل الألوان أو أضف HTML مخصص للهيدر أو اللاندينج بيج.
           </li>
           <li>
-            <strong>4. إدارة الطلبات:</strong> الطلبات هتظهر في صفحة الحسابات (تحت الإنشاء) مع إشعارات تلقائية لواتساب.
+            <strong>5. إدارة الطلبات:</strong> الطلبات هتظهر في صفحة الحسابات (تحت الإنشاء) مع إشعارات تلقائية لواتساب.
           </li>
         </ul>
       </div>
@@ -83,6 +86,12 @@ async function loadStoreManagerPage() {
             <div class="form-group">
               <label for="storeName">اسم المتجر</label>
               <input type="text" id="storeName" name="storeName" class="form-control" placeholder="متجر-افتراضي">
+              <small class="form-text">رابط المتجر هيتولد تلقائيًا بناءً على اسم المتجر</small>
+            </div>
+            <div class="form-group">
+              <label for="storeLink">رابط المتجر</label>
+              <input type="text" id="storeLink" name="storeLink" class="form-control" readonly>
+              <small class="form-text">الرابط ده هيتغير لو غيّرت اسم المتجر</small>
             </div>
             <div class="form-group">
               <label for="templateId">القالب</label>
@@ -248,6 +257,7 @@ async function loadStoreManagerPage() {
         }, storeError, "فشل في جلب بيانات المتجر");
 
         document.getElementById("storeName").value = store.storeName;
+        document.getElementById("storeLink").value = store.storeLink;
         document.getElementById("templateId").value = store.templateId;
         document.getElementById("primaryColor").value = store.primaryColor;
         document.getElementById("secondaryColor").value = store.secondaryColor;
