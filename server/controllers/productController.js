@@ -1,8 +1,9 @@
 // /server/controllers/productController.js
-const Product = require('..//models/Product');
-const Store = require('..//models/Store');
-const Category = require('..//models/Category');
+const Product = require('../models/Product');
+const Store = require('../models/Store');
+const Category = require('../models/Category');
 const { uploadToImgbb } = require('./uploadController');
+const axios = require('axios');
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
@@ -34,7 +35,7 @@ exports.createProduct = async (req, res) => {
     const store = await Store.findOne({ _id: storeId, userId });
     if (!store) {
       console.log(`[${getTimestamp()}] ❌ Create product failed: Store ${storeId} not found for user ${userId}`);
-      return res.status(404).json({ message: 'المتجر غير موجود' });
+      return res.status(404).json({ message: 'المتجر غير موجود أو لا تملكه' });
     }
 
     // التحقق من الحقول المطلوبة
@@ -68,14 +69,14 @@ exports.createProduct = async (req, res) => {
 
     // رفع الصورة إلى imgbb إذا كانت موجودة
     let imageUrl = '';
-    if (file) {
+    if (file && file.size > 0) {
       try {
         const uploadResult = await uploadToImgbb(file);
         imageUrl = uploadResult.url;
         console.log(`[${getTimestamp()}] 📸 Image uploaded to imgbb: ${imageUrl}`);
       } catch (err) {
-        console.error(`[${getTimestamp()}] ❌ Error uploading image to imgbb:`, err.message);
-        return res.status(400).json({ message: `فشل في رفع الصورة: ${err.message}` });
+        console.error(`[${getTimestamp()}] ⚠️ Failed to upload image to imgbb:`, err.message, err.stack);
+        imageUrl = ''; // السماح بحفظ المنتج بدون صورة
       }
     }
 
@@ -113,11 +114,26 @@ exports.updateProduct = async (req, res) => {
   const file = req.file;
 
   try {
+    console.log(`[${getTimestamp()}] 📡 Updating product ${productId} for store ${storeId} with data:`, {
+      productName,
+      description,
+      price,
+      hasOffer,
+      originalPrice,
+      discountedPrice,
+      currency,
+      stock,
+      lowStockThreshold,
+      category,
+      hasFile: !!file,
+      file: file ? { originalname: file.originalname, mimetype: file.mimetype, size: file.size } : null
+    });
+
     // التحقق من وجود المتجر
     const store = await Store.findOne({ _id: storeId, userId });
     if (!store) {
       console.log(`[${getTimestamp()}] ❌ Update product failed: Store ${storeId} not found for user ${userId}`);
-      return res.status(404).json({ message: 'المتجر غير موجود' });
+      return res.status(404).json({ message: 'المتجر غير موجود أو لا تملكه' });
     }
 
     // التحقق من وجود المنتج
@@ -146,14 +162,14 @@ exports.updateProduct = async (req, res) => {
     }
 
     // رفع الصورة إلى imgbb إذا كانت موجودة
-    if (file) {
+    if (file && file.size > 0) {
       try {
         const uploadResult = await uploadToImgbb(file);
         product.imageUrl = uploadResult.url;
         console.log(`[${getTimestamp()}] 📸 Image uploaded to imgbb: ${product.imageUrl}`);
       } catch (err) {
-        console.error(`[${getTimestamp()}] ❌ Error uploading image to imgbb:`, err.message);
-        return res.status(400).json({ message: `فشل في رفع الصورة: ${err.message}` });
+        console.error(`[${getTimestamp()}] ⚠️ Failed to upload image to imgbb:`, err.message, err.stack);
+        product.imageUrl = product.imageUrl || ''; // السماح بتحديث المنتج بدون تغيير الصورة
       }
     }
 
@@ -190,11 +206,12 @@ exports.deleteProduct = async (req, res) => {
   const userId = req.user.userId;
 
   try {
+    console.log(`[${getTimestamp()}] 📡 Deleting product ${productId} for store ${storeId}, user ${userId}`);
     // التحقق من وجود المتجر
     const store = await Store.findOne({ _id: storeId, userId });
     if (!store) {
       console.log(`[${getTimestamp()}] ❌ Delete product failed: Store ${storeId} not found for user ${userId}`);
-      return res.status(404).json({ message: 'المتجر غير موجود' });
+      return res.status(404).json({ message: 'المتجر غير موجود أو لا تملكه' });
     }
 
     // التحقق من وجود المنتج
@@ -228,7 +245,7 @@ exports.getProducts = async (req, res) => {
     const store = await Store.findOne({ _id: storeId, userId });
     if (!store) {
       console.log(`[${getTimestamp()}] ❌ Get products failed: Store ${storeId} not found for user ${userId}`);
-      return res.status(404).json({ message: 'المتجر غير موجود' });
+      return res.status(404).json({ message: 'المتجر غير موجود أو لا تملكه' });
     }
 
     // جلب المنتجات حسب القسم إذا تم تحديده
@@ -253,11 +270,12 @@ exports.getProduct = async (req, res) => {
   const userId = req.user.userId;
 
   try {
+    console.log(`[${getTimestamp()}] 📡 Fetching product ${productId} for store ${storeId}, user ${userId}`);
     // التحقق من وجود المتجر
     const store = await Store.findOne({ _id: storeId, userId });
     if (!store) {
       console.log(`[${getTimestamp()}] ❌ Get product failed: Store ${storeId} not found for user ${userId}`);
-      return res.status(404).json({ message: 'المتجر غير موجود' });
+      return res.status(404).json({ message: 'المتجر غير موجود أو لا تملكه' });
     }
 
     // التحقق من وجود المنتج
