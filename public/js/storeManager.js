@@ -41,7 +41,7 @@ async function loadStoreManagerPage() {
             <strong>1. إنشاء المتجر:</strong> اضغط على زرار "إنشاء المتجر" عشان تعمل متجر جديد بإعدادات افتراضية، وبعدين عدّل الإعدادات زي ما تحب.
           </li>
           <li>
-            <strong>2. تعديل اسم المتجر:</strong> اضغط على زرار "تعديل اسم المتجر" عشان تغيّر اسم المتجر، والرابط هيتحدث تلقائيًا (مثل metjar-8777).
+            <strong>2. تعديل رابط المتجر:</strong> اضغط على زرار "تعديل رابط المتجر" عشان تغيّر الجزء المتغير من الرابط (مثل metjar-8777).
           </li>
           <li>
             <strong>3. زيارة المتجر:</strong> اضغط على زرار "الذهاب إلى المتجر" عشان تشوف متجرك مباشرة.
@@ -89,14 +89,19 @@ async function loadStoreManagerPage() {
             <div class="form-group">
               <label for="storeName">اسم المتجر</label>
               <input type="text" id="storeName" name="storeName" class="form-control" readonly>
-              <small class="form-text">اضغط على زرار "تعديل اسم المتجر" لتغيير الاسم والرابط (مثل metjar-8777)</small>
+              <small class="form-text">اسم المتجر ثابت، بس تقدر تغيّر رابط المتجر من الأسفل</small>
             </div>
             <div class="form-group">
               <label for="storeLink">رابط المتجر الكامل</label>
               <input type="text" id="storeLink" name="storeLink" class="form-control" readonly>
-              <small class="form-text">اضغط على الزر عشان تزور متجرك أو تعدّل اسم المتجر</small>
+              <small class="form-text">اضغط على الزر عشان تزور متجرك أو تعدّل الرابط</small>
               <button type="button" id="goToStoreBtn" class="btn btn-primary" style="margin-top: 10px; margin-right: 10px;" disabled><i class="fas fa-external-link-alt"></i> الذهاب إلى المتجر</button>
-              <button type="button" id="editStoreNameBtn" class="btn btn-secondary" style="margin-top: 10px;" disabled><i class="fas fa-edit"></i> تعديل اسم المتجر</button>
+              <button type="button" id="editStoreLinkBtn" class="btn btn-secondary" style="margin-top: 10px;" disabled><i class="fas fa-edit"></i> تعديل رابط المتجر</button>
+              <div id="storeLinkEditContainer" style="display: none; margin-top: 10px;">
+                <label for="storeLinkSlug">الجزء المتغير من الرابط</label>
+                <input type="text" id="storeLinkSlug" name="storeLinkSlug" class="form-control" placeholder="مثل metjar-8777">
+                <small class="form-text">اكتب الجزء المتغير من الرابط (حروف، أرقام، - أو _ فقط)</small>
+              </div>
             </div>
             <div class="form-group">
               <label for="templateId">القالب</label>
@@ -199,8 +204,11 @@ async function loadStoreManagerPage() {
   const createStoreContainer = document.getElementById("createStoreContainer");
   const productsContainer = document.getElementById("productsContainer");
   const goToStoreBtn = document.getElementById("goToStoreBtn");
-  const editStoreNameBtn = document.getElementById("editStoreNameBtn");
+  const editStoreLinkBtn = document.getElementById("editStoreLinkBtn");
   const storeNameInput = document.getElementById("storeName");
+  const storeLinkInput = document.getElementById("storeLink");
+  const storeLinkEditContainer = document.getElementById("storeLinkEditContainer");
+  const storeLinkSlugInput = document.getElementById("storeLinkSlug");
   const loadingSpinner = document.getElementById("loadingSpinner");
 
   async function handleApiRequest(url, options, errorElement, errorMessage) {
@@ -265,7 +273,8 @@ async function loadStoreManagerPage() {
         }, storeError, "فشل في جلب بيانات المتجر");
 
         storeNameInput.value = store.storeName;
-        document.getElementById("storeLink").value = `https://zainbot.com/store/${store.storeLink}`;
+        storeLinkInput.value = `https://zainbot.com/store/${store.storeLink}`;
+        storeLinkSlugInput.value = store.storeLink;
         document.getElementById("templateId").value = store.templateId;
         document.getElementById("primaryColor").value = store.primaryColor;
         document.getElementById("secondaryColor").value = store.secondaryColor;
@@ -273,60 +282,22 @@ async function loadStoreManagerPage() {
         document.getElementById("landingTemplateId").value = store.landingTemplateId;
         document.getElementById("landingHtml").value = store.landingHtml;
         goToStoreBtn.disabled = false;
-        editStoreNameBtn.disabled = false;
+        editStoreLinkBtn.disabled = false;
         goToStoreBtn.onclick = () => window.open(`https://zainbot.com/store/${store.storeLink}`, '_blank');
       } else {
         storeNameInput.value = "";
-        document.getElementById("storeLink").value = "";
+        storeLinkInput.value = "";
+        storeLinkSlugInput.value = "";
         goToStoreBtn.disabled = true;
-        editStoreNameBtn.disabled = true;
+        editStoreLinkBtn.disabled = true;
       }
     } catch (err) {
       console.error("خطأ في تحميل إعدادات المتجر:", err);
       storeNameInput.value = "";
-      document.getElementById("storeLink").value = "";
+      storeLinkInput.value = "";
+      storeLinkSlugInput.value = "";
       goToStoreBtn.disabled = true;
-      editStoreNameBtn.disabled = true;
-    }
-  }
-
-  async function loadProducts(botId) {
-    try {
-      const bot = await handleApiRequest(`/api/bots/${botId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }, productError, "فشل في جلب بيانات البوت");
-
-      if (!bot.storeId) {
-        document.getElementById("productsList").innerHTML = "<p>أنشئ متجر أولاً قبل إضافة المنتجات.</p>";
-        return;
-      }
-
-      const products = await handleApiRequest(`/api/stores/${bot.storeId}/products`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }, productError, "لم يتم العثور على منتجات، أضف منتجك الأول!");
-
-      const productsList = document.getElementById("productsList");
-      productsList.innerHTML = products.length
-        ? products
-            .map(
-              (product) => `
-                <div class="product-item">
-                  <img src="${product.imageUrl || "/placeholder-bot.png"}" alt="${product.productName}" style="max-width: 100px;">
-                  <div>
-                    <h4>${product.productName}</h4>
-                    <p>السعر: ${product.price} ${product.currency}</p>
-                    <p>المخزون: ${product.stock}</p>
-                    <button onclick="editProduct('${product._id}')" class="btn btn-secondary"><i class="fas fa-edit"></i> تعديل</button>
-                    <button onclick="deleteProduct('${product._id}')" class="btn btn-danger"><i class="fas fa-trash"></i> حذف</button>
-                  </div>
-                </div>
-              `
-            )
-            .join("")
-        : "<p>لم يتم العثور على منتجات، أضف منتجك الأول!</p>";
-    } catch (err) {
-      console.error("خطأ في تحميل المنتجات:", err);
-      document.getElementById("productsList").innerHTML = "<p>لم يتم العثور على منتجات، أضف منتجك الأول!</p>";
+      editStoreLinkBtn.disabled = true;
     }
   }
 
@@ -343,19 +314,26 @@ async function loadStoreManagerPage() {
       const method = bot.storeId ? "PUT" : "POST";
       const url = bot.storeId ? `/api/stores/${bot.storeId}` : "/api/stores";
 
+      // إرسال storeLinkSlug بدل storeName لو موجود
+      const payload = { ...data, selectedBotId: botId };
+      if (data.storeLinkSlug) {
+        payload.storeLink = data.storeLinkSlug;
+        delete payload.storeName; // إزالة storeName عشان مايأثرش
+      }
+
       await handleApiRequest(url, {
         method,
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ ...data, selectedBotId: botId }),
+        body: JSON.stringify(payload),
       }, storeError, "فشل في حفظ المتجر");
 
       storeError.textContent = `تم حفظ المتجر بنجاح!`;
       storeError.style.color = "green";
       storeError.style.display = "block";
-      storeNameInput.readOnly = true; // إرجاع الحقل لـ readonly بعد الحفظ
+      storeLinkEditContainer.style.display = "none"; // إخفاء حقل التعديل بعد الحفظ
       await loadStoreStatus(botId);
       await loadStoreSettings(botId);
       await loadProducts(botId);
@@ -504,9 +482,9 @@ async function loadStoreManagerPage() {
     await createStore(selectedBotId);
   });
 
-  editStoreNameBtn.addEventListener("click", () => {
-    storeNameInput.readOnly = false;
-    storeNameInput.focus();
+  editStoreLinkBtn.addEventListener("click", () => {
+    storeLinkEditContainer.style.display = "block";
+    storeLinkSlugInput.focus();
   });
 
   // Initial Load
