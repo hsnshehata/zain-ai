@@ -669,6 +669,55 @@ async function loadStoreManagerPage() {
     }
   };
 
+  window.saveProduct = async (botId) => {
+    const formData = new FormData(productForm);
+    const formDataEntries = {};
+    for (const [key, value] of formData.entries()) {
+      formDataEntries[key] = value instanceof File ? value.name : value;
+    }
+    console.log(`[${new Date().toISOString()}] 📡 Sending FormData for product:`, formDataEntries);
+
+    if (!formData.get('productName') || !formData.get('price') || !formData.get('currency') || !formData.get('stock')) {
+      showNotification("اسم المنتج، السعر، العملة، والمخزون مطلوبة", "error");
+      return;
+    }
+
+    if (formData.get('hasOffer') === "yes" && (!formData.get('originalPrice') || !formData.get('discountedPrice'))) {
+      showNotification("السعر قبل وبعد الخصم مطلوبان إذا كان هناك عرض", "error");
+      return;
+    }
+
+    try {
+      const bot = await handleApiRequest(`/api/bots/${botId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, "فشل في جلب بيانات البوت");
+
+      if (!bot.storeId) {
+        showNotification("أنشئ متجر أولاً قبل إضافة المنتجات.", "error");
+        return;
+      }
+
+      const method = editingProductId ? "PUT" : "POST";
+      const url = editingProductId
+        ? `/api/stores/${bot.storeId}/products/${editingProductId}`
+        : `/api/stores/${bot.storeId}/products`;
+
+      await handleApiRequest(url, {
+        method,
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      }, "فشل في حفظ المنتج");
+
+      showNotification("تم حفظ المنتج بنجاح!", "success");
+      productForm.reset();
+      offerFields.style.display = "none";
+      editingProductId = null;
+      await loadProducts(botId);
+    } catch (err) {
+      console.error("خطأ في حفظ المنتج:", err);
+    }
+  };
+
   // Event Listeners
   toggleInstructionsBtn.addEventListener("click", () => {
     instructionsContainer.style.display = instructionsContainer.style.display === "none" ? "block" : "none";
