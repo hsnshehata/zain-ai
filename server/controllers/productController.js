@@ -161,7 +161,7 @@ exports.deleteProduct = async (req, res) => {
       });
     }
 
-    await product.remove();
+    await product.deleteOne();
     console.log(`[${getTimestamp()}] ✅ Product deleted: ${product.productName} from store ${storeId}`);
 
     res.status(200).json({ message: 'تم حذف المنتج بنجاح' });
@@ -177,6 +177,8 @@ exports.getProducts = async (req, res) => {
   const userId = req.user.userId;
 
   try {
+    console.log(`[${getTimestamp()}] 📡 Attempting to fetch products for store ${storeId} and user ${userId}`);
+
     // التحقق من وجود المتجر
     const store = await Store.findOne({ _id: storeId, userId });
     if (!store) {
@@ -187,9 +189,9 @@ exports.getProducts = async (req, res) => {
     const products = await Product.find({ storeId });
     console.log(`[${getTimestamp()}] ✅ Fetched ${products.length} products for store ${storeId}`);
 
-    res.status(200).json(products);
+    res.status(200).json(products || []);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error fetching products:`, err.message, err.stack);
+    console.error(`[${getTimestamp()}] ❌ Error fetching products for store ${storeId}:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في جلب المنتجات: ' + (err.message || 'غير معروف') });
   }
 };
