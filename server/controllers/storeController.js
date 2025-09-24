@@ -9,14 +9,12 @@ const getTimestamp = () => new Date().toISOString();
 
 // إنشاء متجر جديد
 exports.createStore = async (req, res) => {
-  const { storeName, templateId, primaryColor, secondaryColor, headerHtml, landingTemplateId, landingHtml } = req.body;
+  let { storeName, templateId, primaryColor, secondaryColor, headerHtml, landingTemplateId, landingHtml, selectedBotId } = req.body;
   const userId = req.user.userId;
 
   try {
-    if (!storeName || storeName.trim() === '') {
-      console.log(`[${getTimestamp()}] ❌ Create store failed: storeName is missing or empty`);
-      return res.status(400).json({ message: 'اسم المتجر مطلوب' });
-    }
+    // استخدام بيانات افتراضية لو مش موجودة
+    storeName = storeName && storeName.trim() !== '' ? storeName : 'متجري الجديد';
 
     // التحقق من عدم وجود متجر بنفس الاسم
     const existingStore = await Store.findOne({ storeName });
@@ -59,13 +57,15 @@ exports.createStore = async (req, res) => {
     console.log(`[${getTimestamp()}] ✅ Store created: ${newStore.storeName} for user ${userId}`);
 
     // ربط المتجر بالبوت إذا كان موجود
-    const bot = await Bot.findOne({ _id: selectedBotId, userId });
-    if (bot) {
-      bot.storeId = newStore._id;
-      await bot.save();
-      console.log(`[${getTimestamp()}] ✅ Linked store ${newStore._id} to bot ${bot._id}`);
-    } else {
-      console.log(`[${getTimestamp()}] ⚠️ No bot found for linking, skipping...`);
+    if (selectedBotId) {
+      const bot = await Bot.findOne({ _id: selectedBotId, userId });
+      if (bot) {
+        bot.storeId = newStore._id;
+        await bot.save();
+        console.log(`[${getTimestamp()}] ✅ Linked store ${newStore._id} to bot ${bot._id}`);
+      } else {
+        console.log(`[${getTimestamp()}] ⚠️ No bot found for linking, skipping...`);
+      }
     }
 
     // إنشاء قاعدة افتراضية للمتجر في Rules
