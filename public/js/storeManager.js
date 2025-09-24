@@ -301,6 +301,46 @@ async function loadStoreManagerPage() {
     }
   }
 
+  async function loadProducts(botId) {
+    try {
+      const bot = await handleApiRequest(`/api/bots/${botId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, productError, "فشل في جلب بيانات البوت");
+
+      if (!bot.storeId) {
+        document.getElementById("productsList").innerHTML = "<p>أنشئ متجر أولاً قبل إضافة المنتجات.</p>";
+        return;
+      }
+
+      const products = await handleApiRequest(`/api/stores/${bot.storeId}/products`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, productError, "لم يتم العثور على منتجات، أضف منتجك الأول!");
+
+      const productsList = document.getElementById("productsList");
+      productsList.innerHTML = products.length
+        ? products
+            .map(
+              (product) => `
+                <div class="product-item">
+                  <img src="${product.imageUrl || "/placeholder-bot.png"}" alt="${product.productName}" style="max-width: 100px;">
+                  <div>
+                    <h4>${product.productName}</h4>
+                    <p>السعر: ${product.price} ${product.currency}</p>
+                    <p>المخزون: ${product.stock}</p>
+                    <button onclick="editProduct('${product._id}')" class="btn btn-secondary"><i class="fas fa-edit"></i> تعديل</button>
+                    <button onclick="deleteProduct('${product._id}')" class="btn btn-danger"><i class="fas fa-trash"></i> حذف</button>
+                  </div>
+                </div>
+              `
+            )
+            .join("")
+        : "<p>لم يتم العثور على منتجات، أضف منتجك الأول!</p>";
+    } catch (err) {
+      console.error("خطأ في تحميل المنتجات:", err);
+      document.getElementById("productsList").innerHTML = "<p>لم يتم العثور على منتجات، أضف منتجك الأول!</p>";
+    }
+  }
+
   async function saveStoreSettings(botId) {
     storeError.style.display = "none";
     const formData = new FormData(storeForm);
@@ -330,7 +370,7 @@ async function loadStoreManagerPage() {
         body: JSON.stringify(payload),
       }, storeError, "فشل في حفظ المتجر");
 
-      storeError.textContent = `تم حفظ المتجر بنجاح!`;
+      storeError.textContent = `تم حفظ المتجر بنجاح! رابط المتجر: https://zainbot.com/store/${data.storeLinkSlug || data.storeLink}`;
       storeError.style.color = "green";
       storeError.style.display = "block";
       storeLinkEditContainer.style.display = "none"; // إخفاء حقل التعديل بعد الحفظ
