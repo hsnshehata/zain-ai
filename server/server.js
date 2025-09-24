@@ -20,7 +20,7 @@ const uploadRoutes = require('./routes/upload');
 const notificationRoutes = require('./routes/notifications');
 const storesRoutes = require('./routes/stores');
 const productsRoutes = require('./routes/products');
-const categoriesRoutes = require('./routes/categories'); // إضافة routes الأقسام
+const categoriesRoutes = require('./routes/categories');
 const ordersRoutes = require('./routes/orders');
 const connectDB = require('./db');
 const Conversation = require('./models/Conversation');
@@ -28,7 +28,7 @@ const Bot = require('./models/Bot');
 const User = require('./models/User');
 const Feedback = require('./models/Feedback');
 const Store = require('./models/Store');
-const Category = require('./models/Category'); // إضافة موديل Category
+const Category = require('./models/Category');
 const NodeCache = require('node-cache');
 const bcrypt = require('bcryptjs');
 const request = require('request');
@@ -84,7 +84,11 @@ app.use((req, res, next) => {
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 // زيادة الحد الأقصى لحجم الـ JSON Payload لـ 10MB
 app.use(express.json({ limit: '10mb' }));
@@ -116,54 +120,96 @@ app.use('/api/messages', messagesRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/stores', storesRoutes);
-app.use('/api/stores', productsRoutes);
-app.use('/api/stores', categoriesRoutes); // إضافة routes الأقسام
-app.use('/api', ordersRoutes);
+app.use('/api/products', productsRoutes);
+app.use('/api/categories', categoriesRoutes);
+app.use('/api/orders', ordersRoutes);
 app.use('/', indexRoutes);
 
-// Route لصفحة المتجر
-app.get('/store/:storeLink', async (req, res) => {
+// Route لخدمة صفحة المتجر بناءً على storeLink
+app.get('/:storeLink', async (req, res) => {
   try {
     const { storeLink } = req.params;
+    console.log(`[${getTimestamp()}] 📡 Serving store.html for storeLink: ${storeLink}`);
+
+    // التحقق من وجود المتجر
     const store = await Store.findOne({ storeLink });
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Store not found for link: ${storeLink}`);
+      console.log(`[${getTimestamp()}] ❌ Store not found for storeLink: ${storeLink}`);
       return res.status(404).json({ message: 'المتجر غير موجود' });
     }
+
     const filePath = path.join(__dirname, '../public/store.html');
     console.log(`[${getTimestamp()}] Serving store.html from: ${filePath}`);
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error(`[${getTimestamp()}] Error serving store.html:`, err);
-        res.status(500).json({ message: 'Failed to load store page' });
+        console.error(`[${getTimestamp()}] ❌ Error serving store.html:`, err);
+        res.status(500).json({ message: 'فشل في تحميل صفحة المتجر' });
       }
     });
   } catch (err) {
-    console.error(`[${getTimestamp()}] Error in store route:`, err);
-    res.status(500).json({ message: 'Something went wrong!' });
+    console.error(`[${getTimestamp()}] ❌ Error in store route:`, err);
+    res.status(500).json({ message: 'حدث خطأ ما!' });
   }
 });
 
-// Route للاندينج بيج
-app.get('/store/:storeLink/landing', async (req, res) => {
+// Route لخدمة صفحة اللاندينج بناءً على storeLink
+app.get('/landing/:storeLink', async (req, res) => {
   try {
     const { storeLink } = req.params;
+    console.log(`[${getTimestamp()}] 📡 Serving landing.html for storeLink: ${storeLink}`);
+
+    // التحقق من وجود المتجر
     const store = await Store.findOne({ storeLink });
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Store not found for link: ${storeLink}`);
+      console.log(`[${getTimestamp()}] ❌ Store not found for storeLink: ${storeLink}`);
       return res.status(404).json({ message: 'المتجر غير موجود' });
     }
+
     const filePath = path.join(__dirname, '../public/landing.html');
     console.log(`[${getTimestamp()}] Serving landing.html from: ${filePath}`);
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error(`[${getTimestamp()}] Error serving landing.html:`, err);
-        res.status(500).json({ message: 'Failed to load landing page' });
+        console.error(`[${getTimestamp()}] ❌ Error serving landing.html:`, err);
+        res.status(500).json({ message: 'فشل في تحميل صفحة اللاندينج' });
       }
     });
   } catch (err) {
-    console.error(`[${getTimestamp()}] Error in landing route:`, err);
-    res.status(500).json({ message: 'Something went wrong!' });
+    console.error(`[${getTimestamp()}] ❌ Error in landing route:`, err);
+    res.status(500).json({ message: 'حدث خطأ ما!' });
+  }
+});
+
+// Route لخدمة صفحة تفاصيل المنتج
+app.get('/product/:storeLink/:productId', async (req, res) => {
+  try {
+    const { storeLink, productId } = req.params;
+    console.log(`[${getTimestamp()}] 📡 Serving product.html for storeLink: ${storeLink}, productId: ${productId}`);
+
+    // التحقق من وجود المتجر
+    const store = await Store.findOne({ storeLink });
+    if (!store) {
+      console.log(`[${getTimestamp()}] ❌ Store not found for storeLink: ${storeLink}`);
+      return res.status(404).json({ message: 'المتجر غير موجود' });
+    }
+
+    // التحقق من وجود المنتج
+    const product = await Product.findOne({ _id: productId, storeId: store._id });
+    if (!product) {
+      console.log(`[${getTimestamp()}] ❌ Product not found for productId: ${productId} in store: ${storeLink}`);
+      return res.status(404).json({ message: 'المنتج غير موجود' });
+    }
+
+    const filePath = path.join(__dirname, '../public/product.html');
+    console.log(`[${getTimestamp()}] Serving product.html from: ${filePath}`);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error(`[${getTimestamp()}] ❌ Error serving product.html:`, err);
+        res.status(500).json({ message: 'فشل في تحميل صفحة المنتج' });
+      }
+    });
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Error in product route:`, err);
+    res.status(500).json({ message: 'حدث خطأ ما!' });
   }
 });
 
