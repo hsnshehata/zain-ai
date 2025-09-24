@@ -1,4 +1,3 @@
-// /public/js/storeManager.js
 async function loadStoreManagerPage() {
   console.log('🔍 loadStoreManagerPage called');
   const link = document.createElement("link");
@@ -29,145 +28,155 @@ async function loadStoreManagerPage() {
     return;
   }
 
-  // Main structure for the store settings page
-  content.innerHTML = `
-    <div class="page-header">
-      <h2><i class="fas fa-store"></i> إدارة المتجر الذكي</h2>
-      <div id="instructionsContainer" class="instructions-container" style="display: none;">
-        <h3>📋 خطوات إنشاء وإدارة متجرك الذكي</h3>
-        <p>عشان تقدر تدير متجرك بسهولة، اتّبع الخطوات دي:</p>
-        <ul>
-          <li>
-            <strong>1. إنشاء المتجر:</strong> لو لسه ماعملتش متجر، املأ بيانات المتجر (الاسم، القالب، الألوان) واضغط "حفظ المتجر".
-          </li>
-          <li>
-            <strong>2. إضافة المنتجات:</strong> أضف منتجاتك بالاسم، الوصف، السعر، الصورة، والمخزون.
-            <br>
-            <span style="display: block; margin-top: 5px;">
-              - الصور لازم تكون بصيغة PNG أو JPG، ويفضل تكون مربعة.<br>
-              - حدد عتبة المخزون المنخفض عشان تتلقى إشعارات لو المخزون قل.
-            </span>
-          </li>
-          <li>
-            <strong>3. تخصيص الواجهة:</strong> اختار قالب (كلاسيكي، مودرن، إلخ)، وعدّل الألوان أو أضف HTML مخصص للهيدر أو اللاندينج بيج.
-          </li>
-          <li>
-            <strong>4. إدارة الطلبات:</strong> الطلبات هتظهر في صفحة الحسابات (تحت الإنشاء) مع إشعارات تلقائية لواتساب.
-          </li>
-        </ul>
-      </div>
-      <div class="header-actions">
-        <button id="toggleInstructionsBtn" class="btn btn-secondary"><i class="fas fa-info-circle"></i> إظهار التعليمات</button>
-        <div id="storeStatus" class="page-status" style="margin-left: 20px;"></div>
-      </div>
-    </div>
+  try {
+    // جلب بيانات البوت
+    const botResponse = await fetch(`/api/bots/${selectedBotId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
 
-    <div id="loadingSpinner" class="spinner"><div class="loader"></div></div>
-    <div id="errorMessage" class="error-message" style="display: none;"></div>
+    if (!botResponse.ok) {
+      throw new Error("فشل في جلب بيانات البوت");
+    }
 
-    <div id="storeSettingsContainer" class="settings-container store-settings-grid" style="display: none;">
-      <div class="card settings-card">
-        <div class="card-header"><h3><i class="fas fa-store-alt"></i> إعدادات المتجر</h3></div>
-        <div class="card-body">
-          <form id="store-form">
-            <div class="form-group">
-              <label for="storeName">اسم المتجر</label>
-              <input type="text" id="storeName" name="storeName" class="form-control" required>
-            </div>
-            <div class="form-group">
-              <label for="templateId">القالب</label>
-              <select id="templateId" name="templateId" class="form-control">
-                <option value="1">كلاسيكي</option>
-                <option value="2">مودرن</option>
-                <option value="3">بسيط</option>
-                <option value="4">إبداعي</option>
-                <option value="5">تجاري</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="primaryColor">اللون الأساسي</label>
-              <input type="color" id="primaryColor" name="primaryColor" class="form-control">
-            </div>
-            <div class="form-group">
-              <label for="secondaryColor">اللون الثانوي</label>
-              <input type="color" id="secondaryColor" name="secondaryColor" class="form-control">
-            </div>
-            <div class="form-group">
-              <label for="headerHtml">كود HTML للهيدر</label>
-              <textarea id="headerHtml" name="headerHtml" class="form-control" rows="4"></textarea>
-            </div>
-            <div class="form-group">
-              <label for="landingTemplateId">قالب اللاندينج بيج</label>
-              <select id="landingTemplateId" name="landingTemplateId" class="form-control">
-                <option value="1">كلاسيكي</option>
-                <option value="2">مودرن</option>
-                <option value="3">بسيط</option>
-                <option value="4">إبداعي</option>
-                <option value="5">تجاري</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="landingHtml">كود HTML للاندينج بيج</label>
-              <textarea id="landingHtml" name="landingHtml" class="form-control" rows="4"></textarea>
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary">حفظ المتجر</button>
-            </div>
-          </form>
-          <p id="storeError" class="error-message" style="display: none;"></p>
+    const bot = await botResponse.json();
+
+    if (!bot.storeId) {
+      // عرض زر إنشاء متجر إذا لم يكن موجود
+      content.innerHTML = `
+        <button id="createStoreBtn" style="padding: 10px 20px; font-size: 16px; margin: 20px 0;">إنشاء المتجر</button>
+        <p>لا يوجد متجر مرتبط بالبوت، الرجاء إنشاء متجر أولاً.</p>
+      `;
+
+      document.getElementById('createStoreBtn').addEventListener('click', createStoreForUser);
+      return;
+    }
+
+    // إذا المتجر موجود استمر في تحميل بيانات الإدارة الحالية
+    content.innerHTML = `
+      <div class="page-header">
+        <h2><i class="fas fa-store"></i> إدارة المتجر الذكي</h2>
+        <div id="instructionsContainer" class="instructions-container" style="display: none;">
+          <h3>📋 خطوات إنشاء وإدارة متجرك الذكي</h3>
+          <p>عشان تقدر تدير متجرك بسهولة، اتّبع الخطوات دي:</p>
+          <ul>
+            <li><strong>1. إنشاء المتجر:</strong> يمكنك تعديل بيانات المتجر وحفظها.</li>
+            <li><strong>2. إضافة المنتجات:</strong> أضف منتجاتك بالتفصيل.</li>
+            <li><strong>3. تخصيص الواجهة:</strong> اختر قالب وألوان.</li>
+            <li><strong>4. إدارة الطلبات:</strong> شاهد الطلبات وإشعاراتها.</li>
+          </ul>
+        </div>
+        <div class="header-actions">
+          <button id="toggleInstructionsBtn" class="btn btn-secondary"><i class="fas fa-info-circle"></i> إظهار التعليمات</button>
+          <div id="storeStatus" class="page-status" style="margin-left: 20px;"></div>
         </div>
       </div>
-      <div class="card settings-card">
-        <div class="card-header"><h3><i class="fas fa-box"></i> إدارة المنتجات</h3></div>
-        <div class="card-body">
-          <form id="product-form">
-            <div class="form-group">
-              <label for="productName">اسم المنتج</label>
-              <input type="text" id="productName" name="productName" class="form-control" required>
-            </div>
-            <div class="form-group">
-              <label for="description">الوصف</label>
-              <textarea id="description" name="description" class="form-control" rows="3"></textarea>
-            </div>
-            <div class="form-group">
-              <label for="price">السعر</label>
-              <input type="number" id="price" name="price" class="form-control" required min="0">
-            </div>
-            <div class="form-group">
-              <label for="currency">العملة</label>
-              <select id="currency" name="currency" class="form-control">
-                <option value="EGP">جنيه مصري</option>
-                <option value="USD">دولار أمريكي</option>
-                <option value="SAR">ريال سعودي</option>
-                <option value="AED">درهم إماراتي</option>
-              </select>
-            </div>
-            <div class="form-group">
-              <label for="image">صورة المنتج</label>
-              <input type="file" id="image" name="image" class="form-control" accept="image/*">
-            </div>
-            <div class="form-group">
-              <label for="stock">المخزون</label>
-              <input type="number" id="stock" name="stock" class="form-control" required min="0">
-            </div>
-            <div class="form-group">
-              <label for="lowStockThreshold">عتبة المخزون المنخفض</label>
-              <input type="number" id="lowStockThreshold" name="lowStockThreshold" class="form-control" min="0" value="10">
-            </div>
-            <div class="form-group">
-              <label for="category">التصنيف</label>
-              <input type="text" id="category" name="category" class="form-control">
-            </div>
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary">إضافة المنتج</button>
-            </div>
-          </form>
-          <p id="productError" class="error-message" style="display: none;"></p>
-          <div id="productsList" class="products-grid"></div>
+
+      <div id="loadingSpinner" class="spinner"><div class="loader"></div></div>
+      <div id="errorMessage" class="error-message" style="display: none;"></div>
+
+      <div id="storeSettingsContainer" class="settings-container store-settings-grid" style="display: none;">
+        <div class="card settings-card">
+          <div class="card-header"><h3><i class="fas fa-store-alt"></i> إعدادات المتجر</h3></div>
+          <div class="card-body">
+            <form id="store-form">
+              <div class="form-group">
+                <label for="storeName">اسم المتجر</label>
+                <input type="text" id="storeName" name="storeName" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label for="templateId">القالب</label>
+                <select id="templateId" name="templateId" class="form-control">
+                  <option value="1">كلاسيكي</option>
+                  <option value="2">مودرن</option>
+                  <option value="3">بسيط</option>
+                  <option value="4">إبداعي</option>
+                  <option value="5">تجاري</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="primaryColor">اللون الأساسي</label>
+                <input type="color" id="primaryColor" name="primaryColor" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="secondaryColor">اللون الثانوي</label>
+                <input type="color" id="secondaryColor" name="secondaryColor" class="form-control">
+              </div>
+              <div class="form-group">
+                <label for="headerHtml">كود HTML للهيدر</label>
+                <textarea id="headerHtml" name="headerHtml" class="form-control" rows="4"></textarea>
+              </div>
+              <div class="form-group">
+                <label for="landingTemplateId">قالب اللاندينج بيج</label>
+                <select id="landingTemplateId" name="landingTemplateId" class="form-control">
+                  <option value="1">كلاسيكي</option>
+                  <option value="2">مودرن</option>
+                  <option value="3">بسيط</option>
+                  <option value="4">إبداعي</option>
+                  <option value="5">تجاري</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="landingHtml">كود HTML للاندينج بيج</label>
+                <textarea id="landingHtml" name="landingHtml" class="form-control" rows="4"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">حفظ المتجر</button>
+              </div>
+            </form>
+            <p id="storeError" class="error-message" style="display: none;"></p>
+          </div>
+        </div>
+        <div class="card settings-card">
+          <div class="card-header"><h3><i class="fas fa-box"></i> إدارة المنتجات</h3></div>
+          <div class="card-body">
+            <form id="product-form">
+              <div class="form-group">
+                <label for="productName">اسم المنتج</label>
+                <input type="text" id="productName" name="productName" class="form-control" required>
+              </div>
+              <div class="form-group">
+                <label for="description">الوصف</label>
+                <textarea id="description" name="description" class="form-control" rows="3"></textarea>
+              </div>
+              <div class="form-group">
+                <label for="price">السعر</label>
+                <input type="number" id="price" name="price" class="form-control" required min="0">
+              </div>
+              <div class="form-group">
+                <label for="currency">العملة</label>
+                <select id="currency" name="currency" class="form-control">
+                  <option value="EGP">جنيه مصري</option>
+                  <option value="USD">دولار أمريكي</option>
+                  <option value="SAR">ريال سعودي</option>
+                  <option value="AED">درهم إماراتي</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="image">صورة المنتج</label>
+                <input type="file" id="image" name="image" class="form-control" accept="image/*">
+              </div>
+              <div class="form-group">
+                <label for="stock">المخزون</label>
+                <input type="number" id="stock" name="stock" class="form-control" required min="0">
+              </div>
+              <div class="form-group">
+                <label for="lowStockThreshold">عتبة المخزون المنخفض</label>
+                <input type="number" id="lowStockThreshold" name="lowStockThreshold" class="form-control" min="0" value="10">
+              </div>
+              <div class="form-group">
+                <label for="category">التصنيف</label>
+                <input type="text" id="category" name="category" class="form-control">
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">إضافة المنتج</button>
+              </div>
+            </form>
+            <p id="productError" class="error-message" style="display: none;"></p>
+            <div id="productsList" class="products-grid"></div>
+          </div>
         </div>
       </div>
-    </div>
-  `;
+    `;
 
   const loadingSpinner = document.getElementById("loadingSpinner");
   const errorMessage = document.getElementById("errorMessage");
@@ -376,7 +385,7 @@ async function loadStoreManagerPage() {
     }
 
     const formData = new FormData(storeForm);
-    formData.append('botId', botId); // إضافة botId للربط
+    formData.append('botId', botId);
 
     try {
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
@@ -386,7 +395,7 @@ async function loadStoreManagerPage() {
       const method = bot.storeId ? 'PUT' : 'POST';
       const url = bot.storeId ? `/api/stores/${bot.storeId}` : '/api/stores';
 
-      const response = await handleApiRequest(url, {
+      await handleApiRequest(url, {
         method,
         headers: {
           Authorization: `Bearer ${token}`,
