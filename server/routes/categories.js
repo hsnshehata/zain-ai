@@ -1,22 +1,23 @@
 // /server/routes/categories.js
 const express = require('express');
-const router = express.Router();
 const authenticate = require('../middleware/authenticate');
 const categoryController = require('../controllers/categoryController');
 
-// Middleware لتسجيل الطلبات
-router.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] 📡 Category Route: ${req.method} ${req.url}`);
-  next();
-});
+const router = express.Router();
 
-// إضافة قسم جديد
+// إنشاء قسم (مع auth)
 router.post('/:storeId/categories', authenticate, categoryController.createCategory);
 
-// جلب كل الأقسام
+// تعديل قسم (مع auth)
+router.put('/:storeId/categories/:categoryId', authenticate, categoryController.updateCategory);
+
+// حذف قسم (مع auth)
+router.delete('/:storeId/categories/:categoryId', authenticate, categoryController.deleteCategory);
+
+// جلب الأقسام بـ storeId (مع auth)
 router.get('/:storeId/categories', authenticate, categoryController.getCategories);
 
-// حذف قسم
-router.delete('/:storeId/categories/:categoryId', authenticate, categoryController.deleteCategory);
+// جلب الأقسام بالـ storeLink (public، بدون auth)
+router.get('/slug/:storeLink/categories', categoryController.getCategoriesByStoreLink);
 
 module.exports = router;
