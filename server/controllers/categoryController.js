@@ -104,6 +104,56 @@ exports.getCategoriesByStoreLink = async (req, res) => {
   }
 };
 
+// تعديل قسم
+exports.updateCategory = async (req, res) => {
+  const { storeId, categoryId } = req.params;
+  const { categoryName, categoryDescription } = req.body;
+  const userId = req.user.userId;
+
+  try {
+    console.log(`[${getTimestamp()}] 📡 Updating category ${categoryId} for store ${storeId} with data:`, {
+      categoryName,
+      categoryDescription
+    });
+
+    // التحقق من وجود المتجر
+    const store = await Store.findOne({ _id: storeId, userId });
+    if (!store) {
+      console.log(`[${getTimestamp()}] ❌ Update category failed: Store ${storeId} not found for user ${userId}`);
+      return res.status(404).json({ message: 'المتجر غير موجود' });
+    }
+
+    // التحقق من وجود القسم
+    const category = await Category.findOne({ _id: categoryId, storeId });
+    if (!category) {
+      console.log(`[${getTimestamp()}] ❌ Update category failed: Category ${categoryId} not found in store ${storeId}`);
+      return res.status(404).json({ message: 'القسم غير موجود' });
+    }
+
+    // تحديث الحقول
+    if (categoryName) {
+      // التحقق من عدم وجود قسم آخر بنفس الاسم
+      const existingCategory = await Category.findOne({ storeId, name: categoryName, _id: { $ne: categoryId } });
+      if (existingCategory) {
+        console.log(`[${getTimestamp()}] ❌ Update category failed: Category name ${categoryName} already exists in store ${storeId}`);
+        return res.status(400).json({ message: 'اسم القسم موجود بالفعل' });
+      }
+      category.name = categoryName;
+    }
+    if (categoryDescription !== undefined) {
+      category.description = categoryDescription || '';
+    }
+
+    await category.save();
+    console.log(`[${getTimestamp()}] ✅ Category updated: ${category.name} for store ${storeId}`);
+
+    res.status(200).json(category);
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Error updating category:`, err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في تعديل القسم: ' + (err.message || 'غير معروف') });
+  }
+};
+
 // حذف قسم
 exports.deleteCategory = async (req, res) => {
   const { storeId, categoryId } = req.params;
