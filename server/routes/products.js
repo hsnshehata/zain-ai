@@ -24,7 +24,7 @@ const upload = multer({
     }
   },
   limits: { fileSize: 5 * 1024 * 1024 } // 5MB
-}).single('image'); // استخدام single بدل any لتطابق uploadToImgbb
+}).single('image');
 
 // Middleware لتسجيل الطلبات
 router.use((req, res, next) => {
@@ -41,16 +41,19 @@ router.use((req, res, next) => {
   next();
 });
 
-// إضافة منتج
+// إضافة منتج (مع auth)
 router.post('/:storeId/products', authenticate, upload, productController.createProduct);
 
-// تعديل منتج
+// تعديل منتج (مع auth)
 router.put('/:storeId/products/:productId', authenticate, upload, productController.updateProduct);
 
-// حذف منتج
+// حذف منتج (مع auth)
 router.delete('/:storeId/products/:productId', authenticate, productController.deleteProduct);
 
-// جلب المنتجات
+// جلب المنتجات بـ storeId (مع auth، لصاحب المتجر)
 router.get('/:storeId/products', authenticate, productController.getProducts);
+
+// جلب المنتجات بالـ storeLink (public، بدون auth)
+router.get('/slug/:storeLink/products', productController.getProductsByStoreLink);
 
 module.exports = router;
