@@ -61,39 +61,38 @@ exports.createProduct = async (req, res) => {
     if (category) {
       const categoryExists = await Category.findOne({ _id: category, storeId });
       if (!categoryExists) {
-        console.log(`[${getTimestamp()}] ❌ Create product failed: Category ${category} not found in store ${storeId}`);
+        console.log(`[${getTimestamp()}] ❌ Create product failed: Category ${category} not found for store ${storeId}`);
         return res.status(404).json({ message: 'القسم غير موجود' });
       }
       categoryId = category;
     }
 
-    // رفع الصورة إلى imgbb إذا كانت موجودة
+    // رفع الصورة إذا وجدت
     let imageUrl = '';
-    if (file && file.size > 0) {
+    if (file) {
       try {
-        const uploadResult = await uploadToImgbb(file);
-        imageUrl = uploadResult.url;
-        console.log(`[${getTimestamp()}] 📸 Image uploaded to imgbb: ${imageUrl}`);
+        imageUrl = await uploadToImgbb(file);
+        console.log(`[${getTimestamp()}] ✅ Image uploaded for product: ${imageUrl}`);
       } catch (err) {
-        console.error(`[${getTimestamp()}] ⚠️ Failed to upload image to imgbb:`, err.message, err.stack);
-        imageUrl = ''; // السماح بحفظ المنتج بدون صورة
+        console.log(`[${getTimestamp()}] ❌ Failed to upload image:`, err.message);
+        return res.status(500).json({ message: 'فشل في رفع الصورة: ' + (err.message || 'غير معروف') });
       }
     }
 
-    // إنشاء المنتج
     const newProduct = new Product({
       storeId,
       productName,
       description: description || '',
-      price: parseFloat(price),
+      price,
       hasOffer: offerEnabled,
-      originalPrice: offerEnabled ? parseFloat(originalPrice) : undefined,
-      discountedPrice: offerEnabled ? parseFloat(discountedPrice) : undefined,
+      originalPrice: offerEnabled ? originalPrice : null,
+      discountedPrice: offerEnabled ? discountedPrice : null,
       currency,
-      stock: parseInt(stock),
-      lowStockThreshold: lowStockThreshold ? parseInt(lowStockThreshold) : 10,
+      stock,
+      lowStockThreshold: lowStockThreshold || 10,
       category: categoryId,
-      imageUrl
+      imageUrl,
+      isActive: true
     });
 
     await newProduct.save();
@@ -143,52 +142,50 @@ exports.updateProduct = async (req, res) => {
       return res.status(404).json({ message: 'المنتج غير موجود' });
     }
 
-    // التحقق من حقول العرض
+    // تحديث الحقول
+    if (productName) product.productName = productName;
+    if (description !== undefined) product.description = description;
+    if (price) product.price = price;
+    if (currency) product.currency = currency;
+    if (stock !== undefined) product.stock = stock;
+    if (lowStockThreshold !== undefined) product.lowStockThreshold = lowStockThreshold;
+
     const offerEnabled = hasOffer === "yes" || hasOffer === true;
-    if (offerEnabled && (!originalPrice || !discountedPrice)) {
-      console.log(`[${getTimestamp()}] ❌ Update product failed: Missing offer fields`, { originalPrice, discountedPrice });
-      return res.status(400).json({ message: 'السعر قبل وبعد الخصم مطلوبان إذا كان هناك عرض' });
+    product.hasOffer = offerEnabled;
+    if (offerEnabled) {
+      if (!originalPrice || !discountedPrice) {
+        console.log(`[${getTimestamp()}] ❌ Update product failed: Missing offer fields`, { originalPrice, discountedPrice });
+        return res.status(400).json({ message: 'السعر قبل وبعد الخصم مطلوبان إذا كان هناك عرض' });
+      }
+      product.originalPrice = originalPrice;
+      product.discountedPrice = discountedPrice;
+    } else {
+      product.originalPrice = null;
+      product.discountedPrice = null;
     }
 
-    // التحقق من وجود القسم لو تم اختياره
-    let categoryId = product.category;
+    // تحديث القسم
     if (category) {
       const categoryExists = await Category.findOne({ _id: category, storeId });
       if (!categoryExists) {
-        console.log(`[${getTimestamp()}] ❌ Update product failed: Category ${category} not found in store ${storeId}`);
+        console.log(`[${getTimestamp()}] ❌ Update product failed: Category ${category} not found for store ${storeId}`);
         return res.status(404).json({ message: 'القسم غير موجود' });
       }
-      categoryId = category;
+      product.category = category;
+    } else {
+      product.category = null;
     }
 
-    // رفع الصورة إلى imgbb إذا كانت موجودة
-    if (file && file.size > 0) {
+    // رفع صورة جديدة إذا وجدت
+    if (file) {
       try {
-        const uploadResult = await uploadToImgbb(file);
-        product.imageUrl = uploadResult.url;
-        console.log(`[${getTimestamp()}] 📸 Image uploaded to imgbb: ${product.imageUrl}`);
+        product.imageUrl = await uploadToImgbb(file);
+        console.log(`[${getTimestamp()}] ✅ Image updated for product: ${product.imageUrl}`);
       } catch (err) {
-        console.error(`[${getTimestamp()}] ⚠️ Failed to upload image to imgbb:`, err.message, err.stack);
-        product.imageUrl = product.imageUrl || ''; // السماح بتحديث المنتج بدون تغيير الصورة
+        console.log(`[${getTimestamp()}] ❌ Failed to upload image:`, err.message);
+        return res.status(500).json({ message: 'فشل في رفع الصورة: ' + (err.message || 'غير معروف') });
       }
     }
-
-    // تحديث الحقول
-    if (productName) product.productName = productName;
-    if (description) product.description = description;
-    if (price) product.price = parseFloat(price);
-    product.hasOffer = offerEnabled;
-    if (offerEnabled) {
-      product.originalPrice = parseFloat(originalPrice);
-      product.discountedPrice = parseFloat(discountedPrice);
-    } else {
-      product.originalPrice = undefined;
-      product.discountedPrice = undefined;
-    }
-    if (currency) product.currency = currency;
-    if (stock !== undefined) product.stock = parseInt(stock);
-    if (lowStockThreshold) product.lowStockThreshold = parseInt(lowStockThreshold);
-    if (category) product.category = categoryId;
 
     await product.save();
     console.log(`[${getTimestamp()}] ✅ Product updated: ${product.productName} for store ${storeId}, imageUrl: ${product.imageUrl}`);
@@ -207,6 +204,7 @@ exports.deleteProduct = async (req, res) => {
 
   try {
     console.log(`[${getTimestamp()}] 📡 Deleting product ${productId} for store ${storeId}, user ${userId}`);
+
     // التحقق من وجود المتجر
     const store = await Store.findOne({ _id: storeId, userId });
     if (!store) {
@@ -221,8 +219,7 @@ exports.deleteProduct = async (req, res) => {
       return res.status(404).json({ message: 'المنتج غير موجود' });
     }
 
-    // لا نحتاج لحذف الصورة لأنها مخزنة على imgbb
-    await product.deleteOne();
+    await Product.deleteOne({ _id: productId });
     console.log(`[${getTimestamp()}] ✅ Product deleted: ${product.productName} from store ${storeId}`);
 
     res.status(200).json({ message: 'تم حذف المنتج بنجاح' });
@@ -232,7 +229,7 @@ exports.deleteProduct = async (req, res) => {
   }
 };
 
-// جلب كل المنتجات
+// جلب المنتجات بـ storeId (لصاحب المتجر)
 exports.getProducts = async (req, res) => {
   const { storeId } = req.params;
   const { category } = req.query;
@@ -260,6 +257,37 @@ exports.getProducts = async (req, res) => {
     res.status(200).json(products || []);
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error fetching products for store ${storeId}:`, err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في جلب المنتجات: ' + (err.message || 'غير معروف') });
+  }
+};
+
+// جلب المنتجات بالـ storeLink (public)
+exports.getProductsByStoreLink = async (req, res) => {
+  const { storeLink } = req.params;
+  const { category } = req.query;
+
+  try {
+    console.log(`[${getTimestamp()}] 📡 Attempting to fetch products for storeLink ${storeLink}`, { category });
+
+    // التحقق من وجود المتجر
+    const store = await Store.findOne({ storeLink });
+    if (!store) {
+      console.log(`[${getTimestamp()}] ❌ Get products failed: Store link ${storeLink} not found`);
+      return res.status(404).json({ message: 'المتجر غير موجود' });
+    }
+
+    // جلب المنتجات حسب القسم إذا تم تحديده
+    const query = { storeId: store._id };
+    if (category) {
+      query.category = category;
+    }
+
+    const products = await Product.find(query).populate('category');
+    console.log(`[${getTimestamp()}] ✅ Fetched ${products.length} products for storeLink ${storeLink}`);
+
+    res.status(200).json(products || []);
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Error fetching products for storeLink ${storeLink}:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في جلب المنتجات: ' + (err.message || 'غير معروف') });
   }
 };
