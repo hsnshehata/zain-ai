@@ -94,7 +94,7 @@ exports.createStore = async (req, res) => {
 // تعديل المتجر
 exports.updateStore = async (req, res) => {
   const { storeId } = req.params;
-  const { storeName, templateId, primaryColor, secondaryColor, headerHtml, landingTemplateId, landingHtml } = req.body;
+  const { storeName, storeLink, templateId, primaryColor, secondaryColor, headerHtml, landingTemplateId, landingHtml } = req.body;
   const userId = req.user.userId;
 
   try {
@@ -112,6 +112,22 @@ exports.updateStore = async (req, res) => {
     if (storeName && storeName.trim() !== '') {
       store.storeName = storeName;
       store.storeLink = await generateUniqueStoreLink(storeName);
+    } else if (storeLink && storeLink.trim() !== '') {
+      // التحقق من صلاحية storeLink
+      if (!/^[a-zA-Z0-9_-]+$/.test(storeLink)) {
+        console.log(`[${getTimestamp()}] ❌ Update store failed: Invalid storeLink format ${storeLink}`);
+        return res.status(400).json({ message: 'رابط المتجر يجب أن يحتوي على حروف، أرقام، - أو _ فقط' });
+      }
+      if (storeLink.length < 3) {
+        console.log(`[${getTimestamp()}] ❌ Update store failed: storeLink ${storeLink} too short`);
+        return res.status(400).json({ message: 'رابط المتجر يجب أن يكون 3 أحرف على الأقل' });
+      }
+      const existingLink = await Store.findOne({ storeLink, _id: { $ne: storeId } });
+      if (existingLink) {
+        console.log(`[${getTimestamp()}] ❌ Update store failed: storeLink ${storeLink} already exists`);
+        return res.status(400).json({ message: 'الرابط المحدد موجود بالفعل، جرب رابط آخر' });
+      }
+      store.storeLink = storeLink;
     }
     if (templateId) store.templateId = templateId;
     if (primaryColor) store.primaryColor = primaryColor;
