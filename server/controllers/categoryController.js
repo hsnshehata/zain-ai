@@ -1,6 +1,6 @@
 // /server/controllers/categoryController.js
 const Category = require('../models/Category');
-const Store = require('../models/Product');
+const Product = require('../models/Product');
 const Store = require('../models/Store');
 
 // دالة مساعدة لإضافة timestamp للـ logs
