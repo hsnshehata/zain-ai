@@ -116,7 +116,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/stores', storesRoutes);
 app.use('/api/stores', productsRoutes); // تعديل لتوصيل productsRoutes على /api/stores
 app.use('/api', ordersRoutes);
-
+app.use('/api/stores', require('./routes/categories'));
 app.use('/', indexRoutes);
 
 // Route لصفحة المتجر
