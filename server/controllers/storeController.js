@@ -2,10 +2,28 @@
 const Store = require('../models/Store');
 const Bot = require('../models/Bot');
 const Rule = require('../models/Rule');
-const sanitizeHtml = require('sanitize-html'); // لتنظيف HTML من أي سكريبتات ضارة
+const sanitizeHtml = require('sanitize-html');
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
+
+// دالة مساعدة لتوليد storeLink فريد
+const generateUniqueStoreLink = async (storeName) => {
+  let storeLink = storeName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+  if (storeLink.length < 3) {
+    storeLink = `metjar-${Math.floor(1000 + Math.random() * 9000)}`; // توليد رابط افتراضي مع رقم عشوائي
+  }
+
+  let existingLink = await Store.findOne({ storeLink });
+  let suffix = 1;
+  let baseLink = storeLink;
+  while (existingLink) {
+    storeLink = `${baseLink}-${suffix}`;
+    existingLink = await Store.findOne({ storeLink });
+    suffix++;
+  }
+  return storeLink;
+};
 
 // إنشاء متجر جديد
 exports.createStore = async (req, res) => {
@@ -14,7 +32,7 @@ exports.createStore = async (req, res) => {
 
   try {
     // استخدام بيانات افتراضية لو مش موجودة
-    storeName = storeName && storeName.trim() !== '' ? storeName : 'متجري الجديد';
+    storeName = storeName && storeName.trim() !== '' ? storeName : 'متجر-افتراضي';
 
     // التحقق من عدم وجود متجر بنفس الاسم
     const existingStore = await Store.findOne({ storeName });
@@ -27,19 +45,8 @@ exports.createStore = async (req, res) => {
     const cleanedHeaderHtml = headerHtml ? sanitizeHtml(headerHtml, { allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], allowedAttributes: { a: ['href'], img: ['src'] } }) : '';
     const cleanedLandingHtml = landingHtml ? sanitizeHtml(landingHtml, { allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], allowedAttributes: { a: ['href'], img: ['src'] } }) : '';
 
-    // إنشاء رابط المتجر بناءً على الاسم (تحويله لـ slug)
-    let storeLink = storeName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    if (storeLink.length < 3) {
-      console.log(`[${getTimestamp()}] ❌ Create store failed: Generated storeLink is too short`);
-      return res.status(400).json({ message: 'اسم المتجر قصير جدًا لتوليد رابط صالح' });
-    }
-
-    // التحقق من توفر الرابط
-    const existingLink = await Store.findOne({ storeLink });
-    if (existingLink) {
-      console.log(`[${getTimestamp()}] ❌ Create store failed: Generated storeLink ${storeLink} already exists`);
-      return res.status(400).json({ message: 'الرابط المولّد موجود بالفعل، جرب اسم متجر مختلف' });
-    }
+    // توليد رابط المتجر
+    const storeLink = await generateUniqueStoreLink(storeName);
 
     const newStore = new Store({
       userId,
@@ -72,7 +79,7 @@ exports.createStore = async (req, res) => {
     const storeRule = new Rule({
       storeId: newStore._id,
       type: 'store',
-      content: { message: 'مرحبا بك في المتجر الذكي!' } // محتوى افتراضي، هيتحدث تلقائيًا مع المنتجات
+      content: { message: 'مرحبا بك في المتجر الذكي!' }
     });
     await storeRule.save();
     console.log(`[${getTimestamp()}] ✅ Created default store rule for store ${newStore._id}`);
@@ -104,16 +111,7 @@ exports.updateStore = async (req, res) => {
     // تحديث الحقول
     if (storeName && storeName.trim() !== '') {
       store.storeName = storeName;
-      store.storeLink = storeName.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-      if (store.storeLink.length < 3) {
-        return res.status(400).json({ message: 'اسم المتجر الجديد قصير جدًا لتوليد رابط صالح' });
-      }
-      // التحقق من توفر الرابط الجديد
-      const existingLink = await Store.findOne({ storeLink: store.storeLink, _id: { $ne: storeId } });
-      if (existingLink) {
-        console.log(`[${getTimestamp()}] ❌ Update store failed: Generated storeLink ${store.storeLink} already exists`);
-        return res.status(400).json({ message: 'الرابط المولّد الجديد موجود بالفعل، جرب اسم متجر مختلف' });
-      }
+      store.storeLink = await generateUniqueStoreLink(storeName);
     }
     if (templateId) store.templateId = templateId;
     if (primaryColor) store.primaryColor = primaryColor;
