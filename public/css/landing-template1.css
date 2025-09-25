@@ -1,0 +1,76 @@
+/* /public/css/landing-template1.css */
+@import url('/css/common.css');
+
+/* Landing Page Template */
+body {
+  background-color: var(--light-bg);
+}
+
+body.dark-mode {
+  background-color: var(--dark-bg);
+}
+
+/* Main Container */
+.store-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Header Customization */
+.store-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--turquoise));
+  color: var(--secondary-color);
+  padding: 30px;
+  border-radius: 10px;
+}
+
+/* Categories Section */
+.categories-section {
+  margin: 30px 20px;
+}
+
+.category-card {
+  border-radius: 8px;
+}
+
+.category-card img {
+  max-height: 150px;
+  object-fit: cover;
+}
+
+/* Footer */
+.store-footer {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  text-align: center;
+  padding: 15px;
+  margin-top: 20px;
+}
+
+body.dark-mode .store-footer {
+  background-color: var(--dark-card);
+  color: var(--dark-text);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .store-main {
+    padding: 15px;
+  }
+  .category-card img {
+    max-height: 120px;
+  }
+}
+
+@media (max-width: 576px) {
+  .store-main {
+    padding: 10px;
+  }
+  .store-header {
+    padding: 20px;
+  }
+  .category-card img {
+    max-height: 100px;
+  }
+}
