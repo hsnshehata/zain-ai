@@ -22,6 +22,7 @@ async function loadStoreManagerPage() {
       flex-wrap: wrap;
       gap: 20px;
       justify-content: flex-start;
+      margin-top: 20px;
     }
     .product-item {
       border: 1px solid #ddd;
@@ -57,6 +58,22 @@ async function loadStoreManagerPage() {
     .product-item button {
       margin-top: 10px;
       width: 100%;
+    }
+    .categories-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .category-item {
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      padding: 15px;
+      width: 200px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .add-product-btn {
+      margin-bottom: 20px;
     }
   `;
   document.head.appendChild(style);
@@ -151,6 +168,7 @@ async function loadStoreManagerPage() {
                 <label for="storeLinkSlug">الجزء المتغير من الرابط</label>
                 <input type="text" id="storeLinkSlug" name="storeLinkSlug" class="form-control" placeholder="مثل metjar-8777">
                 <small class="form-text">اكتب الجزء المتغير من الرابط (حروف، أرقام، - أو _ فقط)</small>
+              </div>
             </div>
             <div class="form-group">
               <label for="templateId">القالب</label>
@@ -198,7 +216,8 @@ async function loadStoreManagerPage() {
       <div class="card settings-card">
         <div class="card-header"><h3><i class="fas fa-box"></i> إدارة المنتجات</h3></div>
         <div class="card-body">
-          <form id="product-form" enctype="multipart/form-data">
+          <button id="addProductBtn" class="btn btn-primary add-product-btn"><i class="fas fa-plus"></i> إضافة منتج جديد</button>
+          <form id="product-form" enctype="multipart/form-data" style="display: none;">
             <div class="form-group">
               <label for="productName">اسم المنتج</label>
               <input type="text" id="productName" name="productName" class="form-control" required>
@@ -255,6 +274,7 @@ async function loadStoreManagerPage() {
               <input type="file" id="image" name="image" class="form-control" accept="image/png,image/jpeg">
             </div>
             <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ المنتج</button>
+            <button type="button" id="cancelProductBtn" class="btn btn-secondary" style="margin-left: 10px;">إلغاء</button>
           </form>
           <div id="productsList" class="products-list"></div>
         </div>
@@ -299,6 +319,8 @@ async function loadStoreManagerPage() {
   const categoriesBtn = document.getElementById("categoriesBtn");
   const createCategoryBtn = document.getElementById("createCategoryBtn");
   const cancelCategoryBtn = document.getElementById("cancelCategoryBtn");
+  const addProductBtn = document.getElementById("addProductBtn");
+  const cancelProductBtn = document.getElementById("cancelProductBtn");
   const goToStoreBtn = document.getElementById("goToStoreBtn");
   const editStoreLinkBtn = document.getElementById("editStoreLinkBtn");
   const storeNameInput = document.getElementById("storeName");
@@ -342,6 +364,10 @@ async function loadStoreManagerPage() {
 
   function showNotification(message, type) {
     const notificationContainer = document.getElementById("notificationContainer");
+    if (!notificationContainer) {
+      console.error("notificationContainer not found in DOM");
+      return;
+    }
     const toast = document.createElement("div");
     toast.className = `toast ${type}`;
     toast.textContent = message;
@@ -360,6 +386,10 @@ async function loadStoreManagerPage() {
       }, "فشل في جلب بيانات البوت");
 
       const storeStatus = document.getElementById("storeStatus");
+      if (!storeStatus) {
+        console.error("storeStatus not found in DOM");
+        return;
+      }
       if (bot.storeId) {
         const store = await handleApiRequest(`/api/stores/${bot.storeId}`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -383,7 +413,7 @@ async function loadStoreManagerPage() {
       loadingSpinner.style.display = "none";
     } catch (err) {
       console.error("خطأ في تحميل حالة المتجر:", err);
-      showNotification("فشل في تحميل حالة المتجر", "error");
+      showNotification("فشل في تحميل حالة المتجر: " + err.message, "error");
       loadingSpinner.style.display = "none";
     }
   }
@@ -420,29 +450,43 @@ async function loadStoreManagerPage() {
       }
     } catch (err) {
       console.error("خطأ في تحميل إعدادات المتجر:", err);
-      showNotification("خطأ في تحميل إعدادات المتجر", "error");
+      showNotification("خطأ في تحميل إعدادات المتجر: " + err.message, "error");
     }
   }
 
   async function loadCategories(botId) {
     try {
+      console.log(`[${new Date().toISOString()}] 📡 Loading categories for bot ${botId}`);
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "فشل في جلب بيانات البوت");
 
       if (!bot.storeId) {
         document.getElementById("categoriesList").innerHTML = "<p>أنشئ متجر أولاً قبل إدارة الأقسام.</p>";
+        console.log(`[${new Date().toISOString()}] ⚠️ No storeId found for bot ${botId}`);
         return;
       }
 
-      const categories = await handleApiRequest(`/api/stores/${bot.storeId}/categories`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }, "لم يتم العثور على أقسام، أضف قسمك الأول!");
+      console.log(`[${new Date().toISOString()}] 📡 Fetching categories for store ${bot.storeId}`);
+      const response = await fetch(`/api/stores/${bot.storeId}/categories`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('فشل في جلب الأقسام');
+      const categories = await response.json();
 
+      console.log(`[${new Date().toISOString()}] ✅ Fetched ${categories.length} categories for store ${bot.storeId}`);
       const categorySelect = document.getElementById("category");
+      if (!categorySelect) {
+        console.error("category select element not found in DOM");
+        return;
+      }
       categorySelect.innerHTML = '<option value="">اختر قسم</option>' + categories.map(cat => `<option value="${cat._id}">${cat.name}</option>`).join("");
 
       const categoriesList = document.getElementById("categoriesList");
+      if (!categoriesList) {
+        console.error("categoriesList element not found in DOM");
+        return;
+      }
       categoriesList.innerHTML = categories.length
         ? categories
             .map(
@@ -458,13 +502,21 @@ async function loadStoreManagerPage() {
             )
             .join("")
         : "<p>لم يتم العثور على أقسام، أضف قسمك الأول!</p>";
+
+      if (categories.length === 0) {
+        console.log(`[${new Date().toISOString()}] ⚠️ No categories found for store ${bot.storeId}`);
+      }
     } catch (err) {
-      console.error("خطأ في تحميل الأقسام:", err);
-      showNotification("فشل في تحميل الأقسام", "error");
+      console.error(`[${new Date().toISOString()}] ❌ Error loading categories:`, err.message, err.stack);
+      showNotification("فشل في تحميل الأقسام: " + (err.message || "خطأ غير معروف"), "error");
+      const categoriesList = document.getElementById("categoriesList");
+      if (categoriesList) {
+        categoriesList.innerHTML = "<p>خطأ في تحميل الأقسام، حاول مرة أخرى.</p>";
+      }
     }
   }
 
-  window.loadProducts = async (botId) => {
+  async function loadProducts(botId) {
     try {
       console.log(`[${new Date().toISOString()}] 📡 Loading products for bot ${botId}`);
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
@@ -478,12 +530,18 @@ async function loadStoreManagerPage() {
       }
 
       console.log(`[${new Date().toISOString()}] 📡 Fetching products for store ${bot.storeId}`);
-      const products = await handleApiRequest(`/api/stores/${bot.storeId}/products`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }, "لم يتم العثور على منتجات، أضف منتجك الأول!");
+      const response = await fetch(`/api/stores/${bot.storeId}/products`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('فشل في جلب المنتجات');
+      const { products } = await response.json();
 
       console.log(`[${new Date().toISOString()}] ✅ Fetched ${products.length} products for store ${bot.storeId}`);
       const productsList = document.getElementById("productsList");
+      if (!productsList) {
+        console.error("productsList element not found in DOM");
+        return;
+      }
       productsList.innerHTML = products.length
         ? products
             .map(
@@ -510,9 +568,12 @@ async function loadStoreManagerPage() {
     } catch (err) {
       console.error(`[${new Date().toISOString()}] ❌ Error loading products:`, err.message, err.stack);
       showNotification("فشل في تحميل المنتجات: " + (err.message || "خطأ غير معروف"), "error");
-      document.getElementById("productsList").innerHTML = "<p>خطأ في تحميل المنتجات، حاول مرة أخرى.</p>";
+      const productsList = document.getElementById("productsList");
+      if (productsList) {
+        productsList.innerHTML = "<p>خطأ في تحميل المنتجات، حاول مرة أخرى.</p>";
+      }
     }
-  };
+  }
 
   async function saveStoreSettings(botId) {
     const formData = new FormData(storeForm);
@@ -569,6 +630,7 @@ async function loadStoreManagerPage() {
       await loadStoreStatus(botId);
       await loadStoreSettings(botId);
       await loadProducts(botId);
+      await loadCategories(botId);
     } catch (err) {
       console.error("خطأ في إنشاء المتجر:", err);
       showNotification("فشل في إنشاء المتجر: " + err.message, "error");
@@ -634,7 +696,7 @@ async function loadStoreManagerPage() {
         showNotification("فشل في حذف القسم: " + err.message, "error");
       }
     }
-  };
+  }
 
   let editingProductId = null;
   window.editProduct = async (productId) => {
@@ -660,11 +722,13 @@ async function loadStoreManagerPage() {
       document.getElementById("lowStockThreshold").value = product.lowStockThreshold;
       document.getElementById("category").value = product.category ? product.category._id : "";
       editingProductId = productId;
+      productForm.style.display = "block";
+      document.getElementById("productName").focus();
     } catch (err) {
       console.error("خطأ في تحميل المنتج:", err);
       showNotification("فشل في تحميل المنتج: " + err.message, "error");
     }
-  };
+  }
 
   window.deleteProduct = async (productId) => {
     if (confirm("هل أنت متأكد من حذف المنتج؟")) {
@@ -686,7 +750,7 @@ async function loadStoreManagerPage() {
         showNotification("فشل في حذف المنتج: " + err.message, "error");
       }
     }
-  };
+  }
 
   window.saveProduct = async (botId) => {
     const formData = new FormData(productForm);
@@ -739,6 +803,7 @@ async function loadStoreManagerPage() {
 
       showNotification("تم حفظ المنتج بنجاح!", "success");
       productForm.reset();
+      productForm.style.display = "none";
       offerFields.style.display = "none";
       editingProductId = null;
       await loadProducts(botId);
@@ -750,7 +815,7 @@ async function loadStoreManagerPage() {
         : err.message || "فشل في حفظ المنتج";
       showNotification(errorMessage, "error");
     }
-  };
+  }
 
   // Event Listeners
   toggleInstructionsBtn.addEventListener("click", () => {
@@ -798,6 +863,21 @@ async function loadStoreManagerPage() {
     categoryForm.reset();
   });
 
+  addProductBtn.addEventListener("click", () => {
+    productForm.style.display = "block";
+    productForm.reset();
+    offerFields.style.display = "none";
+    editingProductId = null;
+    document.getElementById("productName").focus();
+  });
+
+  cancelProductBtn.addEventListener("click", () => {
+    productForm.style.display = "none";
+    productForm.reset();
+    offerFields.style.display = "none";
+    editingProductId = null;
+  });
+
   editStoreLinkBtn.addEventListener("click", () => {
     storeLinkEditContainer.style.display = "block";
     storeLinkSlugInput.focus();
@@ -826,6 +906,7 @@ async function checkStoreExists(botId) {
     return !!bot.storeId;
   } catch (err) {
     console.error("خطأ في التحقق من وجود المتجر:", err);
+    showNotification("خطأ في التحقق من وجود المتجر: " + err.message, "error");
     return false;
   }
 }
