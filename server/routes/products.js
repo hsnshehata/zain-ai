@@ -56,4 +56,7 @@ router.get('/:storeId/products', productController.getProducts);
 // جلب المنتجات الأكثر مبيعاً (بدون authenticate للوصول العام)
 router.get('/:storeId/products/bestsellers', productController.getBestsellers);
 
+// جلب منتج واحد (بدون authenticate للوصول العام)
+router.get('/:storeId/products/:productId', productController.getProduct);
+
 module.exports = router;
