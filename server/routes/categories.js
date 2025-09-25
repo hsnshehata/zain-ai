@@ -13,8 +13,8 @@ router.use((req, res, next) => {
 // إضافة قسم جديد
 router.post('/:storeId/categories', authenticate, categoryController.createCategory);
 
-// جلب كل الأقسام
-router.get('/:storeId/categories', authenticate, categoryController.getCategories);
+// جلب كل الأقسام (بدون authenticate للوصول العام)
+router.get('/:storeId/categories', categoryController.getCategories);
 
 // حذف قسم
 router.delete('/:storeId/categories/:categoryId', authenticate, categoryController.deleteCategory);
