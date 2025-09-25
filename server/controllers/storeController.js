@@ -45,45 +45,30 @@ exports.createStore = async (req, res) => {
     const cleanedHeaderHtml = headerHtml ? sanitizeHtml(headerHtml, { allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], allowedAttributes: { a: ['href'], img: ['src'] } }) : '';
     const cleanedLandingHtml = landingHtml ? sanitizeHtml(landingHtml, { allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], allowedAttributes: { a: ['href'], img: ['src'] } }) : '';
 
-    // توليد رابط المتجر
+    // توليد storeLink فريد
     const storeLink = await generateUniqueStoreLink(storeName);
 
+    // إنشاء المتجر
     const newStore = new Store({
       userId,
       storeName,
       storeLink,
-      templateId: templateId || 1,
+      templateId: parseInt(templateId) || 1,
       primaryColor: primaryColor || '#000000',
       secondaryColor: secondaryColor || '#ffffff',
       headerHtml: cleanedHeaderHtml,
-      landingTemplateId: landingTemplateId || 1,
+      landingTemplateId: parseInt(landingTemplateId) || 1,
       landingHtml: cleanedLandingHtml
     });
 
     await newStore.save();
-    console.log(`[${getTimestamp()}] ✅ Store created: ${newStore.storeName} for user ${userId}`);
 
-    // ربط المتجر بالبوت إذا كان موجود
+    // ربط المتجر بالبوت إذا تم تحديده
     if (selectedBotId) {
-      const bot = await Bot.findOne({ _id: selectedBotId, userId });
-      if (bot) {
-        bot.storeId = newStore._id;
-        await bot.save();
-        console.log(`[${getTimestamp()}] ✅ Linked store ${newStore._id} to bot ${bot._id}`);
-      } else {
-        console.log(`[${getTimestamp()}] ⚠️ No bot found for linking, skipping...`);
-      }
+      await Bot.findByIdAndUpdate(selectedBotId, { storeId: newStore._id });
     }
 
-    // إنشاء قاعدة افتراضية للمتجر في Rules
-    const storeRule = new Rule({
-      storeId: newStore._id,
-      type: 'store',
-      content: { message: 'مرحبا بك في المتجر الذكي!' }
-    });
-    await storeRule.save();
-    console.log(`[${getTimestamp()}] ✅ Created default store rule for store ${newStore._id}`);
-
+    console.log(`[${getTimestamp()}] ✅ Store created: ${newStore.storeName} for user ${userId}, link: ${storeLink}`);
     res.status(201).json(newStore);
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error creating store:`, err.message, err.stack);
@@ -91,33 +76,40 @@ exports.createStore = async (req, res) => {
   }
 };
 
-// تعديل المتجر
+// تعديل متجر
 exports.updateStore = async (req, res) => {
   const { storeId } = req.params;
   const { storeName, storeLink, templateId, primaryColor, secondaryColor, headerHtml, landingTemplateId, landingHtml } = req.body;
   const userId = req.user.userId;
 
   try {
+    console.log(`[${getTimestamp()}] 📡 Updating store ${storeId} for user ${userId} with data:`, {
+      storeName,
+      storeLink,
+      templateId,
+      primaryColor,
+      secondaryColor,
+      headerHtml,
+      landingTemplateId,
+      landingHtml
+    });
+
     const store = await Store.findOne({ _id: storeId, userId });
     if (!store) {
       console.log(`[${getTimestamp()}] ❌ Update store failed: Store ${storeId} not found for user ${userId}`);
-      return res.status(404).json({ message: 'المتجر غير موجود' });
+      return res.status(404).json({ message: 'المتجر غير موجود أو لا تملكه' });
     }
 
-    // تنظيف HTML
-    const cleanedHeaderHtml = headerHtml ? sanitizeHtml(headerHtml, { allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], allowedAttributes: { a: ['href'], img: ['src'] } }) : store.headerHtml;
-    const cleanedLandingHtml = landingHtml ? sanitizeHtml(landingHtml, { allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], allowedAttributes: { a: ['href'], img: ['src'] } }) : store.landingHtml;
-
-    // تحديث الحقول
-    if (storeName && storeName.trim() !== '') {
-      store.storeName = storeName;
-      store.storeLink = await generateUniqueStoreLink(storeName);
-    } else if (storeLink && storeLink.trim() !== '') {
-      // التحقق من صلاحية storeLink
-      if (!/^[a-zA-Z0-9_-]+$/.test(storeLink)) {
-        console.log(`[${getTimestamp()}] ❌ Update store failed: Invalid storeLink format ${storeLink}`);
-        return res.status(400).json({ message: 'رابط المتجر يجب أن يحتوي على حروف، أرقام، - أو _ فقط' });
+    if (storeName && storeName !== store.storeName) {
+      const existingStore = await Store.findOne({ storeName });
+      if (existingStore) {
+        console.log(`[${getTimestamp()}] ❌ Update store failed: Store name ${storeName} already exists`);
+        return res.status(400).json({ message: 'اسم المتجر موجود بالفعل' });
       }
+      store.storeName = storeName;
+    }
+
+    if (storeLink && storeLink !== store.storeLink) {
       if (storeLink.length < 3) {
         console.log(`[${getTimestamp()}] ❌ Update store failed: storeLink ${storeLink} too short`);
         return res.status(400).json({ message: 'رابط المتجر يجب أن يكون 3 أحرف على الأقل' });
@@ -146,7 +138,7 @@ exports.updateStore = async (req, res) => {
   }
 };
 
-// جلب بيانات المتجر
+// جلب بيانات المتجر (للمالك)
 exports.getStore = async (req, res) => {
   const { storeId } = req.params;
   const userId = req.user.userId;
@@ -162,6 +154,26 @@ exports.getStore = async (req, res) => {
     res.status(200).json(store);
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error fetching store:`, err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في جلب المتجر: ' + (err.message || 'غير معروف') });
+  }
+};
+
+// جلب المتجر بالـ storeLink (للزبائن، بدون authenticate)
+exports.getStoreByLink = async (req, res) => {
+  const { storeLink } = req.params;
+
+  try {
+    console.log(`[${getTimestamp()}] 📡 Fetching store by link: ${storeLink}`);
+    const store = await Store.findOne({ storeLink }).select('-userId -isActive'); // إخفاء الحقول الحساسة
+    if (!store) {
+      console.log(`[${getTimestamp()}] ❌ Get store by link failed: Store link ${storeLink} not found`);
+      return res.status(404).json({ message: 'المتجر غير موجود' });
+    }
+
+    console.log(`[${getTimestamp()}] ✅ Fetched store by link: ${store.storeName}`);
+    res.status(200).json(store);
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Error fetching store by link:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في جلب المتجر: ' + (err.message || 'غير معروف') });
   }
 };
