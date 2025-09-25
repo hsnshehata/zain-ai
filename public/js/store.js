@@ -38,262 +38,196 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // دالة لعرض المنتجات
   const renderProducts = (products, container) => {
-    if (!container) {
-      console.error('Container not found for rendering products');
+    if (!container) return;
+    container.innerHTML = '';
+    if (products.length === 0) {
+      container.innerHTML = '<p class="error-message">لا توجد منتجات متاحة</p>';
       return;
     }
-    if (!products || products.length === 0) {
-      container.innerHTML = '<p>لا توجد منتجات متاحة</p>';
-      return;
-    }
-    container.innerHTML = products.map(product => `
-      <div class="product-card">
-        <img src="${product.imageUrl || '/placeholder-bot.png'}" alt="${product.productName}">
+    products.forEach(product => {
+      const productCard = document.createElement('div');
+      productCard.className = 'product-card';
+      productCard.innerHTML = `
+        <img src="${product.imageUrl || '/images/placeholder.png'}" alt="${product.productName}">
         <h3>${product.productName}</h3>
-        <p>${product.description || 'لا يوجد وصف'}</p>
-        ${product.hasOffer ? `
-          <p class="offer-price">السعر: <span class="original-price">${product.originalPrice} ${product.currency}</span> ${product.discountedPrice} ${product.currency}</p>
-        ` : `
-          <p>السعر: ${product.price} ${product.currency}</p>
-        `}
-        <p>المخزون: ${product.stock}</p>
-        <button onclick="addToCart('${product._id}', '${product.productName}', '${storeLink}')">أضف إلى السلة</button>
-      </div>
-    `).join('');
-  };
-
-  // دالة لعرض أزرار الـ Pagination
-  const renderPagination = (totalProducts) => {
-    const totalPages = Math.ceil(totalProducts / productsPerPage);
-    const paginationContainer = document.createElement('div');
-    paginationContainer.className = 'pagination';
-    paginationContainer.innerHTML = `
-      <button class="btn" onclick="changePage(${currentPage - 1}, '${storeLink}')" ${currentPage === 1 ? 'disabled' : ''}>السابق</button>
-      <span>الصفحة ${currentPage} من ${totalPages}</span>
-      <button class="btn" onclick="changePage(${currentPage + 1}, '${storeLink}')" ${currentPage === totalPages ? 'disabled' : ''}>التالي</button>
-    `;
-    if (productsContainer) {
-      productsContainer.insertAdjacentElement('afterend', paginationContainer);
-    }
-  };
-
-  // دالة لعرض الأقسام
-  const renderCategories = (categories) => {
-    if (!categoriesContainer) {
-      console.error('categoriesContainer not found in DOM');
-      return;
-    }
-    categoriesContainer.innerHTML = '<button class="category-tab active" data-category-id="all">الكل</button>';
-    categories.forEach(category => {
-      categoriesContainer.innerHTML += `
-        <button class="category-tab" data-category-id="${category._id}">${category.name}</button>
+        <p>${product.description || 'بدون وصف'}</p>
+        <p>${product.price} ${product.currency}</p>
+        ${product.hasOffer ? `<p><s>${product.originalPrice} ${product.currency}</s> ${product.discountedPrice} ${product.currency}</p>` : ''}
+        <button onclick="addToCart('${product._id}')">أضف إلى السلة</button>
       `;
+      container.appendChild(productCard);
     });
   };
 
-  // دالة لعرض الأقسام في اللاندينج بيج
-  const renderLandingCategories = async (categories, storeId) => {
-    if (!landingCategoriesContainer) {
-      console.error('landingCategoriesContainer not found in DOM');
-      return;
+  // دالة لعرض الأقسام
+  const renderCategories = (categories, container, navContainer) => {
+    if (navContainer) {
+      navContainer.innerHTML = '';
+      const allTab = document.createElement('div');
+      allTab.className = 'category-tab active';
+      allTab.textContent = 'الكل';
+      allTab.dataset.categoryId = '';
+      navContainer.appendChild(allTab);
+      categories.forEach(category => {
+        const tab = document.createElement('div');
+        tab.className = 'category-tab';
+        tab.textContent = category.name;
+        tab.dataset.categoryId = category._id;
+        navContainer.appendChild(tab);
+      });
+      navContainer.querySelectorAll('.category-tab').forEach(tab => {
+        tab.addEventListener('click', async () => {
+          navContainer.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+          const categoryId = tab.dataset.categoryId;
+          await fetchProducts(storeLink, categoryId);
+        });
+      });
     }
-    landingCategoriesContainer.innerHTML = '';
-    for (const category of categories) {
-      const response = await fetch(`/api/stores/${storeId}/products?category=${category._id}&random=true&limit=1`);
-      const { products } = await response.json();
-      const randomProduct = products[0] || {};
-      landingCategoriesContainer.innerHTML += `
-        <div class="category-card">
-          <img src="${randomProduct.imageUrl || '/placeholder-bot.png'}" alt="${category.name}">
+
+    if (container && isLandingPage) {
+      container.innerHTML = '';
+      categories.forEach(async category => {
+        const categoryCard = document.createElement('div');
+        categoryCard.className = 'category-card';
+        categoryCard.innerHTML = `
           <h3>${category.name}</h3>
-          <button onclick="loadCategoryProducts('${category._id}', '${category.name}', '${storeId}')">تصفح القسم</button>
-        </div>
-      `;
+          <p>${category.description || 'بدون وصف'}</p>
+        `;
+        container.appendChild(categoryCard);
+        // جلب المنتجات لكل قسم في اللاند بيج
+        try {
+          const productsResponse = await fetch(`/api/stores/${storeLink}/products?category=${category._id}`);
+          const products = await productsResponse.json();
+          const productsContainer = document.createElement('div');
+          productsContainer.className = 'products-container';
+          renderProducts(products, productsContainer);
+          categoryCard.appendChild(productsContainer);
+        } catch (err) {
+          console.error('خطأ في جلب منتجات القسم:', err);
+        }
+      });
     }
   };
 
-  // دالة جلب المنتجات
-  const fetchProducts = async (storeId, params = {}) => {
-    showSpinner(productsContainer);
-    params.page = currentPage;
-    params.limit = productsPerPage;
-    const query = new URLSearchParams(params).toString();
-    try {
-      const response = await fetch(`/api/stores/${storeId}/products?${query}`);
-      if (!response.ok) throw new Error('فشل في جلب المنتجات');
-      const { products, total } = await response.json();
-      renderProducts(products, productsContainer);
-      renderPagination(total);
-    } catch (err) {
-      showError(productsContainer, 'خطأ في تحميل المنتجات، حاول مرة أخرى.');
-      console.error('خطأ في جلب المنتجات:', err);
-    }
-  };
-
-  // دالة جلب الأقسام
+  // دالة لجلب الأقسام
   const fetchCategories = async (storeId) => {
     try {
+      showSpinner(categoriesContainer);
       const response = await fetch(`/api/stores/${storeId}/categories`);
-      if (!response.ok) throw new Error('فشل في جلب الأقسام');
       const categories = await response.json();
-      renderCategories(categories);
-      if (isLandingPage) {
-        document.getElementById('landing-categories').style.display = 'block';
-        await renderLandingCategories(categories, storeId);
-      }
+      renderCategories(categories, isLandingPage ? landingCategoriesContainer : categoriesContainer, categoriesNav);
+      console.log('✅ Fetched categories:', categories);
     } catch (err) {
       console.error('خطأ في جلب الأقسام:', err);
-      showError(categoriesContainer, 'خطأ في تحميل الأقسام، حاول مرة أخرى.');
-    }
-  };
-
-  // دالة جلب المنتجات العشوائية
-  const fetchRandomProducts = async (storeId) => {
-    showSpinner(randomProductsContainer);
-    try {
-      const response = await fetch(`/api/stores/${storeId}/products?random=true&limit=4`);
-      if (!response.ok) throw new Error('فشل في جلب المنتجات العشوائية');
-      const { products } = await response.json();
-      renderProducts(products, randomProductsContainer);
-    } catch (err) {
-      showError(randomProductsContainer, 'خطأ في تحميل المنتجات العشوائية.');
-      console.error('خطأ في جلب المنتجات العشوائية:', err);
-    }
-  };
-
-  // دالة جلب المنتجات الجديدة
-  const fetchRecentProducts = async (storeId) => {
-    showSpinner(recentProductsContainer);
-    try {
-      const response = await fetch(`/api/stores/${storeId}/products?sort=date-desc&limit=4`);
-      if (!response.ok) throw new Error('فشل في جلب المنتجات الجديدة');
-      const { products } = await response.json();
-      renderProducts(products, recentProductsContainer);
-    } catch (err) {
-      showError(recentProductsContainer, 'خطأ في تحميل المنتجات الجديدة.');
-      console.error('خطأ في جلب المنتجات الجديدة:', err);
-    }
-  };
-
-  // دالة جلب المنتجات الأكثر مبيعاً
-  const fetchBestsellers = async (storeId) => {
-    showSpinner(bestsellersProductsContainer);
-    try {
-      const response = await fetch(`/api/stores/${storeId}/products/bestsellers?limit=4`);
-      if (!response.ok) throw new Error('فشل في جلب المنتجات الأكثر مبيعاً');
-      const products = await response.json();
-      renderProducts(products, bestsellersProductsContainer);
-    } catch (err) {
-      showError(bestsellersProductsContainer, 'خطأ في تحميل المنتجات الأكثر مبيعاً.');
-      console.error('خطأ في جلب المنتجات الأكثر مبيعاً:', err);
-    }
-  };
-
-  // دالة تحميل منتجات قسم معين
-  window.loadCategoryProducts = async (categoryId, categoryName, storeId) => {
-    currentPage = 1; // إعادة تعيين الصفحة عند تغيير القسم
-    categoryTitle.textContent = categoryId === 'all' ? 'جميع المنتجات' : categoryName;
-    document.querySelectorAll('.category-tab').forEach(tab => tab.classList.remove('active'));
-    document.querySelector(`.category-tab[data-category-id="${categoryId}"]`)?.classList.add('active');
-    const params = categoryId === 'all' ? {} : { category: categoryId };
-    await fetchProducts(storeId, params);
-  };
-
-  // دالة تغيير الصفحة
-  window.changePage = async (page, storeId) => {
-    if (page < 1) return;
-    currentPage = page;
-    const params = {};
-    const categoryId = document.querySelector('.category-tab.active')?.getAttribute('data-category-id');
-    if (categoryId && categoryId !== 'all') params.category = categoryId;
-    if (sortSelect.value !== 'default') params.sort = sortSelect.value;
-    if (filterSelect.value !== 'all') params.filter = filterSelect.value;
-    if (searchInput.value.trim()) params.search = searchInput.value.trim();
-    await fetchProducts(storeId, params);
-  };
-
-  // دالة إضافة إلى السلة
-  window.addToCart = async (productId, productName, storeLink) => {
-    if (!confirm(`هل تريد إضافة ${productName} إلى السلة؟`)) return;
-    const quantity = prompt(`كم وحدة من ${productName} تريد؟`, '1');
-    if (quantity && !isNaN(quantity) && quantity > 0) {
-      try {
-        const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
-        const response = await fetch(`/api/stores/${store._id}/orders`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-          },
-          body: JSON.stringify({
-            products: [{ productId, quantity: parseInt(quantity) }],
-            paymentMethod: 'cash_on_delivery'
-          })
-        });
-        if (!response.ok) throw new Error('فشل في إنشاء الطلب');
-        showSuccess('تم إضافة المنتج إلى السلة بنجاح!');
-      } catch (err) {
-        alert('حدث خطأ أثناء إضافة المنتج إلى السلة');
-        console.error('خطأ في إضافة المنتج:', err);
+      showError(categoriesContainer, 'خطأ في جلب الأقسام، حاول مرة أخرى.');
+      if (isLandingPage) {
+        showError(landingCategoriesContainer, 'خطأ في جلب الأقسام، حاول مرة أخرى.');
       }
     }
   };
 
-  // إضافة event listeners
-  searchBtn.addEventListener('click', async () => {
-    currentPage = 1;
-    const searchTerm = searchInput.value.trim();
-    const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
-    await fetchProducts(store._id, { search: searchTerm });
-  });
-
-  searchInput.addEventListener('keypress', async (e) => {
-    if (e.key === 'Enter') {
-      currentPage = 1;
-      const searchTerm = searchInput.value.trim();
-      const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
-      await fetchProducts(store._id, { search: searchTerm });
+  // دالة لجلب المنتجات
+  const fetchProducts = async (storeId, categoryId = '') => {
+    try {
+      showSpinner(productsContainer);
+      let url = `/api/stores/${storeId}/products?page=${currentPage}&limit=${productsPerPage}`;
+      if (categoryId) url += `&category=${categoryId}`;
+      if (searchInput?.value) url += `&search=${encodeURIComponent(searchInput.value)}`;
+      if (sortSelect?.value) url += `&sort=${sortSelect.value}`;
+      if (filterSelect?.value) url += `&filter=${filterSelect.value}`;
+      const response = await fetch(url);
+      const products = await response.json();
+      renderProducts(products, productsContainer);
+      console.log('✅ Fetched products:', products);
+    } catch (err) {
+      console.error('خطأ في جلب المنتجات:', err);
+      showError(productsContainer, 'خطأ في جلب المنتجات، حاول مرة أخرى.');
     }
-  });
+  };
 
-  sortSelect.addEventListener('change', async () => {
-    currentPage = 1;
-    const sortValue = sortSelect.value;
-    const filterValue = filterSelect.value;
-    const params = {};
-    if (sortValue !== 'default') params.sort = sortValue;
-    if (filterValue !== 'all') params.filter = filterValue;
-    if (searchInput.value.trim()) params.search = searchInput.value.trim();
-    const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
-    await fetchProducts(store._id, params);
-  });
-
-  filterSelect.addEventListener('change', async () => {
-    currentPage = 1;
-    const sortValue = sortSelect.value;
-    const filterValue = filterSelect.value;
-    const params = {};
-    if (sortValue !== 'default') params.sort = sortValue;
-    if (filterValue !== 'all') params.filter = filterValue;
-    if (searchInput.value.trim()) params.search = searchInput.value.trim();
-    const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
-    await fetchProducts(store._id, params);
-  });
-
-  categoriesNav.addEventListener('click', async (e) => {
-    if (e.target.classList.contains('category-tab')) {
-      currentPage = 1;
-      const categoryId = e.target.getAttribute('data-category-id');
-      const categoryName = e.target.textContent;
-      const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
-      await loadCategoryProducts(categoryId, categoryName, store._id);
+  // دالة لجلب المنتجات العشوائية
+  const fetchRandomProducts = async (storeId) => {
+    try {
+      showSpinner(randomProductsContainer);
+      const response = await fetch(`/api/stores/${storeId}/products?sort=random&limit=4`);
+      const products = await response.json();
+      renderProducts(products, randomProductsContainer);
+      console.log('✅ Fetched random products:', products);
+    } catch (err) {
+      console.error('خطأ في جلب المنتجات العشوائية:', err);
+      showError(randomProductsContainer, 'خطأ في جلب المنتجات العشوائية، حاول مرة أخرى.');
     }
-  });
+  };
 
+  // دالة لجلب المنتجات الحديثة
+  const fetchRecentProducts = async (storeId) => {
+    try {
+      showSpinner(recentProductsContainer);
+      const response = await fetch(`/api/stores/${storeId}/products?sort=createdAt&limit=4`);
+      const products = await response.json();
+      renderProducts(products, recentProductsContainer);
+      console.log('✅ Fetched recent products:', products);
+    } catch (err) {
+      console.error('خطأ في جلب المنتجات الحديثة:', err);
+      showError(recentProductsContainer, 'خطأ في جلب المنتجات الحديثة، حاول مرة أخرى.');
+    }
+  };
+
+  // دالة لجلب المنتجات الأكثر مبيعاً
+  const fetchBestsellers = async (storeId) => {
+    try {
+      showSpinner(bestsellersProductsContainer);
+      const response = await fetch(`/api/stores/${storeId}/products/bestsellers?limit=4`);
+      const products = await response.json();
+      renderProducts(products, bestsellersProductsContainer);
+      console.log('✅ Fetched bestsellers:', products);
+    } catch (err) {
+      console.error('خطأ في جلب المنتجات الأكثر مبيعاً:', err);
+      showError(bestsellersProductsContainer, 'خطأ في جلب المنتجات الأكثر مبيعاً، حاول مرة أخرى.');
+    }
+  };
+
+  // دالة لإضافة منتج إلى السلة
+  const addToCart = async (productId) => {
+    try {
+      const response = await fetch('/api/cart/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, quantity: 1 })
+      });
+      const result = await response.json();
+      showSuccess('تم إضافة المنتج إلى السلة!');
+      console.log('✅ Added to cart:', result);
+    } catch (err) {
+      console.error('خطأ في إضافة المنتج إلى السلة:', err);
+      showError(productsContainer, 'خطأ في إضافة المنتج إلى السلة، حاول مرة أخرى.');
+    }
+  };
+
+  window.addToCart = addToCart;
+
+  // إعداد البحث
+  if (searchBtn && searchInput) {
+    searchBtn.addEventListener('click', () => fetchProducts(storeLink));
+    searchInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') fetchProducts(storeLink);
+    });
+  }
+
+  // إعداد الترتيب والتصفية
+  if (sortSelect) {
+    sortSelect.addEventListener('change', () => fetchProducts(storeLink));
+  }
+  if (filterSelect) {
+    filterSelect.addEventListener('change', () => fetchProducts(storeLink));
+  }
+
+  // تحميل بيانات المتجر
   try {
-    // جلب بيانات المتجر
+    showSpinner(productsContainer);
     const storeResponse = await fetch(`/api/stores/store/${storeLink}`);
-    if (!storeResponse.ok) throw new Error('فشل في جلب بيانات المتجر');
+    if (!storeResponse.ok) throw new Error('خطأ في جلب بيانات المتجر');
     const store = await storeResponse.json();
 
     // تحديث اسم المتجر
@@ -302,6 +236,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       storeNameElement.textContent = store.storeName;
     } else {
       console.error('store-name element not found in DOM');
+    }
+
+    // تحديث الهيدر مع جملة الترحيب
+    const storeHeaderElement = document.getElementById('store-header');
+    if (storeHeaderElement) {
+      storeHeaderElement.innerHTML = store.headerHtml || `<h2>مرحبًا بك في متجر ${store.storeName}</h2>`;
+    } else {
+      console.error('store-header element not found in DOM');
     }
 
     // تطبيق الألوان المخصصة
@@ -317,14 +259,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       templateCssElement.setAttribute('href', templateLink);
     } else {
       console.error('template-css or landing-template-css element not found in DOM');
-    }
-
-    // تحميل الهيدر المخصص
-    const storeHeaderElement = document.getElementById('store-header');
-    if (storeHeaderElement) {
-      storeHeaderElement.innerHTML = store.headerHtml || '<h2>مرحبًا بك في المتجر</h2>';
-    } else {
-      console.error('store-header element not found in DOM');
     }
 
     // تحميل الأقسام والمنتجات
