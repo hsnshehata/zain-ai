@@ -11,7 +11,10 @@ router.post('/', authenticate, storeController.createStore);
 // تعديل متجر
 router.put('/:storeId', authenticate, storeController.updateStore);
 
-// جلب متجر
+// جلب متجر بالـ ObjectId (للمالك)
 router.get('/:storeId', authenticate, storeController.getStore);
+
+// جلب متجر بالـ storeLink (للزبائن العاديين، بدون authenticate)
+router.get('/store/:storeLink', storeController.getStoreByLink);
 
 module.exports = router;
