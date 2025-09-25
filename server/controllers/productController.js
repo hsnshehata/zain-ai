@@ -145,6 +145,16 @@ exports.updateProduct = async (req, res) => {
     if (category) {
       const categoryExists = await Category.findOne({ _id: category, storeId });
       if (!categoryExists) {
+        console.log(`[${getTimestamp()}] ❌ Update product failed: Category ${category} not found in不说
+
+System: store ${storeId}`);
+      return res.status(404).json({ message: 'المتجر غير موجود أو لا تملكه' });
+    }
+
+    // التحقق من القسم إذا تم إرساله
+    if (category) {
+      const categoryExists = await Category.findOne({ _id: category, storeId });
+      if (!categoryExists) {
         console.log(`[${getTimestamp()}] ❌ Update product failed: Category ${category} not found in store ${storeId}`);
         return res.status(404).json({ message: 'القسم غير موجود' });
       }
@@ -217,7 +227,7 @@ exports.deleteProduct = async (req, res) => {
 // جلب المنتجات
 exports.getProducts = async (req, res) => {
   const { storeId } = req.params;
-  const { category, random, limit, sort, filter, search } = req.query;
+  const { category, random, limit, sort, filter, search, page } = req.query;
   const userId = req.user.userId;
 
   try {
@@ -227,7 +237,8 @@ exports.getProducts = async (req, res) => {
       limit,
       sort,
       filter,
-      search
+      search,
+      page
     });
 
     // التحقق من وجود المتجر
@@ -260,17 +271,22 @@ exports.getProducts = async (req, res) => {
       productsQuery = productsQuery.sort({ createdAt: -1 });
     }
 
+    // Pagination
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const skip = (pageNum - 1) * limitNum;
+
+    // جلب عدد المنتجات الكلي
+    const total = await Product.countDocuments(query);
+
     // جلب منتجات عشوائية
     if (random === 'true') {
       productsQuery = Product.aggregate([
         { $match: query },
-        { $sample: { size: parseInt(limit) || 10 } }
+        { $sample: { size: limitNum } }
       ]);
-    }
-
-    // تطبيق الحد الأقصى
-    if (limit) {
-      productsQuery = productsQuery.limit(parseInt(limit));
+    } else {
+      productsQuery = productsQuery.skip(skip).limit(limitNum);
     }
 
     let products = await productsQuery;
@@ -279,7 +295,7 @@ exports.getProducts = async (req, res) => {
     }
 
     console.log(`[${getTimestamp()}] ✅ Fetched ${products.length} products for store ${storeId}`);
-    res.status(200).json(products || []);
+    res.status(200).json({ products, total });
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error fetching products for store ${storeId}:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في جلب المنتجات: ' + (err.message || 'غير معروف') });
@@ -349,4 +365,25 @@ exports.getProduct = async (req, res) => {
   const userId = req.user.userId;
 
   try {
-    console.log(`[${getTimestamp()}] 📡 Fetching
+    console.log(`[${getTimestamp()}] 📡 Fetching product ${productId} for store ${storeId}, user ${userId}`);
+    // التحقق من وجود المتجر
+    const store = await Store.findOne({ _id: storeId, userId });
+    if (!store) {
+      console.log(`[${getTimestamp()}] ❌ Get product failed: Store ${storeId} not found for user ${userId}`);
+      return res.status(404).json({ message: 'المتجر غير موجود أو لا تملكه' });
+    }
+
+    // التحقق من وجود المنتج
+    const product = await Product.findOne({ _id: productId, storeId }).populate('category');
+    if (!product) {
+      console.log(`[${getTimestamp()}] ❌ Get product failed: Product ${productId} not found in store ${storeId}`);
+      return res.status(404).json({ message: 'المنتج غير موجود' });
+    }
+
+    console.log(`[${getTimestamp()}] ✅ Fetched product: ${product.productName} for store ${storeId}, imageUrl: ${product.imageUrl}`);
+    res.status(200).json(product);
+  } catch (err) {
+    console.error(`[${getTimestamp()}] ❌ Error fetching product:`, err.message, err.stack);
+    res.status(500).json({ message: 'خطأ في جلب المنتج: ' + (err.message || 'غير معروف') });
+  }
+};
