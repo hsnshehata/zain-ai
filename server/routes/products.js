@@ -12,7 +12,7 @@ const upload = multer({
   storage,
   fileFilter: (req, file, cb) => {
     if (!file) {
-      return cb(null, true);
+      return cb(null, true); // السماح بالطلبات بدون ملف
     }
     const filetypes = /jpeg|jpg|png/;
     const extname = filetypes.test(file.originalname.toLowerCase().split('.').pop());
@@ -23,8 +23,8 @@ const upload = multer({
       cb(new Error('نوع الصورة غير مدعوم، يرجى رفع صورة بصيغة PNG أو JPEG'));
     }
   },
-  limits: { fileSize: 5 * 1024 * 1024 }
-}).single('image');
+  limits: { fileSize: 5 * 1024 * 1024 } // 5MB
+}).single('image'); // استخدام single بدل any لتطابق uploadToImgbb
 
 // Middleware لتسجيل الطلبات
 router.use((req, res, next) => {
@@ -50,10 +50,10 @@ router.put('/:storeId/products/:productId', authenticate, upload, productControl
 // حذف منتج
 router.delete('/:storeId/products/:productId', authenticate, productController.deleteProduct);
 
-// جلب المنتجات
-router.get('/:storeId/products', authenticate, productController.getProducts);
+// جلب المنتجات (بدون authenticate للوصول العام)
+router.get('/:storeId/products', productController.getProducts);
 
-// جلب المنتجات الأكثر مبيعاً
-router.get('/:storeId/products/bestsellers', authenticate, productController.getBestsellers);
+// جلب المنتجات الأكثر مبيعاً (بدون authenticate للوصول العام)
+router.get('/:storeId/products/bestsellers', productController.getBestsellers);
 
 module.exports = router;
