@@ -221,7 +221,6 @@ exports.deleteProduct = async (req, res) => {
 exports.getProducts = async (req, res) => {
   const { storeId } = req.params;
   const { category, random, limit, sort, filter, search, page } = req.query;
-  const userId = req.user.userId;
 
   try {
     console.log(`[${getTimestamp()}] 📡 Fetching products for store ${storeId} with query:`, {
@@ -235,10 +234,10 @@ exports.getProducts = async (req, res) => {
     });
 
     // التحقق من وجود المتجر
-    const store = await Store.findOne({ _id: storeId, userId });
+    const store = await Store.findById(storeId);
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Get products failed: Store ${storeId} not found for user ${userId}`);
-      return res.status(404).json({ message: 'المتجر غير موجود أو لا تملكه' });
+      console.log(`[${getTimestamp()}] ❌ Get products failed: Store ${storeId} not found`);
+      return res.status(404).json({ message: 'المتجر غير موجود' });
     }
 
     // بناء الاستعلام
@@ -299,16 +298,15 @@ exports.getProducts = async (req, res) => {
 exports.getBestsellers = async (req, res) => {
   const { storeId } = req.params;
   const { limit } = req.query;
-  const userId = req.user.userId;
 
   try {
     console.log(`[${getTimestamp()}] 📡 Fetching bestsellers for store ${storeId} with limit: ${limit}`);
 
     // التحقق من وجود المتجر
-    const store = await Store.findOne({ _id: storeId, userId });
+    const store = await Store.findById(storeId);
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Get bestsellers failed: Store ${storeId} not found for user ${userId}`);
-      return res.status(404).json({ message: 'المتجر غير موجود أو لا تملكه' });
+      console.log(`[${getTimestamp()}] ❌ Get bestsellers failed: Store ${storeId} not found`);
+      return res.status(404).json({ message: 'المتجر غير موجود' });
     }
 
     // جلب المنتجات الأكثر مبيعاً بناءً على الطلبات
@@ -355,15 +353,15 @@ exports.getBestsellers = async (req, res) => {
 // جلب منتج واحد
 exports.getProduct = async (req, res) => {
   const { storeId, productId } = req.params;
-  const userId = req.user.userId;
+  const userId = req.user ? req.user.userId : null;
 
   try {
     console.log(`[${getTimestamp()}] 📡 Fetching product ${productId} for store ${storeId}, user ${userId}`);
     // التحقق من وجود المتجر
-    const store = await Store.findOne({ _id: storeId, userId });
+    const store = await Store.findById(storeId);
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Get product failed: Store ${storeId} not found for user ${userId}`);
-      return res.status(404).json({ message: 'المتجر غير موجود أو لا تملكه' });
+      console.log(`[${getTimestamp()}] ❌ Get product failed: Store ${storeId} not found`);
+      return res.status(404).json({ message: 'المتجر غير موجود' });
     }
 
     // التحقق من وجود المنتج
