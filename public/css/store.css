@@ -271,6 +271,47 @@ body.dark-mode .category-card {
   background-color: var(--button-hover-bg);
 }
 
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.pagination .btn {
+  padding: 10px 20px;
+  background-color: var(--turquoise);
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color var(--transition-speed) ease;
+}
+
+.pagination .btn:hover {
+  background-color: var(--button-hover-bg);
+}
+
+.pagination .btn:disabled {
+  background-color: var(--light-border);
+  cursor: not-allowed;
+}
+
+body.dark-mode .pagination .btn:disabled {
+  background-color: var(--dark-border);
+}
+
+.pagination span {
+  font-size: 1em;
+  color: var(--light-text);
+}
+
+body.dark-mode .pagination span {
+  color: var(--dark-text);
+}
+
 /* Spinner */
 .spinner {
   border: 4px solid var(--light-border);
@@ -302,6 +343,28 @@ body.dark-mode .spinner {
   margin: 20px 0;
 }
 
+/* Success Toast */
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  padding: 15px;
+  border-radius: 5px;
+  color: white;
+  max-width: 300px;
+  box-shadow: var(--shadow-light);
+  transition: opacity var(--transition-speed) ease;
+}
+
+.toast.success {
+  background-color: var(--success-color);
+}
+
+body.dark-mode .toast {
+  box-shadow: var(--shadow-dark);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .categories-nav {
@@ -317,6 +380,10 @@ body.dark-mode .spinner {
   .products-container,
   .categories-container {
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+  .pagination .btn {
+    padding: 8px 15px;
+    font-size: 0.9em;
   }
 }
 
@@ -360,5 +427,9 @@ body.dark-mode .spinner {
   #sort-select,
   #filter-select {
     width: 100%;
+  }
+  .pagination .btn {
+    padding: 6px 12px;
+    font-size: 0.85em;
   }
 }
