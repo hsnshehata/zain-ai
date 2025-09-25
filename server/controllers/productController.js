@@ -4,7 +4,6 @@ const Store = require('../models/Store');
 const Category = require('../models/Category');
 const Order = require('../models/Order');
 const { uploadToImgbb } = require('./uploadController');
-const axios = require('axios');
 const mongoose = require('mongoose');
 
 // دالة مساعدة لإضافة timestamp للـ logs
@@ -252,7 +251,11 @@ exports.getProducts = async (req, res) => {
       query.productName = { $regex: search, $options: 'i' };
     }
 
-    let productsQuery = Product.find(query).populate('category');
+    let productsQuery = Product.find(query).populate({
+      path: 'category',
+      select: 'name',
+      options: { lean: true }
+    });
 
     // الترتيب
     if (sort === 'price-asc') {
@@ -275,7 +278,16 @@ exports.getProducts = async (req, res) => {
     if (random === 'true') {
       productsQuery = Product.aggregate([
         { $match: query },
-        { $sample: { size: limitNum } }
+        { $sample: { size: limitNum } },
+        {
+          $lookup: {
+            from: 'categories',
+            localField: 'category',
+            foreignField: '_id',
+            as: 'category'
+          }
+        },
+        { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } }
       ]);
     } else {
       productsQuery = productsQuery.skip(skip).limit(limitNum);
@@ -283,7 +295,10 @@ exports.getProducts = async (req, res) => {
 
     let products = await productsQuery;
     if (random === 'true') {
-      products = await Product.populate(products, { path: 'category' });
+      products = products.map(product => ({
+        ...product,
+        category: product.category ? { _id: product.category._id, name: product.category.name } : null
+      }));
     }
 
     console.log(`[${getTimestamp()}] ✅ Fetched ${products.length} products for store ${storeId}`);
@@ -303,7 +318,15 @@ exports.getBestsellers = async (req, res) => {
     console.log(`[${getTimestamp()}] 📡 Fetching bestsellers for store ${storeId} with limit: ${limit}`);
 
     // التحقق من وجود المتجر
-    const store = await Store.findById(storeId);
+    let storeIdObj;
+    try {
+      storeIdObj = mongoose.Types.ObjectId(storeId);
+    } catch (err) {
+      console.log(`[${getTimestamp()}] ❌ Get bestsellers failed: Invalid storeId ${storeId}`);
+      return res.status(400).json({ message: 'معرف المتجر غير صالح' });
+    }
+
+    const store = await Store.findById(storeIdObj);
     if (!store) {
       console.log(`[${getTimestamp()}] ❌ Get bestsellers failed: Store ${storeId} not found`);
       return res.status(404).json({ message: 'المتجر غير موجود' });
@@ -311,7 +334,7 @@ exports.getBestsellers = async (req, res) => {
 
     // جلب المنتجات الأكثر مبيعاً بناءً على الطلبات
     const bestsellers = await Order.aggregate([
-      { $match: { storeId: mongoose.Types.ObjectId(storeId) } },
+      { $match: { storeId: storeIdObj } },
       { $unwind: '$products' },
       {
         $group: {
@@ -339,11 +362,28 @@ exports.getBestsellers = async (req, res) => {
         }
       },
       { $unwind: { path: '$product.category', preserveNullAndEmptyArrays: true } },
-      { $replaceRoot: { newRoot: '$product' } }
+      {
+        $replaceRoot: {
+          newRoot: {
+            $mergeObjects: [
+              '$product',
+              {
+                category: {
+                  $cond: {
+                    if: { $eq: ['$product.category', []] },
+                    then: null,
+                    else: '$product.category'
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
     ]);
 
     console.log(`[${getTimestamp()}] ✅ Fetched ${bestsellers.length} bestsellers for store ${storeId}`);
-    res.status(200).json(bestsellers || []);
+    res.status(200).json(bestsellers);
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error fetching bestsellers for store ${storeId}:`, err.message, err.stack);
     res.status(500).json({ message: 'خطأ في جلب المنتجات الأكثر مبيعاً: ' + (err.message || 'غير معروف') });
@@ -365,7 +405,11 @@ exports.getProduct = async (req, res) => {
     }
 
     // التحقق من وجود المنتج
-    const product = await Product.findOne({ _id: productId, storeId }).populate('category');
+    const product = await Product.findOne({ _id: productId, storeId }).populate({
+      path: 'category',
+      select: 'name',
+      options: { lean: true }
+    });
     if (!product) {
       console.log(`[${getTimestamp()}] ❌ Get product failed: Product ${productId} not found in store ${storeId}`);
       return res.status(404).json({ message: 'المنتج غير موجود' });
