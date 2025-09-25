@@ -1,6 +1,6 @@
 // /public/js/store.js
 document.addEventListener('DOMContentLoaded', async () => {
-  const storeId = new URLSearchParams(window.location.search).get('storeId') || window.location.pathname.split('/').pop();
+  const storeLink = new URLSearchParams(window.location.search).get('storeId') || window.location.pathname.split('/').pop();
   const isLandingPage = window.location.pathname.includes('/landing');
   const categoriesNav = document.querySelector('.categories-nav');
   const categoriesContainer = document.querySelector('.categories-container');
@@ -82,14 +82,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   // دالة لعرض الأقسام في اللاندينج بيج
-  const renderLandingCategories = async (categories) => {
+  const renderLandingCategories = async (categories, storeId) => {
     landingCategoriesContainer.innerHTML = '';
     for (const category of categories) {
       const response = await fetch(`/api/stores/${storeId}/products?category=${category._id}&random=true&limit=1`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const products = await response.json();
-      const randomProduct = products[0] || {};
+      const randomProduct = products.products[0] || {};
       landingCategoriesContainer.innerHTML += `
         <div class="category-card">
           <img src="${randomProduct.imageUrl || '/placeholder-bot.png'}" alt="${category.name}">
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   // دالة جلب المنتجات
-  const fetchProducts = async (params = {}) => {
+  const fetchProducts = async (storeId, params = {}) => {
     showSpinner(productsContainer);
     params.page = currentPage;
     params.limit = productsPerPage;
@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   // دالة جلب الأقسام
-  const fetchCategories = async () => {
+  const fetchCategories = async (storeId) => {
     try {
       const response = await fetch(`/api/stores/${storeId}/categories`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -131,22 +131,23 @@ document.addEventListener('DOMContentLoaded', async () => {
       renderCategories(categories);
       if (isLandingPage) {
         document.getElementById('landing-categories').style.display = 'block';
-        await renderLandingCategories(categories);
+        await renderLandingCategories(categories, storeId);
       }
     } catch (err) {
       console.error('خطأ في جلب الأقسام:', err);
+      showError(categoriesContainer, 'خطأ في تحميل الأقسام، حاول مرة أخرى.');
     }
   };
 
   // دالة جلب المنتجات العشوائية
-  const fetchRandomProducts = async () => {
+  const fetchRandomProducts = async (storeId) => {
     showSpinner(randomProductsContainer);
     try {
       const response = await fetch(`/api/stores/${storeId}/products?random=true&limit=4`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       if (!response.ok) throw new Error('فشل في جلب المنتجات العشوائية');
-      const products = await response.json();
+      const { products } = await response.json();
       renderProducts(products, randomProductsContainer);
     } catch (err) {
       showError(randomProductsContainer, 'خطأ في تحميل المنتجات العشوائية.');
@@ -155,14 +156,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   // دالة جلب المنتجات الجديدة
-  const fetchRecentProducts = async () => {
+  const fetchRecentProducts = async (storeId) => {
     showSpinner(recentProductsContainer);
     try {
       const response = await fetch(`/api/stores/${storeId}/products?sort=date-desc&limit=4`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       if (!response.ok) throw new Error('فشل في جلب المنتجات الجديدة');
-      const products = await response.json();
+      const { products } = await response.json();
       renderProducts(products, recentProductsContainer);
     } catch (err) {
       showError(recentProductsContainer, 'خطأ في تحميل المنتجات الجديدة.');
@@ -171,7 +172,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   // دالة جلب المنتجات الأكثر مبيعاً
-  const fetchBestsellers = async () => {
+  const fetchBestsellers = async (storeId) => {
     showSpinner(bestsellersProductsContainer);
     try {
       const response = await fetch(`/api/stores/${storeId}/products/bestsellers?limit=4`, {
@@ -187,17 +188,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   // دالة تحميل منتجات قسم معين
-  window.loadCategoryProducts = async (categoryId, categoryName) => {
+  window.loadCategoryProducts = async (categoryId, categoryName, storeId) => {
     currentPage = 1; // إعادة تعيين الصفحة عند تغيير القسم
     categoryTitle.textContent = categoryId === 'all' ? 'جميع المنتجات' : categoryName;
     document.querySelectorAll('.category-tab').forEach(tab => tab.classList.remove('active'));
     document.querySelector(`.category-tab[data-category-id="${categoryId}"]`)?.classList.add('active');
     const params = categoryId === 'all' ? {} : { category: categoryId };
-    await fetchProducts(params);
+    await fetchProducts(storeId, params);
   };
 
   // دالة تغيير الصفحة
-  window.changePage = async (page) => {
+  window.changePage = async (page, storeId) => {
     if (page < 1) return;
     currentPage = page;
     const params = {};
@@ -206,11 +207,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (sortSelect.value !== 'default') params.sort = sortSelect.value;
     if (filterSelect.value !== 'all') params.filter = filterSelect.value;
     if (searchInput.value.trim()) params.search = searchInput.value.trim();
-    await fetchProducts(params);
+    await fetchProducts(storeId, params);
   };
 
   // دالة إضافة إلى السلة
-  window.addToCart = async (productId, productName) => {
+  window.addToCart = async (productId, productName, storeId) => {
     if (!confirm(`هل تريد إضافة ${productName} إلى السلة؟`)) return;
     const quantity = prompt(`كم وحدة من ${productName} تريد؟`, '1');
     if (quantity && !isNaN(quantity) && quantity > 0) {
@@ -239,14 +240,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   searchBtn.addEventListener('click', async () => {
     currentPage = 1; // إعادة تعيين الصفحة عند البحث
     const searchTerm = searchInput.value.trim();
-    await fetchProducts({ search: searchTerm });
+    const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
+    await fetchProducts(store._id, { search: searchTerm });
   });
 
   searchInput.addEventListener('keypress', async (e) => {
     if (e.key === 'Enter') {
       currentPage = 1;
       const searchTerm = searchInput.value.trim();
-      await fetchProducts({ search: searchTerm });
+      const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
+      await fetchProducts(store._id, { search: searchTerm });
     }
   });
 
@@ -258,7 +261,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (sortValue !== 'default') params.sort = sortValue;
     if (filterValue !== 'all') params.filter = filterValue;
     if (searchInput.value.trim()) params.search = searchInput.value.trim();
-    await fetchProducts(params);
+    const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
+    await fetchProducts(store._id, params);
   });
 
   filterSelect.addEventListener('change', async () => {
@@ -269,7 +273,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (sortValue !== 'default') params.sort = sortValue;
     if (filterValue !== 'all') params.filter = filterValue;
     if (searchInput.value.trim()) params.search = searchInput.value.trim();
-    await fetchProducts(params);
+    const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
+    await fetchProducts(store._id, params);
   });
 
   categoriesNav.addEventListener('click', async (e) => {
@@ -277,15 +282,14 @@ document.addEventListener('DOMContentLoaded', async () => {
       currentPage = 1;
       const categoryId = e.target.getAttribute('data-category-id');
       const categoryName = e.target.textContent;
-      await loadCategoryProducts(categoryId, categoryName);
+      const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
+      await loadCategoryProducts(categoryId, categoryName, store._id);
     }
   });
 
   try {
     // جلب بيانات المتجر
-    const storeResponse = await fetch(`/api/stores/${storeId}`, {
-      headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-    });
+    const storeResponse = await fetch(`/api/stores/store/${storeLink}`);
     if (!storeResponse.ok) throw new Error('فشل في جلب بيانات المتجر');
     const store = await storeResponse.json();
 
@@ -306,12 +310,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('store-header').innerHTML = store.headerHtml || '<h2>مرحبًا بك في المتجر</h2>';
 
     // تحميل الأقسام والمنتجات
-    await fetchCategories();
+    await fetchCategories(store._id);
     if (!isLandingPage) {
-      await fetchRandomProducts();
-      await fetchRecentProducts();
-      await fetchBestsellers();
-      await fetchProducts();
+      await fetchRandomProducts(store._id);
+      await fetchRecentProducts(store._id);
+      await fetchBestsellers(store._id);
+      await fetchProducts(store._id);
     }
   } catch (err) {
     console.error('خطأ في تحميل المتجر:', err);
