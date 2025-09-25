@@ -2,6 +2,11 @@
 @import url('/css/common.css');
 
 /* Landing Page Template */
+:root {
+  --primary-color: #000000; /* Default fallback */
+  --secondary-color: #ffffff; /* Default fallback */
+}
+
 body {
   background-color: var(--light-bg);
 }
@@ -23,6 +28,18 @@ body.dark-mode {
   color: var(--secondary-color);
   padding: 30px;
   border-radius: 10px;
+  text-align: center;
+}
+
+.store-header h2 {
+  margin: 0;
+  font-size: 2em;
+  font-weight: 700;
+}
+
+body.dark-mode .store-header {
+  background: linear-gradient(135deg, var(--primary-color), var(--dark-card));
+  color: var(--dark-text);
 }
 
 /* Categories Section */
@@ -32,11 +49,44 @@ body.dark-mode {
 
 .category-card {
   border-radius: 8px;
+  border: 1px solid var(--light-border);
+  padding: 15px;
+  background-color: var(--light-card);
+  transition: background-color var(--transition-speed) ease;
+}
+
+body.dark-mode .category-card {
+  border-color: var(--dark-border);
+  background-color: var(--dark-card);
+  color: var(--dark-text);
 }
 
 .category-card img {
   max-height: 150px;
   object-fit: cover;
+  border-radius: 5px;
+}
+
+.category-card h3 {
+  font-size: 1.5em;
+  margin: 10px 0;
+}
+
+.category-card p {
+  font-size: 1em;
+  color: var(--light-text);
+}
+
+body.dark-mode .category-card p {
+  color: var(--dark-text);
+}
+
+/* Products Container inside Category Card */
+.category-card .products-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
 }
 
 /* Footer */
@@ -58,8 +108,17 @@ body.dark-mode .store-footer {
   .store-main {
     padding: 15px;
   }
+  .store-header {
+    padding: 20px;
+  }
+  .store-header h2 {
+    font-size: 1.8em;
+  }
   .category-card img {
     max-height: 120px;
+  }
+  .category-card .products-container {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
 }
 
@@ -68,9 +127,15 @@ body.dark-mode .store-footer {
     padding: 10px;
   }
   .store-header {
-    padding: 20px;
+    padding: 15px;
+  }
+  .store-header h2 {
+    font-size: 1.5em;
   }
   .category-card img {
     max-height: 100px;
+  }
+  .category-card .products-container {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   }
 }
