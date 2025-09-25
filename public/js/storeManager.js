@@ -542,6 +542,7 @@ async function loadStoreManagerPage() {
       await loadProducts(botId);
     } catch (err) {
       console.error("خطأ في حفظ المتجر:", err);
+      showNotification("فشل في حفظ المتجر: " + err.message, "error");
     }
   }
 
@@ -563,6 +564,7 @@ async function loadStoreManagerPage() {
       await loadProducts(botId);
     } catch (err) {
       console.error("خطأ في إنشاء المتجر:", err);
+      showNotification("فشل في إنشاء المتجر: " + err.message, "error");
     }
   }
 
@@ -601,6 +603,7 @@ async function loadStoreManagerPage() {
       await loadCategories(botId);
     } catch (err) {
       console.error("خطأ في إنشاء القسم:", err);
+      showNotification("فشل في إنشاء القسم: " + err.message, "error");
     }
   }
 
@@ -621,7 +624,7 @@ async function loadStoreManagerPage() {
         await loadCategories(selectedBotId);
       } catch (err) {
         console.error("خطأ في حذف القسم:", err);
-        showNotification("فشل في حذف القسم", "error");
+        showNotification("فشل في حذف القسم: " + err.message, "error");
       }
     }
   };
@@ -652,7 +655,7 @@ async function loadStoreManagerPage() {
       editingProductId = productId;
     } catch (err) {
       console.error("خطأ في تحميل المنتج:", err);
-      showNotification("فشل في تحميل المنتج", "error");
+      showNotification("فشل في تحميل المنتج: " + err.message, "error");
     }
   };
 
@@ -673,7 +676,7 @@ async function loadStoreManagerPage() {
         await loadProducts(selectedBotId);
       } catch (err) {
         console.error("خطأ في حذف المنتج:", err);
-        showNotification("فشل في حذف المنتج", "error");
+        showNotification("فشل في حذف المنتج: " + err.message, "error");
       }
     }
   };
@@ -732,9 +735,13 @@ async function loadStoreManagerPage() {
       offerFields.style.display = "none";
       editingProductId = null;
       await loadProducts(botId);
+      await loadCategories(botId); // تحديث الأقسام بعد إضافة المنتج
     } catch (err) {
       console.error("خطأ في حفظ المنتج:", err);
-      showNotification(err.message || "فشل في حفظ المنتج", "error");
+      const errorMessage = err.message.includes('Product validation failed') 
+        ? 'خطأ في بيانات المنتج: تأكد من إدخال رابط صورة صالح أو اترك الحقل فارغًا'
+        : err.message || "فشل في حفظ المنتج";
+      showNotification(errorMessage, "error");
     }
   };
 
