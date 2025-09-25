@@ -19,12 +19,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // دالة لعرض spinner
   const showSpinner = (container) => {
-    container.innerHTML = '<div class="spinner"></div>';
+    if (container) container.innerHTML = '<div class="spinner"></div>';
   };
 
   // دالة لعرض رسالة خطأ
   const showError = (container, message) => {
-    container.innerHTML = `<p class="error-message">${message}</p>`;
+    if (container) container.innerHTML = `<p class="error-message">${message}</p>`;
   };
 
   // دالة لعرض رسالة نجاح
@@ -38,6 +38,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // دالة لعرض المنتجات
   const renderProducts = (products, container) => {
+    if (!container) {
+      console.error('Container not found for rendering products');
+      return;
+    }
     if (!products || products.length === 0) {
       container.innerHTML = '<p>لا توجد منتجات متاحة</p>';
       return;
@@ -53,7 +57,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <p>السعر: ${product.price} ${product.currency}</p>
         `}
         <p>المخزون: ${product.stock}</p>
-        <button onclick="addToCart('${product._id}', '${product.productName}')">أضف إلى السلة</button>
+        <button onclick="addToCart('${product._id}', '${product.productName}', '${storeLink}')">أضف إلى السلة</button>
       </div>
     `).join('');
   };
@@ -64,15 +68,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     const paginationContainer = document.createElement('div');
     paginationContainer.className = 'pagination';
     paginationContainer.innerHTML = `
-      <button class="btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>السابق</button>
+      <button class="btn" onclick="changePage(${currentPage - 1}, '${storeLink}')" ${currentPage === 1 ? 'disabled' : ''}>السابق</button>
       <span>الصفحة ${currentPage} من ${totalPages}</span>
-      <button class="btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>التالي</button>
+      <button class="btn" onclick="changePage(${currentPage + 1}, '${storeLink}')" ${currentPage === totalPages ? 'disabled' : ''}>التالي</button>
     `;
-    productsContainer.insertAdjacentElement('afterend', paginationContainer);
+    if (productsContainer) {
+      productsContainer.insertAdjacentElement('afterend', paginationContainer);
+    }
   };
 
   // دالة لعرض الأقسام
   const renderCategories = (categories) => {
+    if (!categoriesContainer) {
+      console.error('categoriesContainer not found in DOM');
+      return;
+    }
     categoriesContainer.innerHTML = '<button class="category-tab active" data-category-id="all">الكل</button>';
     categories.forEach(category => {
       categoriesContainer.innerHTML += `
@@ -83,18 +93,20 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // دالة لعرض الأقسام في اللاندينج بيج
   const renderLandingCategories = async (categories, storeId) => {
+    if (!landingCategoriesContainer) {
+      console.error('landingCategoriesContainer not found in DOM');
+      return;
+    }
     landingCategoriesContainer.innerHTML = '';
     for (const category of categories) {
-      const response = await fetch(`/api/stores/${storeId}/products?category=${category._id}&random=true&limit=1`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
-      const products = await response.json();
-      const randomProduct = products.products[0] || {};
+      const response = await fetch(`/api/stores/${storeId}/products?category=${category._id}&random=true&limit=1`);
+      const { products } = await response.json();
+      const randomProduct = products[0] || {};
       landingCategoriesContainer.innerHTML += `
         <div class="category-card">
           <img src="${randomProduct.imageUrl || '/placeholder-bot.png'}" alt="${category.name}">
           <h3>${category.name}</h3>
-          <button onclick="loadCategoryProducts('${category._id}', '${category.name}')">تصفح القسم</button>
+          <button onclick="loadCategoryProducts('${category._id}', '${category.name}', '${storeId}')">تصفح القسم</button>
         </div>
       `;
     }
@@ -107,9 +119,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     params.limit = productsPerPage;
     const query = new URLSearchParams(params).toString();
     try {
-      const response = await fetch(`/api/stores/${storeId}/products?${query}`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await fetch(`/api/stores/${storeId}/products?${query}`);
       if (!response.ok) throw new Error('فشل في جلب المنتجات');
       const { products, total } = await response.json();
       renderProducts(products, productsContainer);
@@ -123,9 +133,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // دالة جلب الأقسام
   const fetchCategories = async (storeId) => {
     try {
-      const response = await fetch(`/api/stores/${storeId}/categories`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await fetch(`/api/stores/${storeId}/categories`);
       if (!response.ok) throw new Error('فشل في جلب الأقسام');
       const categories = await response.json();
       renderCategories(categories);
@@ -143,9 +151,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const fetchRandomProducts = async (storeId) => {
     showSpinner(randomProductsContainer);
     try {
-      const response = await fetch(`/api/stores/${storeId}/products?random=true&limit=4`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await fetch(`/api/stores/${storeId}/products?random=true&limit=4`);
       if (!response.ok) throw new Error('فشل في جلب المنتجات العشوائية');
       const { products } = await response.json();
       renderProducts(products, randomProductsContainer);
@@ -159,9 +165,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const fetchRecentProducts = async (storeId) => {
     showSpinner(recentProductsContainer);
     try {
-      const response = await fetch(`/api/stores/${storeId}/products?sort=date-desc&limit=4`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await fetch(`/api/stores/${storeId}/products?sort=date-desc&limit=4`);
       if (!response.ok) throw new Error('فشل في جلب المنتجات الجديدة');
       const { products } = await response.json();
       renderProducts(products, recentProductsContainer);
@@ -175,9 +179,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const fetchBestsellers = async (storeId) => {
     showSpinner(bestsellersProductsContainer);
     try {
-      const response = await fetch(`/api/stores/${storeId}/products/bestsellers?limit=4`, {
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await fetch(`/api/stores/${storeId}/products/bestsellers?limit=4`);
       if (!response.ok) throw new Error('فشل في جلب المنتجات الأكثر مبيعاً');
       const products = await response.json();
       renderProducts(products, bestsellersProductsContainer);
@@ -211,16 +213,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   };
 
   // دالة إضافة إلى السلة
-  window.addToCart = async (productId, productName, storeId) => {
+  window.addToCart = async (productId, productName, storeLink) => {
     if (!confirm(`هل تريد إضافة ${productName} إلى السلة؟`)) return;
     const quantity = prompt(`كم وحدة من ${productName} تريد؟`, '1');
     if (quantity && !isNaN(quantity) && quantity > 0) {
       try {
-        const response = await fetch(`/api/stores/${storeId}/orders`, {
+        const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
+        const response = await fetch(`/api/stores/${store._id}/orders`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
           },
           body: JSON.stringify({
             products: [{ productId, quantity: parseInt(quantity) }],
@@ -238,7 +241,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // إضافة event listeners
   searchBtn.addEventListener('click', async () => {
-    currentPage = 1; // إعادة تعيين الصفحة عند البحث
+    currentPage = 1;
     const searchTerm = searchInput.value.trim();
     const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
     await fetchProducts(store._id, { search: searchTerm });
@@ -294,7 +297,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const store = await storeResponse.json();
 
     // تحديث اسم المتجر
-    document.getElementById('store-name').textContent = store.storeName;
+    const storeNameElement = document.getElementById('store-name');
+    if (storeNameElement) {
+      storeNameElement.textContent = store.storeName;
+    } else {
+      console.error('store-name element not found in DOM');
+    }
 
     // تطبيق الألوان المخصصة
     document.documentElement.style.setProperty('--primary-color', store.primaryColor);
@@ -304,10 +312,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const templateLink = isLandingPage
       ? `/css/landing-template${store.landingTemplateId}.css`
       : `/css/template${store.templateId}.css`;
-    document.getElementById(isLandingPage ? 'landing-template-css' : 'template-css').setAttribute('href', templateLink);
+    const templateCssElement = document.getElementById(isLandingPage ? 'landing-template-css' : 'template-css');
+    if (templateCssElement) {
+      templateCssElement.setAttribute('href', templateLink);
+    } else {
+      console.error('template-css or landing-template-css element not found in DOM');
+    }
 
     // تحميل الهيدر المخصص
-    document.getElementById('store-header').innerHTML = store.headerHtml || '<h2>مرحبًا بك في المتجر</h2>';
+    const storeHeaderElement = document.getElementById('store-header');
+    if (storeHeaderElement) {
+      storeHeaderElement.innerHTML = store.headerHtml || '<h2>مرحبًا بك في المتجر</h2>';
+    } else {
+      console.error('store-header element not found in DOM');
+    }
 
     // تحميل الأقسام والمنتجات
     await fetchCategories(store._id);
