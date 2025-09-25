@@ -151,7 +151,6 @@ async function loadStoreManagerPage() {
                 <label for="storeLinkSlug">الجزء المتغير من الرابط</label>
                 <input type="text" id="storeLinkSlug" name="storeLinkSlug" class="form-control" placeholder="مثل metjar-8777">
                 <small class="form-text">اكتب الجزء المتغير من الرابط (حروف، أرقام، - أو _ فقط)</small>
-              </div>
             </div>
             <div class="form-group">
               <label for="templateId">القالب</label>
@@ -474,13 +473,16 @@ async function loadStoreManagerPage() {
 
       if (!bot.storeId) {
         document.getElementById("productsList").innerHTML = "<p>أنشئ متجر أولاً قبل إضافة المنتجات.</p>";
+        console.log(`[${new Date().toISOString()}] ⚠️ No storeId found for bot ${botId}`);
         return;
       }
 
+      console.log(`[${new Date().toISOString()}] 📡 Fetching products for store ${bot.storeId}`);
       const products = await handleApiRequest(`/api/stores/${bot.storeId}/products`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "لم يتم العثور على منتجات، أضف منتجك الأول!");
 
+      console.log(`[${new Date().toISOString()}] ✅ Fetched ${products.length} products for store ${bot.storeId}`);
       const productsList = document.getElementById("productsList");
       productsList.innerHTML = products.length
         ? products
@@ -501,9 +503,14 @@ async function loadStoreManagerPage() {
             )
             .join("")
         : "<p>لم يتم العثور على منتجات، أضف منتجك الأول!</p>";
+
+      if (products.length === 0) {
+        console.log(`[${new Date().toISOString()}] ⚠️ No products found for store ${bot.storeId}`);
+      }
     } catch (err) {
-      console.error("خطأ في تحميل المنتجات:", err);
-      showNotification("فشل في تحميل المنتجات", "error");
+      console.error(`[${new Date().toISOString()}] ❌ Error loading products:`, err.message, err.stack);
+      showNotification("فشل في تحميل المنتجات: " + (err.message || "خطأ غير معروف"), "error");
+      document.getElementById("productsList").innerHTML = "<p>خطأ في تحميل المنتجات، حاول مرة أخرى.</p>";
     }
   };
 
@@ -755,6 +762,7 @@ async function loadStoreManagerPage() {
   productsBtn.addEventListener("click", () => {
     showSection("products");
     loadCategories(selectedBotId);
+    loadProducts(selectedBotId);
   });
   categoriesBtn.addEventListener("click", () => {
     showSection("categories");
