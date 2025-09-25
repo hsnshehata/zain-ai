@@ -42,8 +42,8 @@ exports.createStore = async (req, res) => {
     }
 
     // تنظيف HTML لو موجود
-    const cleanedHeaderHtml = headerHtml ? sanitizeHtml(headerHtml, { allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], allowedAttributes: { a: ['href'], img: ['src'] } }) : '';
-    const cleanedLandingHtml = landingHtml ? sanitizeHtml(landingHtml, { allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], allowedAttributes: { a: ['href'], img: ['src'] } }) : '';
+    const cleanedHeaderHtml = headerHtml ? sanitizeHtml(headerHtml, { allowedTags: ['div', 'span', 'a', 'p', 'h1', 'h2', 'h3', 'img', 'strong', 'em'], allowedAttributes: { 'a': ['href', 'target'], 'img': ['src', 'alt'] } }) : '';
+    const cleanedLandingHtml = landingHtml ? sanitizeHtml(landingHtml, { allowedTags: ['div', 'span', 'a', 'p', 'h1', 'h2', 'h3', 'img', 'strong', 'em'], allowedAttributes: { 'a': ['href', 'target'], 'img': ['src', 'alt'] } }) : '';
 
     // توليد storeLink فريد
     const storeLink = await generateUniqueStoreLink(storeName);
@@ -53,22 +53,30 @@ exports.createStore = async (req, res) => {
       userId,
       storeName,
       storeLink,
-      templateId: parseInt(templateId) || 1,
+      templateId: templateId || 1,
       primaryColor: primaryColor || '#000000',
       secondaryColor: secondaryColor || '#ffffff',
       headerHtml: cleanedHeaderHtml,
-      landingTemplateId: parseInt(landingTemplateId) || 1,
-      landingHtml: cleanedLandingHtml
+      landingTemplateId: landingTemplateId || 1,
+      landingHtml: cleanedLandingHtml,
+      isActive: true
     });
 
     await newStore.save();
 
-    // ربط المتجر بالبوت إذا تم تحديده
+    // ربط المتجر بالبوت لو موجود
     if (selectedBotId) {
-      await Bot.findByIdAndUpdate(selectedBotId, { storeId: newStore._id });
+      const bot = await Bot.findById(selectedBotId);
+      if (bot && bot.userId.toString() === userId.toString()) {
+        bot.storeId = newStore._id;
+        await bot.save();
+        console.log(`[${getTimestamp()}] ✅ Bot ${selectedBotId} linked to store ${newStore._id}`);
+      } else {
+        console.log(`[${getTimestamp()}] ⚠️ Bot ${selectedBotId} not found or not owned by user ${userId}`);
+      }
     }
 
-    console.log(`[${getTimestamp()}] ✅ Store created: ${newStore.storeName} for user ${userId}, link: ${storeLink}`);
+    console.log(`[${getTimestamp()}] ✅ Store created: ${newStore.storeName} with link ${storeLink} for user ${userId}`);
     res.status(201).json(newStore);
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error creating store:`, err.message, err.stack);
@@ -79,58 +87,66 @@ exports.createStore = async (req, res) => {
 // تعديل متجر
 exports.updateStore = async (req, res) => {
   const { storeId } = req.params;
-  const { storeName, storeLink, templateId, primaryColor, secondaryColor, headerHtml, landingTemplateId, landingHtml } = req.body;
+  const { storeName, templateId, primaryColor, secondaryColor, headerHtml, landingTemplateId, landingHtml, storeLinkSlug } = req.body;
   const userId = req.user.userId;
 
   try {
-    console.log(`[${getTimestamp()}] 📡 Updating store ${storeId} for user ${userId} with data:`, {
-      storeName,
-      storeLink,
-      templateId,
-      primaryColor,
-      secondaryColor,
-      headerHtml,
-      landingTemplateId,
-      landingHtml
-    });
-
+    // التحقق من وجود المتجر وملكيته
     const store = await Store.findOne({ _id: storeId, userId });
     if (!store) {
       console.log(`[${getTimestamp()}] ❌ Update store failed: Store ${storeId} not found for user ${userId}`);
-      return res.status(404).json({ message: 'المتجر غير موجود أو لا تملكه' });
+      return res.status(404).json({ message: 'المتجر غير موجود' });
     }
 
-    if (storeName && storeName !== store.storeName) {
-      const existingStore = await Store.findOne({ storeName });
+    // التحقق من اسم المتجر لو اتغير
+    let newStoreLink = store.storeLink;
+    if (storeName && storeName.trim() !== '' && storeName !== store.storeName) {
+      const existingStore = await Store.findOne({ storeName, _id: { $ne: storeId } });
       if (existingStore) {
         console.log(`[${getTimestamp()}] ❌ Update store failed: Store name ${storeName} already exists`);
         return res.status(400).json({ message: 'اسم المتجر موجود بالفعل' });
       }
-      store.storeName = storeName;
+      // توليد storeLink جديد بناءً على الاسم الجديد
+      newStoreLink = await generateUniqueStoreLink(storeName);
+    } else if (storeLinkSlug && storeLinkSlug.trim() !== '') {
+      // التحقق من الـ storeLinkSlug لو مرسل
+      const existingLink = await Store.findOne({ storeLink: storeLinkSlug, _id: { $ne: storeId } });
+      if (existingLink) {
+        console.log(`[${getTimestamp()}] ❌ Update store failed: Store link ${storeLinkSlug} already exists`);
+        return res.status(400).json({ message: 'رابط المتجر موجود بالفعل' });
+      }
+      newStoreLink = storeLinkSlug.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+      if (newStoreLink.length < 3) {
+        console.log(`[${getTimestamp()}] ❌ Update store failed: Store link ${newStoreLink} is too short`);
+        return res.status(400).json({ message: 'رابط المتجر قصير جدًا، يجب أن يكون 3 أحرف على الأقل' });
+      }
     }
 
-    if (storeLink && storeLink !== store.storeLink) {
-      if (storeLink.length < 3) {
-        console.log(`[${getTimestamp()}] ❌ Update store failed: storeLink ${storeLink} too short`);
-        return res.status(400).json({ message: 'رابط المتجر يجب أن يكون 3 أحرف على الأقل' });
-      }
-      const existingLink = await Store.findOne({ storeLink, _id: { $ne: storeId } });
-      if (existingLink) {
-        console.log(`[${getTimestamp()}] ❌ Update store failed: storeLink ${storeLink} already exists`);
-        return res.status(400).json({ message: 'الرابط المحدد موجود بالفعل، جرب رابط آخر' });
-      }
-      store.storeLink = storeLink;
-    }
-    if (templateId) store.templateId = templateId;
-    if (primaryColor) store.primaryColor = primaryColor;
-    if (secondaryColor) store.secondaryColor = secondaryColor;
+    // تنظيف HTML لو موجود، أو تعيين قيمة افتراضية لو مش موجود
+    const cleanedHeaderHtml = headerHtml ? sanitizeHtml(headerHtml, { 
+      allowedTags: ['div', 'span', 'a', 'p', 'h1', 'h2', 'h3', 'img', 'strong', 'em'], 
+      allowedAttributes: { 'a': ['href', 'target'], 'img': ['src', 'alt'] } 
+    }) : store.headerHtml || '';
+
+    const cleanedLandingHtml = landingHtml ? sanitizeHtml(landingHtml, { 
+      allowedTags: ['div', 'span', 'a', 'p', 'h1', 'h2', 'h3', 'img', 'strong', 'em'], 
+      allowedAttributes: { 'a': ['href', 'target'], 'img': ['src', 'alt'] } 
+    }) : store.landingHtml || '';
+
+    // تحديث بيانات المتجر
+    store.storeName = storeName && storeName.trim() !== '' ? storeName : store.storeName;
+    store.storeLink = newStoreLink;
+    store.templateId = templateId || store.templateId;
+    store.primaryColor = primaryColor || store.primaryColor;
+    store.secondaryColor = secondaryColor || store.secondaryColor;
     store.headerHtml = cleanedHeaderHtml;
-    if (landingTemplateId) store.landingTemplateId = landingTemplateId;
+    store.landingTemplateId = landingTemplateId || store.landingTemplateId;
     store.landingHtml = cleanedLandingHtml;
+    store.updatedAt = Date.now();
 
     await store.save();
-    console.log(`[${getTimestamp()}] ✅ Store updated: ${store.storeName} for user ${userId}`);
 
+    console.log(`[${getTimestamp()}] ✅ Store updated: ${store.storeName} with link ${store.storeLink} for user ${userId}`);
     res.status(200).json(store);
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error updating store:`, err.message, err.stack);
