@@ -1,23 +1,66 @@
 /* /public/css/template1.css */
-.products-grid {
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 15px;
+@import url('/css/common.css');
+
+/* Store Page Template */
+body {
+  background-color: var(--light-bg);
 }
 
+body.dark-mode {
+  background-color: var(--dark-bg);
+}
+
+/* Main Container */
+.store-main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Header Customization */
+.store-header {
+  border-bottom: 2px solid var(--primary-color);
+}
+
+/* Product Cards Customization */
 .product-card {
-  border: 2px solid var(--primary-color);
-  background: #f9f9f9;
-  transition: transform 0.2s;
-}
-
-.product-card:hover {
-  transform: scale(1.05);
+  border-radius: 8px;
 }
 
 .product-card img {
-  border: 1px solid #ddd;
+  max-height: 150px;
+  object-fit: cover;
 }
 
-.product-card button {
-  font-weight: bold;
+/* Footer */
+.store-footer {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  text-align: center;
+  padding: 15px;
+  margin-top: 20px;
+}
+
+body.dark-mode .store-footer {
+  background-color: var(--dark-card);
+  color: var(--dark-text);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .store-main {
+    padding: 15px;
+  }
+  .product-card img {
+    max-height: 120px;
+  }
+}
+
+@media (max-width: 576px) {
+  .store-main {
+    padding: 10px;
+  }
+  .product-card img {
+    max-height: 100px;
+  }
 }
