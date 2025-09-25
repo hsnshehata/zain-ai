@@ -5,6 +5,7 @@ const Category = require('../models/Category');
 const Order = require('../models/Order');
 const { uploadToImgbb } = require('./uploadController');
 const axios = require('axios');
+const mongoose = require('mongoose');
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
@@ -139,16 +140,6 @@ exports.updateProduct = async (req, res) => {
     if (!product) {
       console.log(`[${getTimestamp()}] ❌ Update product failed: Product ${productId} not found in store ${storeId}`);
       return res.status(404).json({ message: 'المنتج غير موجود' });
-    }
-
-    // التحقق من القسم إذا تم إرساله
-    if (category) {
-      const categoryExists = await Category.findOne({ _id: category, storeId });
-      if (!categoryExists) {
-        console.log(`[${getTimestamp()}] ❌ Update product failed: Category ${category} not found in不说
-
-System: store ${storeId}`);
-      return res.status(404).json({ message: 'المتجر غير موجود أو لا تملكه' });
     }
 
     // التحقق من القسم إذا تم إرساله
