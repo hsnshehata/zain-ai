@@ -71,7 +71,8 @@ exports.createProduct = async (req, res) => {
     let imageUrl = '';
     if (file) {
       try {
-        imageUrl = await uploadToImgbb(file);
+        const uploadResult = await uploadToImgbb(file);
+        imageUrl = uploadResult.url; // نستخدم حقل url فقط
         console.log(`[${getTimestamp()}] ✅ Image uploaded successfully: ${imageUrl}`);
       } catch (uploadErr) {
         console.error(`[${getTimestamp()}] ❌ Error uploading image:`, uploadErr.message);
@@ -154,7 +155,8 @@ exports.updateProduct = async (req, res) => {
     // رفع الصورة إذا وجدت
     if (file) {
       try {
-        product.imageUrl = await uploadToImgbb(file);
+        const uploadResult = await uploadToImgbb(file);
+        product.imageUrl = uploadResult.url; // نستخدم حقل url فقط
         console.log(`[${getTimestamp()}] ✅ Image updated successfully: ${product.imageUrl}`);
       } catch (uploadErr) {
         console.error(`[${getTimestamp()}] ❌ Error uploading image:`, uploadErr.message);
