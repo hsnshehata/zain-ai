@@ -1,359 +1,303 @@
 // /public/js/store.js
-document.addEventListener('DOMContentLoaded', async () => {
-  const storeLink = new URLSearchParams(window.location.search).get('storeId') || window.location.pathname.split('/').pop();
-  const isLandingPage = window.location.pathname.includes('/landing');
-  const categoriesNav = document.querySelector('.categories-nav');
-  const categoriesContainer = document.querySelector('.categories-container');
-  const searchInput = document.getElementById('search-input');
-  const searchBtn = document.getElementById('search-btn');
-  const randomProductsContainer = document.getElementById('random-products');
-  const recentProductsContainer = document.getElementById('recent-products');
-  const bestsellersProductsContainer = document.getElementById('bestsellers-products');
-  const productsContainer = document.getElementById('products-container');
-  const categoryTitle = document.getElementById('category-title');
-  const landingCategoriesContainer = document.getElementById('categories-container');
-  const sortSelect = document.getElementById('sort-select');
-  const filterSelect = document.getElementById('filter-select');
-  let currentPage = 1;
-  const productsPerPage = 10;
+document.addEventListener("DOMContentLoaded", async () => {
+  const storeLink = window.location.pathname.split('/').pop();
+  console.log(`[${new Date().toISOString()}] 🔍 Initializing store page for storeLink: ${storeLink}`);
 
-  // دالة لعرض spinner
-  const showSpinner = (container) => {
-    if (container) container.innerHTML = '<div class="spinner"></div>';
-  };
+  // تحميل CSS بناءً على القالب
+  async function loadStoreTemplate() {
+    try {
+      const response = await fetch(`/api/stores/link/${storeLink}`);
+      if (!response.ok) {
+        throw new Error('فشل في جلب بيانات المتجر');
+      }
+      const store = await response.json();
+      console.log(`[${new Date().toISOString()}] ✅ Fetched store data:`, store);
 
-  // دالة لعرض رسالة خطأ
-  const showError = (container, message) => {
-    if (container) container.innerHTML = `<p class="error-message">${message}</p>`;
-  };
+      // تحميل ملف CSS بناءً على templateId
+      const cssLink = document.createElement("link");
+      cssLink.rel = "stylesheet";
+      cssLink.href = `/css/template${store.templateId}.css`;
+      document.head.appendChild(cssLink);
 
-  // دالة لعرض رسالة نجاح
-  const showSuccess = (message) => {
-    const toast = document.createElement('div');
-    toast.className = 'toast success';
-    toast.textContent = message;
-    document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
-  };
+      // تحديث الألوان
+      document.documentElement.style.setProperty('--primary-color', store.primaryColor);
+      document.documentElement.style.setProperty('--secondary-color', store.secondaryColor);
 
-  // دالة لعرض المنتجات
-  const renderProducts = (products, container) => {
-    if (!container) {
-      console.error('Container not found for rendering products');
-      return;
-    }
-    if (!products || products.length === 0) {
-      container.innerHTML = '<p>لا توجد منتجات متاحة</p>';
-      return;
-    }
-    container.innerHTML = products.map(product => `
-      <div class="product-card">
-        <img src="${product.imageUrl || '/placeholder-bot.png'}" alt="${product.productName}">
-        <h3>${product.productName}</h3>
-        <p>${product.description || 'لا يوجد وصف'}</p>
-        ${product.hasOffer ? `
-          <p class="offer-price">السعر: <span class="original-price">${product.originalPrice} ${product.currency}</span> ${product.discountedPrice} ${product.currency}</p>
-        ` : `
-          <p>السعر: ${product.price} ${product.currency}</p>
-        `}
-        <p>المخزون: ${product.stock}</p>
-        <button onclick="addToCart('${product._id}', '${product.productName}', '${storeLink}')">أضف إلى السلة</button>
-      </div>
-    `).join('');
-  };
+      // تحديث اسم المتجر
+      const storeNameElement = document.getElementById("store-name");
+      if (storeNameElement) {
+        storeNameElement.textContent = store.storeName;
+      }
 
-  // دالة لعرض أزرار الـ Pagination
-  const renderPagination = (totalProducts) => {
-    const totalPages = Math.ceil(totalProducts / productsPerPage);
-    const paginationContainer = document.createElement('div');
-    paginationContainer.className = 'pagination';
-    paginationContainer.innerHTML = `
-      <button class="btn" onclick="changePage(${currentPage - 1}, '${storeLink}')" ${currentPage === 1 ? 'disabled' : ''}>السابق</button>
-      <span>الصفحة ${currentPage} من ${totalPages}</span>
-      <button class="btn" onclick="changePage(${currentPage + 1}, '${storeLink}')" ${currentPage === totalPages ? 'disabled' : ''}>التالي</button>
-    `;
-    if (productsContainer) {
-      productsContainer.insertAdjacentElement('afterend', paginationContainer);
-    }
-  };
+      // تحديث الهيدر المخصص
+      const headerHtmlContainer = document.getElementById("header-html");
+      if (headerHtmlContainer && store.headerHtml) {
+        headerHtmlContainer.innerHTML = store.headerHtml;
+      }
 
-  // دالة لعرض الأقسام في التاسك بار
-  const renderCategories = (categories) => {
-    if (!categoriesNav) {
-      console.error('categoriesNav not found in DOM');
-      return;
-    }
-    categoriesNav.innerHTML = '<button class="category-tab active" data-category-id="all">الكل</button>';
-    categories.forEach(category => {
-      categoriesNav.innerHTML += `
-        <button class="category-tab" data-category-id="${category._id}">${category.name}</button>
-      `;
-    });
-  };
+      // تحديث بيانات التواصل والنص الاختياري في الـ footer
+      const footer = document.querySelector('.store-footer');
+      if (footer) {
+        const contactInfo = document.createElement('div');
+        contactInfo.className = 'contact-info';
+        let contactContent = '<h3>بيانات التواصل</h3><ul>';
+        if (store.whatsapp) contactContent += `<li><i class="fas fa-whatsapp"></i> واتساب: <a href="https://wa.me/${store.whatsapp}" target="_blank">${store.whatsapp}</a></li>`;
+        if (store.website) contactContent += `<li><i class="fas fa-globe"></i> الموقع: <a href="${store.website}" target="_blank">${store.website}</a></li>`;
+        if (store.mobilePhone) contactContent += `<li><i class="fas fa-mobile-alt"></i> الهاتف المحمول: ${store.mobilePhone}</li>`;
+        if (store.landline) contactContent += `<li><i class="fas fa-phone"></i> الهاتف الأرضي: ${store.landline}</li>`;
+        if (store.email) contactContent += `<li><i class="fas fa-envelope"></i> الإيميل: <a href="mailto:${store.email}">${store.email}</a></li>`;
+        if (store.address) contactContent += `<li><i class="fas fa-map-marker-alt"></i> العنوان: ${store.address}</li>`;
+        if (store.googleMapsLink) contactContent += `<li><i class="fas fa-map"></i> خريطة جوجل: <a href="${store.googleMapsLink}" target="_blank">عرض الخريطة</a></li>`;
+        contactContent += '</ul>';
+        if (contactContent !== '<h3>بيانات التواصل</h3><ul></ul>') {
+          contactInfo.innerHTML = contactContent;
+          footer.appendChild(contactInfo);
+        }
 
-  // دالة لعرض الأقسام في اللاندينج بيج
-  const renderLandingCategories = async (categories, storeId) => {
-    if (!landingCategoriesContainer) {
-      console.error('landingCategoriesContainer not found in DOM');
-      return;
-    }
-    landingCategoriesContainer.innerHTML = '';
-    for (const category of categories) {
-      const response = await fetch(`/api/stores/${storeId}/products?category=${category._id}&random=true&limit=1`);
-      const { products } = await response.json();
-      const randomProduct = products[0] || {};
-      landingCategoriesContainer.innerHTML += `
-        <div class="category-card">
-          <img src="${randomProduct.imageUrl || '/placeholder-bot.png'}" alt="${category.name}">
-          <h3>${category.name}</h3>
-          <button onclick="loadCategoryProducts('${category._id}', '${category.name}', '${storeId}')">تصفح القسم</button>
+        if (store.footerText) {
+          const footerText = document.createElement('div');
+          footerText.className = 'footer-text';
+          footerText.innerHTML = store.footerText;
+          footer.appendChild(footerText);
+        }
+      }
+
+      return store;
+    } catch (err) {
+      console.error("خطأ في تحميل بيانات المتجر:", err);
+      document.getElementById("content").innerHTML = `
+        <div class="error-message">
+          <h2>خطأ</h2>
+          <p>فشل في تحميل المتجر: ${err.message}</p>
         </div>
       `;
+      return null;
     }
-  };
+  }
 
-  // دالة جلب المنتجات
-  const fetchProducts = async (storeId, params = {}) => {
-    showSpinner(productsContainer);
-    params.page = currentPage;
-    params.limit = productsPerPage;
-    const query = new URLSearchParams(params).toString();
+  // جلب الأقسام
+  async function fetchCategories(storeId) {
     try {
-      const response = await fetch(`/api/stores/${storeId}/products?${query}`);
-      if (!response.ok) throw new Error('فشل في جلب المنتجات');
-      const { products, total } = await response.json();
-      renderProducts(products, productsContainer);
-      renderPagination(total);
-    } catch (err) {
-      showError(productsContainer, 'خطأ في تحميل المنتجات، حاول مرة أخرى.');
-      console.error('خطأ في جلب المنتجات:', err);
-    }
-  };
-
-  // دالة جلب الأقسام
-  const fetchCategories = async (storeId) => {
-    try {
+      console.log(`[${new Date().toISOString()}] 📡 Fetching categories for store ${storeId}`);
       const response = await fetch(`/api/stores/${storeId}/categories`);
       if (!response.ok) throw new Error('فشل في جلب الأقسام');
       const categories = await response.json();
-      renderCategories(categories);
-      if (isLandingPage) {
-        document.getElementById('landing-categories').style.display = 'block';
-        await renderLandingCategories(categories, storeId);
+      console.log(`[${new Date().toISOString()}] ✅ Fetched ${categories.length} categories`, categories);
+
+      const categoriesNav = document.getElementById("categories-nav");
+      if (!categoriesNav) return;
+      categoriesNav.innerHTML = `
+        <div class="categories-container">
+          <div class="category-tab active" data-category-id="all">الكل</div>
+          ${categories.map(cat => `<div class="category-tab" data-category-id="${cat._id}">${cat.name}</div>`).join('')}
+        </div>
+        <div class="search-container">
+          <input type="text" id="search-input" placeholder="ابحث عن منتج...">
+          <button id="search-btn"><i class="fas fa-search"></i> بحث</button>
+        </div>
+      `;
+
+      // إضافة Event Listeners للأقسام
+      const categoryTabs = document.querySelectorAll(".category-tab");
+      categoryTabs.forEach(tab => {
+        tab.addEventListener("click", () => {
+          categoryTabs.forEach(t => t.classList.remove("active"));
+          tab.classList.add("active");
+          const categoryId = tab.getAttribute("data-category-id");
+          fetchProducts(storeId, categoryId === "all" ? null : categoryId);
+        });
+      });
+
+      // إضافة Event Listener للبحث
+      const searchBtn = document.getElementById("search-btn");
+      const searchInput = document.getElementById("search-input");
+      if (searchBtn && searchInput) {
+        searchBtn.addEventListener("click", () => {
+          fetchProducts(storeId, null, searchInput.value);
+        });
+        searchInput.addEventListener("keypress", (e) => {
+          if (e.key === "Enter") {
+            fetchProducts(storeId, null, searchInput.value);
+          }
+        });
       }
     } catch (err) {
-      console.error('خطأ في جلب الأقسام:', err);
-      showError(categoriesContainer, 'خطأ في تحميل الأقسام، حاول مرة أخرى.');
+      console.error("خطأ في جلب الأقسام:", err);
+      document.getElementById("categories-nav").innerHTML = `
+        <div class="error-message">فشل في تحميل الأقسام: ${err.message}</div>
+      `;
     }
-  };
+  }
 
-  // دالة جلب المنتجات العشوائية
-  const fetchRandomProducts = async (storeId) => {
-    showSpinner(randomProductsContainer);
+  // جلب المنتجات
+  async function fetchProducts(storeId, categoryId = null, search = '', sort = 'date-desc', filter = null, page = 1) {
     try {
+      console.log(`[${new Date().toISOString()}] 📡 Fetching products for store ${storeId}`, { categoryId, search, sort, filter, page });
+      const queryParams = new URLSearchParams();
+      if (categoryId) queryParams.set('category', categoryId);
+      if (search) queryParams.set('search', search);
+      if (sort) queryParams.set('sort', sort);
+      if (filter) queryParams.set('filter', filter);
+      queryParams.set('page', page);
+
+      const response = await fetch(`/api/stores/${storeId}/products?${queryParams.toString()}`);
+      if (!response.ok) throw new Error('فشل في جلب المنتجات');
+      const { products, total } = await response.json();
+      console.log(`[${new Date().toISOString()}] ✅ Fetched ${products.length} products, total: ${total}`);
+
+      const productsContainer = document.getElementById("products-container");
+      if (!productsContainer) return;
+
+      productsContainer.innerHTML = products.length
+        ? products.map(product => `
+            <div class="product-card">
+              <img src="${product.imageUrl || '/images/default-product.png'}" alt="${product.productName}">
+              <h3>${product.productName}</h3>
+              <p>${product.description || 'لا يوجد وصف'}</p>
+              <p class="offer-price">
+                ${product.hasOffer 
+                  ? `<span class="original-price">${product.originalPrice} ${product.currency}</span> ${product.discountedPrice} ${product.currency}`
+                  : `${product.price} ${product.currency}`}
+              </p>
+              <p>المخزون: ${product.stock}</p>
+              <button onclick="addToCart('${product._id}')">أضف إلى السلة</button>
+            </div>
+          `).join('')
+        : '<p>لا توجد منتجات متاحة</p>';
+
+      // تحديث الـ Pagination
+      updatePagination(total, page);
+    } catch (err) {
+      console.error("خطأ في جلب المنتجات:", err);
+      document.getElementById("products-container").innerHTML = `
+        <div class="error-message">فشل في تحميل المنتجات: ${err.message}</div>
+      `;
+    }
+  }
+
+  // جلب المنتجات الأكثر مبيعاً
+  async function fetchBestsellers(storeId) {
+    try {
+      console.log(`[${new Date().toISOString()}] 📡 Fetching bestsellers for store ${storeId}`);
+      const response = await fetch(`/api/stores/${storeId}/products/bestsellers?limit=4`);
+      if (!response.ok) throw new Error('فشل في جلب المنتجات الأكثر مبيعاً');
+      const bestsellers = await response.json();
+      console.log(`[${new Date().toISOString()}] ✅ Fetched ${bestsellers.length} bestsellers`);
+
+      const bestsellersContainer = document.getElementById("bestsellers-container");
+      if (!bestsellersContainer) return;
+
+      bestsellersContainer.innerHTML = bestsellers.length
+        ? bestsellers.map(product => `
+            <div class="product-card">
+              <img src="${product.imageUrl || '/images/default-product.png'}" alt="${product.productName}">
+              <h3>${product.productName}</h3>
+              <p>${product.description || 'لا يوجد وصف'}</p>
+              <p class="offer-price">
+                ${product.hasOffer 
+                  ? `<span class="original-price">${product.originalPrice} ${product.currency}</span> ${product.discountedPrice} ${product.currency}`
+                  : `${product.price} ${product.currency}`}
+              </p>
+              <button onclick="addToCart('${product._id}')">أضف إلى السلة</button>
+            </div>
+          `).join('')
+        : '<p>لا توجد منتجات أكثر مبيعاً متاحة</p>';
+    } catch (err) {
+      console.error("خطأ في جلب المنتجات الأكثر مبيعاً:", err);
+      document.getElementById("bestsellers-container").innerHTML = `
+        <div class="error-message">فشل في تحميل المنتجات الأكثر مبيعاً: ${err.message}</div>
+      `;
+    }
+  }
+
+  // جلب المنتجات العشوائية
+  async function fetchRandomProducts(storeId) {
+    try {
+      console.log(`[${new Date().toISOString()}] 📡 Fetching random products for store ${storeId}`);
       const response = await fetch(`/api/stores/${storeId}/products?random=true&limit=4`);
       if (!response.ok) throw new Error('فشل في جلب المنتجات العشوائية');
       const { products } = await response.json();
-      renderProducts(products, randomProductsContainer);
+      console.log(`[${new Date().toISOString()}] ✅ Fetched ${products.length} random products`);
+
+      const randomProductsContainer = document.getElementById("random-products-container");
+      if (!randomProductsContainer) return;
+
+      randomProductsContainer.innerHTML = products.length
+        ? products.map(product => `
+            <div class="product-card">
+              <img src="${product.imageUrl || '/images/default-product.png'}" alt="${product.productName}">
+              <h3>${product.productName}</h3>
+              <p>${product.description || 'لا يوجد وصف'}</p>
+              <p class="offer-price">
+                ${product.hasOffer 
+                  ? `<span class="original-price">${product.originalPrice} ${product.currency}</span> ${product.discountedPrice} ${product.currency}`
+                  : `${product.price} ${product.currency}`}
+              </p>
+              <button onclick="addToCart('${product._id}')">أضف إلى السلة</button>
+            </div>
+          `).join('')
+        : '<p>لا توجد منتجات مختارة متاحة</p>';
     } catch (err) {
-      showError(randomProductsContainer, 'خطأ في تحميل المنتجات العشوائية.');
-      console.error('خطأ في جلب المنتجات العشوائية:', err);
+      console.error("خطأ في جلب المنتجات العشوائية:", err);
+      document.getElementById("random-products-container").innerHTML = `
+        <div class="error-message">فشل في تحميل المنتجات المختارة: ${err.message}</div>
+      `;
     }
+  }
+
+  // تحديث الـ Pagination
+  function updatePagination(total, currentPage) {
+    const limit = 10;
+    const totalPages = Math.ceil(total / limit);
+    const paginationContainer = document.getElementById("pagination");
+    if (!paginationContainer) return;
+
+    paginationContainer.innerHTML = `
+      <button class="btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>السابق</button>
+      <span>صفحة ${currentPage} من ${totalPages}</span>
+      <button class="btn" onclick="changePage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>التالي</button>
+    `;
+  }
+
+  // تغيير الصفحة
+  window.changePage = (page) => {
+    const categoryId = document.querySelector(".category-tab.active")?.getAttribute("data-category-id");
+    const search = document.getElementById("search-input")?.value || '';
+    const sort = document.getElementById("sort-select")?.value || 'date-desc';
+    const filter = document.getElementById("filter-select")?.value || null;
+    fetchProducts(storeLink, categoryId === "all" ? null : categoryId, search, sort, filter, page);
   };
 
-  // دالة جلب المنتجات الجديدة
-  const fetchRecentProducts = async (storeId) => {
-    showSpinner(recentProductsContainer);
-    try {
-      const response = await fetch(`/api/stores/${storeId}/products?sort=date-desc&limit=4`);
-      if (!response.ok) throw new Error('فشل في جلب المنتجات الجديدة');
-      const { products } = await response.json();
-      renderProducts(products, recentProductsContainer);
-    } catch (err) {
-      showError(recentProductsContainer, 'خطأ في تحميل المنتجات الجديدة.');
-      console.error('خطأ في جلب المنتجات الجديدة:', err);
-    }
+  // إضافة إلى السلة (وظيفة مؤقتة)
+  window.addToCart = (productId) => {
+    console.log(`[${new Date().toISOString()}] 🛒 Adding product ${productId} to cart`);
+    alert('تم إضافة المنتج إلى السلة!');
   };
 
-  // دالة جلب المنتجات الأكثر مبيعاً
-  const fetchBestsellers = async (storeId) => {
-    showSpinner(bestsellersProductsContainer);
-    try {
-      const response = await fetch(`/api/stores/${storeId}/products/bestsellers?limit=4`);
-      if (!response.ok) throw new Error('فشل في جلب المنتجات الأكثر مبيعاً');
-      const products = await response.json();
-      renderProducts(products, bestsellersProductsContainer);
-    } catch (err) {
-      showError(bestsellersProductsContainer, 'خطأ في تحميل المنتجات الأكثر مبيعاً.');
-      console.error('خطأ في جلب المنتجات الأكثر مبيعاً:', err);
-    }
-  };
-
-  // دالة تحميل منتجات قسم معين
-  window.loadCategoryProducts = async (categoryId, categoryName, storeId) => {
-    currentPage = 1; // إعادة تعيين الصفحة عند تغيير القسم
-    categoryTitle.textContent = categoryId === 'all' ? 'جميع المنتجات' : categoryName;
-    document.querySelectorAll('.category-tab').forEach(tab => tab.classList.remove('active'));
-    document.querySelector(`.category-tab[data-category-id="${categoryId}"]`)?.classList.add('active');
-    const params = categoryId === 'all' ? {} : { category: categoryId };
-    await fetchProducts(storeId, params);
-  };
-
-  // دالة تغيير الصفحة
-  window.changePage = async (page, storeId) => {
-    if (page < 1) return;
-    currentPage = page;
-    const params = {};
-    const categoryId = document.querySelector('.category-tab.active')?.getAttribute('data-category-id');
-    if (categoryId && categoryId !== 'all') params.category = categoryId;
-    if (sortSelect.value !== 'default') params.sort = sortSelect.value;
-    if (filterSelect.value !== 'all') params.filter = filterSelect.value;
-    if (searchInput.value.trim()) params.search = searchInput.value.trim();
-    await fetchProducts(storeId, params);
-  };
-
-  // دالة إضافة إلى السلة
-  window.addToCart = async (productId, productName, storeLink) => {
-    if (!confirm(`هل تريد إضافة ${productName} إلى السلة؟`)) return;
-    const quantity = prompt(`كم وحدة من ${productName} تريد؟`, '1');
-    if (quantity && !isNaN(quantity) && quantity > 0) {
-      try {
-        const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
-        const response = await fetch(`/api/stores/${store._id}/orders`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-          },
-          body: JSON.stringify({
-            products: [{ productId, quantity: parseInt(quantity) }],
-            paymentMethod: 'cash_on_delivery'
-          })
-        });
-        if (!response.ok) throw new Error('فشل في إنشاء الطلب');
-        showSuccess('تم إضافة المنتج إلى السلة بنجاح!');
-      } catch (err) {
-        alert('حدث خطأ أثناء إضافة المنتج إلى السلة');
-        console.error('خطأ في إضافة المنتج:', err);
-      }
-    }
-  };
-
-  // إضافة event listeners
-  searchBtn.addEventListener('click', async () => {
-    currentPage = 1;
-    const searchTerm = searchInput.value.trim();
-    const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
-    await fetchProducts(store._id, { search: searchTerm });
-  });
-
-  searchInput.addEventListener('keypress', async (e) => {
-    if (e.key === 'Enter') {
-      currentPage = 1;
-      const searchTerm = searchInput.value.trim();
-      const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
-      await fetchProducts(store._id, { search: searchTerm });
-    }
-  });
-
-  sortSelect.addEventListener('change', async () => {
-    currentPage = 1;
-    const sortValue = sortSelect.value;
-    const filterValue = filterSelect.value;
-    const params = {};
-    if (sortValue !== 'default') params.sort = sortValue;
-    if (filterValue !== 'all') params.filter = filterValue;
-    if (searchInput.value.trim()) params.search = searchInput.value.trim();
-    const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
-    await fetchProducts(store._id, params);
-  });
-
-  filterSelect.addEventListener('change', async () => {
-    currentPage = 1;
-    const sortValue = sortSelect.value;
-    const filterValue = filterSelect.value;
-    const params = {};
-    if (sortValue !== 'default') params.sort = sortValue;
-    if (filterValue !== 'all') params.filter = filterValue;
-    if (searchInput.value.trim()) params.search = searchInput.value.trim();
-    const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
-    await fetchProducts(store._id, params);
-  });
-
-  categoriesNav.addEventListener('click', async (e) => {
-    if (e.target.classList.contains('category-tab')) {
-      currentPage = 1;
-      const categoryId = e.target.getAttribute('data-category-id');
-      const categoryName = e.target.textContent;
-      const store = await fetch(`/api/stores/store/${storeLink}`).then(res => res.json());
-      await loadCategoryProducts(categoryId, categoryName, store._id);
-    }
-  });
-
-  try {
-    // جلب بيانات المتجر
-    const storeResponse = await fetch(`/api/stores/store/${storeLink}`);
-    if (!storeResponse.ok) throw new Error('فشل في جلب بيانات المتجر');
-    const store = await storeResponse.json();
-
-    // تحديث اسم المتجر ورسالة الترحيب
-    const storeNameElement = document.getElementById('store-name');
-    if (storeNameElement) {
-      storeNameElement.textContent = store.storeName;
-    } else {
-      console.error('store-name element not found in DOM');
-    }
-
-    // إضافة رسالة ترحيب في اللاندينج بيج
-    if (isLandingPage) {
-      const welcomeMessage = document.createElement('h2');
-      welcomeMessage.textContent = `مرحباً بك في متجر ${store.storeName}`;
-      welcomeMessage.style.textAlign = 'center';
-      welcomeMessage.style.marginBottom = '20px';
-      const landingHeader = document.getElementById('store-header');
-      if (landingHeader) {
-        landingHeader.prepend(welcomeMessage);
-      } else {
-        console.error('store-header element not found in DOM');
-      }
-    }
-
-    // تطبيق الألوان المخصصة
-    document.documentElement.style.setProperty('--primary-color', store.primaryColor || '#000000');
-    document.documentElement.style.setProperty('--secondary-color', store.secondaryColor || '#ffffff');
-
-    // تحميل القالب
-    const templateLink = isLandingPage
-      ? `/css/landing-template${store.landingTemplateId}.css`
-      : `/css/template${store.templateId}.css`;
-    const templateCssElement = document.getElementById(isLandingPage ? 'landing-template-css' : 'template-css');
-    if (templateCssElement) {
-      templateCssElement.setAttribute('href', templateLink);
-    } else {
-      console.error('template-css or landing-template-css element not found in DOM');
-    }
-
-    // تحميل الهيدر المخصص
-    const storeHeaderElement = document.getElementById('store-header');
-    if (storeHeaderElement) {
-      storeHeaderElement.innerHTML = store.headerHtml || `<h2>مرحباً بك في متجر ${store.storeName}</h2>`;
-    } else {
-      console.error('store-header element not found in DOM');
-    }
-
-    // تحميل الأقسام والمنتجات
+  // تحميل المتجر
+  const store = await loadStoreTemplate();
+  if (store) {
     await fetchCategories(store._id);
-    await fetchProducts(store._id); // تحميل المنتجات تلقائيًا
-    if (!isLandingPage) {
-      await fetchRandomProducts(store._id);
-      await fetchRecentProducts(store._id);
-      await fetchBestsellers(store._id);
+    await fetchBestsellers(store._id);
+    await fetchRandomProducts(store._id);
+    await fetchProducts(store._id);
+
+    // إضافة Event Listeners للترتيب والتصفية
+    const sortSelect = document.getElementById("sort-select");
+    const filterSelect = document.getElementById("filter-select");
+    if (sortSelect) {
+      sortSelect.addEventListener("change", () => {
+        const categoryId = document.querySelector(".category-tab.active")?.getAttribute("data-category-id");
+        const search = document.getElementById("search-input")?.value || '';
+        fetchProducts(store._id, categoryId === "all" ? null : categoryId, search, sortSelect.value);
+      });
     }
-  } catch (err) {
-    console.error('خطأ في تحميل المتجر:', err);
-    showError(productsContainer, 'خطأ في تحميل المتجر، حاول مرة أخرى.');
-    if (isLandingPage) {
-      showError(landingCategoriesContainer, 'خطأ في تحميل الصفحة، حاول مرة أخرى.');
+    if (filterSelect) {
+      filterSelect.addEventListener("change", () => {
+        const categoryId = document.querySelector(".category-tab.active")?.getAttribute("data-category-id");
+        const search = document.getElementById("search-input")?.value || '';
+        fetchProducts(store._id, categoryId === "all" ? null : categoryId, search, sortSelect?.value || 'date-desc', filterSelect.value);
+      });
     }
   }
 });
