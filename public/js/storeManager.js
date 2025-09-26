@@ -116,7 +116,6 @@ async function loadStoreManagerPage() {
         <button id="categoriesBtn" class="btn btn-primary">الأقسام</button>
       </div>
     </div>
-
     <div id="instructionsContainer" class="instructions-container" style="display: none;">
       <h3>📋 خطوات إنشاء وإدارة متجرك الذكي</h3>
       <p>عشان تقدر تدير متجرك بسهولة، اتّبع الخطوات دي:</p>
@@ -135,10 +134,8 @@ async function loadStoreManagerPage() {
         <li><strong>8. إدارة الطلبات:</strong> الطلبات هتظهر في صفحة الحسابات (تحت الإنشاء) مع إشعارات تلقائية لواتساب.</li>
       </ul>
     </div>
-
     <div id="notificationContainer"></div>
     <div id="loadingSpinner" class="spinner"><div class="loader"></div></div>
-
     <div id="createStoreContainer" class="settings-container" style="display: none;">
       <div class="card settings-card">
         <div class="card-header"><h3><i class="fas fa-store-alt"></i> إنشاء متجر جديد</h3></div>
@@ -148,7 +145,6 @@ async function loadStoreManagerPage() {
         </div>
       </div>
     </div>
-
     <div id="storeSettingsContainer" class="settings-container store-settings-grid">
       <div class="card settings-card">
         <div class="card-header"><h3><i class="fas fa-store-alt"></i> إعدادات المتجر</h3></div>
@@ -230,7 +226,6 @@ async function loadStoreManagerPage() {
         </div>
       </div>
     </div>
-
     <div id="productsContainer" class="settings-container" style="display: none;">
       <div class="card settings-card">
         <div class="card-header"><h3><i class="fas fa-box"></i> إدارة المنتجات</h3></div>
@@ -299,7 +294,6 @@ async function loadStoreManagerPage() {
         </div>
       </div>
     </div>
-
     <div id="categoriesContainer" class="settings-container" style="display: none;">
       <div class="card settings-card">
         <div class="card-header"><h3><i class="fas fa-list"></i> إدارة الأقسام</h3></div>
@@ -403,7 +397,6 @@ async function loadStoreManagerPage() {
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "فشل في جلب بيانات البوت");
-
       const storeStatus = document.getElementById("storeStatus");
       if (!storeStatus) {
         console.error("storeStatus not found in DOM");
@@ -442,12 +435,10 @@ async function loadStoreManagerPage() {
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "فشل في جلب بيانات البوت");
-
       if (bot.storeId) {
         const store = await handleApiRequest(`/api/stores/${bot.storeId}`, {
           headers: { Authorization: `Bearer ${token}` },
         }, "فشل في جلب بيانات المتجر");
-
         storeNameInput.value = store.storeName;
         storeLinkInput.value = `https://zainbot.com/store/${store.storeLink}`;
         storeLinkSlugInput.value = store.storeLink;
@@ -497,13 +488,11 @@ async function loadStoreManagerPage() {
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "فشل في جلب بيانات البوت");
-
       if (!bot.storeId) {
         document.getElementById("categoriesList").innerHTML = "<p>أنشئ متجر أولاً قبل إدارة الأقسام.</p>";
         console.log(`[${new Date().toISOString()}] ⚠️ No storeId found for bot ${botId}`);
         return;
       }
-
       console.log(`[${new Date().toISOString()}] 📡 Fetching categories for store ${bot.storeId}`);
       const response = await fetch(`/api/stores/${bot.storeId}/categories`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -513,7 +502,6 @@ async function loadStoreManagerPage() {
         throw new Error(errorData.message || 'فشل في جلب الأقسام');
       }
       const categories = await response.json();
-
       console.log(`[${new Date().toISOString()}] ✅ Fetched ${categories.length} categories for store ${bot.storeId}`, categories);
       const categorySelect = document.getElementById("category");
       if (!categorySelect) {
@@ -521,9 +509,8 @@ async function loadStoreManagerPage() {
         showNotification("خطأ في العثور على عنصر اختيار القسم", "error");
         return;
       }
-      categorySelect.innerHTML = '<option value="">اختر قسم</option>' + 
+      categorySelect.innerHTML = '<option value="">اختر قسم</option>' +
         (categories.length ? categories.map(cat => `<option value="${cat._id}">${cat.name}</option>`).join("") : "");
-
       const categoriesList = document.getElementById("categoriesList");
       if (!categoriesList) {
         console.error("categoriesList element not found in DOM");
@@ -546,7 +533,6 @@ async function loadStoreManagerPage() {
             )
             .join("")
         : "<p>لا توجد أقسام، أضف واحدة جديدة!</p>";
-
       if (categories.length === 0) {
         console.log(`[${new Date().toISOString()}] ⚠️ No categories found for store ${bot.storeId}, displaying placeholder message`);
       }
@@ -566,20 +552,17 @@ async function loadStoreManagerPage() {
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "فشل في جلب بيانات البوت");
-
       if (!bot.storeId) {
         document.getElementById("productsList").innerHTML = "<p>أنشئ متجر أولاً قبل إضافة المنتجات.</p>";
         console.log(`[${new Date().toISOString()}] ⚠️ No storeId found for bot ${botId}`);
         return;
       }
-
       console.log(`[${new Date().toISOString()}] 📡 Fetching products for store ${bot.storeId}`);
       const response = await fetch(`/api/stores/${bot.storeId}/products`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!response.ok) throw new Error('فشل في جلب المنتجات');
       const { products } = await response.json();
-
       console.log(`[${new Date().toISOString()}] ✅ Fetched ${products.length} products for store ${bot.storeId}`);
       const productsList = document.getElementById("productsList");
       if (!productsList) {
@@ -606,7 +589,6 @@ async function loadStoreManagerPage() {
             )
             .join("")
         : "<p>لا توجد منتجات، أضف واحدة جديدة!</p>";
-
       if (products.length === 0) {
         console.log(`[${new Date().toISOString()}] ⚠️ No products found for store ${bot.storeId}`);
       }
@@ -623,21 +605,17 @@ async function loadStoreManagerPage() {
   async function saveStoreSettings(botId) {
     const formData = new FormData(storeForm);
     const data = Object.fromEntries(formData);
-
     try {
       console.log(`[${new Date().toISOString()}] 📡 Saving store settings for bot ${botId}:`, data);
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "فشل في جلب بيانات البوت");
-
       const method = bot.storeId ? "PUT" : "POST";
       const url = bot.storeId ? `/api/stores/${bot.storeId}` : "/api/stores";
-
       const payload = { ...data, selectedBotId: botId };
       if (data.storeLinkSlug) {
         payload.storeLink = data.storeLinkSlug;
       }
-
       await handleApiRequest(url, {
         method,
         headers: {
@@ -646,7 +624,6 @@ async function loadStoreManagerPage() {
         },
         body: JSON.stringify(payload),
       }, "فشل في حفظ المتجر");
-
       showNotification(`تم حفظ المتجر بنجاح! رابط المتجر: https://zainbot.com/store/${data.storeLinkSlug || data.storeLink}`, "success");
       storeLinkEditContainer.style.display = "none";
       await loadStoreStatus(botId);
@@ -670,7 +647,6 @@ async function loadStoreManagerPage() {
         },
         body: JSON.stringify({ selectedBotId: botId }),
       }, "فشل في إنشاء المتجر");
-
       showNotification("تم إنشاء المتجر بنجاح!", "success");
       await loadStoreStatus(botId);
       await loadStoreSettings(botId);
@@ -685,28 +661,23 @@ async function loadStoreManagerPage() {
   async function saveCategory(botId) {
     const formData = new FormData(categoryForm);
     const data = Object.fromEntries(formData);
-
     if (!data.categoryName) {
       showNotification("اسم القسم مطلوب", "error");
       return;
     }
-
     try {
       console.log(`[${new Date().toISOString()}] 📡 Saving category for bot ${botId}:`, data);
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "فشل في جلب بيانات البوت");
-
       if (!bot.storeId) {
         showNotification("أنشئ متجر أولاً قبل إنشاء الأقسام.", "error");
         return;
       }
-
       const method = data.categoryId ? "PUT" : "POST";
       const url = data.categoryId
         ? `/api/stores/${bot.storeId}/categories/${data.categoryId}`
         : `/api/stores/${bot.storeId}/categories`;
-
       await handleApiRequest(url, {
         method,
         headers: {
@@ -718,7 +689,6 @@ async function loadStoreManagerPage() {
           categoryDescription: data.categoryDescription
         }),
       }, data.categoryId ? "فشل في تعديل القسم" : "فشل في إنشاء القسم");
-
       showNotification(data.categoryId ? "تم تعديل القسم بنجاح!" : "تم إنشاء القسم بنجاح!", "success");
       categoryForm.reset();
       categoryForm.style.display = "none";
@@ -736,16 +706,23 @@ async function loadStoreManagerPage() {
       const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "فشل في جلب بيانات البوت");
-
+      
       if (!bot.storeId) {
         showNotification("أنشئ متجر أولاً قبل تعديل الأقسام.", "error");
         return;
       }
-
+      
+      // جلب القسم مع التحقق من وجوده
       const category = await handleApiRequest(`/api/stores/${bot.storeId}/categories/${categoryId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "القسم غير موجود، قد يكون تم حذفه أو غير متوفر");
-
+      
+      // تحقق إن القسم موجود فعلًا
+      if (!category) {
+        showNotification("القسم غير موجود أو تم حذفه.", "error");
+        return;
+      }
+      
       document.getElementById("categoryName").value = category.name || "";
       document.getElementById("categoryDescription").value = category.description || "";
       categoryForm.setAttribute("data-category-id", categoryId);
@@ -754,6 +731,8 @@ async function loadStoreManagerPage() {
     } catch (err) {
       console.error(`[${new Date().toISOString()}] ❌ Error loading category ${categoryId}:`, err.message, err.stack);
       showNotification("فشل في تحميل القسم: القسم غير موجود أو تم حذفه", "error");
+      // إعادة تحميل الأقسام للتأكد من تحديث القائمة
+      await loadCategories(selectedBotId);
     }
   }
 
@@ -764,12 +743,10 @@ async function loadStoreManagerPage() {
         const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
           headers: { Authorization: `Bearer ${token}` },
         }, "فشل في جلب بيانات البوت");
-
         await handleApiRequest(`/api/stores/${bot.storeId}/categories/${categoryId}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         }, "فشل في حذف القسم");
-
         showNotification("تم حذف القسم بنجاح!", "success");
         await loadCategories(selectedBotId);
       } catch (err) {
@@ -780,17 +757,16 @@ async function loadStoreManagerPage() {
   }
 
   let editingProductId = null;
+
   window.editProduct = async (productId) => {
     try {
       console.log(`[${new Date().toISOString()}] 📡 Editing product ${productId} for bot ${selectedBotId}`);
       const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "فشل في جلب بيانات البوت");
-
       const product = await handleApiRequest(`/api/stores/${bot.storeId}/products/${productId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "المنتج غير موجود، قد يكون تم حذفه أو غير متوفر");
-
       document.getElementById("productName").value = product.productName || "";
       document.getElementById("description").value = product.description || "";
       document.getElementById("price").value = product.price || "";
@@ -818,12 +794,10 @@ async function loadStoreManagerPage() {
         const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
           headers: { Authorization: `Bearer ${token}` },
         }, "فشل في جلب بيانات البوت");
-
         await handleApiRequest(`/api/stores/${bot.storeId}/products/${productId}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         }, "فشل في حذف المنتج");
-
         showNotification("تم حذف المنتج بنجاح!", "success");
         await loadProducts(selectedBotId);
       } catch (err) {
@@ -840,48 +814,40 @@ async function loadStoreManagerPage() {
       formDataEntries[key] = value instanceof File ? value.name : value;
     }
     console.log(`[${new Date().toISOString()}] 📡 Sending FormData for product:`, formDataEntries);
-
     // التحقق من الحقول المطلوبة
     if (!formData.get('productName') || !formData.get('price') || !formData.get('currency') || !formData.get('stock')) {
       showNotification("اسم المنتج، السعر، العملة، والمخزون مطلوبة", "error");
       return;
     }
-
     if (formData.get('hasOffer') === "yes" && (!formData.get('originalPrice') || !formData.get('discountedPrice'))) {
       showNotification("السعر قبل وبعد الخصم مطلوبان إذا كان هناك عرض", "error");
       return;
     }
-
     // التحقق من وجود صورة
     const imageFile = formData.get('image');
     if (imageFile && imageFile.size > 0 && !['image/png', 'image/jpeg'].includes(imageFile.type)) {
       showNotification("الصورة يجب أن تكون بصيغة PNG أو JPEG", "error");
       return;
     }
-
     try {
       console.log(`[${new Date().toISOString()}] 📡 Checking bot ${botId} for store association`);
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "فشل في جلب بيانات البوت");
-
       if (!bot.storeId) {
         showNotification("أنشئ متجر أولاً قبل إضافة المنتجات.", "error");
         return;
       }
-
       console.log(`[${new Date().toISOString()}] 📡 Saving product for store ${bot.storeId}, editing: ${editingProductId || 'new'}`);
       const method = editingProductId ? "PUT" : "POST";
       const url = editingProductId
         ? `/api/stores/${bot.storeId}/products/${editingProductId}`
         : `/api/stores/${bot.storeId}/products`;
-
       const response = await handleApiRequest(url, {
         method,
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       }, "فشل في حفظ المنتج");
-
       showNotification("تم حفظ المنتج بنجاح!", "success");
       productForm.reset();
       productForm.style.display = "none";
@@ -891,7 +857,7 @@ async function loadStoreManagerPage() {
       await loadCategories(botId);
     } catch (err) {
       console.error("خطأ في حفظ المنتج:", err);
-      const errorMessage = err.message.includes('Product validation failed') 
+      const errorMessage = err.message.includes('Product validation failed')
         ? 'خطأ في بيانات المنتج: تأكد من إدخال رابط صورة صالح أو اترك الحقل فارغًا'
         : err.message || "فشل في حفظ المنتج";
       showNotification(errorMessage, "error");
