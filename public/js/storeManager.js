@@ -519,8 +519,6 @@ async function loadStoreManagerPage() {
       if (categoriesList) {
         categoriesList.innerHTML = "<p>خطأ في تحميل الأقسام، حاول مرة أخرى لاحقًا.</p>";
       }
-      // إعادة المحاولة بعد 3 ثوانٍ
-      setTimeout(() => loadCategories(botId), 3000);
     }
   }
 
