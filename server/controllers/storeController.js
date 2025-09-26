@@ -42,8 +42,14 @@ exports.createStore = async (req, res) => {
     }
 
     // تنظيف HTML لو موجود
-    const cleanedHeaderHtml = headerHtml ? sanitizeHtml(headerHtml, { allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], allowedAttributes: { a: ['href'], img: ['src'] } }) : '';
-    const cleanedLandingHtml = landingHtml ? sanitizeHtml(landingHtml, { allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], allowedAttributes: { a: ['href'], img: ['src'] } }) : '';
+    const cleanedHeaderHtml = headerHtml ? sanitizeHtml(headerHtml, { 
+      allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], 
+      allowedAttributes: { a: ['href'], img: ['src'] } 
+    }) : '';
+    const cleanedLandingHtml = landingHtml ? sanitizeHtml(landingHtml, { 
+      allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], 
+      allowedAttributes: { a: ['href'], img: ['src'] } 
+    }) : '';
 
     // توليد storeLink فريد
     const storeLink = await generateUniqueStoreLink(storeName);
@@ -121,11 +127,22 @@ exports.updateStore = async (req, res) => {
       }
       store.storeLink = storeLink;
     }
-    if (templateId) store.templateId = templateId;
+
+    // تنظيف HTML لو موجود
+    const cleanedHeaderHtml = headerHtml ? sanitizeHtml(headerHtml, { 
+      allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], 
+      allowedAttributes: { a: ['href'], img: ['src'] } 
+    }) : store.headerHtml || '';
+    const cleanedLandingHtml = landingHtml ? sanitizeHtml(landingHtml, { 
+      allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], 
+      allowedAttributes: { a: ['href'], img: ['src'] } 
+    }) : store.landingHtml || '';
+
+    if (templateId) store.templateId = parseInt(templateId);
     if (primaryColor) store.primaryColor = primaryColor;
     if (secondaryColor) store.secondaryColor = secondaryColor;
     store.headerHtml = cleanedHeaderHtml;
-    if (landingTemplateId) store.landingTemplateId = landingTemplateId;
+    if (landingTemplateId) store.landingTemplateId = parseInt(landingTemplateId);
     store.landingHtml = cleanedLandingHtml;
 
     await store.save();
