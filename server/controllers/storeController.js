@@ -1,7 +1,6 @@
 // /server/controllers/storeController.js
 const Store = require('../models/Store');
 const Bot = require('../models/Bot');
-const Rule = require('../models/Rule');
 const sanitizeHtml = require('sanitize-html');
 
 // دالة مساعدة لإضافة timestamp للـ logs
@@ -31,6 +30,23 @@ exports.createStore = async (req, res) => {
   const userId = req.user.userId;
 
   try {
+    console.log(`[${getTimestamp()}] 📡 Creating store for user ${userId} with data:`, {
+      storeName,
+      templateId,
+      primaryColor,
+      secondaryColor,
+      headerHtml,
+      whatsapp,
+      website,
+      mobilePhone,
+      landline,
+      email,
+      address,
+      googleMapsLink,
+      footerText,
+      selectedBotId
+    });
+
     // استخدام بيانات افتراضية لو مش موجودة
     storeName = storeName && storeName.trim() !== '' ? storeName : 'متجر-افتراضي';
 
@@ -142,9 +158,9 @@ exports.updateStore = async (req, res) => {
       allowedAttributes: { a: ['href'], img: ['src'] } 
     }) : store.headerHtml || '';
 
-    if (templateId) store.templateId = parseInt(templateId);
-    if (primaryColor) store.primaryColor = primaryColor;
-    if (secondaryColor) store.secondaryColor = secondaryColor;
+    store.templateId = parseInt(templateId) || store.templateId;
+    store.primaryColor = primaryColor || store.primaryColor;
+    store.secondaryColor = secondaryColor || store.secondaryColor;
     store.headerHtml = cleanedHeaderHtml;
     store.whatsapp = whatsapp || store.whatsapp;
     store.website = website || store.website;
@@ -171,6 +187,7 @@ exports.getStore = async (req, res) => {
   const userId = req.user.userId;
 
   try {
+    console.log(`[${getTimestamp()}] 📡 Fetching store ${storeId} for user ${userId}`);
     const store = await Store.findOne({ _id: storeId, userId });
     if (!store) {
       console.log(`[${getTimestamp()}] ❌ Get store failed: Store ${storeId} not found for user ${userId}`);
@@ -191,10 +208,10 @@ exports.getStoreByLink = async (req, res) => {
 
   try {
     console.log(`[${getTimestamp()}] 📡 Fetching store by link: ${storeLink}`);
-    const store = await Store.findOne({ storeLink }).select('-userId -isActive');
+    const store = await Store.findOne({ storeLink, isActive: true }).select('-userId');
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Get store by link failed: Store link ${storeLink} not found`);
-      return res.status(404).json({ message: 'المتجر غير موجود' });
+      console.log(`[${getTimestamp()}] ❌ Get store by link failed: Store link ${storeLink} not found or not active`);
+      return res.status(404).json({ message: 'المتجر غير موجود أو غير مفعل' });
     }
 
     console.log(`[${getTimestamp()}] ✅ Fetched store by link: ${store.storeName}`);
