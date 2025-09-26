@@ -471,20 +471,26 @@ async function loadStoreManagerPage() {
       const response = await fetch(`/api/stores/${bot.storeId}/categories`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      if (!response.ok) throw new Error('فشل في جلب الأقسام');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'فشل في جلب الأقسام');
+      }
       const categories = await response.json();
 
-      console.log(`[${new Date().toISOString()}] ✅ Fetched ${categories.length} categories for store ${bot.storeId}`);
+      console.log(`[${new Date().toISOString()}] ✅ Fetched ${categories.length} categories for store ${bot.storeId}`, categories);
       const categorySelect = document.getElementById("category");
       if (!categorySelect) {
         console.error("category select element not found in DOM");
+        showNotification("خطأ في العثور على عنصر اختيار القسم", "error");
         return;
       }
-      categorySelect.innerHTML = '<option value="">اختر قسم</option>' + categories.map(cat => `<option value="${cat._id}">${cat.name}</option>`).join("");
+      categorySelect.innerHTML = '<option value="">اختر قسم</option>' + 
+        (categories.length ? categories.map(cat => `<option value="${cat._id}">${cat.name}</option>`).join("") : "");
 
       const categoriesList = document.getElementById("categoriesList");
       if (!categoriesList) {
         console.error("categoriesList element not found in DOM");
+        showNotification("خطأ في العثور على قائمة الأقسام", "error");
         return;
       }
       categoriesList.innerHTML = categories.length
@@ -542,6 +548,7 @@ async function loadStoreManagerPage() {
       const productsList = document.getElementById("productsList");
       if (!productsList) {
         console.error("productsList element not found in DOM");
+        showNotification("خطأ في العثور على قائمة المنتجات", "error");
         return;
       }
       productsList.innerHTML = products.length
@@ -609,6 +616,7 @@ async function loadStoreManagerPage() {
       await loadStoreStatus(botId);
       await loadStoreSettings(botId);
       await loadProducts(botId);
+      await loadCategories(botId); // تحديث الأقسام بعد حفظ الإعدادات
     } catch (err) {
       console.error("خطأ في حفظ المتجر:", err);
       showNotification("فشل في حفظ المتجر: " + err.message, "error");
@@ -670,7 +678,7 @@ async function loadStoreManagerPage() {
       showNotification("تم إنشاء القسم بنجاح!", "success");
       categoryForm.reset();
       categoryForm.style.display = "none";
-      await loadCategories(botId);
+      await loadCategories(botId); // تحديث الأقسام بعد الإنشاء
     } catch (err) {
       console.error("خطأ في إنشاء القسم:", err);
       showNotification("فشل في إنشاء القسم: " + err.message, "error");
@@ -808,7 +816,7 @@ async function loadStoreManagerPage() {
       offerFields.style.display = "none";
       editingProductId = null;
       await loadProducts(botId);
-      await loadCategories(botId); // تحديث الأقسام بعد إضافة المنتج
+      await loadCategories(botId); // تحديث الأقسام بعد حفظ المنتج
     } catch (err) {
       console.error("خطأ في حفظ المنتج:", err);
       const errorMessage = err.message.includes('Product validation failed') 
@@ -870,6 +878,7 @@ async function loadStoreManagerPage() {
     offerFields.style.display = "none";
     editingProductId = null;
     document.getElementById("productName").focus();
+    loadCategories(selectedBotId); // تحديث الأقسام عند فتح نموذج المنتج
   });
 
   cancelProductBtn.addEventListener("click", () => {
