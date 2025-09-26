@@ -674,6 +674,23 @@ async function loadStoreManagerPage() {
         showNotification("أنشئ متجر أولاً قبل إنشاء الأقسام.", "error");
         return;
       }
+
+      // التحقق من وجود اسم القسم قبل إرسال الطلب
+      console.log(`[${new Date().toISOString()}] 📡 Checking if category name '${data.categoryName}' already exists for store ${bot.storeId}`);
+      const categories = await handleApiRequest(`/api/stores/${bot.storeId}/categories`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, "فشل في جلب قائمة الأقسام");
+      
+      const isNameTaken = categories.some(cat => 
+        cat.name.toLowerCase() === data.categoryName.toLowerCase() && 
+        (!data.categoryId || cat._id !== data.categoryId)
+      );
+      
+      if (isNameTaken) {
+        showNotification("اسم القسم موجود بالفعل، اختر اسم تاني!", "error");
+        return;
+      }
+
       const method = data.categoryId ? "PUT" : "POST";
       const url = data.categoryId
         ? `/api/stores/${bot.storeId}/categories/${data.categoryId}`
@@ -689,14 +706,17 @@ async function loadStoreManagerPage() {
           categoryDescription: data.categoryDescription
         }),
       }, data.categoryId ? "فشل في تعديل القسم" : "فشل في إنشاء القسم");
+      
       showNotification(data.categoryId ? "تم تعديل القسم بنجاح!" : "تم إنشاء القسم بنجاح!", "success");
       categoryForm.reset();
       categoryForm.style.display = "none";
       categoryForm.removeAttribute("data-category-id");
       await loadCategories(botId);
     } catch (err) {
-      console.error("خطأ في حفظ القسم:", err);
-      showNotification("فشل في حفظ القسم: " + err.message, "error");
+      console.error(`[${new Date().toISOString()}] ❌ Error saving category:`, err.message, err.stack);
+      showNotification(`فشل في حفظ القسم: ${err.message}`, "error");
+      // إعادة تحميل الأقسام للتأكد من تحديث الواجهة
+      await loadCategories(botId);
     }
   }
 
@@ -712,12 +732,10 @@ async function loadStoreManagerPage() {
         return;
       }
       
-      // جلب القسم مع التحقق من وجوده
       const category = await handleApiRequest(`/api/stores/${bot.storeId}/categories/${categoryId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "القسم غير موجود، قد يكون تم حذفه أو غير متوفر");
       
-      // تحقق إن القسم موجود فعلًا
       if (!category) {
         showNotification("القسم غير موجود أو تم حذفه.", "error");
         return;
@@ -731,7 +749,6 @@ async function loadStoreManagerPage() {
     } catch (err) {
       console.error(`[${new Date().toISOString()}] ❌ Error loading category ${categoryId}:`, err.message, err.stack);
       showNotification("فشل في تحميل القسم: القسم غير موجود أو تم حذفه", "error");
-      // إعادة تحميل الأقسام للتأكد من تحديث القائمة
       await loadCategories(selectedBotId);
     }
   }
@@ -814,7 +831,6 @@ async function loadStoreManagerPage() {
       formDataEntries[key] = value instanceof File ? value.name : value;
     }
     console.log(`[${new Date().toISOString()}] 📡 Sending FormData for product:`, formDataEntries);
-    // التحقق من الحقول المطلوبة
     if (!formData.get('productName') || !formData.get('price') || !formData.get('currency') || !formData.get('stock')) {
       showNotification("اسم المنتج، السعر، العملة، والمخزون مطلوبة", "error");
       return;
@@ -823,7 +839,6 @@ async function loadStoreManagerPage() {
       showNotification("السعر قبل وبعد الخصم مطلوبان إذا كان هناك عرض", "error");
       return;
     }
-    // التحقق من وجود صورة
     const imageFile = formData.get('image');
     if (imageFile && imageFile.size > 0 && !['image/png', 'image/jpeg'].includes(imageFile.type)) {
       showNotification("الصورة يجب أن تكون بصيغة PNG أو JPEG", "error");
