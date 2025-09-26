@@ -58,7 +58,7 @@ exports.createProduct = async (req, res) => {
     }
 
     // التحقق من القسم إذا تم إرساله
-    if (category) {
+    if (category && category !== 'null') {
       const categoryExists = await Category.findOne({ _id: category, storeId });
       if (!categoryExists) {
         console.log(`[${getTimestamp()}] ❌ Create product failed: Category ${category} not found in store ${storeId}`);
@@ -84,21 +84,21 @@ exports.createProduct = async (req, res) => {
       storeId,
       productName,
       description: description || '',
-      price,
+      price: parseFloat(price),
       hasOffer: offerEnabled,
-      originalPrice: offerEnabled ? originalPrice : undefined,
-      discountedPrice: offerEnabled ? discountedPrice : undefined,
+      originalPrice: offerEnabled ? parseFloat(originalPrice) : undefined,
+      discountedPrice: offerEnabled ? parseFloat(discountedPrice) : undefined,
       currency,
-      stock,
-      lowStockThreshold: lowStockThreshold || 10,
-      category: category || null,
+      stock: parseInt(stock),
+      lowStockThreshold: parseInt(lowStockThreshold) || 10,
+      category: category && category !== 'null' ? category : null,
       imageUrl,
-      isActive: true // إضافة الحقل isActive
+      isActive: true,
+      salesCount: 0 // إضافة salesCount افتراضي
     });
 
     await newProduct.save();
     console.log(`[${getTimestamp()}] ✅ Product created: ${productName} for store ${storeId}, imageUrl: ${imageUrl}`);
-
     res.status(201).json(newProduct);
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error creating product:`, err.message, err.stack);
@@ -167,19 +167,19 @@ exports.updateProduct = async (req, res) => {
     // تحديث الحقول
     product.productName = productName || product.productName;
     product.description = description !== undefined ? description : product.description;
-    product.price = price !== undefined ? price : product.price;
+    product.price = price !== undefined ? parseFloat(price) : product.price;
     product.hasOffer = hasOffer === "yes" || hasOffer === true;
-    product.originalPrice = product.hasOffer ? originalPrice : undefined;
-    product.discountedPrice = product.hasOffer ? discountedPrice : undefined;
+    product.originalPrice = product.hasOffer ? parseFloat(originalPrice) : undefined;
+    product.discountedPrice = product.hasOffer ? parseFloat(discountedPrice) : undefined;
     product.currency = currency || product.currency;
-    product.stock = stock !== undefined ? stock : product.stock;
-    product.lowStockThreshold = lowStockThreshold !== undefined ? lowStockThreshold : product.lowStockThreshold;
+    product.stock = stock !== undefined ? parseInt(stock) : product.stock;
+    product.lowStockThreshold = lowStockThreshold !== undefined ? parseInt(lowStockThreshold) : product.lowStockThreshold;
     product.category = category && category !== 'null' ? category : product.category;
-    product.isActive = true; // التأكد من إن المنتج مفعل
+    product.isActive = true;
+    product.salesCount = product.salesCount || 0; // التأكد من وجود salesCount
 
     await product.save();
     console.log(`[${getTimestamp()}] ✅ Product updated: ${product.productName} for store ${storeId}, imageUrl: ${product.imageUrl}`);
-
     res.status(200).json(product);
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error updating product:`, err.message, err.stack);
@@ -210,7 +210,6 @@ exports.deleteProduct = async (req, res) => {
 
     await product.deleteOne();
     console.log(`[${getTimestamp()}] ✅ Product deleted: ${product.productName} from store ${storeId}`);
-
     res.status(200).json({ message: 'تم حذف المنتج بنجاح' });
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error deleting product:`, err.message, err.stack);
@@ -242,7 +241,7 @@ exports.getProducts = async (req, res) => {
     }
 
     // بناء الاستعلام
-    const query = { storeId, isActive: true, stock: { $gt: 0 } }; // إضافة شروط isActive و stock
+    const query = { storeId, isActive: true }; // إزالة شرط stock لعرض كل المنتجات
     if (category && category !== 'null') {
       query.category = category;
     }
@@ -303,7 +302,7 @@ exports.getProducts = async (req, res) => {
       }));
     }
 
-    console.log(`[${getTimestamp()}] ✅ Fetched ${products.length} products for store ${storeId}`);
+    console.log(`[${getTimestamp()}] ✅ Fetched ${products.length} products for store ${storeId}, total: ${total}`);
     res.status(200).json({ products, total });
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error fetching products for store ${storeId}:`, err.message, err.stack);
@@ -314,7 +313,7 @@ exports.getProducts = async (req, res) => {
 // جلب المنتجات الأكثر مبيعاً
 exports.getBestsellers = async (req, res) => {
   const { storeId } = req.params;
-  const { limit } = req.query;
+  const { limit = 4 } = req.query;
 
   try {
     console.log(`[${getTimestamp()}] 📡 Fetching bestsellers for store ${storeId} with limit: ${limit}`);
@@ -335,7 +334,7 @@ exports.getBestsellers = async (req, res) => {
     }
 
     // جلب المنتجات الأكثر مبيعاً بناءً على الطلبات
-    const bestsellers = await Order.aggregate([
+    let bestsellers = await Order.aggregate([
       { $match: { storeId: storeIdObj } },
       { $unwind: '$products' },
       {
@@ -345,7 +344,7 @@ exports.getBestsellers = async (req, res) => {
         }
       },
       { $sort: { totalQuantity: -1 } },
-      { $limit: parseInt(limit) || 4 },
+      { $limit: parseInt(limit) },
       {
         $lookup: {
           from: 'products',
@@ -355,7 +354,7 @@ exports.getBestsellers = async (req, res) => {
         }
       },
       { $unwind: '$product' },
-      { $match: { 'product.isActive': true, 'product.stock': { $gt: 0 } } }, // إضافة شروط isActive و stock
+      { $match: { 'product.isActive': true } }, // إزالة شرط stock
       {
         $lookup: {
           from: 'categories',
@@ -385,6 +384,19 @@ exports.getBestsellers = async (req, res) => {
       }
     ]);
 
+    // إذا لم يكن هناك طلبات، جلب أحدث المنتجات
+    if (bestsellers.length === 0) {
+      console.log(`[${getTimestamp()}] ⚠️ No orders found, fetching recent products instead for store ${storeId}`);
+      bestsellers = await Product.find({ storeId, isActive: true })
+        .sort({ createdAt: -1 })
+        .limit(parseInt(limit))
+        .populate({
+          path: 'category',
+          select: 'name',
+          options: { lean: true }
+        });
+    }
+
     console.log(`[${getTimestamp()}] ✅ Fetched ${bestsellers.length} bestsellers for store ${storeId}`);
     res.status(200).json(bestsellers);
   } catch (err) {
@@ -408,7 +420,7 @@ exports.getProduct = async (req, res) => {
     }
 
     // التحقق من وجود المنتج
-    const product = await Product.findOne({ _id: productId, storeId }).populate({
+    const product = await Product.findOne({ _id: productId, storeId, isActive: true }).populate({
       path: 'category',
       select: 'name',
       options: { lean: true }
