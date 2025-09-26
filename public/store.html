@@ -7,20 +7,20 @@
   <link rel="stylesheet" href="/css/common.css">
   <link rel="stylesheet" href="/css/store.css">
   <link id="template-css" rel="stylesheet" href="/css/template1.css">
-  <link id="landing-template-css" rel="stylesheet" href="/css/landing-template1.css">
 </head>
 <body class="light-mode">
   <header class="store-header" id="store-header">
-    <h2>مرحبًا بك في المتجر</h2>
+    <h1 id="store-name">متجر ذكي</h1>
+    <div id="header-html"></div>
   </header>
 
-  <nav class="categories-nav">
+  <nav class="categories-nav" id="categories-nav">
     <div class="categories-container">
       <button class="category-tab active" data-category-id="all">الكل</button>
       <!-- الأقسام هتتحط هنا ديناميكيًا -->
     </div>
     <div class="search-container">
-      <input type="text" id="search-input" placeholder="ابحث عن منتج..." />
+      <input type="text" id="search-input" placeholder="ابحث عن منتج...">
       <button id="search-btn" class="btn">بحث</button>
     </div>
   </nav>
@@ -29,7 +29,7 @@
     <!-- قسم المنتجات العشوائية -->
     <section class="products-section">
       <h3>منتجات مختارة</h3>
-      <div class="products-container" id="random-products">
+      <div class="products-container" id="random-products-container">
         <!-- المنتجات العشوائية هتتحط هنا -->
       </div>
     </section>
@@ -45,7 +45,7 @@
     <!-- قسم الأكثر مبيعاً -->
     <section class="products-section">
       <h3>الأكثر مبيعاً</h3>
-      <div class="products-container" id="bestsellers-products">
+      <div class="products-container" id="bestsellers-container">
         <!-- المنتجات الأكثر مبيعاً هتتحط هنا -->
       </div>
     </section>
@@ -69,17 +69,15 @@
         <!-- المنتجات حسب القسم هتتحط هنا -->
       </div>
     </section>
-
-    <!-- قسم الأقسام في اللاندينج بيج -->
-    <section class="categories-section" id="landing-categories" style="display: none;">
-      <h3>تصفح حسب القسم</h3>
-      <div class="categories-container" id="categories-container">
-        <!-- الأقسام هتتحط هنا في اللاندينج بيج -->
-      </div>
-    </section>
   </main>
 
   <footer class="store-footer">
+    <div class="contact-info" id="contact-info">
+      <!-- بيانات التواصل هتتحط هنا ديناميكيًا -->
+    </div>
+    <div class="footer-text" id="footer-text">
+      <!-- النص الاختياري هيتحط هنا ديناميكيًا -->
+    </div>
     <p>متجر ذكي من <a href="https://zainbot.com">zainbot.com</a></p>
   </footer>
 
