@@ -58,12 +58,14 @@ exports.createProduct = async (req, res) => {
     }
 
     // التحقق من القسم إذا تم إرساله
-    if (category && category !== 'null') {
+    let categoryId = null;
+    if (category && category !== 'null' && mongoose.isValidObjectId(category)) {
       const categoryExists = await Category.findOne({ _id: category, storeId });
       if (!categoryExists) {
         console.log(`[${getTimestamp()}] ❌ Create product failed: Category ${category} not found in store ${storeId}`);
         return res.status(404).json({ message: 'القسم غير موجود' });
       }
+      categoryId = category;
     }
 
     // رفع الصورة إذا وجدت
@@ -75,7 +77,7 @@ exports.createProduct = async (req, res) => {
         console.log(`[${getTimestamp()}] ✅ Image uploaded successfully: ${imageUrl}`);
       } catch (uploadErr) {
         console.error(`[${getTimestamp()}] ❌ Error uploading image:`, uploadErr.message);
-        return res.status(500).json({ message: 'خطأ في رفع الصورة: ' + uploadErr.message });
+        return res.status(400).json({ message: `خطأ في رفع الصورة: ${uploadErr.message}` });
       }
     }
 
@@ -91,7 +93,7 @@ exports.createProduct = async (req, res) => {
       currency,
       stock: parseInt(stock),
       lowStockThreshold: parseInt(lowStockThreshold) || 10,
-      category: category && category !== 'null' ? category : null,
+      category: categoryId,
       imageUrl,
       isActive: true,
       salesCount: 0
@@ -144,12 +146,14 @@ exports.updateProduct = async (req, res) => {
     }
 
     // التحقق من القسم إذا تم إرساله
-    if (category && category !== 'null') {
+    let categoryId = product.category ? product.category._id : null;
+    if (category && category !== 'null' && mongoose.isValidObjectId(category)) {
       const categoryExists = await Category.findOne({ _id: category, storeId });
       if (!categoryExists) {
         console.log(`[${getTimestamp()}] ❌ Update product failed: Category ${category} not found in store ${storeId}`);
         return res.status(404).json({ message: 'القسم غير موجود' });
       }
+      categoryId = category;
     }
 
     // رفع الصورة إذا وجدت
@@ -160,7 +164,7 @@ exports.updateProduct = async (req, res) => {
         console.log(`[${getTimestamp()}] ✅ Image updated successfully: ${product.imageUrl}`);
       } catch (uploadErr) {
         console.error(`[${getTimestamp()}] ❌ Error uploading image:`, uploadErr.message);
-        return res.status(500).json({ message: 'خطأ في رفع الصورة: ' + uploadErr.message });
+        return res.status(400).json({ message: `خطأ في رفع الصورة: ${uploadErr.message}` });
       }
     }
 
@@ -174,7 +178,7 @@ exports.updateProduct = async (req, res) => {
     product.currency = currency || product.currency;
     product.stock = stock !== undefined ? parseInt(stock) : product.stock;
     product.lowStockThreshold = lowStockThreshold !== undefined ? parseInt(lowStockThreshold) : product.lowStockThreshold;
-    product.category = category && category !== 'null' ? category : product.category;
+    product.category = categoryId;
     product.isActive = true;
     product.salesCount = product.salesCount || 0;
 
