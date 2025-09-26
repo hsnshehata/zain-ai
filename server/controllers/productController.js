@@ -94,7 +94,7 @@ exports.createProduct = async (req, res) => {
       category: category && category !== 'null' ? category : null,
       imageUrl,
       isActive: true,
-      salesCount: 0 // إضافة salesCount افتراضي
+      salesCount: 0
     });
 
     await newProduct.save();
@@ -176,7 +176,7 @@ exports.updateProduct = async (req, res) => {
     product.lowStockThreshold = lowStockThreshold !== undefined ? parseInt(lowStockThreshold) : product.lowStockThreshold;
     product.category = category && category !== 'null' ? category : product.category;
     product.isActive = true;
-    product.salesCount = product.salesCount || 0; // التأكد من وجود salesCount
+    product.salesCount = product.salesCount || 0;
 
     await product.save();
     console.log(`[${getTimestamp()}] ✅ Product updated: ${product.productName} for store ${storeId}, imageUrl: ${product.imageUrl}`);
@@ -241,7 +241,7 @@ exports.getProducts = async (req, res) => {
     }
 
     // بناء الاستعلام
-    const query = { storeId, isActive: true }; // إزالة شرط stock لعرض كل المنتجات
+    const query = { storeId, isActive: true };
     if (category && category !== 'null') {
       query.category = category;
     }
@@ -279,7 +279,7 @@ exports.getProducts = async (req, res) => {
     if (random === 'true') {
       productsQuery = Product.aggregate([
         { $match: query },
-        { $sample: { size: limitNum } },
+        { $sample: { size: parseInt(limitNum) } },
         {
           $lookup: {
             from: 'categories',
@@ -288,7 +288,34 @@ exports.getProducts = async (req, res) => {
             as: 'category'
           }
         },
-        { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } }
+        { $unwind: { path: '$category', preserveNullAndEmptyArrays: true } },
+        {
+          $project: {
+            _id: 1,
+            storeId: 1,
+            productName: 1,
+            description: 1,
+            price: 1,
+            hasOffer: 1,
+            originalPrice: 1,
+            discountedPrice: 1,
+            currency: 1,
+            stock: 1,
+            lowStockThreshold: 1,
+            imageUrl: 1,
+            salesCount: 1,
+            isActive: 1,
+            createdAt: 1,
+            updatedAt: 1,
+            category: {
+              $cond: {
+                if: { $eq: ['$category', {}] },
+                then: null,
+                else: { _id: '$category._id', name: '$category.name' }
+              }
+            }
+          }
+        }
       ]);
     } else {
       productsQuery = productsQuery.skip(skip).limit(limitNum);
@@ -354,7 +381,7 @@ exports.getBestsellers = async (req, res) => {
         }
       },
       { $unwind: '$product' },
-      { $match: { 'product.isActive': true } }, // إزالة شرط stock
+      { $match: { 'product.isActive': true } },
       {
         $lookup: {
           from: 'categories',
