@@ -53,7 +53,7 @@ router.delete('/:storeId/products/:productId', authenticate, productController.d
 // جلب المنتجات (بدون authenticate للوصول العام)
 router.get('/:storeId/products', productController.getProducts);
 
-// جلب منتج واحد (بدون authenticate للوصول العام، بس هنا هيستخدم في الداشبورد مع auth)
+// جلب منتج واحد
 router.get('/:storeId/products/:productId', authenticate, productController.getProduct);
 
 // جلب المنتجات الأكثر مبيعاً (بدون authenticate للوصول العام)
