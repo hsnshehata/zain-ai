@@ -300,6 +300,7 @@ async function loadStoreManagerPage() {
         <div class="card-body">
           <button id="createCategoryBtn" class="btn btn-primary" style="margin-bottom: 20px;"><i class="fas fa-plus"></i> إنشاء قسم جديد</button>
           <form id="category-form" style="display: none;">
+            <input type="hidden" id="categoryId" name="categoryId">
             <div class="form-group">
               <label for="categoryName">اسم القسم</label>
               <input type="text" id="categoryName" name="categoryName" class="form-control" required>
@@ -746,7 +747,6 @@ async function loadStoreManagerPage() {
 
       categoryForm.reset();
       categoryForm.style.display = "none";
-      categoryForm.removeAttribute("data-category-id");
       await loadCategories(botId);
     } catch (err) {
       console.error(`[${new Date().toISOString()}] ❌ Error saving category:`, err.message, err.stack);
@@ -778,7 +778,7 @@ async function loadStoreManagerPage() {
       
       document.getElementById("categoryName").value = category.name || "";
       document.getElementById("categoryDescription").value = category.description || "";
-      categoryForm.setAttribute("data-category-id", categoryId);
+      document.getElementById("categoryId").value = categoryId;
       categoryForm.style.display = "block";
       document.getElementById("categoryName").focus();
     } catch (err) {
@@ -953,14 +953,14 @@ async function loadStoreManagerPage() {
   createCategoryBtn.addEventListener("click", () => {
     categoryForm.style.display = "block";
     categoryForm.reset();
-    categoryForm.removeAttribute("data-category-id");
+    document.getElementById("categoryId").value = "";
     document.getElementById("categoryName").focus();
   });
 
   cancelCategoryBtn.addEventListener("click", () => {
     categoryForm.style.display = "none";
     categoryForm.reset();
-    categoryForm.removeAttribute("data-category-id");
+    document.getElementById("categoryId").value = "";
   });
 
   addProductBtn.addEventListener("click", () => {
