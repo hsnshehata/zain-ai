@@ -737,6 +737,11 @@ async function loadStoreManagerPage() {
         headers: { Authorization: `Bearer ${token}` },
       }, "فشل في جلب بيانات البوت");
 
+      if (!bot.storeId) {
+        showNotification("أنشئ متجر أولاً قبل تعديل الأقسام.", "error");
+        return;
+      }
+
       const category = await handleApiRequest(`/api/stores/${bot.storeId}/categories/${categoryId}`, {
         headers: { Authorization: `Bearer ${token}` },
       }, "القسم غير موجود، قد يكون تم حذفه أو غير متوفر");
@@ -747,8 +752,8 @@ async function loadStoreManagerPage() {
       categoryForm.style.display = "block";
       document.getElementById("categoryName").focus();
     } catch (err) {
-      console.error("خطأ في تحميل القسم:", err);
-      showNotification("فشل في تحميل القسم: " + err.message, "error");
+      console.error(`[${new Date().toISOString()}] ❌ Error loading category ${categoryId}:`, err.message, err.stack);
+      showNotification("فشل في تحميل القسم: القسم غير موجود أو تم حذفه", "error");
     }
   }
 
