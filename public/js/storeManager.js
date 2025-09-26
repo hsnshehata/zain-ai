@@ -203,7 +203,6 @@ async function loadStoreManagerPage() {
             </div>
             <div class="form-group">
               <label for="landline">رقم الهاتف الأرضي (اختياري)</label>
-              1
               <input type="text" id="landline" name="landline" class="form-control">
             </div>
             <div class="form-group">
@@ -676,41 +675,75 @@ async function loadStoreManagerPage() {
         return;
       }
 
-      // التحقق من اسم القسم لو إنشاء قسم جديد أو لو الاسم اتغير أثناء التعديل
-      if (!data.categoryId || (data.categoryId && document.getElementById("categoryName").value !== document.getElementById("categoryName").defaultValue)) {
+      // لو فيه categoryId، يعني إحنا بنعدّل قسم موجود
+      const isEditing = !!data.categoryId;
+      if (isEditing) {
+        // جلب بيانات القسم الحالي للمقارنة
+        const currentCategory = await handleApiRequest(`/api/stores/${bot.storeId}/categories/${data.categoryId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }, "فشل في جلب بيانات القسم");
+
+        // فحص تكرار الاسم بس لو الاسم اتغيّر
+        if (data.categoryName !== currentCategory.name) {
+          console.log(`[${new Date().toISOString()}] 📡 Checking if category name '${data.categoryName}' already exists for store ${bot.storeId}`);
+          const categories = await handleApiRequest(`/api/stores/${bot.storeId}/categories`, {
+            headers: { Authorization: `Bearer ${token}` },
+          }, "فشل في جلب قائمة الأقسام");
+
+          const isNameTaken = categories.some(cat => 
+            cat.name.toLowerCase() === data.categoryName.toLowerCase() && 
+            cat._id !== data.categoryId
+          );
+
+          if (isNameTaken) {
+            showNotification("اسم القسم موجود بالفعل، اختر اسم تاني!", "error");
+            return;
+          }
+        }
+
+        // تعديل القسم باستخدام PUT
+        await handleApiRequest(`/api/stores/${bot.storeId}/categories/${data.categoryId}`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            categoryName: data.categoryName,
+            categoryDescription: data.categoryDescription
+          }),
+        }, "فشل في تعديل القسم");
+        showNotification("تم تعديل القسم بنجاح!", "success");
+      } else {
+        // إنشاء قسم جديد باستخدام POST
         console.log(`[${new Date().toISOString()}] 📡 Checking if category name '${data.categoryName}' already exists for store ${bot.storeId}`);
         const categories = await handleApiRequest(`/api/stores/${bot.storeId}/categories`, {
           headers: { Authorization: `Bearer ${token}` },
         }, "فشل في جلب قائمة الأقسام");
-        
+
         const isNameTaken = categories.some(cat => 
-          cat.name.toLowerCase() === data.categoryName.toLowerCase() && 
-          (!data.categoryId || cat._id !== data.categoryId)
+          cat.name.toLowerCase() === data.categoryName.toLowerCase()
         );
-        
+
         if (isNameTaken) {
           showNotification("اسم القسم موجود بالفعل، اختر اسم تاني!", "error");
           return;
         }
+
+        await handleApiRequest(`/api/stores/${bot.storeId}/categories`, {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            categoryName: data.categoryName,
+            categoryDescription: data.categoryDescription
+          }),
+        }, "فشل في إنشاء القسم");
+        showNotification("تم إنشاء القسم بنجاح!", "success");
       }
 
-      const method = data.categoryId ? "PUT" : "POST";
-      const url = data.categoryId
-        ? `/api/stores/${bot.storeId}/categories/${data.categoryId}`
-        : `/api/stores/${bot.storeId}/categories`;
-      await handleApiRequest(url, {
-        method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          categoryName: data.categoryName,
-          categoryDescription: data.categoryDescription
-        }),
-      }, data.categoryId ? "فشل في تعديل القسم" : "فشل في إنشاء القسم");
-      
-      showNotification(data.categoryId ? "تم تعديل القسم بنجاح!" : "تم إنشاء القسم بنجاح!", "success");
       categoryForm.reset();
       categoryForm.style.display = "none";
       categoryForm.removeAttribute("data-category-id");
