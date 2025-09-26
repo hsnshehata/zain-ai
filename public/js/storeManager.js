@@ -129,9 +129,10 @@ async function loadStoreManagerPage() {
             - الصور لازم تكون بصيغة PNG أو JPG، ويفضل تكون مربعة.<br>
             - حدد عتبة المخزون المنخفض عشان تتلقى إشعارات لو المخزون قل.
           </span></li>
-        <li><strong>5. إدارة الأقسام:</strong> أنشئ أقسام لتنظيم المنتجات، وأضف منتجات لكل قسم.</li>
-        <li><strong>6. تخصيص الواجهة:</strong> اختار قالب (كلاسيكي، مودرن، إلخ)، وعدّل الألوان أو أضف HTML مخصص للهيدر أو اللاندينج بيج.</li>
-        <li><strong>7. إدارة الطلبات:</strong> الطلبات هتظهر في صفحة الحسابات (تحت الإنشاء) مع إشعارات تلقائية لواتساب.</li>
+        <li><strong>5. إدارة الأقسام:</strong> أنشئ أو عدّل أقسام لتنظيم المنتجات، وأضف منتجات لكل قسم.</li>
+        <li><strong>6. تخصيص الواجهة:</strong> اختار قالب (كلاسيكي، مودرن، إلخ)، وعدّل الألوان أو أضف HTML مخصص للهيدر.</li>
+        <li><strong>7. بيانات التواصل:</strong> أضف بيانات التواصل (واتساب، إيميل، عنوان، إلخ) لتظهر أسفل صفحة المتجر.</li>
+        <li><strong>8. إدارة الطلبات:</strong> الطلبات هتظهر في صفحة الحسابات (تحت الإنشاء) مع إشعارات تلقائية لواتساب.</li>
       </ul>
     </div>
 
@@ -193,18 +194,36 @@ async function loadStoreManagerPage() {
               <textarea id="headerHtml" name="headerHtml" class="form-control" rows="4"></textarea>
             </div>
             <div class="form-group">
-              <label for="landingTemplateId">قالب اللاندينج بيج</label>
-              <select id="landingTemplateId" name="landingTemplateId" class="form-control">
-                <option value="1">كلاسيكي</option>
-                <option value="2">مودرن</option>
-                <option value="3">بسيط</option>
-                <option value="4">إبداعي</option>
-                <option value="5">تجاري</option>
-              </select>
+              <label for="whatsapp">رقم الواتساب (اختياري)</label>
+              <input type="text" id="whatsapp" name="whatsapp" class="form-control">
             </div>
             <div class="form-group">
-              <label for="landingHtml">كود HTML للاندينج بيج</label>
-              <textarea id="landingHtml" name="landingHtml" class="form-control" rows="4"></textarea>
+              <label for="website">الموقع الإلكتروني (اختياري)</label>
+              <input type="text" id="website" name="website" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="mobilePhone">رقم الهاتف المحمول (اختياري)</label>
+              <input type="text" id="mobilePhone" name="mobilePhone" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="landline">رقم الهاتف الأرضي (اختياري)</label>
+              <input type="text" id="landline" name="landline" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="email">البريد الإلكتروني (اختياري)</label>
+              <input type="email" id="email" name="email" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="address">عنوان المتجر (اختياري)</label>
+              <input type="text" id="address" name="address" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="googleMapsLink">رابط خريطة جوجل (اختياري)</label>
+              <input type="text" id="googleMapsLink" name="googleMapsLink" class="form-control">
+            </div>
+            <div class="form-group">
+              <label for="footerText">نص اختياري أسفل الصفحة (اختياري)</label>
+              <textarea id="footerText" name="footerText" class="form-control" rows="4"></textarea>
             </div>
             <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ الإعدادات</button>
           </form>
@@ -436,8 +455,14 @@ async function loadStoreManagerPage() {
         document.getElementById("primaryColor").value = store.primaryColor;
         document.getElementById("secondaryColor").value = store.secondaryColor;
         document.getElementById("headerHtml").value = store.headerHtml;
-        document.getElementById("landingTemplateId").value = store.landingTemplateId;
-        document.getElementById("landingHtml").value = store.landingHtml;
+        document.getElementById("whatsapp").value = store.whatsapp;
+        document.getElementById("website").value = store.website;
+        document.getElementById("mobilePhone").value = store.mobilePhone;
+        document.getElementById("landline").value = store.landline;
+        document.getElementById("email").value = store.email;
+        document.getElementById("address").value = store.address;
+        document.getElementById("googleMapsLink").value = store.googleMapsLink;
+        document.getElementById("footerText").value = store.footerText;
         goToStoreBtn.disabled = false;
         editStoreLinkBtn.disabled = false;
         goToStoreBtn.onclick = () => window.open(`https://zainbot.com/store/${store.storeLink}`, '_blank');
@@ -445,6 +470,18 @@ async function loadStoreManagerPage() {
         storeNameInput.value = "";
         storeLinkInput.value = "";
         storeLinkSlugInput.value = "";
+        document.getElementById("templateId").value = "1";
+        document.getElementById("primaryColor").value = "#000000";
+        document.getElementById("secondaryColor").value = "#ffffff";
+        document.getElementById("headerHtml").value = "";
+        document.getElementById("whatsapp").value = "";
+        document.getElementById("website").value = "";
+        document.getElementById("mobilePhone").value = "";
+        document.getElementById("landline").value = "";
+        document.getElementById("email").value = "";
+        document.getElementById("address").value = "";
+        document.getElementById("googleMapsLink").value = "";
+        document.getElementById("footerText").value = "";
         goToStoreBtn.disabled = true;
         editStoreLinkBtn.disabled = true;
       }
@@ -501,6 +538,7 @@ async function loadStoreManagerPage() {
                   <div>
                     <h4>${cat.name}</h4>
                     <p>${cat.description || "لا يوجد وصف"}</p>
+                    <button onclick="window.editCategory('${cat._id}')" class="btn btn-secondary"><i class="fas fa-edit"></i> تعديل</button>
                     <button onclick="window.deleteCategory('${cat._id}')" class="btn btn-danger"><i class="fas fa-trash"></i> حذف</button>
                   </div>
                 </div>
@@ -614,7 +652,7 @@ async function loadStoreManagerPage() {
       await loadStoreStatus(botId);
       await loadStoreSettings(botId);
       await loadProducts(botId);
-      await loadCategories(botId); // تحديث الأقسام بعد حفظ الإعدادات
+      await loadCategories(botId);
     } catch (err) {
       console.error("خطأ في حفظ المتجر:", err);
       showNotification("فشل في حفظ المتجر: " + err.message, "error");
@@ -664,22 +702,53 @@ async function loadStoreManagerPage() {
         return;
       }
 
-      await handleApiRequest(`/api/stores/${bot.storeId}/categories`, {
-        method: "POST",
+      const method = data.categoryId ? "PUT" : "POST";
+      const url = data.categoryId
+        ? `/api/stores/${bot.storeId}/categories/${data.categoryId}`
+        : `/api/stores/${bot.storeId}/categories`;
+
+      await handleApiRequest(url, {
+        method,
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
-      }, "فشل في إنشاء القسم");
+        body: JSON.stringify({
+          categoryName: data.categoryName,
+          categoryDescription: data.categoryDescription
+        }),
+      }, data.categoryId ? "فشل في تعديل القسم" : "فشل في إنشاء القسم");
 
-      showNotification("تم إنشاء القسم بنجاح!", "success");
+      showNotification(data.categoryId ? "تم تعديل القسم بنجاح!" : "تم إنشاء القسم بنجاح!", "success");
       categoryForm.reset();
       categoryForm.style.display = "none";
-      await loadCategories(botId); // تحديث الأقسام بعد الإنشاء
+      categoryForm.removeAttribute("data-category-id");
+      await loadCategories(botId);
     } catch (err) {
-      console.error("خطأ في إنشاء القسم:", err);
-      showNotification("فشل في إنشاء القسم: " + err.message, "error");
+      console.error("خطأ في حفظ القسم:", err);
+      showNotification("فشل في حفظ القسم: " + err.message, "error");
+    }
+  }
+
+  window.editCategory = async (categoryId) => {
+    try {
+      console.log(`[${new Date().toISOString()}] 📡 Editing category ${categoryId} for bot ${selectedBotId}`);
+      const bot = await handleApiRequest(`/api/bots/${selectedBotId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, "فشل في جلب بيانات البوت");
+
+      const category = await handleApiRequest(`/api/stores/${bot.storeId}/categories/${categoryId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, "القسم غير موجود، قد يكون تم حذفه أو غير متوفر");
+
+      document.getElementById("categoryName").value = category.name || "";
+      document.getElementById("categoryDescription").value = category.description || "";
+      categoryForm.setAttribute("data-category-id", categoryId);
+      categoryForm.style.display = "block";
+      document.getElementById("categoryName").focus();
+    } catch (err) {
+      console.error("خطأ في تحميل القسم:", err);
+      showNotification("فشل في تحميل القسم: " + err.message, "error");
     }
   }
 
@@ -814,7 +883,7 @@ async function loadStoreManagerPage() {
       offerFields.style.display = "none";
       editingProductId = null;
       await loadProducts(botId);
-      await loadCategories(botId); // تحديث الأقسام بعد حفظ المنتج
+      await loadCategories(botId);
     } catch (err) {
       console.error("خطأ في حفظ المنتج:", err);
       const errorMessage = err.message.includes('Product validation failed') 
@@ -862,12 +931,15 @@ async function loadStoreManagerPage() {
 
   createCategoryBtn.addEventListener("click", () => {
     categoryForm.style.display = "block";
+    categoryForm.reset();
+    categoryForm.removeAttribute("data-category-id");
     document.getElementById("categoryName").focus();
   });
 
   cancelCategoryBtn.addEventListener("click", () => {
     categoryForm.style.display = "none";
     categoryForm.reset();
+    categoryForm.removeAttribute("data-category-id");
   });
 
   addProductBtn.addEventListener("click", () => {
@@ -876,7 +948,7 @@ async function loadStoreManagerPage() {
     offerFields.style.display = "none";
     editingProductId = null;
     document.getElementById("productName").focus();
-    loadCategories(selectedBotId); // تحديث الأقسام عند فتح نموذج المنتج
+    loadCategories(selectedBotId);
   });
 
   cancelProductBtn.addEventListener("click", () => {
