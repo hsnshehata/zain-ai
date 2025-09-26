@@ -45,14 +45,18 @@ const productSchema = new mongoose.Schema({
   },
   category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', default: null },
   imageUrl: { type: String, default: '' },
+  salesCount: { type: Number, default: 0, min: [0, 'عدد المبيعات يجب أن يكون أكبر من أو يساوي 0'] }, // إضافة salesCount
+  isActive: { type: Boolean, default: true }, // إضافة isActive
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });
 
-// فهرس لتحسين البحث
+// فهرس لتحسين البحث والأداء
 productSchema.index({ storeId: 1 });
 productSchema.index({ category: 1 });
+productSchema.index({ salesCount: -1 }); // فهرس لتحسين جلب الأكثر مبيعاً
 
+// تحديث updatedAt وتأكيد السعر بعد الخصم
 productSchema.pre('save', function (next) {
   this.updatedAt = Date.now();
   if (this.hasOffer && this.discountedPrice >= this.originalPrice) {
