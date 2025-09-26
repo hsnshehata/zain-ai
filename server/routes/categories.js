@@ -15,13 +15,18 @@ router.post('/:storeId/categories', authenticate, categoryController.createCateg
 
 // جلب كل الأقسام (مع authenticate للداشبورد، بدون للمتجر)
 router.get('/:storeId/categories', (req, res, next) => {
-  // إذا كان الطلب من الداشبورد (يحتوي على Authorization header)
   if (req.headers.authorization) {
     authenticate(req, res, next);
   } else {
-    next(); // الوصول العام للمتجر
+    next();
   }
 }, categoryController.getCategories);
+
+// جلب قسم معين
+router.get('/:storeId/categories/:categoryId', authenticate, categoryController.getCategory);
+
+// تعديل قسم
+router.put('/:storeId/categories/:categoryId', authenticate, categoryController.updateCategory);
 
 // حذف قسم
 router.delete('/:storeId/categories/:categoryId', authenticate, categoryController.deleteCategory);
