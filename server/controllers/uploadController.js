@@ -44,28 +44,46 @@ async function uploadToImgbb(file, options = {}) {
       size: file.size,
     });
 
-    // إرسال الطلب إلى imgbb
-    const response = await axios.post('https://api.imgbb.com/1/upload', formData, {
-      headers: {
-        ...formData.getHeaders(),
-      },
-      timeout: 10000, // إضافة timeout لتجنب الانتظار الطويل
-    });
+    // محاولة رفع الصورة مع retry mechanism
+    let attempts = 3;
+    let lastError = null;
+    for (let i = 0; i < attempts; i++) {
+      try {
+        const response = await axios.post('https://api.imgbb.com/1/upload', formData, {
+          headers: {
+            ...formData.getHeaders(),
+          },
+          timeout: 20000, // زيادة الـ timeout لـ 20 ثانية
+        });
 
-    console.log('📥 imgbb response:', response.data);
+        console.log('📥 imgbb response:', response.data);
 
-    // التحقق من نجاح الطلب
-    if (response.status !== 200 || !response.data.success) {
-      const errorMessage = response.data.error?.message || 'خطأ غير معروف';
-      console.error(`❌ imgbb upload failed: ${errorMessage}`);
-      throw new Error(`فشل في رفع الصورة إلى imgbb: ${errorMessage}`);
+        // التحقق من نجاح الطلب
+        if (response.status !== 200 || !response.data.success) {
+          const errorMessage = response.data.error?.message || 'خطأ غير معروف';
+          console.error(`❌ imgbb upload failed: ${errorMessage}`);
+          throw new Error(`فشل في رفع الصورة إلى imgbb: ${errorMessage}`);
+        }
+
+        return {
+          url: response.data.data.url,
+          thumbUrl: response.data.data.thumb.url,
+          deleteUrl: response.data.data.delete_url,
+        };
+      } catch (err) {
+        lastError = err;
+        console.error(`❌ Attempt ${i + 1} failed:`, err.message);
+        if (err.code === 'ECONNABORTED') {
+          console.log(`[${new Date().toISOString()}] ⚠️ Retrying upload due to timeout...`);
+          continue; // إعادة المحاولة لو الخطأ timeout
+        }
+        throw err; // رمي الخطأ لو مش timeout
+      }
     }
 
-    return {
-      url: response.data.data.url,
-      thumbUrl: response.data.data.thumb.url,
-      deleteUrl: response.data.data.delete_url,
-    };
+    // لو فشلت كل المحاولات
+    console.error('❌ All upload attempts failed');
+    throw new Error(`فشل في رفع الصورة بعد ${attempts} محاولات: ${lastError.message}`);
   } catch (err) {
     console.error('❌ Error uploading to imgbb:', err.message, err.stack);
     throw new Error(`خطأ في رفع الصورة: ${err.message}`);
