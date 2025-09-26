@@ -45,11 +45,12 @@ body.dark-mode .categories-nav {
 }
 
 .categories-container {
-  display: flex;
-  flex-direction: row; /* تأكيد إن الأزرار تكون في صف واحد */
-  gap: 10px;
-  flex-wrap: nowrap; /* منع التفاف الأزرار لسطر جديد */
-  align-items: center;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 10px !important;
+  align-items: center !important;
+  justify-content: center !important;
 }
 
 .category-tab {
@@ -60,7 +61,7 @@ body.dark-mode .categories-nav {
   cursor: pointer;
   transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
   color: var(--primary-color);
-  white-space: nowrap; /* منع النص من الانقسام لسطور */
+  white-space: nowrap;
   font-size: 1em;
 }
 
@@ -388,7 +389,7 @@ body.dark-mode .store-footer .contact-info a {
 }
 
 .zainbot-credit {
-  order: 3; /* يضمن إن النص يكون آخر حاجة */
+  order: 3;
   margin-top: 10px;
   font-size: 0.9em;
   text-align: center;
@@ -455,8 +456,8 @@ body.dark-mode .toast {
     align-items: center;
   }
   .categories-container {
-    flex-wrap: wrap; /* عشان الأزرار تتكيف مع الشاشات الصغيرة */
-    justify-content: center;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
   }
   .search-container {
     width: 100%;
