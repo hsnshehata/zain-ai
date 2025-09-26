@@ -31,12 +31,12 @@ body.dark-mode .store-header {
 .categories-nav {
   display: flex;
   justify-content: center;
+  align-items: center;
   gap: 10px;
   padding: 15px 20px;
   background-color: var(--light-card);
   box-shadow: var(--shadow-light);
   margin-bottom: 20px;
-  flex-wrap: wrap;
 }
 
 body.dark-mode .categories-nav {
@@ -46,8 +46,10 @@ body.dark-mode .categories-nav {
 
 .categories-container {
   display: flex;
+  flex-direction: row; /* تأكيد إن الأزرار تكون في صف واحد */
   gap: 10px;
-  flex-wrap: nowrap; /* عشان الأزرار تبقى جنب بعض */
+  flex-wrap: nowrap; /* منع التفاف الأزرار لسطر جديد */
+  align-items: center;
 }
 
 .category-tab {
@@ -58,7 +60,8 @@ body.dark-mode .categories-nav {
   cursor: pointer;
   transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
   color: var(--primary-color);
-  white-space: nowrap; /* عشان النص ما ينقسم على أكتر من سطر */
+  white-space: nowrap; /* منع النص من الانقسام لسطور */
+  font-size: 1em;
 }
 
 .category-tab.active,
@@ -453,6 +456,7 @@ body.dark-mode .toast {
   }
   .categories-container {
     flex-wrap: wrap; /* عشان الأزرار تتكيف مع الشاشات الصغيرة */
+    justify-content: center;
   }
   .search-container {
     width: 100%;
