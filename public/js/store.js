@@ -88,7 +88,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // جلب الأقسام
+  // جلب الأقسام مع عدد المنتجات
   async function fetchCategories(storeId) {
     try {
       console.log(`[${new Date().toISOString()}] 📡 Fetching categories for store ${storeId}`);
@@ -96,6 +96,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!response.ok) throw new Error('فشل في جلب الأقسام');
       const categories = await response.json();
       console.log(`[${new Date().toISOString()}] ✅ Fetched ${categories.length} categories`, categories);
+
+      // جلب عدد المنتجات لكل قسم
+      const categoriesWithCount = await Promise.all(categories.map(async (cat) => {
+        const productCount = await fetch(`/api/stores/${storeId}/products?category=${cat._id}`);
+        const { total } = await productCount.json();
+        return { ...cat, productCount: total };
+      }));
 
       const categoriesNav = document.getElementById("categories-nav");
       if (!categoriesNav) {
@@ -105,7 +112,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       categoriesNav.innerHTML = `
         <div class="categories-container">
           <div class="category-tab active" data-category-id="all">الكل</div>
-          ${categories.map(cat => `<div class="category-tab" data-category-id="${cat._id}">${cat.name}</div>`).join('')}
+          ${categoriesWithCount.map(cat => `<div class="category-tab" data-category-id="${cat._id}">${cat.name} (${cat.productCount})</div>`).join('')}
         </div>
         <div class="search-container">
           <input type="text" id="search-input" placeholder="ابحث عن منتج...">
