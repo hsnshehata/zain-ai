@@ -1,7 +1,7 @@
 /* /public/css/landing-template1.css */
 @import url('/css/common.css');
 
-/* Landing Page Template */
+/* Landing Page Template 1 - Classic */
 body {
   background-color: var(--light-bg);
 }
@@ -19,10 +19,13 @@ body.dark-mode {
 
 /* Header Customization */
 .store-header {
-  background: linear-gradient(135deg, var(--primary-color), var(--turquoise));
+  background: var(--primary-color);
   color: var(--secondary-color);
   padding: 30px;
-  border-radius: 10px;
+  border-radius: 8px;
+  border: 2px solid var(--secondary-color);
+  text-align: center;
+  box-shadow: var(--shadow-light);
 }
 
 /* Categories Section */
@@ -32,11 +35,45 @@ body.dark-mode {
 
 .category-card {
   border-radius: 8px;
+  border: 2px solid var(--primary-color);
+  background-color: var(--light-card);
+  padding: 20px;
+  text-align: center;
+  transition: transform var(--transition-speed) ease;
+}
+
+.category-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+body.dark-mode .category-card {
+  background-color: var(--dark-card);
+  border-color: var(--primary-color);
+  color: var(--secondary-color);
 }
 
 .category-card img {
   max-height: 150px;
   object-fit: cover;
+  border: 1px solid var(--secondary-color);
+  border-radius: 5px;
+}
+
+.category-card h3 {
+  font-size: 1.2em;
+  margin: 10px 0;
+  color: var(--primary-color);
+}
+
+body.dark-mode .category-card h3 {
+  color: var(--secondary-color);
+}
+
+.category-card button {
+  background-color: var(--primary-color);
+  color: var(--secondary-color);
+  border: 1px solid var(--secondary-color);
 }
 
 /* Footer */
@@ -46,11 +83,12 @@ body.dark-mode {
   text-align: center;
   padding: 15px;
   margin-top: 20px;
+  border-top: 2px solid var(--secondary-color);
 }
 
 body.dark-mode .store-footer {
   background-color: var(--dark-card);
-  color: var(--dark-text);
+  color: var(--secondary-color);
 }
 
 /* Responsive Design */
