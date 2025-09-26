@@ -501,18 +501,20 @@ async function loadStoreManagerPage() {
               `
             )
             .join("")
-        : "<p>لم يتم العثور على أقسام، أضف قسمك الأول!</p>";
+        : "<p>لا توجد أقسام، أضف واحدة جديدة!</p>";
 
       if (categories.length === 0) {
-        console.log(`[${new Date().toISOString()}] ⚠️ No categories found for store ${bot.storeId}`);
+        console.log(`[${new Date().toISOString()}] ⚠️ No categories found for store ${bot.storeId}, displaying placeholder message`);
       }
     } catch (err) {
       console.error(`[${new Date().toISOString()}] ❌ Error loading categories:`, err.message, err.stack);
-      showNotification("فشل في تحميل الأقسام: " + (err.message || "خطأ غير معروف"), "error");
+      showNotification("فشل في تحميل الأقسام: حاول مرة أخرى لاحقًا", "error");
       const categoriesList = document.getElementById("categoriesList");
       if (categoriesList) {
-        categoriesList.innerHTML = "<p>خطأ في تحميل الأقسام، حاول مرة أخرى.</p>";
+        categoriesList.innerHTML = "<p>خطأ في تحميل الأقسام، حاول مرة أخرى لاحقًا.</p>";
       }
+      // إعادة المحاولة بعد 3 ثوانٍ
+      setTimeout(() => loadCategories(botId), 3000);
     }
   }
 
@@ -560,17 +562,17 @@ async function loadStoreManagerPage() {
               `
             )
             .join("")
-        : "<p>لم يتم العثور على منتجات، أضف منتجك الأول!</p>";
+        : "<p>لا توجد منتجات، أضف واحدة جديدة!</p>";
 
       if (products.length === 0) {
         console.log(`[${new Date().toISOString()}] ⚠️ No products found for store ${bot.storeId}`);
       }
     } catch (err) {
       console.error(`[${new Date().toISOString()}] ❌ Error loading products:`, err.message, err.stack);
-      showNotification("فشل في تحميل المنتجات: " + (err.message || "خطأ غير معروف"), "error");
+      showNotification("فشل في تحميل المنتجات: حاول مرة أخرى لاحقًا", "error");
       const productsList = document.getElementById("productsList");
       if (productsList) {
-        productsList.innerHTML = "<p>خطأ في تحميل المنتجات، حاول مرة أخرى.</p>";
+        productsList.innerHTML = "<p>خطأ في تحميل المنتجات، حاول مرة أخرى لاحقًا.</p>";
       }
     }
   }
@@ -707,18 +709,18 @@ async function loadStoreManagerPage() {
 
       const product = await handleApiRequest(`/api/stores/${bot.storeId}/products/${productId}`, {
         headers: { Authorization: `Bearer ${token}` },
-      }, "فشل في جلب بيانات المنتج");
+      }, "المنتج غير موجود، قد يكون تم حذفه أو غير متوفر");
 
-      document.getElementById("productName").value = product.productName;
-      document.getElementById("description").value = product.description;
-      document.getElementById("price").value = product.price;
+      document.getElementById("productName").value = product.productName || "";
+      document.getElementById("description").value = product.description || "";
+      document.getElementById("price").value = product.price || "";
       document.getElementById("hasOffer").value = product.hasOffer ? "yes" : "no";
       offerFields.style.display = product.hasOffer ? "block" : "none";
       document.getElementById("originalPrice").value = product.originalPrice || "";
       document.getElementById("discountedPrice").value = product.discountedPrice || "";
-      document.getElementById("currency").value = product.currency;
-      document.getElementById("stock").value = product.stock;
-      document.getElementById("lowStockThreshold").value = product.lowStockThreshold;
+      document.getElementById("currency").value = product.currency || "EGP";
+      document.getElementById("stock").value = product.stock || 0;
+      document.getElementById("lowStockThreshold").value = product.lowStockThreshold || 10;
       document.getElementById("category").value = product.category ? product.category._id : "";
       editingProductId = productId;
       productForm.style.display = "block";
