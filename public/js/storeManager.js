@@ -6,7 +6,7 @@ async function loadStoreManagerPage() {
   link.href = "/css/storeManager.css";
   document.head.appendChild(link);
 
-  // إضافة CSS للإشعارات والبطاقات
+  // إضافة CSS للإشعارات والبطاقات والـ spinner
   const style = document.createElement("style");
   style.innerHTML = `
     .toast {
@@ -74,6 +74,27 @@ async function loadStoreManagerPage() {
     }
     .add-product-btn {
       margin-bottom: 20px;
+    }
+    .product-saving-spinner {
+      display: none;
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .saving-text {
+      display: none;
+      margin-top: 10px;
+      font-size: 14px;
+      color: #3498db;
+      text-align: center;
     }
   `;
   document.head.appendChild(style);
@@ -287,7 +308,9 @@ async function loadStoreManagerPage() {
               <label for="image">صورة المنتج (اختياري)</label>
               <input type="file" id="image" name="image" class="form-control" accept="image/png,image/jpeg">
             </div>
-            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> حفظ المنتج</button>
+            <button type="submit" id="saveProductBtn" class="btn btn-primary"><i class="fas fa-save"></i> حفظ المنتج</button>
+            <div id="productSavingSpinner" class="product-saving-spinner"></div>
+            <div id="savingText" class="saving-text">جاري حفظ المنتج...</div>
             <button type="button" id="cancelProductBtn" class="btn btn-secondary" style="margin-left: 10px;">إلغاء</button>
           </form>
           <div id="productsList" class="products-list"></div>
@@ -344,6 +367,9 @@ async function loadStoreManagerPage() {
   const hasOfferSelect = document.getElementById("hasOffer");
   const offerFields = document.getElementById("offerFields");
   const loadingSpinner = document.getElementById("loadingSpinner");
+  const saveProductBtn = document.getElementById("saveProductBtn");
+  const productSavingSpinner = document.getElementById("productSavingSpinner");
+  const savingText = document.getElementById("savingText");
 
   function showSection(section) {
     storeSettingsContainer.style.display = section === "storeSettings" ? "grid" : "none";
@@ -867,6 +893,8 @@ async function loadStoreManagerPage() {
       formDataEntries[key] = value instanceof File ? value.name : value;
     }
     console.log(`[${new Date().toISOString()}] 📡 Sending FormData for product:`, formDataEntries);
+
+    // التحقق من الحقول المطلوبة
     if (!formData.get('productName') || !formData.get('price') || !formData.get('currency') || !formData.get('stock')) {
       showNotification("اسم المنتج، السعر، العملة، والمخزون مطلوبة", "error");
       return;
@@ -875,12 +903,26 @@ async function loadStoreManagerPage() {
       showNotification("السعر قبل وبعد الخصم مطلوبان إذا كان هناك عرض", "error");
       return;
     }
+
+    // التحقق من الصورة
     const imageFile = formData.get('image');
-    if (imageFile && imageFile.size > 0 && !['image/png', 'image/jpeg'].includes(imageFile.type)) {
-      showNotification("الصورة يجب أن تكون بصيغة PNG أو JPEG", "error");
-      return;
+    if (imageFile && imageFile.size > 0) {
+      if (!['image/png', 'image/jpeg'].includes(imageFile.type)) {
+        showNotification("الصورة يجب أن تكون بصيغة PNG أو JPEG", "error");
+        return;
+      }
+      if (imageFile.size > 5 * 1024 * 1024) { // الحد الأقصى 5 ميجا
+        showNotification("حجم الصورة كبير جدًا، جرب صورة أقل من 5 ميجابايت", "error");
+        return;
+      }
     }
+
     try {
+      // إظهار الـ spinner وإخفاء زرار الحفظ
+      saveProductBtn.style.display = "none";
+      productSavingSpinner.style.display = "block";
+      savingText.style.display = "block";
+
       console.log(`[${new Date().toISOString()}] 📡 Checking bot ${botId} for store association`);
       const bot = await handleApiRequest(`/api/bots/${botId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -889,16 +931,19 @@ async function loadStoreManagerPage() {
         showNotification("أنشئ متجر أولاً قبل إضافة المنتجات.", "error");
         return;
       }
+
       console.log(`[${new Date().toISOString()}] 📡 Saving product for store ${bot.storeId}, editing: ${editingProductId || 'new'}`);
       const method = editingProductId ? "PUT" : "POST";
       const url = editingProductId
         ? `/api/stores/${bot.storeId}/products/${editingProductId}`
         : `/api/stores/${bot.storeId}/products`;
+
       const response = await handleApiRequest(url, {
         method,
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       }, "فشل في حفظ المنتج");
+
       showNotification("تم حفظ المنتج بنجاح!", "success");
       productForm.reset();
       productForm.style.display = "none";
@@ -908,10 +953,18 @@ async function loadStoreManagerPage() {
       await loadCategories(botId);
     } catch (err) {
       console.error("خطأ في حفظ المنتج:", err);
-      const errorMessage = err.message.includes('Product validation failed')
-        ? 'خطأ في بيانات المنتج: تأكد من إدخال رابط صورة صالح أو اترك الحقل فارغًا'
-        : err.message || "فشل في حفظ المنتج";
+      let errorMessage = "فشل في حفظ المنتج: " + err.message;
+      if (err.message.includes('timeout')) {
+        errorMessage = "تأخر في رفع الصورة، جرب صورة بحجم أصغر أو تحقق من الاتصال بالإنترنت";
+      } else if (err.message.includes('Product validation failed')) {
+        errorMessage = "خطأ في بيانات المنتج: تأكد من إدخال بيانات صحيحة أو اترك حقل الصورة فارغًا";
+      }
       showNotification(errorMessage, "error");
+    } finally {
+      // إخفاء الـ spinner وإظهار زرار الحفظ مرة تانية
+      saveProductBtn.style.display = "inline-block";
+      productSavingSpinner.style.display = "none";
+      savingText.style.display = "none";
     }
   }
 
