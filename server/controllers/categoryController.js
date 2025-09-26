@@ -58,20 +58,21 @@ exports.createCategory = async (req, res) => {
 // جلب كل الأقسام
 exports.getCategories = async (req, res) => {
   const { storeId } = req.params;
-  const userId = req.user.userId;
+  const userId = req.user ? req.user.userId : null; // التحقق من وجود req.user
 
   try {
-    console.log(`[${getTimestamp()}] 📡 Attempting to fetch categories for store ${storeId} and user ${userId}`);
+    console.log(`[${getTimestamp()}] 📡 Attempting to fetch categories for store ${storeId}, user ${userId || 'public'}`);
 
     // التحقق من وجود المتجر
-    const store = await Store.findOne({ _id: storeId, userId });
+    const storeQuery = userId ? { _id: storeId, userId } : { _id: storeId };
+    const store = await Store.findOne(storeQuery);
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Get categories failed: Store ${storeId} not found for user ${userId}`);
+      console.log(`[${getTimestamp()}] ❌ Get categories failed: Store ${storeId} not found${userId ? ` for user ${userId}` : ''}`);
       return res.status(404).json({ message: 'المتجر غير موجود' });
     }
 
     const categories = await Category.find({ storeId });
-    console.log(`[${getTimestamp()}] ✅ Fetched ${categories.length} categories for store ${storeId}`);
+    console.log(`[${getTimestamp()}] ✅ Fetched ${categories.length} categories for store ${storeId}`, categories);
 
     res.status(200).json(categories || []);
   } catch (err) {
@@ -86,6 +87,7 @@ exports.deleteCategory = async (req, res) => {
   const userId = req.user.userId;
 
   try {
+    console.log(`[${getTimestamp()}] 📡 Deleting category ${categoryId} for store ${storeId}, user ${userId}`);
     // التحقق من وجود المتجر
     const store = await Store.findOne({ _id: storeId, userId });
     if (!store) {
