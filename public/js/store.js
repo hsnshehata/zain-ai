@@ -182,8 +182,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                   ? `<span class="original-price">${product.originalPrice} ${product.currency}</span> ${product.discountedPrice} ${product.currency}`
                   : `${product.price} ${product.currency}`}
               </p>
-              <p>المخزون: ${product.stock}</p>
-              <button onclick="addToCart('${product._id}')">أضف إلى السلة</button>
+              <p>المخزون: ${product.stock > 0 ? product.stock : 'نفد المخزون'}</p>
+              <button onclick="addToCart('${product._id}')" ${product.stock === 0 ? 'disabled' : ''}>${product.stock === 0 ? 'نفد المخزون' : 'أضف إلى السلة'}</button>
             </div>
           `).join('')
         : '<p>لا توجد منتجات متاحة</p>';
@@ -202,7 +202,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                     ? `<span class="original-price">${product.originalPrice} ${product.currency}</span> ${product.discountedPrice} ${product.currency}`
                     : `${product.price} ${product.currency}`}
                 </p>
-                <button onclick="addToCart('${product._id}')">أضف إلى السلة</button>
+                <p>المخزون: ${product.stock > 0 ? product.stock : 'نفد المخزون'}</p>
+                <button onclick="addToCart('${product._id}')" ${product.stock === 0 ? 'disabled' : ''}>${product.stock === 0 ? 'نفد المخزون' : 'أضف إلى السلة'}</button>
               </div>
             `).join('')
           : '<p>لا توجد منتجات جديدة متاحة</p>';
@@ -247,7 +248,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                   ? `<span class="original-price">${product.originalPrice} ${product.currency}</span> ${product.discountedPrice} ${product.currency}`
                   : `${product.price} ${product.currency}`}
               </p>
-              <button onclick="addToCart('${product._id}')">أضف إلى السلة</button>
+              <p>المخزون: ${product.stock > 0 ? product.stock : 'نفد المخزون'}</p>
+              <button onclick="addToCart('${product._id}')" ${product.stock === 0 ? 'disabled' : ''}>${product.stock === 0 ? 'نفد المخزون' : 'أضف إلى السلة'}</button>
             </div>
           `).join('')
         : '<p>لا توجد منتجات أكثر مبيعاً متاحة</p>';
@@ -288,7 +290,8 @@ document.addEventListener("DOMContentLoaded", async () => {
                   ? `<span class="original-price">${product.originalPrice} ${product.currency}</span> ${product.discountedPrice} ${product.currency}`
                   : `${product.price} ${product.currency}`}
               </p>
-              <button onclick="addToCart('${product._id}')">أضف إلى السلة</button>
+              <p>المخزون: ${product.stock > 0 ? product.stock : 'نفد المخزون'}</p>
+              <button onclick="addToCart('${product._id}')" ${product.stock === 0 ? 'disabled' : ''}>${product.stock === 0 ? 'نفد المخزون' : 'أضف إلى السلة'}</button>
             </div>
           `).join('')
         : '<p>لا توجد منتجات مختارة متاحة</p>';
