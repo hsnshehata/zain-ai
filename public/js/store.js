@@ -6,9 +6,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   // تحميل CSS بناءً على القالب
   async function loadStoreTemplate() {
     try {
+      console.log(`[${new Date().toISOString()}] 📡 Fetching store data for storeLink: ${storeLink}`);
       const response = await fetch(`/api/stores/link/${storeLink}`);
       if (!response.ok) {
-        throw new Error('فشل في جلب بيانات المتجر');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'فشل في جلب بيانات المتجر');
       }
       const store = await response.json();
       console.log(`[${new Date().toISOString()}] ✅ Fetched store data:`, store);
@@ -27,6 +29,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       const storeNameElement = document.getElementById("store-name");
       if (storeNameElement) {
         storeNameElement.textContent = store.storeName;
+      } else {
+        console.warn("store-name element not found in DOM");
       }
 
       // تحديث الهيدر المخصص
@@ -60,17 +64,24 @@ document.addEventListener("DOMContentLoaded", async () => {
           footerText.innerHTML = store.footerText;
           footer.appendChild(footerText);
         }
+      } else {
+        console.warn("store-footer element not found in DOM");
       }
 
       return store;
     } catch (err) {
-      console.error("خطأ في تحميل بيانات المتجر:", err);
-      document.getElementById("content").innerHTML = `
-        <div class="error-message">
-          <h2>خطأ</h2>
-          <p>فشل في تحميل المتجر: ${err.message}</p>
-        </div>
-      `;
+      console.error(`[${new Date().toISOString()}] ❌ Error loading store data:`, err.message);
+      const contentElement = document.getElementById("content");
+      if (contentElement) {
+        contentElement.innerHTML = `
+          <div class="error-message">
+            <h2>خطأ</h2>
+            <p>المتجر غير موجود أو حدث خطأ: ${err.message}</p>
+          </div>
+        `;
+      } else {
+        console.error("content element not found in DOM");
+      }
       return null;
     }
   }
@@ -85,7 +96,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.log(`[${new Date().toISOString()}] ✅ Fetched ${categories.length} categories`, categories);
 
       const categoriesNav = document.getElementById("categories-nav");
-      if (!categoriesNav) return;
+      if (!categoriesNav) {
+        console.error("categories-nav element not found in DOM");
+        return;
+      }
       categoriesNav.innerHTML = `
         <div class="categories-container">
           <div class="category-tab active" data-category-id="all">الكل</div>
@@ -123,9 +137,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     } catch (err) {
       console.error("خطأ في جلب الأقسام:", err);
-      document.getElementById("categories-nav").innerHTML = `
-        <div class="error-message">فشل في تحميل الأقسام: ${err.message}</div>
-      `;
+      const categoriesNav = document.getElementById("categories-nav");
+      if (categoriesNav) {
+        categoriesNav.innerHTML = `
+          <div class="error-message">فشل في تحميل الأقسام: ${err.message}</div>
+        `;
+      }
     }
   }
 
@@ -139,6 +156,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (sort) queryParams.set('sort', sort);
       if (filter) queryParams.set('filter', filter);
       queryParams.set('page', page);
+      queryParams.set('limit', 10);
 
       const response = await fetch(`/api/stores/${storeId}/products?${queryParams.toString()}`);
       if (!response.ok) throw new Error('فشل في جلب المنتجات');
@@ -146,7 +164,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.log(`[${new Date().toISOString()}] ✅ Fetched ${products.length} products, total: ${total}`);
 
       const productsContainer = document.getElementById("products-container");
-      if (!productsContainer) return;
+      if (!productsContainer) {
+        console.error("products-container element not found in DOM");
+        return;
+      }
 
       productsContainer.innerHTML = products.length
         ? products.map(product => `
@@ -169,9 +190,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       updatePagination(total, page);
     } catch (err) {
       console.error("خطأ في جلب المنتجات:", err);
-      document.getElementById("products-container").innerHTML = `
-        <div class="error-message">فشل في تحميل المنتجات: ${err.message}</div>
-      `;
+      const productsContainer = document.getElementById("products-container");
+      if (productsContainer) {
+        productsContainer.innerHTML = `
+          <div class="error-message">فشل في تحميل المنتجات: ${err.message}</div>
+        `;
+      }
     }
   }
 
@@ -185,7 +209,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.log(`[${new Date().toISOString()}] ✅ Fetched ${bestsellers.length} bestsellers`);
 
       const bestsellersContainer = document.getElementById("bestsellers-container");
-      if (!bestsellersContainer) return;
+      if (!bestsellersContainer) {
+        console.error("bestsellers-container element not found in DOM");
+        return;
+      }
 
       bestsellersContainer.innerHTML = bestsellers.length
         ? bestsellers.map(product => `
@@ -204,9 +231,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         : '<p>لا توجد منتجات أكثر مبيعاً متاحة</p>';
     } catch (err) {
       console.error("خطأ في جلب المنتجات الأكثر مبيعاً:", err);
-      document.getElementById("bestsellers-container").innerHTML = `
-        <div class="error-message">فشل في تحميل المنتجات الأكثر مبيعاً: ${err.message}</div>
-      `;
+      const bestsellersContainer = document.getElementById("bestsellers-container");
+      if (bestsellersContainer) {
+        bestsellersContainer.innerHTML = `
+          <div class="error-message">فشل في تحميل المنتجات الأكثر مبيعاً: ${err.message}</div>
+        `;
+      }
     }
   }
 
@@ -217,10 +247,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       const response = await fetch(`/api/stores/${storeId}/products?random=true&limit=4`);
       if (!response.ok) throw new Error('فشل في جلب المنتجات العشوائية');
       const { products } = await response.json();
-      console.log(`[${new Date().toISOString()}] ✅ Fetched ${products.length} random products`);
+      console.log(`[${new Date().toISOString()}] ✅ Fetched ${products.length} random products`, products);
 
       const randomProductsContainer = document.getElementById("random-products-container");
-      if (!randomProductsContainer) return;
+      if (!randomProductsContainer) {
+        console.error("random-products-container element not found in DOM");
+        return;
+      }
 
       randomProductsContainer.innerHTML = products.length
         ? products.map(product => `
@@ -239,9 +272,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         : '<p>لا توجد منتجات مختارة متاحة</p>';
     } catch (err) {
       console.error("خطأ في جلب المنتجات العشوائية:", err);
-      document.getElementById("random-products-container").innerHTML = `
-        <div class="error-message">فشل في تحميل المنتجات المختارة: ${err.message}</div>
-      `;
+      const randomProductsContainer = document.getElementById("random-products-container");
+      if (randomProductsContainer) {
+        randomProductsContainer.innerHTML = `
+          <div class="error-message">فشل في تحميل المنتجات المختارة: ${err.message}</div>
+        `;
+      }
     }
   }
 
@@ -250,7 +286,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     const limit = 10;
     const totalPages = Math.ceil(total / limit);
     const paginationContainer = document.getElementById("pagination");
-    if (!paginationContainer) return;
+    if (!paginationContainer) {
+      console.error("pagination element not found in DOM");
+      return;
+    }
 
     paginationContainer.innerHTML = `
       <button class="btn" onclick="changePage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>السابق</button>
