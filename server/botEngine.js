@@ -1,3 +1,4 @@
+// /server/botEngine.js
 const OpenAI = require('openai');
 const mongoose = require('mongoose');
 const axios = require('axios');
@@ -29,7 +30,7 @@ async function downloadImageToBase64(imageUrl) {
       responseType: 'arraybuffer',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        Authorization: `Bearer ${process.env.FACEBOOK_ACCESS_TOKEN}`, // إضافة توكن فيسبوك
+        Authorization: `Bearer ${process.env.FACEBOOK_ACCESS_TOKEN}`,
       },
     });
     const imageBuffer = Buffer.from(response.data);
@@ -169,9 +170,9 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         systemPrompt += `\nبيانات المتجر: الاسم: ${store.storeName}، الرابط: zainbot.com/${store.storeLink}.\n`;
         const products = await Product.find({ storeId: store._id });
         if (products.length > 0) {
-          systemPrompt += 'المنتجات المتاحة:\n';
+          systemPrompt += 'محتويات المتجر:\n';
           products.forEach((product) => {
-            systemPrompt += `المنتج: ${product.productName}، السعر: ${product.price} ${product.currency}، الوصف: ${product.description || 'غير متوفر'}، الصورة: ${product.imageUrl || 'غير متوفرة'}، المخزون: ${product.stock}.\n`;
+            systemPrompt += `المنتج: ${product.productName}، السعر: ${product.price} ${product.currency}، الرابط: zainbot.com/store/${store.storeLink}?productId=${product._id}، الصورة: ${product.imageUrl || 'غير متوفرة'}، الوصف: ${product.description || 'غير متوفر'}، المخزون: ${product.stock}.\n`;
           });
         } else {
           systemPrompt += 'لا توجد منتجات متاحة حاليًا في المتجر.\n';
@@ -248,11 +249,19 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
             reply = `قناة التواصل: ${rule.content.platform}\nالوصف: ${rule.content.description}\nالرابط/الرقم: ${rule.content.value}`;
             break;
           }
-        } else if (rule.type === 'store') {
-          const productName = rule.content.productName.toLowerCase();
-          if (userMessageContent.toLowerCase().includes(productName)) {
-            reply = `المنتج: ${rule.content.productName}، السعر: ${rule.content.price} ${rule.content.currency}، الوصف: ${rule.content.description || 'غير متوفر'}، الصورة: ${rule.content.imageUrl || 'غير متوفرة'}، المخزون: ${rule.content.stock}.`;
-            break;
+        }
+      }
+
+      // التحقق من محتويات المتجر إذا لم يتم العثور على رد من القواعد الأخرى
+      if (!reply && bot && bot.storeId) {
+        const store = await Store.findById(bot.storeId);
+        if (store) {
+          const products = await Product.find({ storeId: store._id });
+          for (const product of products) {
+            if (userMessageContent.toLowerCase().includes(product.productName.toLowerCase())) {
+              reply = `المنتج: ${product.productName}، السعر: ${product.price} ${product.currency}، الرابط: zainbot.com/store/${store.storeLink}?productId=${product._id}، الصورة: ${product.imageUrl || 'غير متوفرة'}، الوصف: ${product.description || 'غير متوفر'}، المخزون: ${product.stock}.`;
+              break;
+            }
           }
         }
       }
