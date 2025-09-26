@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function loadStoreTemplate() {
     try {
       console.log(`[${new Date().toISOString()}] 📡 Fetching store data for storeLink: ${storeLink}`);
-      const response = await fetch(`/api/stores/link/${storeLink}`);
+      const response = await fetch(`/api/stores/store/${storeLink}`); // تعديل الـ URL هنا
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'فشل في جلب بيانات المتجر');
