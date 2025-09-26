@@ -136,14 +136,14 @@ exports.updateProduct = async (req, res) => {
     }
 
     // التحقق من وجود المنتج
-    const product = await Product.findOne({ _id: productId, storeId });
+    const product = await Product.findOne({ _id: productId, storeId }).populate('category');
     if (!product) {
       console.log(`[${getTimestamp()}] ❌ Update product failed: Product ${productId} not found in store ${storeId}`);
       return res.status(404).json({ message: 'المنتج غير موجود' });
     }
 
     // التحقق من القسم إذا تم إرساله
-    if (category) {
+    if (category && category !== 'null') {
       const categoryExists = await Category.findOne({ _id: category, storeId });
       if (!categoryExists) {
         console.log(`[${getTimestamp()}] ❌ Update product failed: Category ${category} not found in store ${storeId}`);
@@ -166,14 +166,14 @@ exports.updateProduct = async (req, res) => {
     // تحديث الحقول
     product.productName = productName || product.productName;
     product.description = description !== undefined ? description : product.description;
-    product.price = price || product.price;
+    product.price = price !== undefined ? price : product.price;
     product.hasOffer = hasOffer === "yes" || hasOffer === true;
     product.originalPrice = product.hasOffer ? originalPrice : undefined;
     product.discountedPrice = product.hasOffer ? discountedPrice : undefined;
     product.currency = currency || product.currency;
     product.stock = stock !== undefined ? stock : product.stock;
-    product.lowStockThreshold = lowStockThreshold || product.lowStockThreshold;
-    product.category = category || product.category;
+    product.lowStockThreshold = lowStockThreshold !== undefined ? lowStockThreshold : product.lowStockThreshold;
+    product.category = category && category !== 'null' ? category : product.category;
 
     await product.save();
     console.log(`[${getTimestamp()}] ✅ Product updated: ${product.productName} for store ${storeId}, imageUrl: ${product.imageUrl}`);
@@ -241,7 +241,7 @@ exports.getProducts = async (req, res) => {
 
     // بناء الاستعلام
     const query = { storeId };
-    if (category) {
+    if (category && category !== 'null') {
       query.category = category;
     }
     if (filter === 'offers') {
@@ -396,7 +396,7 @@ exports.getProduct = async (req, res) => {
   const userId = req.user ? req.user.userId : null;
 
   try {
-    console.log(`[${getTimestamp()}] 📡 Fetching product ${productId} for store ${storeId}, user ${userId}`);
+    console.log(`[${getTimestamp()}] 📡 Fetching product ${productId} for store ${storeId}, user ${userId || 'public'}`);
     // التحقق من وجود المتجر
     const store = await Store.findById(storeId);
     if (!store) {
