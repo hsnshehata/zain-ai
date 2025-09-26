@@ -38,15 +38,45 @@ const storeSchema = new mongoose.Schema({
     trim: true, 
     default: '' // كود HTML مخصص للهيدر
   },
-  landingTemplateId: { 
-    type: Number, 
-    enum: [1, 2, 3, 4, 5], // قوالب اللاندينج بيج
-    default: 1 
-  },
-  landingHtml: { 
+  whatsapp: { 
     type: String, 
     trim: true, 
-    default: '' // كود HTML مخصص للاندينج بيج
+    default: '' 
+  },
+  website: { 
+    type: String, 
+    trim: true, 
+    default: '' 
+  },
+  mobilePhone: { 
+    type: String, 
+    trim: true, 
+    default: '' 
+  },
+  landline: { 
+    type: String, 
+    trim: true, 
+    default: '' 
+  },
+  email: { 
+    type: String, 
+    trim: true, 
+    default: '' 
+  },
+  address: { 
+    type: String, 
+    trim: true, 
+    default: '' 
+  },
+  googleMapsLink: { 
+    type: String, 
+    trim: true, 
+    default: '' 
+  },
+  footerText: { 
+    type: String, 
+    trim: true, 
+    default: '' // نص اختياري أسفل الصفحة
   },
   isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
@@ -58,7 +88,6 @@ storeSchema.pre('validate', function (next) {
   if (!this.storeName) {
     return next(new Error('اسم المتجر مطلوب لتوليد الرابط'));
   }
-  // إزالة التحقق من طول storeLink لأن storeController.js بيضمن رابط صالح
   this.updatedAt = Date.now();
   next();
 });
