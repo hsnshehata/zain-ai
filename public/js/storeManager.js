@@ -203,6 +203,7 @@ async function loadStoreManagerPage() {
             </div>
             <div class="form-group">
               <label for="landline">رقم الهاتف الأرضي (اختياري)</label>
+              1
               <input type="text" id="landline" name="landline" class="form-control">
             </div>
             <div class="form-group">
@@ -675,20 +676,22 @@ async function loadStoreManagerPage() {
         return;
       }
 
-      // التحقق من وجود اسم القسم قبل إرسال الطلب
-      console.log(`[${new Date().toISOString()}] 📡 Checking if category name '${data.categoryName}' already exists for store ${bot.storeId}`);
-      const categories = await handleApiRequest(`/api/stores/${bot.storeId}/categories`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }, "فشل في جلب قائمة الأقسام");
-      
-      const isNameTaken = categories.some(cat => 
-        cat.name.toLowerCase() === data.categoryName.toLowerCase() && 
-        (!data.categoryId || cat._id !== data.categoryId)
-      );
-      
-      if (isNameTaken) {
-        showNotification("اسم القسم موجود بالفعل، اختر اسم تاني!", "error");
-        return;
+      // التحقق من اسم القسم لو إنشاء قسم جديد أو لو الاسم اتغير أثناء التعديل
+      if (!data.categoryId || (data.categoryId && document.getElementById("categoryName").value !== document.getElementById("categoryName").defaultValue)) {
+        console.log(`[${new Date().toISOString()}] 📡 Checking if category name '${data.categoryName}' already exists for store ${bot.storeId}`);
+        const categories = await handleApiRequest(`/api/stores/${bot.storeId}/categories`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }, "فشل في جلب قائمة الأقسام");
+        
+        const isNameTaken = categories.some(cat => 
+          cat.name.toLowerCase() === data.categoryName.toLowerCase() && 
+          (!data.categoryId || cat._id !== data.categoryId)
+        );
+        
+        if (isNameTaken) {
+          showNotification("اسم القسم موجود بالفعل، اختر اسم تاني!", "error");
+          return;
+        }
       }
 
       const method = data.categoryId ? "PUT" : "POST";
@@ -715,7 +718,6 @@ async function loadStoreManagerPage() {
     } catch (err) {
       console.error(`[${new Date().toISOString()}] ❌ Error saving category:`, err.message, err.stack);
       showNotification(`فشل في حفظ القسم: ${err.message}`, "error");
-      // إعادة تحميل الأقسام للتأكد من تحديث الواجهة
       await loadCategories(botId);
     }
   }
