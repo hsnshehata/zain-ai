@@ -155,8 +155,8 @@ async function loadStoreManagerPage() {
           <form id="store-form">
             <div class="form-group">
               <label for="storeName">اسم المتجر</label>
-              <input type="text" id="storeName" name="storeName" class="form-control" readonly>
-              <small class="form-text">اسم المتجر ثابت، بس تقدر تغيّر رابط المتجر من الأسفل</small>
+              <input type="text" id="storeName" name="storeName" class="form-control">
+              <small class="form-text">يمكنك تغيير اسم المتجر هنا</small>
             </div>
             <div class="form-group">
               <label for="storeLink">رابط المتجر الكامل</label>
@@ -591,7 +591,6 @@ async function loadStoreManagerPage() {
       const payload = { ...data, selectedBotId: botId };
       if (data.storeLinkSlug) {
         payload.storeLink = data.storeLinkSlug;
-        delete payload.storeName;
       }
 
       await handleApiRequest(url, {
