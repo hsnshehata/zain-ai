@@ -77,6 +77,9 @@ exports.createProduct = async (req, res) => {
         console.log(`[${getTimestamp()}] ✅ Image uploaded successfully: ${imageUrl}`);
       } catch (uploadErr) {
         console.error(`[${getTimestamp()}] ❌ Error uploading image:`, uploadErr.message);
+        if (uploadErr.message.includes('timeout')) {
+          return res.status(408).json({ message: 'تأخر في رفع الصورة، جرب صورة بحجم أصغر أو تحقق من الاتصال بالإنترنت' });
+        }
         return res.status(400).json({ message: `خطأ في رفع الصورة: ${uploadErr.message}` });
       }
     }
@@ -164,6 +167,9 @@ exports.updateProduct = async (req, res) => {
         console.log(`[${getTimestamp()}] ✅ Image updated successfully: ${product.imageUrl}`);
       } catch (uploadErr) {
         console.error(`[${getTimestamp()}] ❌ Error uploading image:`, uploadErr.message);
+        if (uploadErr.message.includes('timeout')) {
+          return res.status(408).json({ message: 'تأخر في رفع الصورة، جرب صورة بحجم أصغر أو تحقق من الاتصال بالإنترنت' });
+        }
         return res.status(400).json({ message: `خطأ في رفع الصورة: ${uploadErr.message}` });
       }
     }
