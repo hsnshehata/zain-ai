@@ -27,7 +27,7 @@ const generateUniqueStoreLink = async (storeName) => {
 
 // إنشاء متجر جديد
 exports.createStore = async (req, res) => {
-  let { storeName, templateId, primaryColor, secondaryColor, headerHtml, landingTemplateId, landingHtml, selectedBotId } = req.body;
+  let { storeName, templateId, primaryColor, secondaryColor, headerHtml, whatsapp, website, mobilePhone, landline, email, address, googleMapsLink, footerText, selectedBotId } = req.body;
   const userId = req.user.userId;
 
   try {
@@ -46,10 +46,6 @@ exports.createStore = async (req, res) => {
       allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], 
       allowedAttributes: { a: ['href'], img: ['src'] } 
     }) : '';
-    const cleanedLandingHtml = landingHtml ? sanitizeHtml(landingHtml, { 
-      allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], 
-      allowedAttributes: { a: ['href'], img: ['src'] } 
-    }) : '';
 
     // توليد storeLink فريد
     const storeLink = await generateUniqueStoreLink(storeName);
@@ -63,8 +59,14 @@ exports.createStore = async (req, res) => {
       primaryColor: primaryColor || '#000000',
       secondaryColor: secondaryColor || '#ffffff',
       headerHtml: cleanedHeaderHtml,
-      landingTemplateId: parseInt(landingTemplateId) || 1,
-      landingHtml: cleanedLandingHtml
+      whatsapp: whatsapp || '',
+      website: website || '',
+      mobilePhone: mobilePhone || '',
+      landline: landline || '',
+      email: email || '',
+      address: address || '',
+      googleMapsLink: googleMapsLink || '',
+      footerText: footerText || ''
     });
 
     await newStore.save();
@@ -85,7 +87,7 @@ exports.createStore = async (req, res) => {
 // تعديل متجر
 exports.updateStore = async (req, res) => {
   const { storeId } = req.params;
-  const { storeName, storeLink, templateId, primaryColor, secondaryColor, headerHtml, landingTemplateId, landingHtml } = req.body;
+  const { storeName, storeLink, templateId, primaryColor, secondaryColor, headerHtml, whatsapp, website, mobilePhone, landline, email, address, googleMapsLink, footerText } = req.body;
   const userId = req.user.userId;
 
   try {
@@ -96,8 +98,14 @@ exports.updateStore = async (req, res) => {
       primaryColor,
       secondaryColor,
       headerHtml,
-      landingTemplateId,
-      landingHtml
+      whatsapp,
+      website,
+      mobilePhone,
+      landline,
+      email,
+      address,
+      googleMapsLink,
+      footerText
     });
 
     const store = await Store.findOne({ _id: storeId, userId });
@@ -133,17 +141,19 @@ exports.updateStore = async (req, res) => {
       allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], 
       allowedAttributes: { a: ['href'], img: ['src'] } 
     }) : store.headerHtml || '';
-    const cleanedLandingHtml = landingHtml ? sanitizeHtml(landingHtml, { 
-      allowedTags: ['div', 'span', 'a', 'img', 'p', 'h1', 'h2', 'ul', 'li'], 
-      allowedAttributes: { a: ['href'], img: ['src'] } 
-    }) : store.landingHtml || '';
 
     if (templateId) store.templateId = parseInt(templateId);
     if (primaryColor) store.primaryColor = primaryColor;
     if (secondaryColor) store.secondaryColor = secondaryColor;
     store.headerHtml = cleanedHeaderHtml;
-    if (landingTemplateId) store.landingTemplateId = parseInt(landingTemplateId);
-    store.landingHtml = cleanedLandingHtml;
+    store.whatsapp = whatsapp || store.whatsapp;
+    store.website = website || store.website;
+    store.mobilePhone = mobilePhone || store.mobilePhone;
+    store.landline = landline || store.landline;
+    store.email = email || store.email;
+    store.address = address || store.address;
+    store.googleMapsLink = googleMapsLink || store.googleMapsLink;
+    store.footerText = footerText || store.footerText;
 
     await store.save();
     console.log(`[${getTimestamp()}] ✅ Store updated: ${store.storeName} for user ${userId}`);
@@ -181,7 +191,7 @@ exports.getStoreByLink = async (req, res) => {
 
   try {
     console.log(`[${getTimestamp()}] 📡 Fetching store by link: ${storeLink}`);
-    const store = await Store.findOne({ storeLink }).select('-userId -isActive'); // إخفاء الحقول الحساسة
+    const store = await Store.findOne({ storeLink }).select('-userId -isActive');
     if (!store) {
       console.log(`[${getTimestamp()}] ❌ Get store by link failed: Store link ${storeLink} not found`);
       return res.status(404).json({ message: 'المتجر غير موجود' });
