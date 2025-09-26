@@ -746,6 +746,7 @@ async function loadStoreManagerPage() {
       }
 
       categoryForm.reset();
+      document.getElementById("categoryId").value = "";
       categoryForm.style.display = "none";
       await loadCategories(botId);
     } catch (err) {
