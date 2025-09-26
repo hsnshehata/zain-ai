@@ -71,7 +71,7 @@ exports.createProduct = async (req, res) => {
     if (file) {
       try {
         const uploadResult = await uploadToImgbb(file);
-        imageUrl = uploadResult.url; // نستخدم حقل url فقط
+        imageUrl = uploadResult.url;
         console.log(`[${getTimestamp()}] ✅ Image uploaded successfully: ${imageUrl}`);
       } catch (uploadErr) {
         console.error(`[${getTimestamp()}] ❌ Error uploading image:`, uploadErr.message);
@@ -92,7 +92,8 @@ exports.createProduct = async (req, res) => {
       stock,
       lowStockThreshold: lowStockThreshold || 10,
       category: category || null,
-      imageUrl
+      imageUrl,
+      isActive: true // إضافة الحقل isActive
     });
 
     await newProduct.save();
@@ -155,7 +156,7 @@ exports.updateProduct = async (req, res) => {
     if (file) {
       try {
         const uploadResult = await uploadToImgbb(file);
-        product.imageUrl = uploadResult.url; // نستخدم حقل url فقط
+        product.imageUrl = uploadResult.url;
         console.log(`[${getTimestamp()}] ✅ Image updated successfully: ${product.imageUrl}`);
       } catch (uploadErr) {
         console.error(`[${getTimestamp()}] ❌ Error uploading image:`, uploadErr.message);
@@ -174,6 +175,7 @@ exports.updateProduct = async (req, res) => {
     product.stock = stock !== undefined ? stock : product.stock;
     product.lowStockThreshold = lowStockThreshold !== undefined ? lowStockThreshold : product.lowStockThreshold;
     product.category = category && category !== 'null' ? category : product.category;
+    product.isActive = true; // التأكد من إن المنتج مفعل
 
     await product.save();
     console.log(`[${getTimestamp()}] ✅ Product updated: ${product.productName} for store ${storeId}, imageUrl: ${product.imageUrl}`);
@@ -240,7 +242,7 @@ exports.getProducts = async (req, res) => {
     }
 
     // بناء الاستعلام
-    const query = { storeId };
+    const query = { storeId, isActive: true, stock: { $gt: 0 } }; // إضافة شروط isActive و stock
     if (category && category !== 'null') {
       query.category = category;
     }
@@ -353,6 +355,7 @@ exports.getBestsellers = async (req, res) => {
         }
       },
       { $unwind: '$product' },
+      { $match: { 'product.isActive': true, 'product.stock': { $gt: 0 } } }, // إضافة شروط isActive و stock
       {
         $lookup: {
           from: 'categories',
