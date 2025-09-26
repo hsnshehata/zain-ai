@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function loadStoreTemplate() {
     try {
       console.log(`[${new Date().toISOString()}] 📡 Fetching store data for storeLink: ${storeLink}`);
-      const response = await fetch(`/api/stores/store/${storeLink}`); // تعديل الـ URL هنا
+      const response = await fetch(`/api/stores/store/${storeLink}`);
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'فشل في جلب بيانات المتجر');
@@ -26,11 +26,13 @@ document.addEventListener("DOMContentLoaded", async () => {
       document.documentElement.style.setProperty('--secondary-color', store.secondaryColor);
 
       // تحديث اسم المتجر
-      const storeNameElement = document.getElementById("store-name");
-      if (storeNameElement) {
-        storeNameElement.textContent = store.storeName;
+      const storeNameElements = document.querySelectorAll("#store-name");
+      if (storeNameElements.length) {
+        storeNameElements.forEach(element => {
+          element.textContent = `مرحبًا بك في متجر ${store.storeName}`;
+        });
       } else {
-        console.warn("store-name element not found in DOM");
+        console.warn("store-name elements not found in DOM");
       }
 
       // تحديث الهيدر المخصص
@@ -46,7 +48,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         contactInfo.className = 'contact-info';
         let contactContent = '<h3>بيانات التواصل</h3><ul>';
         if (store.whatsapp) contactContent += `<li><i class="fas fa-whatsapp"></i> واتساب: <a href="https://wa.me/${store.whatsapp}" target="_blank">${store.whatsapp}</a></li>`;
-        if (store.website) contactContent += `<li><i class="fas fa-globe"></i> الموقع: <a href="${store.website}" target="_blank">${store.website}</a></li>`;
+        if (store.website) contactContent += `<li><i class="fas fa-globe"></i> الموقع: <a href="${store.website.startsWith('http') ? store.website : 'https://' + store.website}" target="_blank">${store.website}</a></li>`;
         if (store.mobilePhone) contactContent += `<li><i class="fas fa-mobile-alt"></i> الهاتف المحمول: ${store.mobilePhone}</li>`;
         if (store.landline) contactContent += `<li><i class="fas fa-phone"></i> الهاتف الأرضي: ${store.landline}</li>`;
         if (store.email) contactContent += `<li><i class="fas fa-envelope"></i> الإيميل: <a href="mailto:${store.email}">${store.email}</a></li>`;
@@ -55,14 +57,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         contactContent += '</ul>';
         if (contactContent !== '<h3>بيانات التواصل</h3><ul></ul>') {
           contactInfo.innerHTML = contactContent;
-          footer.appendChild(contactInfo);
+          footer.insertBefore(contactInfo, footer.querySelector('.zainbot-credit'));
         }
 
         if (store.footerText) {
           const footerText = document.createElement('div');
           footerText.className = 'footer-text';
           footerText.innerHTML = store.footerText;
-          footer.appendChild(footerText);
+          footer.insertBefore(footerText, footer.querySelector('.zainbot-credit'));
         }
       } else {
         console.warn("store-footer element not found in DOM");
@@ -186,6 +188,26 @@ document.addEventListener("DOMContentLoaded", async () => {
           `).join('')
         : '<p>لا توجد منتجات متاحة</p>';
 
+      // تحديث قسم أضيف حديثًا
+      const recentProductsContainer = document.getElementById("recent-products");
+      if (recentProductsContainer) {
+        recentProductsContainer.innerHTML = products.length
+          ? products.slice(0, 4).map(product => `
+              <div class="product-card">
+                <img src="${product.imageUrl || '/images/default-product.png'}" alt="${product.productName}">
+                <h3>${product.productName}</h3>
+                <p>${product.description || 'لا يوجد وصف'}</p>
+                <p class="offer-price">
+                  ${product.hasOffer 
+                    ? `<span class="original-price">${product.originalPrice} ${product.currency}</span> ${product.discountedPrice} ${product.currency}`
+                    : `${product.price} ${product.currency}`}
+                </p>
+                <button onclick="addToCart('${product._id}')">أضف إلى السلة</button>
+              </div>
+            `).join('')
+          : '<p>لا توجد منتجات جديدة متاحة</p>';
+      }
+
       // تحديث الـ Pagination
       updatePagination(total, page);
     } catch (err) {
@@ -304,7 +326,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const search = document.getElementById("search-input")?.value || '';
     const sort = document.getElementById("sort-select")?.value || 'date-desc';
     const filter = document.getElementById("filter-select")?.value || null;
-    fetchProducts(storeLink, categoryId === "all" ? null : categoryId, search, sort, filter, page);
+    fetchProducts(store._id, categoryId === "all" ? null : categoryId, search, sort, filter, page);
   };
 
   // إضافة إلى السلة (وظيفة مؤقتة)
@@ -320,7 +342,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     await fetchBestsellers(store._id);
     await fetchRandomProducts(store._id);
     await fetchProducts(store._id);
-
     // إضافة Event Listeners للترتيب والتصفية
     const sortSelect = document.getElementById("sort-select");
     const filterSelect = document.getElementById("filter-select");
