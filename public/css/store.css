@@ -44,7 +44,7 @@ body.dark-mode .categories-nav {
   box-shadow: var(--shadow-dark);
 }
 
-.categories-container {
+.categories-nav .categories-container {
   display: flex !important;
   flex-direction: row !important;
   flex-wrap: nowrap !important;
@@ -455,7 +455,7 @@ body.dark-mode .toast {
     flex-direction: column;
     align-items: center;
   }
-  .categories-container {
+  .categories-nav .categories-container {
     flex-wrap: wrap !important;
     justify-content: center !important;
   }
