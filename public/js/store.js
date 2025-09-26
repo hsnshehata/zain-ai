@@ -77,15 +77,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   };
 
-  // دالة لعرض الأقسام
+  // دالة لعرض الأقسام في التاسك بار
   const renderCategories = (categories) => {
-    if (!categoriesContainer) {
-      console.error('categoriesContainer not found in DOM');
+    if (!categoriesNav) {
+      console.error('categoriesNav not found in DOM');
       return;
     }
-    categoriesContainer.innerHTML = '<button class="category-tab active" data-category-id="all">الكل</button>';
+    categoriesNav.innerHTML = '<button class="category-tab active" data-category-id="all">الكل</button>';
     categories.forEach(category => {
-      categoriesContainer.innerHTML += `
+      categoriesNav.innerHTML += `
         <button class="category-tab" data-category-id="${category._id}">${category.name}</button>
       `;
     });
@@ -296,7 +296,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!storeResponse.ok) throw new Error('فشل في جلب بيانات المتجر');
     const store = await storeResponse.json();
 
-    // تحديث اسم المتجر
+    // تحديث اسم المتجر ورسالة الترحيب
     const storeNameElement = document.getElementById('store-name');
     if (storeNameElement) {
       storeNameElement.textContent = store.storeName;
@@ -304,9 +304,23 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.error('store-name element not found in DOM');
     }
 
+    // إضافة رسالة ترحيب في اللاندينج بيج
+    if (isLandingPage) {
+      const welcomeMessage = document.createElement('h2');
+      welcomeMessage.textContent = `مرحباً بك في متجر ${store.storeName}`;
+      welcomeMessage.style.textAlign = 'center';
+      welcomeMessage.style.marginBottom = '20px';
+      const landingHeader = document.getElementById('store-header');
+      if (landingHeader) {
+        landingHeader.prepend(welcomeMessage);
+      } else {
+        console.error('store-header element not found in DOM');
+      }
+    }
+
     // تطبيق الألوان المخصصة
-    document.documentElement.style.setProperty('--primary-color', store.primaryColor);
-    document.documentElement.style.setProperty('--secondary-color', store.secondaryColor);
+    document.documentElement.style.setProperty('--primary-color', store.primaryColor || '#000000');
+    document.documentElement.style.setProperty('--secondary-color', store.secondaryColor || '#ffffff');
 
     // تحميل القالب
     const templateLink = isLandingPage
@@ -322,18 +336,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     // تحميل الهيدر المخصص
     const storeHeaderElement = document.getElementById('store-header');
     if (storeHeaderElement) {
-      storeHeaderElement.innerHTML = store.headerHtml || '<h2>مرحبًا بك في المتجر</h2>';
+      storeHeaderElement.innerHTML = store.headerHtml || `<h2>مرحباً بك في متجر ${store.storeName}</h2>`;
     } else {
       console.error('store-header element not found in DOM');
     }
 
     // تحميل الأقسام والمنتجات
     await fetchCategories(store._id);
+    await fetchProducts(store._id); // تحميل المنتجات تلقائيًا
     if (!isLandingPage) {
       await fetchRandomProducts(store._id);
       await fetchRecentProducts(store._id);
       await fetchBestsellers(store._id);
-      await fetchProducts(store._id);
     }
   } catch (err) {
     console.error('خطأ في تحميل المتجر:', err);
