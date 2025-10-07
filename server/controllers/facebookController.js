@@ -11,17 +11,34 @@ const getFacebookUsername = async (userId, accessToken) => {
   try {
     const cleanUserId = userId.replace(/^(facebook_|facebook_comment_)/, '');
     console.log(`[${getTimestamp()}] 📋 محاولة جلب اسم المستخدم لـ ${cleanUserId} من فيسبوك باستخدام التوكن: ${accessToken.slice(0, 10)}...`);
+    
+    // استخدام إصدار أقدم من الـ API إذا كان الإصدار الحالي بيسبب مشاكل
     const response = await axios.get(
-      `https://graph.facebook.com/v22.0/${cleanUserId}?fields=name&access_token=${accessToken}`
+      `https://graph.facebook.com/v20.0/${cleanUserId}?fields=name&access_token=${accessToken}`,
+      {
+        timeout: 5000, // إضافة timeout عشان نتجنب التأخير الطويل
+      }
     );
+
     if (response.data.name) {
       console.log(`[${getTimestamp()}] ✅ تم جلب اسم المستخدم من فيسبوك: ${response.data.name}`);
       return response.data.name;
     }
+
     console.log(`[${getTimestamp()}] ⚠️ لم يتم العثور على الاسم في الاستجابة:`, response.data);
-    return cleanUserId;
+    return 'مستخدم فيسبوك';
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم من فيسبوك لـ ${userId}:`, err.message, err.response?.data);
+    console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم من فيسبوك لـ ${userId}:`, err.message, err.response?.data || {});
+    
+    // التحقق من نوع الخطأ
+    if (err.response?.status === 400) {
+      console.log(`[${getTimestamp()}] ⚠️ الـ ID (${userId}) غير متاح أو لا يمكن الوصول إليه بسبب قيود الخصوصية`);
+      return 'مستخدم فيسبوك';
+    } else if (err.response?.status === 401) {
+      console.error(`[${getTimestamp()}] ❌ التوكن غير صالح أو انتهت صلاحيته. يرجى التحقق من التوكن: ${accessToken.slice(0, 10)}...`);
+      return 'مستخدم فيسبوك';
+    }
+
     return userId.replace(/^(facebook_|facebook_comment_)/, '');
   }
 };
