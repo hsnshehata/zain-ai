@@ -6,26 +6,6 @@ const { processMessage, processFeedback } = require('../botEngine');
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
 
-// دالة لجلب اسم المستخدم من فيسبوك
-const getFacebookUsername = async (userId, accessToken) => {
-  try {
-    const cleanUserId = userId.replace(/^(facebook_|facebook_comment_)/, '');
-    console.log(`[${getTimestamp()}] 📋 محاولة جلب اسم المستخدم لـ ${cleanUserId} من فيسبوك باستخدام التوكن: ${accessToken.slice(0, 10)}...`);
-    const response = await axios.get(
-      `https://graph.facebook.com/v22.0/${cleanUserId}?fields=name&access_token=${accessToken}`
-    );
-    if (response.data.name) {
-      console.log(`[${getTimestamp()}] ✅ تم جلب اسم المستخدم من فيسبوك: ${response.data.name}`);
-      return response.data.name;
-    }
-    console.log(`[${getTimestamp()}] ⚠️ لم يتم العثور على الاسم في الاستجابة:`, response.data);
-    return cleanUserId;
-  } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم من فيسبوك لـ ${userId}:`, err.message, err.response?.data);
-    return userId.replace(/^(facebook_|facebook_comment_)/, '');
-  }
-};
-
 const handleMessage = async (req, res) => {
   try {
     console.log('📩 Webhook POST request received:', JSON.stringify(req.body, null, 2));
@@ -78,7 +58,8 @@ const handleMessage = async (req, res) => {
           continue;
         }
 
-        const username = await getFacebookUsername(prefixedSenderId, bot.facebookApiKey);
+        // تم حذف جلب الاسم من فيسبوك، واستخدمنا اسم افتراضي
+        const username = 'مستخدم فيسبوك';
 
         let conversation = await Conversation.findOne({
           botId: bot._id,
@@ -220,7 +201,8 @@ const handleMessage = async (req, res) => {
               continue;
             }
 
-            const username = await getFacebookUsername(prefixedCommenterId, bot.facebookApiKey);
+            // حذف جلب اسم المعلق من فيسبوك واستخدام اسم افتراضي
+            const username = 'مستخدم فيسبوك';
 
             console.log(`💬 Comment received on post ${postId} from ${commenterName} (${prefixedCommenterId}): ${message}`);
 
