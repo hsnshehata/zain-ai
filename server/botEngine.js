@@ -14,7 +14,7 @@ const Store = require('./models/Store');
 const Product = require('./models/Product');
 
 const openai = new OpenAI({
-  apiKey: 'A',
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 // دالة لجلب الوقت الحالي
