@@ -440,8 +440,7 @@
 						<p><strong>طرق الدفع:</strong> الدفع عند الاستلام، الدفع عبر واتساب</p>
 						<p><strong>تخطيط صفحة المتجر:</strong> ${
 							state.store.adminConfig?.landingLayout === 'layout2' ? 'مودرن' :
-							state.store.adminConfig?.landingLayout === 'layout3' ? 'خيال' :
-							state.store.adminConfig?.landingLayout === 'layout4' ? 'لامع' : 'كلاسيكي'
+							state.store.adminConfig?.landingLayout === 'layout3' ? 'خيال' : 'كلاسيكي'
 						}</p>
 					</div>
 					<div>
@@ -794,7 +793,6 @@
 			{ id: 'layout1', name: 'كلاسيكي', description: 'واجهة بسيطة ثابتة بدون حركات، أبيض + اللون الأساسي.' },
 			{ id: 'layout2', name: 'مودرن', description: 'شريط علوي كبسولات وعناصر حديثة، بدون أي بنرات متحركة.' },
 			{ id: 'layout3', name: 'خيال', description: 'بطل (Hero) ثابت بخلفية متدرجة وCTA، بدون سلايدر.' },
-			{ id: 'layout4', name: 'لامع', description: 'شريط لامع مع شبكة بلايسهولدر، ألوان بسيطة وثابتة.' },
 		];
 
 		const renderLayoutPreviewHTML = (layout) => {
@@ -820,24 +818,6 @@
 							<h4 style="margin:0;">${escapeHtml(state.store.storeName || '')}</h4>
 							<p style="margin:0;opacity:.95;">${escapeHtml(state.store.storeDescription || 'نص تعريفي ثابت بدون حركة')}</p>
 							<button class="btn btn-primary" style="background:#fff;color:#0f172a;border:none;inline-size:max-content;">تسوق الآن</button>
-						</div>
-					`;
-				case 'layout4':
-					return `
-						<div class="preview-glossy" style="display:grid;gap:10px;">
-							<div class="preview-bar" style="background:var(--primary, #00C4B4);color:#fff;border-radius:12px;padding:12px;display:flex;justify-content:space-between;align-items:center;">
-								<strong>${escapeHtml(state.store.storeName || '')}</strong>
-								<span style="opacity:.95;">واجهة لامعة ثابتة</span>
-							</div>
-							<div class="preview-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;">
-								${Array.from({length:4}).map(()=> `
-									<div class="preview-card" style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:10px;">
-										<div style="inline-size:100%;block-size:72px;background:#f8fafc;border-radius:8px;margin-block-end:8px;"></div>
-										<div style="inline-size:70%;block-size:10px;background:#e2e8f0;border-radius:4px;margin-block-end:6px;"></div>
-										<div style="inline-size:40%;block-size:10px;background:#e2e8f0;border-radius:4px;"></div>
-									</div>
-								`).join('')}
-							</div>
 						</div>
 					`;
 				case 'layout1':
@@ -2106,21 +2086,10 @@
 						<div class="form-grid-two">
 							<div class="form-group">
 								<label for="templateSelect">اختيار القالب</label>
-								<select id="templateSelect" name="templateId">
-									<option value="1">قالب الأعمال الحديث</option>
-									<option value="2">قالب الشبكة المتجاوبة</option>
-									<option value="3">قالب العروض الترويجية</option>
-									<option value="4">قالب المنتجات الرقمية</option>
-									<option value="5">قالب المطاعم والمقاهي</option>
-								</select>
-							</div>
-							<div class="form-group">
-								<label for="landingLayoutSelectNew">تخطيط صفحة المتجر</label>
-								<select id="landingLayoutSelectNew" name="landingLayout">
-									<option value="layout1">نموذج 1</option>
-									<option value="layout2">نموذج 2</option>
-									<option value="layout3">نموذج 3</option>
-									<option value="layout4">نموذج 4</option>
+								<select id="templateSelect" name="landingLayout">
+									<option value="layout1">كلاسيكي</option>
+									<option value="layout2">مودرن</option>
+									<option value="layout3">خيال</option>
 								</select>
 							</div>
 						</div>
@@ -2130,20 +2099,12 @@
 								<label for="primaryColorNew">اللون الأساسي</label>
 								<input type="color" id="primaryColorNew" name="primaryColor" value="#00C4B4">
 							</div>
-							<div class="form-group">
-								<label for="secondaryColorNew">اللون الثانوي</label>
-								<input type="color" id="secondaryColorNew" name="secondaryColor" value="#ffffff">
-							</div>
 						</div>
 
 						<div class="form-grid-two">
 							<div class="form-group">
 								<label for="whatsappNew">رقم واتساب</label>
 								<input type="text" id="whatsappNew" name="whatsapp" placeholder="مثال: 201234567890+">
-							</div>
-							<div class="form-group">
-								<label for="emailNew">البريد الإلكتروني</label>
-								<input type="email" id="emailNew" name="email" placeholder="example@domain.com">
 							</div>
 						</div>
 
@@ -2222,11 +2183,8 @@
 			const payload = {
 				storeName,
 				storeLink,
-				templateId: Number(form.templateId.value),
 				primaryColor: form.primaryColor.value,
-				secondaryColor: form.secondaryColor.value,
 				whatsapp: form.whatsapp.value.trim(),
-				email: form.email.value.trim(),
 				enableCart: form.enableCart.checked,
 				landingLayout: form.landingLayout.value,
 				selectedBotId: state.selectedBotId,
