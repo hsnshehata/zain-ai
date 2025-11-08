@@ -792,7 +792,7 @@
 		const layouts = [
 			{ id: 'layout1', name: 'كلاسيكي', description: 'واجهة بسيطة ثابتة بدون حركات، أبيض + اللون الأساسي.' },
 			{ id: 'layout2', name: 'مودرن', description: 'شريط علوي كبسولات وعناصر حديثة، بدون أي بنرات متحركة.' },
-			{ id: 'layout3', name: 'خيال', description: 'بطل (Hero) ثابت بخلفية متدرجة وCTA، بدون سلايدر.' },
+			{ id: 'layout3', name: 'خيال', description: 'بطل (Hero) ثابت بخلفية متدرجة و CTA،  سلايدر متحركة.' },
 		];
 
 		const renderLayoutPreviewHTML = (layout) => {
@@ -2211,3 +2211,4 @@
 
 	window.loadStoreManagerPage = loadStoreManagerPage;
 })();
+
