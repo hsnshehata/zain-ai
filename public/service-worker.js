@@ -1,6 +1,6 @@
 // public/service-worker.js
 
-const CACHE_NAME = 'zain-ai-v0.0006'; // bump لتجديد الكاش بعد إضافة قوالب الهبوط
+const CACHE_NAME = 'zain-ai-v0.0007'; // bump لتجديد الكاش (إصلاح تحميل صور PNG الخارجية)
 const urlsToCache = [
   '/',
   '/index.html',
@@ -83,6 +83,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
   const pathname = requestUrl.pathname;
+  const isSameOrigin = requestUrl.origin === self.location.origin;
 
   // تجاهل أي طلبات للـ /chat/ وخلّيها تتحمل من الشبكة دايمًا
   if (pathname.startsWith('/chat/')) {
@@ -102,15 +103,15 @@ self.addEventListener('fetch', (event) => {
     urlsToCache.includes(pathname) || // ملفات محلية
     pathname.endsWith('.css') || // أي ملف CSS
     pathname.endsWith('.js') || // أي ملف JS
-    pathname.endsWith('.png') || // أي صور PNG
+    (isSameOrigin && pathname.endsWith('.png')) || // صور PNG محلية فقط (تجاهل الخارجية عشان استجابة opaque)
     pathname.endsWith('.woff2') || // Font Awesome Fonts
     pathname.endsWith('.woff') // Font Awesome Fonts
   ) {
     event.respondWith(
       fetch(event.request)
         .then((networkResponse) => {
-          // If network response is valid, update cache and return response
-          if (networkResponse && networkResponse.status === 200) {
+          // اعتبر الاستجابة صالحة لو status 200 أو نوعها opaque (Cross-Origin بدون فشل)
+          if (networkResponse && (networkResponse.status === 200 || networkResponse.type === 'opaque')) {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME)
               .then((cache) => {
@@ -169,6 +170,10 @@ self.addEventListener('fetch', (event) => {
         })
     );
   } else {
+    // السماح بتمرير صور PNG الخارجية مباشرة بدون اعتراض (عشان ما نرجعش 404 أول مرة)
+    if (!isSameOrigin && pathname.endsWith('.png')) {
+      return; // المتصفح هيكمل عادي network fetch
+    }
     // Network-first for API calls or non-cached resources
     event.respondWith(
       fetch(event.request)
