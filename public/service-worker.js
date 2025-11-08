@@ -84,6 +84,12 @@ self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
   const pathname = requestUrl.pathname;
   const isSameOrigin = requestUrl.origin === self.location.origin;
+  const dest = event.request.destination;
+
+  // bypass: أي صور خارج الدومين (PNG/JPG/SVG/WebP...) نسيبها للمتصفح مباشرة بدون اعتراض
+  if (!isSameOrigin && dest === 'image') {
+    return; // لا نستخدم respondWith => مفيش fallback أو لوج مضلل
+  }
 
   // تجاهل أي طلبات للـ /chat/ وخلّيها تتحمل من الشبكة دايمًا
   if (pathname.startsWith('/chat/')) {
@@ -140,7 +146,10 @@ self.addEventListener('fetch', (event) => {
                     return new Response('Font Awesome not available', { status: 404 });
                   });
               }
-              console.error(`Service Worker: No cache available for ${event.request.url}`);
+              // لو الملف خارجي، بلاش نطبع لوج مضلل
+              if (isSameOrigin) {
+                console.error(`Service Worker: No cache available for ${event.request.url}`);
+              }
               return new Response('Resource not found', { status: 404 });
             });
         })
