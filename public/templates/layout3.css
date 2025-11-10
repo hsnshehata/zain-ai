@@ -426,6 +426,16 @@
 .footer-classic .social a { inline-size:3rem; block-size:3rem; display:grid; place-items:center; background:#fff; border-radius:999px; border:1px solid #e5e7eb; color:#111827; font-size:1.25rem; }
 .footer-classic .copyright { border-top:1px solid rgba(255,255,255,.1); text-align:center; padding:.75rem; font-size:.75rem; color:#d1d5db; }
 
+/* Mobile footer adjustments */
+@media (max-width:640px){
+	html, body{ overflow-x:hidden; }
+	.footer-classic .wrap{ grid-template-columns:1fr; gap:.75rem; padding:1.25rem .75rem; }
+	.footer-classic .wrap .brand img{ display:none; }
+	.footer-classic{ font-size:.9rem; }
+	.footer-classic .social a{ inline-size:2.25rem; block-size:2.25rem; font-size:1rem; }
+	.footer-classic a{ word-break: break-word; overflow-wrap: anywhere; }
+}
+
 /* Utilities */
 .hidden { display:none !important; }
 
