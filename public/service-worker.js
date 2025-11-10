@@ -1,6 +1,6 @@
 // public/service-worker.js
 
-const CACHE_NAME = 'zain-ai-v0.0007'; // bump لتجديد الكاش (إصلاح تحميل صور PNG الخارجية)
+const CACHE_NAME = 'zain-ai-v0.0008'; // bump: تفريغ الكاش القديم + تطبيق سياسة عدم كاش للصور والروابط الخارجية
 const urlsToCache = [
   '/',
   '/index.html',
@@ -38,12 +38,7 @@ const urlsToCache = [
   '/favicon.ico',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css', // Font Awesome CSS
-  // Font Awesome Fonts
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/webfonts/fa-brands-400.woff2',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/webfonts/fa-brands-400.woff',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/webfonts/fa-solid-900.woff2',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/webfonts/fa-solid-900.woff',
+  // ملاحظـة: تم إزالة أي روابط خارجية من الـ pre-cache لتجنّب الكاش للموارد الخارجية
 ];
 
 self.addEventListener('install', (event) => {
@@ -86,9 +81,18 @@ self.addEventListener('fetch', (event) => {
   const isSameOrigin = requestUrl.origin === self.location.origin;
   const dest = event.request.destination;
 
-  // bypass: أي صور خارج الدومين (PNG/JPG/SVG/WebP...) نسيبها للمتصفح مباشرة بدون اعتراض
-  if (!isSameOrigin && dest === 'image') {
-    return; // لا نستخدم respondWith => مفيش fallback أو لوج مضلل
+  // 1) الصور: ممنوع تتحط في أي كاش وممنوع تتقري من الكاش
+  // هنستخدم network fetch مع cache: 'no-store' دايمًا علشان كل مرة تتحمل من السيرفر
+  if (dest === 'image') {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .catch(() => {
+          // لو الشبكة وقعت مفيش fallback للصور (حسب الطلب: الصور لازم تتجاب من الشبكة)
+          console.warn('Service Worker: Image fetch failed (no-store)', event.request.url);
+          return new Response('', { status: 504, statusText: 'Image fetch failed' });
+        })
+    );
+    return;
   }
 
   // تجاهل أي طلبات للـ /chat/ وخلّيها تتحمل من الشبكة دايمًا
@@ -103,21 +107,32 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // 2) أي روابط خارجية (Cross-Origin): لا كاش نهائيًا
+  if (!isSameOrigin) {
+    event.respondWith(
+      fetch(event.request, { cache: 'no-store' })
+        .catch(() => {
+          console.warn('Service Worker: External request failed (no-store)', event.request.url);
+          return new Response('External resource unavailable', { status: 502 });
+        })
+    );
+    return;
+  }
+
   // Network-first strategy for cached assets, fonts, and external resources
   if (
-    urlsToCache.includes(event.request.url) || // ملفات في urlsToCache (بما فيها Font Awesome و Fonts)
+    urlsToCache.includes(event.request.url) || // ملفات في urlsToCache
     urlsToCache.includes(pathname) || // ملفات محلية
     pathname.endsWith('.css') || // أي ملف CSS
     pathname.endsWith('.js') || // أي ملف JS
-    (isSameOrigin && pathname.endsWith('.png')) || // صور PNG محلية فقط (تجاهل الخارجية عشان استجابة opaque)
-    pathname.endsWith('.woff2') || // Font Awesome Fonts
-    pathname.endsWith('.woff') // Font Awesome Fonts
+    pathname.endsWith('.woff2') || // خطوط محلية فقط
+    pathname.endsWith('.woff') // خطوط محلية فقط
   ) {
     event.respondWith(
       fetch(event.request)
         .then((networkResponse) => {
-          // اعتبر الاستجابة صالحة لو status 200 أو نوعها opaque (Cross-Origin بدون فشل)
-          if (networkResponse && (networkResponse.status === 200 || networkResponse.type === 'opaque')) {
+          // نحفظ في الكاش فقط للموارد المحلية غير الصور
+          if (networkResponse && networkResponse.status === 200) {
             const responseToCache = networkResponse.clone();
             caches.open(CACHE_NAME)
               .then((cache) => {
@@ -134,18 +149,6 @@ self.addEventListener('fetch', (event) => {
                 console.log(`Service Worker: Serving cached content for ${event.request.url}`);
                 return cacheResponse;
               }
-              // Fallback to local Font Awesome CSS if CDN fails
-              if (event.request.url.includes('font-awesome')) {
-                console.log(`Service Worker: Font Awesome CDN failed, serving local fallback`);
-                return caches.match('/css/font-awesome.min.css')
-                  .then((localResponse) => {
-                    if (localResponse) {
-                      return localResponse;
-                    }
-                    console.error(`Service Worker: No local fallback available for Font Awesome`);
-                    return new Response('Font Awesome not available', { status: 404 });
-                  });
-              }
               // لو الملف خارجي، بلاش نطبع لوج مضلل
               if (isSameOrigin) {
                 console.error(`Service Worker: No cache available for ${event.request.url}`);
@@ -161,28 +164,12 @@ self.addEventListener('fetch', (event) => {
               if (cacheResponse) {
                 return cacheResponse;
               }
-              // Fallback to local Font Awesome CSS if CDN fails
-              if (event.request.url.includes('font-awesome')) {
-                console.log(`Service Worker: Font Awesome CDN failed (offline), serving local fallback`);
-                return caches.match('/css/font-awesome.min.css')
-                  .then((localResponse) => {
-                    if (localResponse) {
-                      return localResponse;
-                    }
-                    console.error(`Service Worker: No local fallback available for Font Awesome (offline)`);
-                    return new Response('Font Awesome not available', { status: 404 });
-                  });
-              }
               console.error(`Service Worker: Offline and no cache for ${event.request.url}`);
               return caches.match('/index.html'); // Fallback to index.html
             });
         })
     );
   } else {
-    // السماح بتمرير صور PNG الخارجية مباشرة بدون اعتراض (عشان ما نرجعش 404 أول مرة)
-    if (!isSameOrigin && pathname.endsWith('.png')) {
-      return; // المتصفح هيكمل عادي network fetch
-    }
     // Network-first for API calls or non-cached resources
     event.respondWith(
       fetch(event.request)
