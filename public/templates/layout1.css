@@ -81,6 +81,19 @@
 .footer-classic .social a { width:48px; height:48px; display:grid; place-items:center; background:#fff; border-radius:999px; border:1px solid #e5e7eb; color:#111827; font-size:20px; }
 .footer-classic .copyright { border-top:1px solid rgba(255,255,255,.1); text-align:center; padding:12px; font-size:12px; color:#d1d5db; }
 
+/* Mobile optimizations — footer fits small screens without horizontal scroll */
+@media (max-width: 640px){
+	html, body{ overflow-x:hidden; }
+	.footer-classic .wrap{ grid-template-columns: 1fr; gap:12px; padding:16px 12px; max-width:100%; }
+	.footer-classic .wrap .brand img{ display:none; }
+	.footer-classic .wrap .brand{ font-size:16px; }
+	.footer-classic{ font-size:14px; }
+	.footer-classic .social{ gap:8px; }
+	.footer-classic .social a{ width:36px; height:36px; font-size:16px; }
+	.footer-classic a{ word-break: break-word; overflow-wrap: anywhere; }
+	.footer-classic .wrap, .footer-classic{ overflow-x:hidden; }
+}
+
 /* Utilities */
 .hidden { display:none !important; }
 
