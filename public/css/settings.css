@@ -1,0 +1,119 @@
+/* public/css/settings.css */
+
+/* Styles specific to the Settings page (loaded by loadSettingsPage) */
+
+.form-card {
+  margin-bottom: 20px;
+  padding: 20px;
+  border-radius: 8px;
+}
+
+body.dark-mode .form-card {
+  background-color: var(--dark-card);
+}
+
+body.light-mode .form-card {
+  background-color: var(--light-card);
+}
+
+.form-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.form-group {
+  position: relative;
+}
+
+.form-group label {
+  display: block;
+  font-size: 1em;
+  margin-bottom: 5px;
+}
+
+body.dark-mode .form-group label {
+  color: var(--dark-text);
+}
+
+body.light-mode .form-group label {
+  color: var(--light-text);
+}
+
+.form-group input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid;
+  border-radius: 6px;
+  font-size: 1em;
+  box-sizing: border-box;
+}
+
+body.dark-mode .form-group input {
+  border-color: var(--dark-border);
+  background-color: rgba(255, 255, 255, 0.05);
+  color: var(--dark-text);
+}
+
+body.light-mode .form-group input {
+  border-color: var(--light-border);
+  background-color: rgba(0, 0, 0, 0.03);
+  color: var(--light-text);
+}
+
+.form-group input:focus {
+  border-color: var(--turquoise);
+  outline: none;
+  box-shadow: 0 0 5px rgba(26, 188, 156, 0.5);
+}
+
+button[type="submit"] {
+  background-color: var(--turquoise);
+  color: white;
+  padding: 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.1em;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+button[type="submit"]:hover {
+  background-color: #00a89a;
+}
+
+button[type="submit"]:focus {
+  outline: 2px solid var(--turquoise);
+  outline-offset: 2px;
+}
+
+#error {
+  margin-top: 15px;
+  color: var(--error-color);
+  font-size: 0.9rem;
+  min-height: 1.2em;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 576px) {
+  .form-card {
+    padding: 15px;
+  }
+
+  .form-group label {
+    font-size: 0.95em;
+  }
+
+  .form-group input {
+    font-size: 0.95em;
+  }
+
+  button[type="submit"] {
+    font-size: 1em;
+  }
+
+  #error {
+    font-size: 0.85rem;
+  }
+}

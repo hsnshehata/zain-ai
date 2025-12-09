@@ -1,0 +1,345 @@
+/* Styles for Standalone Chat Page (chat.html) */
+
+/* Apply base body styles from common.css */
+body {
+  /* background-color is set by common.css dark/light mode */
+}
+
+.chat-container {
+  max-width: 800px;
+  margin: 20px auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px var(--shadow-light); /* Use common shadow */
+  overflow: hidden;
+  direction: rtl;
+  font-family: var(--primary-font);
+  transition: background-color var(--transition-speed);
+}
+
+body.dark-mode .chat-container {
+  background-color: var(--dark-card);
+  box-shadow: 0 4px 12px var(--shadow-dark);
+}
+
+body.light-mode .chat-container {
+  background-color: var(--light-card);
+}
+
+#chatHeader {
+  padding: 15px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Center content */
+  transition: background-color var(--transition-speed);
+}
+
+body.dark-mode #chatHeader {
+  background-color: var(--dark-sidebar); /* Example: Use sidebar color */
+}
+
+body.light-mode #chatHeader {
+  background-color: var(--turquoise); /* Example: Use primary color */
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#chatLogo {
+  max-width: 60px;
+  max-height: 60px;
+  border-radius: 50%;
+}
+
+#chatTitle {
+  margin: 0;
+  font-size: 1.5em;
+  font-weight: bold;
+  transition: color var(--transition-speed);
+}
+
+body.dark-mode #chatTitle {
+  color: var(--dark-heading);
+}
+
+body.light-mode #chatTitle {
+  color: white; /* Contrast against turquoise header */
+}
+
+#chatMessages {
+  padding: 20px;
+  height: 350px; /* Consider making this dynamic or using flex */
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: background-color var(--transition-speed);
+}
+
+body.dark-mode #chatMessages {
+  background-color: var(--dark-bg); /* Match body background */
+}
+
+body.light-mode #chatMessages {
+  background-color: var(--light-bg); /* Match body background */
+}
+
+.message {
+  max-width: 70%;
+  padding: 10px 15px;
+  border-radius: 12px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  transition: background-color var(--transition-speed), color var(--transition-speed);
+}
+
+.user-message {
+  align-self: flex-end;
+  margin-left: 10px; /* RTL */
+  border-bottom-right-radius: 4px;
+}
+
+body.dark-mode .user-message {
+  background-color: var(--turquoise); /* User message color in dark */
+  color: var(--dark-bg);
+}
+
+body.light-mode .user-message {
+  background-color: var(--turquoise); /* User message color in light */
+  color: white;
+}
+
+.bot-message {
+  align-self: flex-start;
+  margin-right: 10px; /* RTL */
+  border-bottom-left-radius: 4px;
+}
+
+body.dark-mode .bot-message {
+  background-color: var(--dark-card); /* Bot message color in dark */
+  color: var(--dark-text);
+}
+
+body.light-mode .bot-message {
+  background-color: #e9ecef; /* Bot message color in light */
+  color: var(--light-text);
+}
+
+#suggestedQuestions {
+  padding: 10px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-top: 1px solid;
+}
+
+body.dark-mode #suggestedQuestions {
+  border-top-color: var(--dark-border);
+  background-color: var(--dark-card); /* Match container bg */
+}
+
+body.light-mode #suggestedQuestions {
+  border-top-color: var(--light-border);
+  background-color: var(--light-card); /* Match container bg */
+}
+
+.suggested-question {
+  padding: 8px 16px;
+  border: 1px solid var(--turquoise);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: transform 0.2s, background-color var(--transition-speed), color var(--transition-speed);
+}
+
+body.dark-mode .suggested-question {
+  background-color: transparent;
+  color: var(--turquoise);
+}
+
+body.light-mode .suggested-question {
+  background-color: transparent;
+  color: var(--turquoise);
+}
+
+.suggested-question:hover {
+  transform: translateY(-2px);
+  background-color: var(--turquoise);
+}
+body.dark-mode .suggested-question:hover {
+    color: var(--dark-bg);
+}
+body.light-mode .suggested-question:hover {
+    color: white;
+}
+
+.chat-input {
+  display: flex;
+  align-items: center;
+  padding: 15px 20px;
+  gap: 10px;
+  border-top: 1px solid;
+  transition: background-color var(--transition-speed);
+}
+
+body.dark-mode .chat-input {
+  border-top-color: var(--dark-border);
+  background-color: var(--dark-card); /* Match container bg */
+}
+
+body.light-mode .chat-input {
+  border-top-color: var(--light-border);
+  background-color: var(--light-card); /* Match container bg */
+}
+
+#messageInput {
+  flex: 1;
+  padding: 10px 15px;
+  border: 1px solid;
+  border-radius: 20px;
+  font-size: 1em;
+  outline: none;
+  /* Use common input styles */
+}
+
+/* Input styles are inherited from common.css */
+
+#sendMessageBtn,
+#imageInputBtn {
+  /* Use common button styles */
+  background-color: var(--turquoise);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  transition: transform 0.2s, background-color var(--transition-speed);
+  padding: 0; /* Override common button padding */
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+#sendMessageBtn:hover,
+#imageInputBtn:hover {
+  transform: translateY(-2px);
+  background-color: var(--button-hover-bg);
+}
+
+#sendMessageBtn i,
+#imageInputBtn i {
+  color: white;
+  font-size: 18px;
+  margin: 0 !important; /* Override common button icon margin */
+  line-height: 1; /* Adjust line height */
+}
+
+.feedback-buttons {
+  margin-top: 5px;
+  display: flex;
+  gap: 10px;
+}
+
+.feedback-btn {
+  background: none;
+  border: none;
+  font-size: 1.2em;
+  cursor: pointer;
+  transition: transform 0.2s, color var(--transition-speed);
+}
+
+body.dark-mode .feedback-btn {
+    color: var(--dark-text);
+    opacity: 0.7;
+}
+body.light-mode .feedback-btn {
+    color: var(--light-text);
+    opacity: 0.7;
+}
+
+.feedback-btn:hover {
+  transform: scale(1.2);
+  opacity: 1;
+}
+
+/* Scrollbar Styling (from common.css if defined there, or keep here) */
+#chatMessages::-webkit-scrollbar {
+  width: 8px;
+}
+
+#chatMessages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#chatMessages::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+#chatMessages::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Code Block Styling (from common.css if defined there, or keep here) */
+.code-block-container {
+  position: relative;
+  margin: 10px 0;
+  border: 1px solid;
+  border-radius: 8px;
+  overflow: hidden;
+  display: inline-block;
+  max-width: 100%;
+}
+
+body.dark-mode .code-block-container {
+    border-color: var(--dark-border);
+}
+body.light-mode .code-block-container {
+    border-color: var(--light-border);
+}
+
+.code-block-container pre {
+  padding: 15px;
+  margin: 0;
+  border-radius: 0 0 8px 8px; /* Only bottom radius if copy btn is present */
+  font-family: monospace;
+  font-size: 0.9em;
+  max-height: 400px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  overflow-x: auto; /* Allow horizontal scroll for code */
+  transition: background-color var(--transition-speed), color var(--transition-speed);
+}
+
+body.dark-mode .code-block-container pre {
+    background-color: #2d2d2d;
+    color: #f8f8f2;
+}
+body.light-mode .code-block-container pre {
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.code-block-container .copy-btn {
+  position: absolute;
+  top: 0;
+  left: 10px; /* RTL */
+  background-color: var(--turquoise);
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 0 0 4px 4px;
+  cursor: pointer;
+  font-size: 0.8em;
+  transition: background-color var(--transition-speed);
+  z-index: 1;
+}
+
+.code-block-container .copy-btn:hover {
+  background-color: var(--button-hover-bg);
+}
+
