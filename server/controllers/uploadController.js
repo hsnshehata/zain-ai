@@ -65,8 +65,10 @@ async function uploadToImgbb(file, options = {}) {
         }
 
         const data = response.data.data;
+        // direct/original link is under image.url; display_url can be a compressed/preview version
+        const directUrl = data.image?.url || data.url || data.display_url;
         return {
-          url: data.url || data.display_url,
+          url: directUrl,
           displayUrl: data.display_url,
           thumbUrl: data.thumb?.url || data.medium?.url,
           deleteUrl: data.delete_url,
