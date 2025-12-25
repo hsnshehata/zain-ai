@@ -429,7 +429,6 @@
         const filterSelect = document.getElementById('productCategoryFilter');
         const refreshBtn = document.getElementById('refreshProductsBtn');
         const addBtn = document.getElementById('addProductBtn');
-        const exportBtn = document.getElementById('exportProductsCsv');
         const tableBody = document.getElementById('productsTableBody');
 
         if (searchInput) {
@@ -443,11 +442,6 @@
         filterSelect?.addEventListener('change', async (event) => { state.productCategoryFilter = event.target.value; state.productPage = 1; if (typeof helpers.refreshDashboard === 'function') await helpers.refreshDashboard(); });
 
         refreshBtn?.addEventListener('click', async (event) => { event.preventDefault(); if (typeof helpers.refreshDashboard === 'function') await helpers.refreshDashboard(); helpers.showToast('تم تحديث قائمة المنتجات'); });
-
-        exportBtn?.addEventListener('click', async (event) => {
-            event.preventDefault(); const btn = event.currentTarget; const original = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري التصدير...';
-            try { await exportProductsToCsv(state, helpers); } finally { btn.disabled = false; btn.innerHTML = original; }
-        });
 
         addBtn?.addEventListener('click', () => { openProductModal(state, helpers, 'create'); });
 
@@ -797,8 +791,7 @@ function openProductBarcodesModal(state, helpers, product) {
                     <div class="toolbar-group">
                         <button class="btn btn-secondary btn-sm" id="refreshProductsBtn"><i class="fas fa-sync"></i> تحديث</button>
                         <button class="btn btn-secondary btn-sm" id="importProductsBtn"><i class="fas fa-file-import"></i> استيراد منتجات</button>
-                        <button class="btn btn-secondary btn-sm" id="exportProductsAllBtn"><i class="fas fa-file-export"></i> تصدير منتجات + أقسام</button>
-                        <button class="btn btn-secondary btn-sm" id="exportProductsCsv"><i class="fas fa-file-download"></i> تصدير المنتجات CSV</button>
+                        <button class="btn btn-secondary btn-sm" id="exportProductsAllBtn"><i class="fas fa-file-export"></i> تصدير ♥</button>
                         <button class="btn btn-primary" id="addProductBtn"><i class="fas fa-plus"></i> إضافة منتج</button>
                     </div>
                 </div>
