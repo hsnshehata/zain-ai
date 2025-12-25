@@ -5,7 +5,8 @@
   // مرجع المتجر عشان السلة واللينكات
   let STORE_REF = null;
   // حالة الواجهة (بحث/مفضلة)
-  const UI_STATE = { showFavs: false, query: '', currentCategory: 'all' }; // إضافة currentCategory للفلترة حسب القسم
+  const UI_STATE = { showFavs: false, query: '', currentCategory: 'all', page: 1 }; // إضافة currentCategory للفلترة حسب القسم + صفحة التحميل التدريجي
+  const PAGE_SIZE = 40;
 
   // نظام سلة بسيط باستخدام localStorage
   function cartKey(){ return STORE_REF? `zain_cart_${STORE_REF._id}` : 'zain_cart'; }
@@ -593,7 +594,7 @@
         if (act === 'scroll_products'){
           root.querySelector('#products')?.scrollIntoView({ behavior:'smooth', block:'start' });
         } else if (act === 'favorites'){
-          UI_STATE.showFavs = true; applyFilters(root, ctx);
+          UI_STATE.showFavs = true; UI_STATE.page = 1; applyFilters(root, ctx);
           root.querySelector('#products')?.scrollIntoView({ behavior:'smooth', block:'start' });
         } else if (act === 'external'){
           const url = heroCta.getAttribute('data-url'); if (url) window.open(url, '_blank');
@@ -742,6 +743,7 @@
         if (!pill.hasAttribute('data-cid')) return; // تجاهل روابط إضافية بدون data-cid
         const cid = pill.getAttribute('data-cid') || 'all';
         UI_STATE.currentCategory = cid;
+        UI_STATE.page = 1;
         // تحديث الشكل النشط
         catBar.querySelectorAll('.pill').forEach(b=>{
           b.classList.toggle('active', b.getAttribute('data-cid') === UI_STATE.currentCategory);
@@ -749,6 +751,14 @@
         applyFilters(root, ctx);
       });
     }
+
+    // زر عرض المزيد للتحميل التدريجي
+    root.addEventListener('click', (e)=>{
+      const moreBtn = e.target.closest('[data-load-more]');
+      if (!moreBtn) return;
+      UI_STATE.page = Math.max(1, (UI_STATE.page||1) + 1);
+      applyFilters(root, ctx);
+    });
   }
 
   function applyFilters(root, ctx){
@@ -772,7 +782,16 @@
       });
     }
 
-    grid.innerHTML = list.map(p=>productCard(p, ctx.store.adminConfig?.enableCart)).join('') || `<div style=\"grid-column:1/-1;text-align:center;color:#6b7280;\">لا توجد منتجات مطابقة</div>`;
+    const page = Math.max(1, UI_STATE.page || 1);
+    const paged = list.slice(0, page * PAGE_SIZE);
+    grid.innerHTML = paged.map(p=>productCard(p, ctx.store.adminConfig?.enableCart)).join('') || `<div style="grid-column:1/-1;text-align:center;color:#6b7280;">لا توجد منتجات مطابقة</div>`;
+
+    const loadBtn = root.querySelector('[data-load-more]');
+    if (loadBtn){
+      const hasMore = list.length > paged.length;
+      loadBtn.style.display = hasMore ? 'inline-flex' : 'none';
+      loadBtn.textContent = hasMore ? 'عرض المزيد من المنتجات' : 'لا مزيد من المنتجات';
+    }
 
   // تفعيل تأثير الميل (Tilt) بعد الحقن
   initCosmicTilt(grid);
@@ -1001,7 +1020,7 @@
     STORE_REF = store; // خزن المرجع للسلة والمشاركة
     // خريطة المنتجات لاستخدامها في السلة
     try { window.__ALL_PRODUCTS__ = Array.isArray(products) ? products.slice() : []; } catch(_){}
-    const visibleProducts = (Array.isArray(products)? products : []).filter(p => Number(p.stock) > 0);
+    const visibleProducts = Array.isArray(products) ? products.slice() : [];
     const ctxView = { ...ctx, products: visibleProducts };
     // شريط أعلى ثابت فيه البحث + المفضلة + السلة (السلة فاب موجودة مسبقاً بس نضيف أيقونة نصية هنا إن رغبت) مع إبقاء الفاب
     const topBar = `
@@ -1034,7 +1053,7 @@
     const productsSection = document.createElement('section');
     productsSection.id = 'products';
     productsSection.className = 'section';
-  productsSection.innerHTML = `<h2 class="section-title" style="text-align:center;">كل المنتجات</h2><div class="featured-grid">${visibleProducts.map(p=>productCard(p, store.adminConfig?.enableCart)).join('')}</div>`;
+  productsSection.innerHTML = `<h2 class="section-title" style="text-align:center;">كل المنتجات</h2><div class="featured-grid"></div><div class="load-more-wrap" style="text-align:center;margin-top:16px;"><button class="btn btn-outline" data-load-more>عرض المزيد من المنتجات</button></div>`;
     container.appendChild(productsSection);
 
     // About + Footer في النهاية
@@ -1048,6 +1067,7 @@
       let timer;
       const doFilter = ()=>{
         UI_STATE.query = (topSearch.value||'').trim().toLowerCase();
+        UI_STATE.page = 1;
         applyFilters(container, ctxView);
         container.querySelector('#products')?.scrollIntoView({ behavior:'smooth', block:'start' });
       };
@@ -1060,6 +1080,7 @@
     if (favToggleTop){
       favToggleTop.addEventListener('click', ()=>{
         UI_STATE.showFavs = !UI_STATE.showFavs;
+        UI_STATE.page = 1;
         favToggleTop.classList.toggle('active', UI_STATE.showFavs);
         applyFilters(container, ctxView);
         container.querySelector('#products')?.scrollIntoView({ behavior:'smooth', block:'start' });
