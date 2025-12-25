@@ -662,12 +662,18 @@
     }
     title.textContent = newTitle;
 
-    // إخفاء قسم المميزة عند اختيار قسم أو في وضع المفضلة
+    const hasQuery = !!UI_STATE.query;
+
+    // إخفاء قسم المميزة عند البحث أو اختيار قسم أو في وضع المفضلة
     const feat = root.querySelector('#featured');
-    if (feat){ feat.classList.toggle('hidden', !!UI_STATE.showFavs || (UI_STATE.currentCategory && UI_STATE.currentCategory !== 'all')); }
+    if (feat){ feat.classList.toggle('hidden', !!UI_STATE.showFavs || hasQuery || (UI_STATE.currentCategory && UI_STATE.currentCategory !== 'all')); }
+
+    // إخفاء البنر عند البحث أو في وضع المفضلة (يظل ظاهر مع الأقسام فقط)
+    const banner = root.querySelector('.banner-classic');
+    if (banner){ banner.classList.toggle('hidden', !!UI_STATE.showFavs || hasQuery); }
 
     // باقي الأقسام تُخفى فقط في وضع المفضلة
-    ['.banner-classic','#cats','.about-classic'].forEach(sel=>{
+    ['#cats','.about-classic'].forEach(sel=>{
       const el = root.querySelector(sel); if (!el) return;
       if (UI_STATE.showFavs) el.classList.add('hidden'); else el.classList.remove('hidden');
     });
