@@ -15,7 +15,7 @@
 .banner-classic .wrap { max-width:1200px; margin:0 auto; padding:0 16px; display:block; }
 .banner-classic .cta { background: var(--primary-color); color:#fff; border-radius:8px; padding:8px 12px; text-decoration:none; }
 .banner-hero { position:relative; }
-.banner-img { display:block; max-width:100%; border-radius:12px; margin:0 auto; }
+.banner-img { display:block; max-width:100%; width:min(1088px, 100%); aspect-ratio:1088 / 410; height:auto; object-fit:cover; border-radius:12px; margin:0 auto; }
 .banner-ctas { position:absolute; inset-inline:16px; inset-block-end:16px; display:flex; gap:8px; justify-content:center; flex-wrap:wrap; }
 .banner-text { margin-top:8px; color:#374151; text-align:center; }
 
