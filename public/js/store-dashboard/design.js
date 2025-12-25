@@ -71,6 +71,7 @@
                     <div class="form-group">
                         <label>صورة البنر</label>
                         <input type="file" id="bannerImageInput" accept="image/*">
+                        <small class="input-hint">المقاس الأنسب للبنر: 1088 × 410 بكسل.</small>
                         <div style="margin-block-start:8px;">
                             <img id="bannerPreviewImg" src="${state.store.adminConfig?.banner?.imageUrl || ''}" alt="Banner" style="max-inline-size:100%;border-radius:12px;${state.store.adminConfig?.banner?.imageUrl ? '' : 'display:none;'}">
                         </div>
