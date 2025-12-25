@@ -23,9 +23,9 @@ router.post('/', upload.single('image'), async (req, res) => {
       return res.status(400).json({ message: 'لم يتم رفع أي صورة' });
     }
     const uploadResult = await uploadToImgbb(req.file, { expiration: 2592000 }); // 30 يوم
-    // نُعيد رابط العرض المباشر للصورة (i.ibb.co) لضمان عمله داخل الواجهة بدون إعادة توجيه
+    // نستخدم الرابط المباشر (الأصلي) لتجنب أي ضغط أو تقليل جودة
     res.json({
-      imageUrl: uploadResult.displayUrl || uploadResult.url,
+      imageUrl: uploadResult.url || uploadResult.displayUrl,
       thumbUrl: uploadResult.thumbUrl,
     });
   } catch (err) {
