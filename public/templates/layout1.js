@@ -570,14 +570,27 @@
     const searchBar = root.querySelector('.search-bar');
     const searchInput = root.querySelector('.search-bar input');
     if (searchIcon && searchBar && searchInput){
-      searchIcon.addEventListener('click', ()=>{
-        searchBar.classList.toggle('hidden');
-        if (!searchBar.classList.contains('hidden')){ setTimeout(()=>searchInput.focus(), 50); }
-      });
-      searchInput.addEventListener('input', ()=>{
+      const runSearch = () => {
         UI_STATE.query = (searchInput.value||'').trim().toLowerCase();
         UI_STATE.page = 1;
         applyFilters(root, ctx);
+      };
+      searchIcon.addEventListener('click', ()=>{
+        const willShow = searchBar.classList.toggle('hidden') === false;
+        if (willShow){ setTimeout(()=>searchInput.focus(), 50); }
+        if (!willShow){
+          searchInput.value = '';
+          runSearch();
+        }
+      });
+      searchInput.addEventListener('input', runSearch);
+      searchInput.addEventListener('keyup', (e)=>{
+        if (e.key === 'Enter'){ runSearch(); }
+        if (e.key === 'Escape'){
+          searchInput.value = '';
+          searchBar.classList.add('hidden');
+          runSearch();
+        }
       });
     }
 
