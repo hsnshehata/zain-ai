@@ -36,12 +36,13 @@
 
   // جلب بيانات المتجر + الأقسام + المنتجات
   async function fetchStoreBundle(storeLink, opts = {}){
+    // اجلب كل المنتجات (بدون حد 12) عشان البحث والأقسام يعرضوا الكل
     const { preloadAll = false } = opts;
     const storeRes = await fetch(`/api/stores/store/${encodeURIComponent(storeLink)}`);
     if (!storeRes.ok) throw new Error('تعذر جلب بيانات المتجر');
     const store = await storeRes.json();
 
-    const limit = preloadAll ? 1000 : 12;
+    const limit = preloadAll ? 5000 : 5000; // حمّل كل المنتجات للواجهة (بحث/أقسام/مميزة)
     const [categoriesRes, productsRes, bestsellersRes] = await Promise.all([
       fetch(`/api/categories/${store._id}/categories`),
       fetch(`/api/products/${store._id}/products?limit=${limit}&sort=date-desc`),
