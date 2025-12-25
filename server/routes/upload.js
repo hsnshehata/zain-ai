@@ -22,7 +22,7 @@ router.post('/', upload.single('image'), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: 'لم يتم رفع أي صورة' });
     }
-    const uploadResult = await uploadToImgbb(req.file, { expiration: 2592000 }); // 30 يوم
+    const uploadResult = await uploadToImgbb(req.file, { expiration: 259200000000 }); // 30 يوم
     // نستخدم الرابط المباشر (الأصلي) لتجنب أي ضغط أو تقليل جودة
     res.json({
       imageUrl: uploadResult.url || uploadResult.displayUrl,
