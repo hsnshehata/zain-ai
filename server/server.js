@@ -26,7 +26,6 @@ const suppliersRoutes = require('./routes/suppliers');
 const salesRoutes = require('./routes/sales');
 const ordersRoutes = require('./routes/orders');
 const expensesRoutes = require('./routes/expenses');
-const waRoutes = require('./routes/wa');
 const connectDB = require('./db');
 const Conversation = require('./models/Conversation');
 const Bot = require('./models/Bot');
@@ -39,7 +38,7 @@ const bcrypt = require('bcryptjs');
 const axios = require('axios');
 const { checkAutoStopBots, refreshInstagramTokens } = require('./cronJobs');
 const authenticate = require('./middleware/authenticate');
-const waService = require('./waService');
+
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
@@ -138,7 +137,6 @@ app.use('/api/suppliers', suppliersRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/expenses', expensesRoutes);
-app.use('/api/wa', waRoutes);
 app.use('/', indexRoutes);
 
 // Route لصفحة المتجر
@@ -462,10 +460,6 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error(`[${getTimestamp()}] ❌ Unhandled Rejection at:`, promise, 'reason:', reason);
 });
 
-// Connect to MongoDB
-connectDB()
-  .then(() => waService.bootstrap())
-  .catch((err) => console.error('[bootstrap] Mongo connect failed', err.message));
 
 // تشغيل وظايف التحقق الدورية
 checkAutoStopBots();
