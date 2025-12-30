@@ -7,6 +7,7 @@ const WhatsAppSession = require('./models/WhatsAppSession');
 const Bot = require('./models/Bot');
 
 const clients = new Map();
+const initPromises = new Map(); // botId -> initialize() promise
 const states = new Map(); // botId -> { status, qr, error, updatedAt }
 let store = null;
 
@@ -114,8 +115,15 @@ const connect = async (botId) => {
   if (!bot) throw new Error('Bot not found');
   setState(botId, { status: 'starting', error: null, qr: null });
   const client = await ensureClient(botId, bot.name, true);
-  if (!client.initialized) {
-    await client.initialize();
+  if (!initPromises.has(botId)) {
+    const initPromise = client.initialize()
+      .catch((err) => {
+        console.error('WA initialize failed', botId?.toString(), err.message);
+        setState(botId, { status: 'error', error: err.message });
+        clients.delete(botId);
+      })
+      .finally(() => initPromises.delete(botId));
+    initPromises.set(botId, initPromise);
   }
   return getState(botId);
 };
@@ -126,6 +134,7 @@ const disconnect = async (botId) => {
     try { await client.destroy(); } catch (_) {}
     clients.delete(botId);
   }
+  initPromises.delete(botId);
   setState(botId, { status: 'disconnected', qr: null });
   await WhatsAppSession.updateOne({ botId }, { connected: false }, { upsert: true });
   return getState(botId);
