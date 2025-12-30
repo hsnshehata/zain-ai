@@ -26,6 +26,7 @@ const suppliersRoutes = require('./routes/suppliers');
 const salesRoutes = require('./routes/sales');
 const ordersRoutes = require('./routes/orders');
 const expensesRoutes = require('./routes/expenses');
+// removed waRoutes (local WA app)
 const connectDB = require('./db');
 const Conversation = require('./models/Conversation');
 const Bot = require('./models/Bot');
@@ -38,7 +39,6 @@ const bcrypt = require('bcryptjs');
 const axios = require('axios');
 const { checkAutoStopBots, refreshInstagramTokens } = require('./cronJobs');
 const authenticate = require('./middleware/authenticate');
-
 
 // دالة مساعدة لإضافة timestamp للـ logs
 const getTimestamp = () => new Date().toISOString();
@@ -97,17 +97,8 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use(express.static(path.join(__dirname, '../public')));
 
-// تطبيق Rate Limiting — تجاهل الطلبات المرافقة بترويسة Authorization (مستخدمون مسجلون)
-// هذا يمنع حظر المستخدمين المصادق عليهم عند قيامهم بطلبات متكررة من الواجهة.
-app.use((req, res, next) => {
-  try {
-    // إذا كانت هناك ترويسة Authorization، افترض أنها طلب مصادق عليه وتجاوز الـ limiter
-    if (req.header('Authorization')) return next();
-    return limiter(req, res, next);
-  } catch (e) {
-    return next();
-  }
-});
+// تطبيق Rate Limiting للجميع
+app.use(limiter);
 
 // Route لجلب GOOGLE_CLIENT_ID
 app.get('/api/config', (req, res) => {
@@ -460,6 +451,9 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error(`[${getTimestamp()}] ❌ Unhandled Rejection at:`, promise, 'reason:', reason);
 });
 
+// Connect to MongoDB
+connectDB()
+  .catch((err) => console.error('[bootstrap] Mongo connect failed', err.message));
 
 // تشغيل وظايف التحقق الدورية
 checkAutoStopBots();
