@@ -7,7 +7,7 @@ const WhatsAppSession = require('./models/WhatsAppSession');
 const Bot = require('./models/Bot');
 
 const clients = new Map();
-const states = new Map(); // botId -> { status, qr, error }
+const states = new Map(); // botId -> { status, qr, error, updatedAt }
 let store = null;
 
 const API_BASE = process.env.API_BASE_URL || 'http://localhost:5000';
@@ -39,7 +39,10 @@ const sendBotMessage = async ({ botId, waMessage }) => {
 
 const setState = (botId, next) => {
   const prev = states.get(botId) || {};
-  states.set(botId, { ...prev, ...next });
+  const updatedAt = Date.now();
+  const state = { ...prev, ...next, updatedAt };
+  states.set(botId, state);
+  console.log('[waState]', botId?.toString(), state.status, state.error || '', state.qr ? 'qr-set' : '', new Date(updatedAt).toISOString());
 };
 
 const ensureClient = async (botId, botName, headless = true) => {
@@ -129,7 +132,7 @@ const disconnect = async (botId) => {
 };
 
 const getState = (botId) => {
-  return states.get(botId) || { status: 'idle' };
+  return states.get(botId) || { status: 'idle', updatedAt: null };
 };
 
 const bootstrap = async () => {
