@@ -15,7 +15,6 @@ const API_BASE = process.env.API_BASE_URL || 'http://localhost:5000';
 const initStore = async () => {
   if (store) return store;
   store = new MongoStore({ mongoose });
-  await store.connect();
   return store;
 };
 
