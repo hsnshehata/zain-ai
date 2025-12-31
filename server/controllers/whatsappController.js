@@ -69,12 +69,6 @@ const processWebhook = async (req, res) => {
         // If it's a media message, fetch the media URL
         if (isImage || isVoice) {
           try {
-            const session = await WhatsAppSession.findOne({ phoneNumber: userId });
-            if (!session) {
-              console.log(`❌ No WhatsApp session found for user: ${userId}`);
-              return res.sendStatus(200);
-            }
-
             console.log(`📩 Fetching media URL for ID: ${mediaUrl}`);
             const response = await fetch(
               `https://graph.facebook.com/v20.0/${mediaUrl}`,
@@ -125,7 +119,8 @@ const processWebhook = async (req, res) => {
           isImage,
           isVoice,
           messageId,
-          "whatsapp"
+          "whatsapp",
+          mediaUrl
         );
 
         // Send reply back to WhatsApp
