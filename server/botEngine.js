@@ -23,14 +23,25 @@ function getCurrentTime() {
 }
 
 // دالة لتحميل الصورة وتحويلها إلى base64
-async function downloadImageToBase64(imageUrl) {
+const getMediaAuthHeader = (channel) => {
+  if (channel === 'whatsapp' && process.env.WHATSAPP_ACCESS_TOKEN) {
+    return { Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}` };
+  }
+  if (process.env.FACEBOOK_ACCESS_TOKEN) {
+    return { Authorization: `Bearer ${process.env.FACEBOOK_ACCESS_TOKEN}` };
+  }
+  return {};
+};
+
+async function downloadImageToBase64(imageUrl, channel = 'web') {
   try {
+    if (isDataUrl(imageUrl)) return imageUrl;
     console.log('📥 جاري تحميل الصورة من:', imageUrl);
     const response = await axios.get(imageUrl, {
       responseType: 'arraybuffer',
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-        Authorization: `Bearer ${process.env.FACEBOOK_ACCESS_TOKEN}`,
+        ...getMediaAuthHeader(channel),
       },
     });
     const imageBuffer = Buffer.from(response.data);
@@ -43,20 +54,32 @@ async function downloadImageToBase64(imageUrl) {
   }
 }
 
-async function transcribeAudio(audioUrl) {
+async function transcribeAudio(audioUrl, channel = 'web') {
   try {
     console.log('🎙️ Starting audio transcription with LemonFox, audioUrl:', audioUrl);
-    if (!audioUrl || !audioUrl.startsWith('http')) {
+    let audioBuffer;
+    let filename = 'audio.mp4';
+    if (isDataUrl(audioUrl)) {
+      const match = audioUrl.match(/^data:([^;]+);base64,(.+)$/);
+      if (!match) {
+        console.error('❌ Invalid data URL for audio');
+        throw new Error('Invalid audio URL');
+      }
+      const mime = match[1];
+      audioBuffer = Buffer.from(match[2], 'base64');
+      const ext = mime?.split('/')[1] || 'mp4';
+      filename = `audio.${ext}`;
+    } else if (audioUrl && audioUrl.startsWith('http')) {
+      console.log('📥 Fetching audio file from:', audioUrl);
+      const audioResponse = await axios.get(audioUrl, { responseType: 'arraybuffer', headers: getMediaAuthHeader(channel) });
+      audioBuffer = Buffer.from(audioResponse.data);
+    } else {
       console.error('❌ Invalid or missing audioUrl:', audioUrl);
       throw new Error('Invalid audio URL');
     }
 
-    console.log('📥 Fetching audio file from:', audioUrl);
-    const audioResponse = await axios.get(audioUrl, { responseType: 'arraybuffer' });
-    const audioBuffer = Buffer.from(audioResponse.data);
-
     const body = new FormData();
-    body.append('file', audioBuffer, { filename: 'audio.mp4', contentType: 'audio/mp4' });
+    body.append('file', audioBuffer, { filename, contentType: 'audio/mp4' });
     body.append('language', 'arabic');
     body.append('response_format', 'json');
 
@@ -82,6 +105,14 @@ async function transcribeAudio(audioUrl) {
     throw new Error('عذرًا، لم أتمكن من تحليل الصوت. ممكن تبعتلي نص بدل الصوت؟');
   }
 }
+
+const isDataUrl = (str) => typeof str === 'string' && str.startsWith('data:');
+
+const placeholderForMedia = (isImage, isVoice) => {
+  if (isImage) return '[صورة]';
+  if (isVoice) return '[صوت]';
+  return '[وسائط]';
+};
 
 async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'web', mediaUrl = null) {
   try {
@@ -184,18 +215,23 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     let userMessageContent = message;
 
+    // Normalize media content: avoid storing base64 in the conversation
+    if (isDataUrl(mediaUrl)) {
+      userMessageContent = placeholderForMedia(isImage, isVoice);
+    }
+
     if (isVoice) {
       try {
         if (mediaUrl && mediaUrl.startsWith('http')) {
           console.log('🎙️ Voice message with mediaUrl, transcribing:', mediaUrl);
-          userMessageContent = await transcribeAudio(mediaUrl);
+          userMessageContent = await transcribeAudio(mediaUrl, finalChannel);
           console.log('💬 Transcribed audio message:', userMessageContent);
         } else if (message && message.startsWith('http')) {
           console.log('🎙️ Voice message with URL in message, transcribing:', message);
-          userMessageContent = await transcribeAudio(message);
+          userMessageContent = await transcribeAudio(message, finalChannel);
           console.log('💬 Transcribed audio message:', userMessageContent);
         } else if (message && !message.startsWith('http')) {
-          userMessageContent = message;
+          userMessageContent = isDataUrl(message) ? placeholderForMedia(false, true) : message;
           console.log('💬 Using pre-transcribed audio message from WhatsApp:', userMessageContent);
         } else {
           console.log('⚠️ No valid message or mediaUrl for voice');
@@ -206,7 +242,8 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         return err.message;
       }
     } else if (isImage) {
-      userMessageContent = message || '[صورة]';
+      userMessageContent = message || mediaUrl || '[صورة]';
+      if (isDataUrl(userMessageContent)) userMessageContent = placeholderForMedia(true, false);
       console.log('🖼️ Image message, content:', userMessageContent);
     }
 
@@ -220,10 +257,14 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     await conversation.save();
     console.log('💬 User message added to conversation:', userMessageContent);
 
-    const contextMessages = conversation.messages.slice(-21, -1);
+    const contextMessages = conversation.messages
+      .slice(-50) // take latest 50
+      .filter((msg) => !isDataUrl(msg.content)) // drop any stored data URLs
+      .slice(-21, -1); // keep last 20 after filtering
+
     const context = contextMessages.map(msg => ({
       role: msg.role,
-      content: msg.content,
+      content: msg.content.length > 2000 ? `${msg.content.slice(0, 2000)}...` : msg.content,
     }));
     console.log('🧠 Conversation context:', context.length, 'messages');
 
@@ -278,7 +319,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
         try {
           // تحميل الصورة وتحويلها إلى base64
-          imageDataUrl = await downloadImageToBase64(mediaUrl);
+          imageDataUrl = await downloadImageToBase64(mediaUrl, finalChannel);
         } catch (err) {
           console.error('❌ Failed to download image:', err.message);
           return err.message;
