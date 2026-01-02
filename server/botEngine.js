@@ -310,19 +310,27 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     if (!reply) {
       if (isImage) {
-        if (!mediaUrl || !mediaUrl.startsWith('http')) {
-          console.error('❌ Invalid or missing mediaUrl for image:', mediaUrl);
+        if (!mediaUrl) {
+          console.error('❌ Missing mediaUrl for image');
           return 'عذرًا، لم أتمكن من تحليل الصورة بسبب رابط غير صالح.';
         }
-        console.log('🖼️ Processing image with mediaUrl:', mediaUrl);
-        let imageDataUrl;
 
-        try {
-          // تحميل الصورة وتحويلها إلى base64
-          imageDataUrl = await downloadImageToBase64(mediaUrl, finalChannel);
-        } catch (err) {
-          console.error('❌ Failed to download image:', err.message);
-          return err.message;
+        let imageDataUrl;
+        if (isDataUrl(mediaUrl)) {
+          // إذا وصلتنا الصورة كـ data URL نستخدمها مباشرة بدون تنزيل
+          imageDataUrl = mediaUrl;
+          console.log('🖼️ Image provided as data URL, skipping download');
+        } else if (mediaUrl.startsWith('http')) {
+          console.log('🖼️ Processing image with mediaUrl:', mediaUrl);
+          try {
+            imageDataUrl = await downloadImageToBase64(mediaUrl, finalChannel);
+          } catch (err) {
+            console.error('❌ Failed to download image:', err.message);
+            return err.message;
+          }
+        } else {
+          console.error('❌ Invalid or unsupported mediaUrl for image:', mediaUrl);
+          return 'عذرًا، رابط الصورة غير مدعوم. أرسل صورة جديدة من فضلك.';
         }
 
         try {
