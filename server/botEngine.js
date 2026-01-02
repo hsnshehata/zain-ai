@@ -222,20 +222,14 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     if (isVoice) {
       try {
-        if (mediaUrl && mediaUrl.startsWith('http')) {
-          console.log('🎙️ Voice message with mediaUrl, transcribing:', mediaUrl);
-          userMessageContent = await transcribeAudio(mediaUrl, finalChannel);
+        const voiceSource = mediaUrl || message;
+        if (voiceSource && (voiceSource.startsWith('http') || isDataUrl(voiceSource))) {
+          console.log('🎙️ Voice message, transcribing from source:', voiceSource.slice(0, 80));
+          userMessageContent = await transcribeAudio(voiceSource, finalChannel);
           console.log('💬 Transcribed audio message:', userMessageContent);
-        } else if (message && message.startsWith('http')) {
-          console.log('🎙️ Voice message with URL in message, transcribing:', message);
-          userMessageContent = await transcribeAudio(message, finalChannel);
-          console.log('💬 Transcribed audio message:', userMessageContent);
-        } else if (message && !message.startsWith('http')) {
-          userMessageContent = isDataUrl(message) ? placeholderForMedia(false, true) : message;
-          console.log('💬 Using pre-transcribed audio message from WhatsApp:', userMessageContent);
         } else {
-          console.log('⚠️ No valid message or mediaUrl for voice');
-          return 'عذرًا، لم أتمكن من تحليل الصوت. ممكن تبعتلي نص بدل الصوت؟';
+          console.log('⚠️ No valid mediaUrl or audio payload for voice:', mediaUrl, message);
+          return 'عذرًا، لم أتمكن من تحليل الصوت بسبب رابط غير صالح. أرسل المقطع الصوتي من جديد أو اكتب النص.';
         }
       } catch (err) {
         console.error('❌ Failed to transcribe audio:', err.message);
