@@ -61,13 +61,28 @@ async function transcribeAudio(audioUrl, channel = 'web') {
     let filename = 'audio.mp4';
     let contentType = 'audio/mp4';
     if (isDataUrl(audioUrl)) {
-      const match = audioUrl.match(/^data:([^;,]+)(;[^,]*)?,base64,(.+)$/);
-      if (!match) {
-        console.error('❌ Invalid data URL for audio');
+      // Normalize data URLs that may contain spaces in parameters (e.g., "data:audio/ogg; codecs=opus;base64,....")
+      const trimmed = audioUrl.trim();
+      const commaIndex = trimmed.indexOf(',');
+      if (commaIndex === -1) {
+        console.error('❌ Invalid data URL for audio (no comma found)');
         throw new Error('Invalid audio URL');
       }
-      const mime = match[1]?.split(';')[0] || match[1] || 'audio/mp4';
-      const base64Payload = match[3];
+
+      const metaRaw = trimmed.slice('data:'.length, commaIndex);
+      const base64Payload = trimmed.slice(commaIndex + 1).replace(/\s+/g, '');
+      const metaParts = metaRaw
+        .split(';')
+        .map((part) => part.trim())
+        .filter(Boolean);
+
+      const mime = metaParts[0] || 'audio/mp4';
+      const hasBase64 = metaParts.some((p) => p.toLowerCase() === 'base64');
+      if (!hasBase64) {
+        console.error('❌ Invalid data URL for audio (missing base64 flag)');
+        throw new Error('Invalid audio URL');
+      }
+
       audioBuffer = Buffer.from(base64Payload, 'base64');
       const ext = mime?.split('/')[1] || 'mp4';
       filename = `audio.${ext}`;
