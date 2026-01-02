@@ -59,27 +59,36 @@ async function transcribeAudio(audioUrl, channel = 'web') {
     console.log('🎙️ Starting audio transcription with LemonFox, audioUrl:', audioUrl);
     let audioBuffer;
     let filename = 'audio.mp4';
+    let contentType = 'audio/mp4';
     if (isDataUrl(audioUrl)) {
-      const match = audioUrl.match(/^data:([^;]+);base64,(.+)$/);
+      const match = audioUrl.match(/^data:([^;,]+)(;[^,]*)?,base64,(.+)$/);
       if (!match) {
         console.error('❌ Invalid data URL for audio');
         throw new Error('Invalid audio URL');
       }
-      const mime = match[1];
-      audioBuffer = Buffer.from(match[2], 'base64');
+      const mime = match[1]?.split(';')[0] || match[1] || 'audio/mp4';
+      const base64Payload = match[3];
+      audioBuffer = Buffer.from(base64Payload, 'base64');
       const ext = mime?.split('/')[1] || 'mp4';
       filename = `audio.${ext}`;
+      contentType = mime;
     } else if (audioUrl && audioUrl.startsWith('http')) {
       console.log('📥 Fetching audio file from:', audioUrl);
       const audioResponse = await axios.get(audioUrl, { responseType: 'arraybuffer', headers: getMediaAuthHeader(channel) });
       audioBuffer = Buffer.from(audioResponse.data);
+      const respMime = audioResponse.headers?.['content-type'];
+      if (respMime) {
+        contentType = respMime.split(';')[0] || respMime;
+        const ext = contentType?.split('/')[1];
+        if (ext) filename = `audio.${ext}`;
+      }
     } else {
       console.error('❌ Invalid or missing audioUrl:', audioUrl);
       throw new Error('Invalid audio URL');
     }
 
     const body = new FormData();
-    body.append('file', audioBuffer, { filename, contentType: 'audio/mp4' });
+    body.append('file', audioBuffer, { filename, contentType });
     body.append('language', 'arabic');
     body.append('response_format', 'json');
 
