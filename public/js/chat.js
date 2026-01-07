@@ -62,7 +62,11 @@ try {
       console.log('🔍 Settings loaded:', settings);
       console.log('🎨 Title color:', settings.titleColor);
 
+      // عنوان الصفحة قد يأتي كحقل مستقل أو داخل كائن colors
+      const resolvedTitleColor = settings.titleColor || settings.colors?.titleColor || '#ffffff';
+
       chatTitle.textContent = settings.title || 'صفحة الدردشة';
+      chatTitle.style.color = resolvedTitleColor;
       if (settings.logoUrl) {
         chatLogo.src = settings.logoUrl;
         chatLogo.style.display = 'block';
@@ -85,7 +89,7 @@ try {
           background-color: ${settings?.colors?.header || '#2D3436'};
         }
         #chatTitle {
-          color: ${settings?.colors?.titleColor || '#ffffff'};
+          color: ${resolvedTitleColor};
         }
         #chatMessages {
           background-color: ${settings?.colors?.chatAreaBackground || '#3B4A4E'};
