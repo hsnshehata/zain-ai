@@ -202,8 +202,8 @@
 
         function bindProductsAddButtons() {
             productsContainer.querySelectorAll('.add-product-btn')?.forEach(btn => {
-                btn.addEventListener('click', (ev) => {
-                    const node = btn.closest('.product-item');
+                btn.addEventListener('click', () => {
+                    const node = btn.closest('.product-card') || btn.closest('.product-item');
                     const id = node?.getAttribute('data-id');
                     const name = node?.getAttribute('data-name');
                     const price = Number(node?.getAttribute('data-price') || 0);
