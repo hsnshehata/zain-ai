@@ -630,6 +630,36 @@ async function importProductsAndCategories(state, helpers) {
 
         const headersAuth = { Authorization: `Bearer ${state.token}`, 'Content-Type': 'application/json' };
 
+        // let user choose how to merge imported products
+        const choice = window.prompt('اختر وضع الاستيراد:\n1) الاحتفاظ بالمنتجات الحالية وإضافة الجديدة بجوارها\n2) مسح كل المنتجات الحالية واستبدالها بما في الملف\nأدخل 1 أو 2', '1');
+        if (choice === null) return; // user cancelled
+        const importMode = String(choice).trim() === '2' ? 'replace' : 'append';
+
+        if (importMode === 'replace') {
+            helpers.showToast('جارٍ حذف المنتجات السابقة قبل الاستيراد...', 'info');
+            const existingProducts = [];
+            const pageSize = 500;
+            let page = 1;
+            while (true) {
+                const url = `/api/products/${storeId}/products?limit=${pageSize}&page=${page}`;
+                const resp = await helpers.handleApiRequest(url, { headers: headersAuth }, null, 'فشل في جلب المنتجات الحالية للمسح');
+                const list = Array.isArray(resp?.products) ? resp.products : [];
+                existingProducts.push(...list);
+                const total = Number(resp?.total) || 0;
+                if (!list.length || existingProducts.length >= total) break;
+                page += 1;
+                if (page > 1000) break;
+            }
+
+            for (const prod of existingProducts) {
+                try {
+                    await helpers.handleApiRequest(`/api/products/${storeId}/products/${prod._id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${state.token}` } }, null, `فشل في حذف المنتج ${prod.productName || prod.name || ''}`);
+                } catch (e) {
+                    console.warn('Failed to delete product before import', prod?._id, e.message);
+                }
+            }
+        }
+
         // Build existing categories map by name
         const existingCategories = {};
         (Array.isArray(state.categories) ? state.categories : []).forEach(c => { if (c && c.name) existingCategories[String(c.name).trim()] = c._id; });
@@ -693,7 +723,7 @@ async function importProductsAndCategories(state, helpers) {
         }
 
         if (typeof helpers.refreshDashboard === 'function') await helpers.refreshDashboard();
-        helpers.showToast(`تم استيراد ${imported} منتج` , 'success');
+        helpers.showToast(`تم استيراد ${imported} منتج (${importMode === 'replace' ? 'تم استبدال المنتجات السابقة' : 'تمت إضافتها بجوار المنتجات الحالية'})` , 'success');
     } catch (err) {
         helpers.showToast(err.message || 'فشل في استيراد الملف', 'error');
     }
