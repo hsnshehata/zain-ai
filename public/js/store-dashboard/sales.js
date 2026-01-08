@@ -7,19 +7,26 @@
     function renderProductsList(products, helpers) {
         if (!products || !products.length) return '<p>لا توجد منتجات</p>';
         return `
-            <div class="products-list">
-                ${products.map(p => `
-                    <div class="product-item" data-id="${p._id}" data-name="${helpers.escapeHtml(p.productName||p.name||'') }" data-price="${p.salePrice||p.price||0}" data-image="${helpers.escapeHtml((p.primaryImage && (p.primaryImage.url||p.primaryImage)) || (p.images && p.images[0]) || '')}">
-                        <div style="display:flex;gap:8px;align-items:center;">
-                            <img src="${helpers.escapeHtml((p.primaryImage && (p.primaryImage.url||p.primaryImage)) || (p.images && p.images[0]) || '')}" onerror="this.style.display='none'" alt="" style="inline-size:56px;block-size:56px;object-fit:cover;border-radius:6px;background:#fff;border:1px solid #eee">
-                            <div style="flex:1;min-inline-size:0">
-                                <div class="product-name" style="font-weight:600;">${helpers.escapeHtml(p.productName||p.name||'')}</div>
-                                <div class="product-price" style="color:#666;font-size:0.95rem;margin-block-start:6px">${helpers.formatCurrency(p.salePrice||p.price||0)}</div>
+            <div class="products-grid">
+                ${products.map(p => {
+                    const image = helpers.escapeHtml((p.primaryImage && (p.primaryImage.url || p.primaryImage)) || (p.images && p.images[0]) || '');
+                    const name = helpers.escapeHtml(p.productName || p.name || '');
+                    const price = helpers.formatCurrency(p.salePrice || p.price || 0);
+                    const category = helpers.escapeHtml((p.category && (p.category.name || p.category.title)) || '');
+                    return `
+                        <div class="product-card" data-id="${p._id}" data-name="${name}" data-price="${p.salePrice||p.price||0}" data-image="${image}">
+                            <div class="product-thumb">${image ? `<img src="${image}" alt="${name}" onerror="this.style.display='none'">` : '<div class="thumb-placeholder"></div>'}</div>
+                            <div class="product-details">
+                                <div class="product-name">${name}</div>
+                                <div class="product-meta">
+                                    <span class="product-price">${price}</span>
+                                    ${category ? `<span class="product-category">${category}</span>` : ''}
+                                </div>
                             </div>
-                            <button class="btn btn-sm btn-outline add-product-btn">أضف</button>
+                            <button class="btn btn-sm btn-outline add-product-btn">أضف للسلة</button>
                         </div>
-                    </div>
-                `).join('')}
+                    `;
+                }).join('')}
             </div>
         `;
     }
@@ -54,27 +61,48 @@
         return { subtotal };
     }
 
+    function getProductsSource(state) {
+        return (state.catalogSnapshot && state.catalogSnapshot.length) ? state.catalogSnapshot : (state.products || []);
+    }
+
+    function filterProductsForSales(products, categoryId, searchTerm) {
+        const cat = categoryId && categoryId !== 'all' ? String(categoryId) : null;
+        const q = (searchTerm || '').toLowerCase();
+        return (products || []).filter(p => {
+            const matchesCategory = !cat || String(p.category?._id || p.category) === cat;
+            const name = (p.productName || p.name || '').toLowerCase();
+            const barcode = (p.barcode || '').toLowerCase();
+            const matchesSearch = !q || name.includes(q) || barcode.includes(q);
+            return matchesCategory && matchesSearch;
+        });
+    }
+
     async function renderPanel() {
         const state = module.ctx.state; const helpers = module.ctx.helpers;
         const panel = document.getElementById('store-sales-panel'); if (!panel) return;
 
         // prepare products list from snapshot for quick sale
-        const products = state.catalogSnapshot && state.catalogSnapshot.length ? state.catalogSnapshot : state.products || [];
+        const products = getProductsSource(state);
         state.salesCart = state.salesCart || [];
+        state.salesCategoryFilter = state.salesCategoryFilter || 'all';
         const cart = state.salesCart;
         const totals = computeTotals(cart);
+        const initialProducts = filterProductsForSales(products, state.salesCategoryFilter, '').slice(0, 120);
 
         panel.innerHTML = `
             <style>
                 /* Sales panel local styles (logical properties) */
                 .store-card { padding: 14px; border-radius: 10px; background: transparent; }
-                .products-list{display:flex;flex-wrap:wrap;gap:10px;max-block-size:520px;overflow:auto;padding:6px;margin-block-end:6px}
-                .product-item{background:transparent;padding:8px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);inline-size:100%;box-shadow:0 1px 0 rgba(0,0,0,0.03)}
-                .products-list .product-item{inline-size:calc(50% - 10px)}
-                @media(min-inline-size:1200px){ .products-list .product-item{inline-size:calc(33.333% - 10px)} }
-                .product-item img{inline-size:56px;block-size:56px;object-fit:cover;border-radius:6px;border:1px solid rgba(0,0,0,0.06);background:#fff}
-                .product-name{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-                .product-price{color:var(--muted-color,#9aa0a6);font-size:0.95rem}
+                .products-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;max-block-size:520px;overflow:auto;padding:6px;margin-block-end:6px}
+                .product-card{background:transparent;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);box-shadow:0 4px 16px rgba(0,0,0,0.06);display:flex;flex-direction:column;gap:8px;transition:transform .12s, box-shadow .12s}
+                .product-card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,0.08)}
+                .product-thumb{inline-size:100%;block-size:120px;border-radius:10px;overflow:hidden;background:linear-gradient(135deg,#f9fafb,#eef2ff);display:grid;place-items:center}
+                .product-thumb img{inline-size:100%;block-size:100%;object-fit:cover}
+                .thumb-placeholder{inline-size:100%;block-size:100%;background:repeating-linear-gradient(45deg,#f3f4f6,#f3f4f6 10px,#e5e7eb 10px,#e5e7eb 20px)}
+                .product-name{font-weight:700;font-size:0.98rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+                .product-meta{display:flex;gap:6px;align-items:center;justify-content:space-between}
+                .product-price{color:var(--muted-color,#111);font-weight:700}
+                .product-category{background:rgba(0,0,0,0.06);color:#374151;padding:2px 8px;border-radius:999px;font-size:0.8rem}
                 /* Cart table tweaks */
                 .store-table th{background:transparent;color:var(--muted-color,#9aa0a6);font-weight:600;padding:10px;text-align:end}
                 .store-table td{padding:10px;vertical-align:middle}
@@ -88,11 +116,15 @@
             <div class="store-card" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
                 <div>
                     <h3><i class="fas fa-bolt"></i> مبيعات سريعة</h3>
-                    <div style="display:flex;gap:8px;margin-block:8px;align-items:center;">
-                        <input id="saleSearchInput" type="text" placeholder="ابحث عن منتج بالاسم أو الكود" style="flex:1">
+                    <div style="display:flex;gap:8px;margin-block:8px;align-items:center;flex-wrap:wrap;">
+                        <input id="saleSearchInput" type="text" placeholder="ابحث عن منتج بالاسم أو الكود" style="flex:1;min-inline-size:200px">
+                        <select id="saleCategoryFilter" style="min-inline-size:160px">
+                            <option value="all" ${state.salesCategoryFilter === 'all' ? 'selected' : ''}>كل الأقسام</option>
+                            ${(Array.isArray(state.categories) ? state.categories : []).map(c => `<option value="${c._id}" ${state.salesCategoryFilter === c._id ? 'selected' : ''}>${helpers.escapeHtml(c.name || c.title || '')}</option>`).join('')}
+                        </select>
                         <button class="btn btn-secondary btn-sm" id="refreshProductsBtn">تحديث</button>
                     </div>
-                    <div id="productsListContainer">${renderProductsList(products.slice(0,50), helpers)}</div>
+                    <div id="productsListContainer">${renderProductsList(initialProducts, helpers)}</div>
                 </div>
                 <div>
                     <h3><i class="fas fa-shopping-cart"></i> السلة</h3>
@@ -125,6 +157,7 @@
         const productsContainer = panel.querySelector('#productsListContainer');
         const refreshBtn = panel.querySelector('#refreshProductsBtn');
         const searchInput = panel.querySelector('#saleSearchInput');
+        const categoryFilter = panel.querySelector('#saleCategoryFilter');
         const cartContainer = panel.querySelector('#cartContainer');
         const saveBtn = panel.querySelector('#saveSaleBtn');
         const clearBtn = panel.querySelector('#clearCartBtn');
@@ -132,20 +165,26 @@
         const paymentSelect = panel.querySelector('#salePaymentMethod');
         const customerSelect = panel.querySelector('#saleCustomerSelect');
 
-        refreshBtn?.addEventListener('click', () => {
-            // re-render products list using latest snapshot
-            const products = (state.catalogSnapshot && state.catalogSnapshot.length) ? state.catalogSnapshot : state.products || [];
-            productsContainer.innerHTML = renderProductsList(products.slice(0,50), helpers);
+        const renderFilteredProducts = () => {
+            const base = getProductsSource(state);
+            const searchTerm = (searchInput?.value || '').trim().toLowerCase();
+            const filtered = filterProductsForSales(base, state.salesCategoryFilter, searchTerm).slice(0, 120);
+            productsContainer.innerHTML = renderProductsList(filtered, helpers);
             bindProductsAddButtons();
+        };
+
+        refreshBtn?.addEventListener('click', () => {
+            renderFilteredProducts();
         });
 
         searchInput?.addEventListener('input', helpers.debounce((e) => {
-            const q = e.target.value.trim().toLowerCase();
-            const products = (state.catalogSnapshot && state.catalogSnapshot.length) ? state.catalogSnapshot : state.products || [];
-            const filtered = products.filter(p => (p.productName||p.name||'').toLowerCase().includes(q) || (p.barcode||'').includes(q)).slice(0,50);
-            productsContainer.innerHTML = renderProductsList(filtered, helpers);
-            bindProductsAddButtons();
+            renderFilteredProducts();
         }, 250));
+
+        categoryFilter?.addEventListener('change', (e) => {
+            state.salesCategoryFilter = e.target.value || 'all';
+            renderFilteredProducts();
+        });
 
         bindProductsAddButtons();
 
