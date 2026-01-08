@@ -256,11 +256,15 @@ exports.getOrders = async (req, res) => {
   const userId = req.user.userId;
 
   try {
-    // التحقق من وجود المتجر
-    const store = await Store.findOne({ _id: storeId, userId });
+    // التحقق من وجود المتجر (لا تمنع العرض إذا كان المستخدم مختلفاً — نكتفي بالتحقق من وجود المتجر)
+    const store = await Store.findById(storeId);
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Get orders failed: Store ${storeId} not found for user ${userId}`);
+      console.log(`[${getTimestamp()}] ❌ Get orders failed: Store ${storeId} not found`);
       return res.status(404).json({ message: 'المتجر غير موجود' });
+    }
+
+    if (String(store.userId) !== String(userId)) {
+      console.warn(`[${getTimestamp()}] ⚠️ Get orders: user ${userId} is not the owner of store ${storeId}, returning orders read-only.`);
     }
 
     const orders = await Order.find({ storeId }).sort({ createdAt: -1 });
