@@ -156,15 +156,15 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function planUserIntent(message) {
-    const plannerPrompt = `أنت مساعد منفذ أوامر في لوحة التحكم. ارجع فقط JSON صالح بدون أي نص آخر.
-المفاتيح المطلوبة: intent (navigate | addRule | deleteProduct | chat)، params (object)، responseMessage (نص قصير ودود)، requiresConfirmation (true/false).
+    const plannerPrompt = `أنت مساعد تنفيذي في لوحة تحكم زين. حلّل طلب المستخدم وارجع JSON فقط بدون نص زائد.
+المفاتيح: intent (navigate | addRule | deleteProduct | chat)، params (object)، responseMessage (نص قصير)، requiresConfirmation (true/false).
 القواعد:
-- ضع requiresConfirmation=true لأي إجراء حساس مثل الحذف أو تعديل بيانات مالية.
-- addRule: استخدم type=general لو غير محدد، وضع النص الأصلي في content.
-- navigate: pages المقبولة: bots, rules, chat-page, store-manager, facebook, instagram, whatsapp, messages, feedback, settings, wasenderpro.
-- deleteProduct: إن توفّر اسم منتج فقط ضعه في productName واطلب من المستخدم معرف المنتج إن لم يكن متاحاً.
-- لو الطلب مجرد دردشة أو غير مدعوم، استخدم intent='chat' وresponseMessage للرد.
-أعد JSON فقط.`;
+- ضع requiresConfirmation=true لأي حذف أو تعديل حساس (منتجات، قواعد، مستخدمين...).
+- addRule: لو كان الطلب سؤال/إجابة، ضع type='qa' وcontent={question,answer}، وإلا type='general' مع النص.
+- navigate: الصفحات المسموحة bots, rules, chat-page, store-manager, facebook, instagram, whatsapp, messages, feedback, settings, wasenderpro.
+- deleteProduct: لو الاسم فقط متاح ضعه في productName واطلب storeId وproductId.
+- لو الطلب دردشة أو غير مدعوم، استخدم intent='chat' مع responseMessage مهذب.
+أعد JSON صالح فقط.`;
 
     const aiResponse = await handleApiRequest('/api/bot', {
       method: 'POST',
@@ -205,59 +205,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
       }
 
-      let internalCommand = parseSimpleCommand(message);
+      // دائماً نخطط عبر الذكاء الاصطناعي ثم ننفذ
+      const plan = await planUserIntent(message);
 
-      if (internalCommand) {
-        let retryCount = 0;
-        const maxRetries = 3;
-
-        while (retryCount < maxRetries) {
-          try {
-            const executionResult = await executeInternalCommand(internalCommand);
-            const botMessageDiv = document.createElement('div');
-            botMessageDiv.className = 'message bot-message';
-            botMessageDiv.innerHTML = `
-              <p>${executionResult.message}</p>
-              <small>${new Date().toLocaleString('ar-EG')}</small>
-            `;
-            assistantChatMessages.appendChild(botMessageDiv);
-            assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
-            conversationHistory.push({ role: 'assistant', content: executionResult.message });
-            updateConversationCache();
-            break;
-          } catch (err) {
-            retryCount++;
-            if (retryCount === maxRetries) {
-              const errorMessage = `فشلت في تنفيذ الأمر بعد ${maxRetries} محاولات: ${err.message}`;
-              const botMessageDiv = document.createElement('div');
-              botMessageDiv.className = 'message bot-message';
-              botMessageDiv.innerHTML = `
-                <p>${errorMessage}</p>
-                <small>${new Date().toLocaleString('ar-EG')}</small>
-              `;
-              assistantChatMessages.appendChild(botMessageDiv);
-              assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
-              conversationHistory.push({ role: 'assistant', content: errorMessage });
-              updateConversationCache();
-              break;
-            }
-
-            internalCommand = await retryCommandWithAI(internalCommand, err.message);
-          }
-        }
-      } else {
-        const plan = await planUserIntent(message);
-
-        if (requiresConfirmation(plan.intent) || plan.requiresConfirmation) {
-          pendingAction = plan;
-          const question = plan.confirmationMessage || `هل أنت متأكد أنك تريد تنفيذ الطلب: ${plan.responseMessage || plan.intent}? (نعم/لا)`;
-          appendBotMessage(question);
-          return;
-        }
-
-        const result = await executePlannedIntent(plan);
-        appendBotMessage(result.message || plan.responseMessage || 'تم التنفيذ.');
+      if (requiresConfirmation(plan.intent) || plan.requiresConfirmation) {
+        pendingAction = plan;
+        const question = plan.confirmationMessage || `هل أنت متأكد أنك تريد تنفيذ الطلب: ${plan.responseMessage || plan.intent}? (نعم/لا)`;
+        appendBotMessage(question);
+        return;
       }
+
+      const result = await executePlannedIntent(plan);
+      appendBotMessage(result.message || plan.responseMessage || 'تم التنفيذ.');
     } catch (err) {
       console.error('خطأ في معالجة الرسالة:', err);
       const errorMessage = 'عذرًا، حدث خطأ أثناء معالجة طلبك. حاول مرة أخرى!';
@@ -308,6 +267,22 @@ document.addEventListener('DOMContentLoaded', () => {
         content,
         secretCode: 'EXECUTE_NOW',
       };
+    }
+
+    // نمط سريع لإضافة قاعدة سؤال/إجابة: "سؤال X ... يقوله Y"
+    const qaMatch = message.match(/سؤال\s+(.+?)\s+(?:يقوله|يقول له|يرد عليه\s*ب?[:：]?|يرد عليه ب)\s*(.+)/i);
+    if (qaMatch) {
+      const question = qaMatch[1].trim();
+      const answer = qaMatch[2].trim();
+      if (question && answer) {
+        return {
+          action: 'addRule',
+          botId: selectedBotId,
+          type: 'qa',
+          content: { question, answer },
+          secretCode: 'EXECUTE_NOW',
+        };
+      }
     }
 
     return null;
