@@ -17,8 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Ensure the modal is hidden initially
   assistantChatModal.style.display = 'none';
 
-  const ASSISTANT_BOT_ID = '688ebdc24f6bd5cf70cb071b';
   const selectedBotId = localStorage.getItem('selectedBotId');
+  const assistantBotId = '688ebdc24f6bd5cf70cb071d'; // معرف البوت الثابت للمساعد
   let userId = localStorage.getItem('userId') || 'dashboard_user_' + Date.now();
   let conversationHistory = JSON.parse(localStorage.getItem(`conversationHistory_${userId}`)) || [];
 
@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       } else {
         const systemPrompt = `
-أنت بوت ذكي اسمه "المساعد الذكي" (ID: ${ASSISTANT_BOT_ID}). مهمتك الرد على المستخدم بطريقة طبيعية وودودة بناءً على الأسئلة أو العبارات اللي مش أوامر تنفيذية (زي "كيف حالك" أو "شكرًا لك").
+      أنت بوت ذكي اسمه "المساعد الذكي" (ID: ${assistantBotId}). مهمتك الرد على المستخدم بطريقة طبيعية وودودة بناءً على الأسئلة أو العبارات اللي مش أوامر تنفيذية (زي "كيف حالك" أو "شكرًا لك").
 
 ### أمثلة على الردود:
 - لو المستخدم قال "كيف حالك":
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
           },
           body: JSON.stringify({
-            botId: ASSISTANT_BOT_ID,
+            botId: assistantBotId,
             message,
             userId,
             history: conversationHistory,
