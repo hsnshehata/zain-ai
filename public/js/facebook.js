@@ -140,7 +140,7 @@ async function loadFacebookPage() {
               <p>تسمح للبوت بالرد على تعليقات المستخدمين على بوستات الصفحة بنفس طريقة الرد على الرسايل.</p>
             </div>
             <label class="switch">
-              <input type="checkbox" id="feedCommentsToggle" data-setting-key="feedCommentsEnabled">
+              <input type="checkbox" id="commentsRepliesToggle" data-setting-key="commentsRepliesEnabled">
               <span class="slider"></span>
             </label>
           </div>
@@ -200,7 +200,7 @@ async function loadFacebookPage() {
       messageReactionsEnabled: false,
       messagingReferralsEnabled: false,
       messageEditsEnabled: false,
-      feedCommentsEnabled: false,
+      commentsRepliesEnabled: false,
     };
 
     try {
