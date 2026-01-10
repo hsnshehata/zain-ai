@@ -435,8 +435,9 @@ try {
         return;
       }
 
-      if (isInitialLoad && page !== (role === "superadmin" ? "bots" : "rules")) {
-        console.warn(`⚠️ Attempted to load ${page} during initial load, ignoring`);
+      const allowedInitialPage = initialHash || (role === "superadmin" ? "bots" : "rules");
+      if (isInitialLoad && page !== allowedInitialPage) {
+        console.warn(`⚠️ Attempted to load ${page} during initial load, allowed: ${allowedInitialPage}`);
         return;
       }
 
