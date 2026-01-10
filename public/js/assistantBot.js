@@ -19,8 +19,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const selectedBotId = localStorage.getItem('selectedBotId');
   const assistantBotId = '688ebdc24f6bd5cf70cb071d'; // معرف البوت الثابت للمساعد
+  const storedStoreId = localStorage.getItem('storeId'); // قد يكون محفوظ من المتجر
   let userId = localStorage.getItem('userId') || 'dashboard_user_' + Date.now();
   let conversationHistory = JSON.parse(localStorage.getItem(`conversationHistory_${userId}`)) || [];
+  let pendingAction = null; // لتخزين أمر حساس بانتظار التأكيد
 
   if (!selectedBotId) {
     assistantChatMessages.innerHTML = `
@@ -88,8 +90,121 @@ document.addEventListener('DOMContentLoaded', () => {
     await processMessage(message, lastMessageTimestamp);
   }
 
+  // إضافة رسالة روبوت للـ UI وللتاريخ
+  function appendBotMessage(text) {
+    const botMessageDiv = document.createElement('div');
+    botMessageDiv.className = 'message bot-message';
+    botMessageDiv.innerHTML = `
+      <p>${text}</p>
+      <small>${new Date().toLocaleString('ar-EG')}</small>
+    `;
+    assistantChatMessages.appendChild(botMessageDiv);
+    assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
+    conversationHistory.push({ role: 'assistant', content: text });
+    updateConversationCache();
+  }
+
+  function isAffirmative(text) {
+    return /^(?:نعم|اه|أيوه|ايوه|تمام|موافق|confirm|yes)$/i.test(text.trim());
+  }
+
+  function isNegative(text) {
+    return /^(?:لا|لأ|مش|مش موافق|الغاء|إلغاء|cancel|no)$/i.test(text.trim());
+  }
+
+  function requiresConfirmation(intent) {
+    const sensitiveIntents = ['deleteProduct', 'deleteRule', 'deleteBot', 'deleteMessage', 'removeUser'];
+    return sensitiveIntents.includes(intent);
+  }
+
+  async function executePlannedIntent(plan) {
+    const intent = plan.intent;
+    const params = plan.params || {};
+
+    switch (intent) {
+      case 'navigate': {
+        return await executeInternalCommand({ action: 'navigate', page: params.page });
+      }
+      case 'addRule': {
+        const content = params.content || plan.responseMessage || 'رد عام';
+        const type = params.type || 'general';
+        const command = { action: 'addRule', botId: selectedBotId, type, content };
+        const result = await executeInternalCommand(command);
+        return result;
+      }
+      case 'deleteProduct': {
+        const storeId = params.storeId || storedStoreId;
+        const productId = params.productId;
+        const productName = params.productName || 'المنتج';
+        if (!storeId || !productId) {
+          return { message: `أحتاج معرف المتجر والمنتج قبل الحذف. أرسل لي storeId ومعرف المنتج (أو اختَر المنتج من المتجر).` };
+        }
+        try {
+          await handleApiRequest(`/api/products/${storeId}/products/${productId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+          }, null, `فشل حذف ${productName}`);
+          return { message: `تم حذف ${productName} بنجاح.` };
+        } catch (err) {
+          return { message: `تعذر حذف ${productName}: ${err.message}` };
+        }
+      }
+      case 'chat':
+      default:
+        return { message: plan.responseMessage || 'حاضر.' };
+    }
+  }
+
+  async function planUserIntent(message) {
+    const plannerPrompt = `أنت مساعد منفذ أوامر في لوحة التحكم. ارجع فقط JSON صالح بدون أي نص آخر.
+المفاتيح المطلوبة: intent (navigate | addRule | deleteProduct | chat)، params (object)، responseMessage (نص قصير ودود)، requiresConfirmation (true/false).
+القواعد:
+- ضع requiresConfirmation=true لأي إجراء حساس مثل الحذف أو تعديل بيانات مالية.
+- addRule: استخدم type=general لو غير محدد، وضع النص الأصلي في content.
+- navigate: pages المقبولة: bots, rules, chat-page, store-manager, facebook, instagram, whatsapp, messages, feedback, settings, wasenderpro.
+- deleteProduct: إن توفّر اسم منتج فقط ضعه في productName واطلب من المستخدم معرف المنتج إن لم يكن متاحاً.
+- لو الطلب مجرد دردشة أو غير مدعوم، استخدم intent='chat' وresponseMessage للرد.
+أعد JSON فقط.`;
+
+    const aiResponse = await handleApiRequest('/api/bot', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      },
+      body: JSON.stringify({
+        botId: assistantBotId,
+        message,
+        userId,
+        history: conversationHistory,
+        systemPrompt: plannerPrompt,
+      }),
+    }, null, 'فشل في تحليل الطلب');
+
+    try {
+      return JSON.parse(aiResponse.reply || '{}');
+    } catch (err) {
+      return { intent: 'chat', responseMessage: aiResponse.reply || 'لم أفهم الطلب، وضح أكثر.' };
+    }
+  }
+
   async function processMessage(message, lastMessageTimestamp) {
     try {
+      // تأكيد أمر حساس معلق
+      if (pendingAction) {
+        if (isAffirmative(message)) {
+          const result = await executePlannedIntent(pendingAction);
+          appendBotMessage(result.message || 'تم التنفيذ.');
+        } else if (isNegative(message)) {
+          appendBotMessage('تم إلغاء الطلب بناءً على رغبتك.');
+        } else {
+          appendBotMessage('يرجى الرد بنعم أو لا لتأكيد الطلب المعلق.');
+          return;
+        }
+        pendingAction = null;
+        return;
+      }
+
       let internalCommand = parseSimpleCommand(message);
 
       if (internalCommand) {
@@ -131,75 +246,22 @@ document.addEventListener('DOMContentLoaded', () => {
           }
         }
       } else {
-        const systemPrompt = `
-      أنت بوت ذكي اسمه "المساعد الذكي" (ID: ${assistantBotId}). مهمتك الرد على المستخدم بطريقة طبيعية وودودة بناءً على الأسئلة أو العبارات اللي مش أوامر تنفيذية (زي "كيف حالك" أو "شكرًا لك").
+        const plan = await planUserIntent(message);
 
-### أمثلة على الردود:
-- لو المستخدم قال "كيف حالك":
-  - رد بـ: "أنا بخير، شكرًا لسؤالك! وأنت كيف حالك؟"
-- لو المستخدم قال "شكرًا لك":
-  - رد بـ: "العفو! أنا هنا عشان أساعدك في أي وقت."
-- لو المستخدم قال "ممكن تساعدني في ايه":
-  - رد بـ: "يمكنني مساعدتك في العديد من الأمور مثل إدارة البوتات، إضافة أو تعديل القواعد، تصفية الرسائل، تقديم معلومات أو إجابات على استفساراتك. كيف يمكنني مساعدتك بشكل محدد اليوم؟"
-- لو المستخدم قال "صلي على النبي":
-  - رد بـ: "صلى الله عليه وسلم! كيف يمكنني مساعدتك اليوم؟"
+        if (requiresConfirmation(plan.intent) || plan.requiresConfirmation) {
+          pendingAction = plan;
+          const question = plan.confirmationMessage || `هل أنت متأكد أنك تريد تنفيذ الطلب: ${plan.responseMessage || plan.intent}? (نعم/لا)`;
+          appendBotMessage(question);
+          return;
+        }
 
-### تعليمات عامة:
-- لو المستخدم طلب أمر مش واضح، اطلب توضيح (مثال: "من فضلك، وضّح الأمر أكتر").
-- لو الأمر خارج نطاق الصفحات أو الوظائف، رد بـ "عذرًا، هذا الأمر غير متاح حاليًا."
-- حافظ على ذاكرة المحادثة (conversationHistory) عشان تفهم سياق الأسئلة.
-- رد بطريقة طبيعية وودودة دائمًا.
-- لا تحول الأمر لـ JSON ولا تضيف رمز سري لأن الأمر مش تنفيذي.
-
-### الآن، نفّذ الأمر التالي بناءً على التعليمات أعلاه:
-الأمر: "${message}"
-`;
-
-        const messages = [
-          { role: 'system', content: systemPrompt },
-          ...conversationHistory,
-        ];
-
-        const data = await handleApiRequest('/api/bot', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: JSON.stringify({
-            botId: assistantBotId,
-            message,
-            userId,
-            history: conversationHistory,
-          }),
-        }, null, 'فشل في معالجة الرسالة');
-
-        const reply = data.reply || 'عذرًا، لم أفهم طلبك. حاول مرة أخرى!';
-
-        const botMessageDiv = document.createElement('div');
-        botMessageDiv.className = 'message bot-message';
-        botMessageDiv.innerHTML = `
-          <p>${reply}</p>
-          <small>${new Date().toLocaleString('ar-EG')}</small>
-        `;
-        assistantChatMessages.appendChild(botMessageDiv);
-        assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
-        conversationHistory.push({ role: 'assistant', content: reply });
-        updateConversationCache();
+        const result = await executePlannedIntent(plan);
+        appendBotMessage(result.message || plan.responseMessage || 'تم التنفيذ.');
       }
     } catch (err) {
       console.error('خطأ في معالجة الرسالة:', err);
       const errorMessage = 'عذرًا، حدث خطأ أثناء معالجة طلبك. حاول مرة أخرى!';
-      const botMessageDiv = document.createElement('div');
-      botMessageDiv.className = 'message bot-message';
-      botMessageDiv.innerHTML = `
-        <p>${errorMessage}</p>
-        <small>${new Date().toLocaleString('ar-EG')}</small>
-      `;
-      assistantChatMessages.appendChild(botMessageDiv);
-      assistantChatMessages.scrollTop = assistantChatMessages.scrollHeight;
-      conversationHistory.push({ role: 'assistant', content: errorMessage });
-      updateConversationCache();
+      appendBotMessage(errorMessage);
     }
   }
 
