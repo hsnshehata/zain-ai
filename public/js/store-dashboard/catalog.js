@@ -447,6 +447,7 @@
 
         const importBtn = document.getElementById('importProductsBtn');
         const exportAllBtn = document.getElementById('exportProductsAllBtn');
+        const purgeAllBtn = document.getElementById('purgeAllBtn');
 
         importBtn?.addEventListener('click', async (e) => {
             e.preventDefault();
@@ -456,6 +457,11 @@
         exportAllBtn?.addEventListener('click', async (e) => {
             e.preventDefault();
             await exportProductsAndCategories(state, helpers);
+        });
+
+        purgeAllBtn?.addEventListener('click', async (e) => {
+            e.preventDefault();
+            await deleteAllProductsAndCategories(state, helpers);
         });
 
         tableBody?.addEventListener('click', (event) => {
@@ -534,6 +540,62 @@
             helpers.showToast(`تم تصدير ${helpers.formatNumber(allProducts.length)} منتج`, 'success');
         } catch (err) {
             helpers.showToast(err.message || 'تعذر تصدير المنتجات', 'error');
+        }
+    }
+
+    // حذف كل المنتجات وكل الأقسام دفعة واحدة (بحذر شديد)
+    async function deleteAllProductsAndCategories(state, helpers) {
+        try {
+            const storeId = state.store?._id;
+            if (!storeId) throw new Error('معرّف المتجر غير متاح');
+            const headersAuth = { Authorization: `Bearer ${state.token}` };
+
+            const step1 = window.prompt('تحذير: سيتم حذف كل المنتجات وكل الأقسام. اكتب "DELETE ALL" للتأكيد الأول.');
+            if (step1 !== 'DELETE ALL') return;
+            const step2 = window.prompt('تأكيد أخير: اكتب "تأكيد" للحذف النهائي.');
+            if (step2 !== 'تأكيد') return;
+
+            helpers.showToast('جارٍ حذف المنتجات... قد يستغرق بعض الوقت', 'info');
+
+            // اجلب كل المنتجات (تصفح بالصفحات) ثم احذفها
+            const pageSize = 500;
+            let page = 1;
+            let total = 0;
+            const allProducts = [];
+            while (true) {
+                const url = `/api/products/${storeId}/products?limit=${pageSize}&page=${page}`;
+                const resp = await helpers.handleApiRequest(url, { headers: headersAuth }, null, 'فشل في جلب المنتجات');
+                const list = Array.isArray(resp?.products) ? resp.products : [];
+                total = Number(resp?.total) || total;
+                allProducts.push(...list);
+                if (!list.length || allProducts.length >= total) break;
+                page += 1;
+                if (page > 1000) break;
+            }
+
+            for (const prod of allProducts) {
+                try {
+                    await helpers.handleApiRequest(`/api/products/${storeId}/products/${prod._id}`, { method: 'DELETE', headers: headersAuth }, null, `فشل في حذف المنتج ${prod.productName || prod.name || ''}`);
+                } catch (err) {
+                    console.warn('تعذر حذف منتج', prod?._id, err.message);
+                }
+            }
+
+            helpers.showToast('جارٍ حذف الأقسام...', 'info');
+            // احذف الأقسام الحالية
+            const categories = Array.isArray(state.categories) ? state.categories : [];
+            for (const cat of categories) {
+                try {
+                    await helpers.handleApiRequest(`/api/categories/${storeId}/categories/${cat._id}`, { method: 'DELETE', headers: headersAuth }, null, `فشل في حذف القسم ${cat.name || ''}`);
+                } catch (err) {
+                    console.warn('تعذر حذف قسم', cat?._id, err.message);
+                }
+            }
+
+            if (typeof helpers.refreshDashboard === 'function') await helpers.refreshDashboard();
+            helpers.showToast('تم حذف كل المنتجات والأقسام', 'success');
+        } catch (err) {
+            helpers.showToast(err.message || 'فشل في تنفيذ الحذف الشامل', 'error');
         }
     }
 
@@ -822,6 +884,7 @@ function openProductBarcodesModal(state, helpers, product) {
                         <button class="btn btn-secondary btn-sm" id="refreshProductsBtn"><i class="fas fa-sync"></i> تحديث</button>
                         <button class="btn btn-secondary btn-sm" id="importProductsBtn"><i class="fas fa-file-import"></i> استيراد منتجات</button>
                         <button class="btn btn-secondary btn-sm" id="exportProductsAllBtn"><i class="fas fa-file-export"></i> تصدير ♥</button>
+                        <button class="btn btn-danger btn-sm" id="purgeAllBtn" title="حذف كل المنتجات والأقسام"><i class="fas fa-trash"></i> حذف الكل</button>
                         <button class="btn btn-primary" id="addProductBtn"><i class="fas fa-plus"></i> إضافة منتج</button>
                     </div>
                 </div>
