@@ -812,14 +812,32 @@ body.light-mode .chat-input {
 
 /* Mobile specific */
 @media (max-width: 768px) {
+  .chat-page-form-wrapper .color-schemes-carousel-wrapper {
+    padding: 15px 0;
+  }
+  
   .chat-page-form-wrapper .color-schemes-carousel {
-    padding: 15px 10px;
-    gap: 15px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 10px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 400px;
+    scroll-snap-type: none;
   }
   
   .chat-page-form-wrapper .color-scheme-btn {
-    min-width: 160px;
-    font-size: 0.85em;
+    min-width: auto;
+    width: 100%;
+    font-size: 0.8em;
+    padding: 10px 12px;
+    scroll-snap-align: none;
+  }
+  
+  .chat-page-form-wrapper .color-scheme-btn.active,
+  .chat-page-form-wrapper .color-scheme-btn:active {
+    transform: scale(0.95);
   }
 }
 
