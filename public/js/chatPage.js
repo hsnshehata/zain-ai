@@ -238,6 +238,312 @@ async function loadChatPage() {
           outerBackgroundColor: '#F5F5DC',
         },
       },
+      {
+        name: 'أزرق داكن',
+        colors: {
+          titleColor: '#FFFFFF',
+          headerColor: '#1E3A8A',
+          chatAreaBackgroundColor: '#3B82F6',
+          userMessageBackgroundColor: '#2563EB',
+          userMessageTextColor: '#FFFFFF',
+          botMessageBackgroundColor: '#1E3A8A',
+          botMessageTextColor: '#93C5FD',
+          buttonColor: '#2563EB',
+          inputTextColor: '#FFFFFF',
+          sendButtonColor: '#2563EB',
+          containerBackgroundColor: '#3B82F6',
+          outerBackgroundColor: '#1E3A8A',
+        },
+      },
+      {
+        name: 'سماوي حديث',
+        colors: {
+          titleColor: '#FFFFFF',
+          headerColor: '#0891B2',
+          chatAreaBackgroundColor: '#06B6D4',
+          userMessageBackgroundColor: '#0891B2',
+          userMessageTextColor: '#FFFFFF',
+          botMessageBackgroundColor: '#164E63',
+          botMessageTextColor: '#CFFAFE',
+          buttonColor: '#0891B2',
+          inputTextColor: '#FFFFFF',
+          sendButtonColor: '#0891B2',
+          containerBackgroundColor: '#06B6D4',
+          outerBackgroundColor: '#164E63',
+        },
+      },
+      {
+        name: 'أرجواني عميق',
+        colors: {
+          titleColor: '#FFFFFF',
+          headerColor: '#581C87',
+          chatAreaBackgroundColor: '#7E22CE',
+          userMessageBackgroundColor: '#9333EA',
+          userMessageTextColor: '#FFFFFF',
+          botMessageBackgroundColor: '#581C87',
+          botMessageTextColor: '#E9D5FF',
+          buttonColor: '#9333EA',
+          inputTextColor: '#FFFFFF',
+          sendButtonColor: '#9333EA',
+          containerBackgroundColor: '#7E22CE',
+          outerBackgroundColor: '#581C87',
+        },
+      },
+      {
+        name: 'أحمر غروب',
+        colors: {
+          titleColor: '#FFFFFF',
+          headerColor: '#7F1D1D',
+          chatAreaBackgroundColor: '#DC2626',
+          userMessageBackgroundColor: '#F87171',
+          userMessageTextColor: '#7F1D1D',
+          botMessageBackgroundColor: '#7F1D1D',
+          botMessageTextColor: '#FEE2E2',
+          buttonColor: '#F87171',
+          inputTextColor: '#FFFFFF',
+          sendButtonColor: '#F87171',
+          containerBackgroundColor: '#DC2626',
+          outerBackgroundColor: '#7F1D1D',
+        },
+      },
+      {
+        name: 'أخضر صنوبري',
+        colors: {
+          titleColor: '#FFFFFF',
+          headerColor: '#14532D',
+          chatAreaBackgroundColor: '#15803D',
+          userMessageBackgroundColor: '#22C55E',
+          userMessageTextColor: '#FFFFFF',
+          botMessageBackgroundColor: '#14532D',
+          botMessageTextColor: '#DCFCE7',
+          buttonColor: '#22C55E',
+          inputTextColor: '#FFFFFF',
+          sendButtonColor: '#22C55E',
+          containerBackgroundColor: '#15803D',
+          outerBackgroundColor: '#14532D',
+        },
+      },
+      {
+        name: 'برتقالي حار',
+        colors: {
+          titleColor: '#FFFFFF',
+          headerColor: '#92400E',
+          chatAreaBackgroundColor: '#EA580C',
+          userMessageBackgroundColor: '#F97316',
+          userMessageTextColor: '#FFFFFF',
+          botMessageBackgroundColor: '#92400E',
+          botMessageTextColor: '#FFEDD5',
+          buttonColor: '#F97316',
+          inputTextColor: '#FFFFFF',
+          sendButtonColor: '#F97316',
+          containerBackgroundColor: '#EA580C',
+          outerBackgroundColor: '#92400E',
+        },
+      },
+      {
+        name: 'أزرق سماء',
+        colors: {
+          titleColor: '#FFFFFF',
+          headerColor: '#082F49',
+          chatAreaBackgroundColor: '#0369A1',
+          userMessageBackgroundColor: '#0EA5E9',
+          userMessageTextColor: '#FFFFFF',
+          botMessageBackgroundColor: '#082F49',
+          botMessageTextColor: '#E0F2FE',
+          buttonColor: '#0EA5E9',
+          inputTextColor: '#FFFFFF',
+          sendButtonColor: '#0EA5E9',
+          containerBackgroundColor: '#0369A1',
+          outerBackgroundColor: '#082F49',
+        },
+      },
+      {
+        name: 'وردي مجنون',
+        colors: {
+          titleColor: '#FFFFFF',
+          headerColor: '#831843',
+          chatAreaBackgroundColor: '#EC4899',
+          userMessageBackgroundColor: '#F472B6',
+          userMessageTextColor: '#FFFFFF',
+          botMessageBackgroundColor: '#831843',
+          botMessageTextColor: '#FCE7F3',
+          buttonColor: '#F472B6',
+          inputTextColor: '#FFFFFF',
+          sendButtonColor: '#F472B6',
+          containerBackgroundColor: '#EC4899',
+          outerBackgroundColor: '#831843',
+        },
+      },
+      {
+        name: 'أصفر ذهبي',
+        colors: {
+          titleColor: '#FFFFFF',
+          headerColor: '#713F12',
+          chatAreaBackgroundColor: '#D97706',
+          userMessageBackgroundColor: '#FBBF24',
+          userMessageTextColor: '#78350F',
+          botMessageBackgroundColor: '#713F12',
+          botMessageTextColor: '#FEF3C7',
+          buttonColor: '#FBBF24',
+          inputTextColor: '#FFFFFF',
+          sendButtonColor: '#FBBF24',
+          containerBackgroundColor: '#D97706',
+          outerBackgroundColor: '#713F12',
+        },
+      },
+      {
+        name: 'أرجواني فاتح',
+        colors: {
+          titleColor: '#333333',
+          headerColor: '#F3E8FF',
+          chatAreaBackgroundColor: '#EDE9FE',
+          userMessageBackgroundColor: '#A78BFA',
+          userMessageTextColor: '#FFFFFF',
+          botMessageBackgroundColor: '#DDD6FE',
+          botMessageTextColor: '#333333',
+          buttonColor: '#A78BFA',
+          inputTextColor: '#333333',
+          sendButtonColor: '#A78BFA',
+          containerBackgroundColor: '#EDE9FE',
+          outerBackgroundColor: '#F3E8FF',
+        },
+      },
+      {
+        name: 'أخضر فاتح',
+        colors: {
+          titleColor: '#333333',
+          headerColor: '#F0FDF4',
+          chatAreaBackgroundColor: '#ECFDF5',
+          userMessageBackgroundColor: '#86EFAC',
+          userMessageTextColor: '#15803D',
+          botMessageBackgroundColor: '#DCFCE7',
+          botMessageTextColor: '#166534',
+          buttonColor: '#86EFAC',
+          inputTextColor: '#15803D',
+          sendButtonColor: '#86EFAC',
+          containerBackgroundColor: '#ECFDF5',
+          outerBackgroundColor: '#F0FDF4',
+        },
+      },
+      {
+        name: 'أسود وأبيض',
+        colors: {
+          titleColor: '#FFFFFF',
+          headerColor: '#000000',
+          chatAreaBackgroundColor: '#1F1F1F',
+          userMessageBackgroundColor: '#FFFFFF',
+          userMessageTextColor: '#000000',
+          botMessageBackgroundColor: '#000000',
+          botMessageTextColor: '#FFFFFF',
+          buttonColor: '#FFFFFF',
+          inputTextColor: '#FFFFFF',
+          sendButtonColor: '#FFFFFF',
+          containerBackgroundColor: '#1F1F1F',
+          outerBackgroundColor: '#000000',
+        },
+      },
+      {
+        name: 'رمادي معاصر',
+        colors: {
+          titleColor: '#FFFFFF',
+          headerColor: '#374151',
+          chatAreaBackgroundColor: '#4B5563',
+          userMessageBackgroundColor: '#6B7280',
+          userMessageTextColor: '#FFFFFF',
+          botMessageBackgroundColor: '#374151',
+          botMessageTextColor: '#F3F4F6',
+          buttonColor: '#6B7280',
+          inputTextColor: '#FFFFFF',
+          sendButtonColor: '#6B7280',
+          containerBackgroundColor: '#4B5563',
+          outerBackgroundColor: '#374151',
+        },
+      },
+      {
+        name: 'بني دافئ',
+        colors: {
+          titleColor: '#FFFFFF',
+          headerColor: '#5A3A1A',
+          chatAreaBackgroundColor: '#8B6F47',
+          userMessageBackgroundColor: '#A0826D',
+          userMessageTextColor: '#FFFFFF',
+          botMessageBackgroundColor: '#5A3A1A',
+          botMessageTextColor: '#F5E6D3',
+          buttonColor: '#A0826D',
+          inputTextColor: '#FFFFFF',
+          sendButtonColor: '#A0826D',
+          containerBackgroundColor: '#8B6F47',
+          outerBackgroundColor: '#5A3A1A',
+        },
+      },
+      {
+        name: 'أزرق سماوي فاتح',
+        colors: {
+          titleColor: '#0C4A6E',
+          headerColor: '#F0F9FF',
+          chatAreaBackgroundColor: '#E0F2FE',
+          userMessageBackgroundColor: '#BAE6FD',
+          userMessageTextColor: '#0C4A6E',
+          botMessageBackgroundColor: '#E0F2FE',
+          botMessageTextColor: '#0C4A6E',
+          buttonColor: '#BAE6FD',
+          inputTextColor: '#0C4A6E',
+          sendButtonColor: '#BAE6FD',
+          containerBackgroundColor: '#E0F2FE',
+          outerBackgroundColor: '#F0F9FF',
+        },
+      },
+      {
+        name: 'أحمر وردي',
+        colors: {
+          titleColor: '#FFFFFF',
+          headerColor: '#BE123C',
+          chatAreaBackgroundColor: '#E11D48',
+          userMessageBackgroundColor: '#F43F5E',
+          userMessageTextColor: '#FFFFFF',
+          botMessageBackgroundColor: '#BE123C',
+          botMessageTextColor: '#FFE4E6',
+          buttonColor: '#F43F5E',
+          inputTextColor: '#FFFFFF',
+          sendButtonColor: '#F43F5E',
+          containerBackgroundColor: '#E11D48',
+          outerBackgroundColor: '#BE123C',
+        },
+      },
+      {
+        name: 'أخضر مخضر',
+        colors: {
+          titleColor: '#FFFFFF',
+          headerColor: '#065F46',
+          chatAreaBackgroundColor: '#047857',
+          userMessageBackgroundColor: '#10B981',
+          userMessageTextColor: '#FFFFFF',
+          botMessageBackgroundColor: '#065F46',
+          botMessageTextColor: '#D1FAE5',
+          buttonColor: '#10B981',
+          inputTextColor: '#FFFFFF',
+          sendButtonColor: '#10B981',
+          containerBackgroundColor: '#047857',
+          outerBackgroundColor: '#065F46',
+        },
+      },
+      {
+        name: 'بنفسجي وردي',
+        colors: {
+          titleColor: '#FFFFFF',
+          headerColor: '#6D28D9',
+          chatAreaBackgroundColor: '#7C3AED',
+          userMessageBackgroundColor: '#A78BFA',
+          userMessageTextColor: '#FFFFFF',
+          botMessageBackgroundColor: '#6D28D9',
+          botMessageTextColor: '#EDE9FE',
+          buttonColor: '#A78BFA',
+          inputTextColor: '#FFFFFF',
+          sendButtonColor: '#A78BFA',
+          containerBackgroundColor: '#7C3AED',
+          outerBackgroundColor: '#6D28D9',
+        },
+      },
     ];
 
     async function loadChatPageSettings() {
@@ -277,330 +583,361 @@ async function loadChatPage() {
           `.trim();
 
           chatPageContent.innerHTML = `
-            <div class="form-group">
-              <label for="chatLink">رابط صفحة الدردشة:</label>
-              <div class="input-group-container">
-                <div class="input-group">
-                  <input type="text" id="chatLink" value="${data.link}" readonly>
-                </div>
-                <div class="input-group-buttons">
-                  <button id="editLinkBtn" class="submit-btn">تعديل</button>
-                  <button id="copyLinkBtn" class="submit-btn">نسخ الرابط</button>
-                </div>
-              </div>
-              <div id="editLinkForm" style="display: none; margin-top: 10px;">
-                <input type="text" id="newLinkId" placeholder="أدخل الرابط الجديد (أحرف وأرقام فقط، 4 أحرف على الأقل)" style="width: 70%; padding: 5px; margin-right: 5px;">
-                <button id="saveLinkBtn" class="submit-btn">حفظ</button>
-                <button id="cancelLinkBtn" class="submit-btn" style="background-color: #dc3545;">إلغاء</button>
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="floatingButtonCode">كود زر الدعم العائم:</label>
-              <div class="input-group-container">
-                <div class="input-group">
-                  <textarea id="floatingButtonCode" readonly style="width: 100%; height: 150px; resize: none; direction: ltr;">${floatingButtonCode}</textarea>
-                </div>
-                <div class="input-group-buttons">
-                  <button id="copyFloatingButtonCodeBtn" class="submit-btn">نسخ</button>
-                </div>
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="fullIframeCode">كود تضمين صفحة الدردشة:</label>
-              <div class="input-group-container">
-                <div class="input-group">
-                  <textarea id="fullIframeCode" readonly style="width: 100%; height: 100px; resize: none; direction: ltr;">${fullIframeCode}</textarea>
-                </div>
-                <div class="input-group-buttons">
-                  <button id="copyFullIframeCodeBtn" class="submit-btn">نسخ</button>
-                </div>
-              </div>
-            </div>
-            <div class="preview-settings-container">
-              <div class="preview-section">
-                <h3>معاينة صفحة الدردشة</h3>
-                <div class="chat-preview-container" style="padding: 10px;">
-                  <div id="previewChat" class="chat-container" style="
-                    max-width: 400px;
-                    margin: 10px auto;
-                    border-radius: 12px;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-                    overflow: hidden;
-                    direction: rtl;
-                    font-family: 'Arial', sans-serif;
-                  ">
-                    <div class="section-with-settings" id="previewChatHeaderContainer" style="display: ${data.headerHidden ? 'none' : 'block'};">
-                      <div id="previewChatHeader" class="chat-header" style="
-                        padding: 10px 15px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                      ">
-                        <img id="previewChatLogo" class="chat-logo" style="display: ${data.logoUrl ? 'block' : 'none'}; max-width: 40px; max-height: 40px; border-radius: 50%;" src="${data.logoUrl || ''}" alt="Logo">
-                        <h1 id="previewChatTitle" class="chat-title" style="margin: 0; font-size: 1.2em; font-weight: bold;">${data.title}</h1>
-                      </div>
-                      <button class="settings-gear" data-target="header-settings">⚙️</button>
-                      <div id="header-settings" class="settings-popup" style="display: none;">
-                        <button class="close-btn">✕</button>
-                        <div class="color-picker-wrapper">
-                          <label for="titleColor">لون نص العنوان:</label>
-                          <input type="color" class="color-input" id="titleColorInput" data-color-id="titleColor" value="${data.titleColor || '#ffffff'}">
-                        </div>
-                        <div class="color-picker-wrapper">
-                          <label for="headerColor">لون الهيدر:</label>
-                          <input type="color" class="color-input" id="headerColorInput" data-color-id="headerColor" value="${data.colors.header}">
-                        </div>
-                      </div>
+            <div class="chat-page-form-wrapper">
+              <!-- Chat Link Section -->
+              <div class="form-section">
+                <h3><i class="fas fa-link"></i> رابط صفحة الدردشة</h3>
+                <div class="form-group">
+                  <div class="input-group-wrapper">
+                    <div class="input-group-main">
+                      <input type="text" id="chatLink" value="${data.link}" readonly class="chat-link-input">
                     </div>
-                    <div class="section-with-settings">
-                      <div id="previewSuggestedQuestions" class="suggested-questions" style="
-                        display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};
-                        padding: 8px 15px;
-                        flex-wrap: wrap;
-                        gap: 8px;
-                        justify-content: center;
-                        text-align: center;
-                      ">
-                        <!-- الأسئلة هتتعرض ديناميكيًا هنا -->
-                      </div>
-                      <button class="settings-gear" data-target="suggested-questions-settings" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};" id="suggestedQuestionsGear">⚙️</button>
-                      <div id="suggested-questions-settings" class="settings-popup" style="display: none;">
-                        <button class="close-btn">✕</button>
-                        <div class="color-picker-wrapper">
-                          <label for="buttonColor">لون الأزرار المقترحة:</label>
-                          <input type="color" class="color-input" id="buttonColorInput" data-color-id="buttonColor" value="${data.colors.button}">
-                        </div>
-                      </div>
+                    <div class="input-group-actions">
+                      <button id="copyLinkBtn" class="action-btn copy-btn" title="نسخ الرابط">
+                        <i class="fas fa-copy"></i>
+                      </button>
+                      <button id="editLinkBtn" class="action-btn edit-btn" title="تعديل الرابط">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <a href="${data.link}" target="_blank" class="action-btn visit-btn" title="الذهاب للصفحة">
+                        <i class="fas fa-external-link-alt"></i>
+                      </a>
                     </div>
-                    <div class="section-with-settings">
-                      <div id="previewChatMessages" class="chat-messages" style="
-                        padding: 10px;
-                        height: 200px;
-                        overflow-y: auto;
-                        display: flex;
-                        flex-direction: column;
-                        gap: 8px;
-                      ">
-                        <div class="message user-message" style="
-                          max-width: 70%;
-                          padding: 8px 12px;
-                          border-radius: 12px;
-                          line-height: 1.4;
-                          word-wrap: break-word;
-                          align-self: flex-end;
-                          margin-left: 10px;
-                          border-bottom-right-radius: 4px;
-                        ">رسالة المستخدم</div>
-                        <div class="message bot-message" style="
-                          max-width: 70%;
-                          padding: 8px 12px;
-                          border-radius: 12px;
-                          line-height: 1.4;
-                          word-wrap: break-word;
-                          align-self: flex-start;
-                          margin-right: 10px;
-                          border-bottom-left-radius: 4px;
-                        ">رد البوت</div>
-                      </div>
-                      <button class="settings-gear" data-target="messages-settings">⚙️</button>
-                      <div id="messages-settings" class="settings-popup" style="display: none;">
-                        <button class="close-btn">✕</button>
-                        <div class="color-picker-wrapper">
-                          <label for="chatAreaBackgroundColor">لون خلفية مربع الدردشة:</label>
-                          <input type="color" class="color-input" id="chatAreaBackgroundColorInput" data-color-id="chatAreaBackgroundColor" value="${data.colors.chatAreaBackground || '#ffffff'}">
-                        </div>
-                        <div class="color-picker-wrapper">
-                          <label for="userMessageBackgroundColor">لون فقاعة المستخدم:</label>
-                          <input type="color" class="color-input" id="userMessageBackgroundColorInput" data-color-id="userMessageBackgroundColor" value="${data.colors.userMessageBackground || '#007bff'}">
-                        </div>
-                        <div class="color-picker-wrapper">
-                          <label for="userMessageTextColor">لون نص المستخدم:</label>
-                          <input type="color" class="color-input" id="userMessageTextColorInput" data-color-id="userMessageTextColor" value="${data.colors.userMessageTextColor || '#ffffff'}">
-                        </div>
-                        <div class="color-picker-wrapper">
-                          <label for="botMessageBackgroundColor">لون فقاعة البوت:</label>
-                          <input type="color" class="color-input" id="botMessageBackgroundColorInput" data-color-id="botMessageBackgroundColor" value="${data.colors.botMessageBackground || '#e9ecef'}">
-                        </div>
-                        <div class="color-picker-wrapper">
-                          <label for="botMessageTextColor">لون نص البوت:</label>
-                          <input type="color" class="color-input" id="botMessageTextColorInput" data-color-id="botMessageTextColor" value="${data.colors.botMessageTextColor || '#000000'}">
-                        </div>
-                      </div>
+                  </div>
+                  <div id="editLinkForm" class="edit-link-form" style="display: none;">
+                    <input type="text" id="newLinkId" placeholder="أدخل الرابط الجديد (أحرف وأرقام فقط، 4 أحرف على الأقل)" class="link-input">
+                    <div class="form-actions">
+                      <button id="saveLinkBtn" class="action-btn save-btn">
+                        <i class="fas fa-check"></i> حفظ
+                      </button>
+                      <button id="cancelLinkBtn" class="action-btn cancel-btn">
+                        <i class="fas fa-times"></i> إلغاء
+                      </button>
                     </div>
-                    <div class="section-with-settings">
-                      <div class="chat-input" style="
-                        display: flex;
-                        align-items: center;
-                        padding: 10px 15px;
-                        gap: 8px;
-                        border-top: 1px solid #e0e0e0;
-                        margin-bottom: -15px;
-                      ">
-                        <input type="text" id="previewMessageInput" placeholder="اكتب رسالتك..." style="
-                          flex: 1;
-                          padding: 8px;
-                          border: none;
-                          border-radius: 8px;
-                          font-size: 0.9em;
-                          outline: none;
-                          background-color: rgba(255, 255, 255, 0.1);
-                          backdrop-filter: blur(5px);
-                          -webkit-backdrop-filter: blur(5px);
-                        ">
-                        <label id="previewImageInputBtn" for="previewImageInput" style="
-                          display: ${data.imageUploadEnabled ? 'flex' : 'none'};
-                          background-color: ${data.colors.sendButtonColor || '#007bff'};
-                          border: none;
-                          border-radius: 50%;
-                          width: 40px;
-                          height: 40px;
-                          justify-content: center;
-                          align-items: center;
-                          cursor: pointer;
-                          transition: transform 0.2s, background-color: 0.3s;
-                        ">
-                          <i class="fas fa-image" style="color: #ffffff; font-size: 18px;"></i>
-                          <input type="file" id="previewImageInput" accept="image/*" style="display: none;">
-                        </label>
-                        <button id="previewSendMessageBtn" style="
-                          background-color: ${data.colors.sendButtonColor || '#007bff'};
-                          border: none;
-                          border-radius: 50%;
-                          width: 40px;
-                          height: 40px;
+                  </div>
+                </div>
+              </div>
+
+              <!-- Codes Section -->
+              <div class="form-section">
+                <h3><i class="fas fa-code"></i> أكواد التضمين</h3>
+                
+                <div class="code-box">
+                  <div class="code-header">
+                    <span class="code-title">زر الدعم العائم</span>
+                    <button id="copyFloatingButtonCodeBtn" class="copy-code-btn">
+                      <i class="fas fa-copy"></i> نسخ
+                    </button>
+                  </div>
+                  <textarea id="floatingButtonCode" readonly class="code-textarea">${floatingButtonCode}</textarea>
+                </div>
+
+                <div class="code-box">
+                  <div class="code-header">
+                    <span class="code-title">تضمين كامل الصفحة</span>
+                    <button id="copyFullIframeCodeBtn" class="copy-code-btn">
+                      <i class="fas fa-copy"></i> نسخ
+                    </button>
+                  </div>
+                  <textarea id="fullIframeCode" readonly class="code-textarea">${fullIframeCode}</textarea>
+                </div>
+              </div>
+
+              <!-- Preview and Settings -->
+              <div class="preview-settings-container">
+                <div class="preview-section">
+                  <h3><i class="fas fa-eye"></i> معاينة صفحة الدردشة</h3>
+                  <div class="chat-preview-container" style="padding: 10px;">
+                    <div id="previewChat" class="chat-container" style="
+                      max-width: 400px;
+                      margin: 10px auto;
+                      border-radius: 12px;
+                      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+                      overflow: hidden;
+                      direction: rtl;
+                      font-family: 'Arial', sans-serif;
+                    ">
+                      <div class="section-with-settings" id="previewChatHeaderContainer" style="display: ${data.headerHidden ? 'none' : 'block'};">
+                        <div id="previewChatHeader" class="chat-header" style="
+                          padding: 10px 15px;
                           display: flex;
-                          justify-content: center;
                           align-items: center;
-                          cursor: pointer;
-                          transition: transform 0.2s, background-color: 0.3s;
+                          justify-content: center;
                         ">
-                          <i class="fas fa-arrow-up" style="color: #ffffff; font-size: 18px;"></i>
+                          <img id="previewChatLogo" class="chat-logo" style="display: ${data.logoUrl ? 'block' : 'none'}; max-width: 40px; max-height: 40px; border-radius: 50%;" src="${data.logoUrl || ''}" alt="Logo">
+                          <h1 id="previewChatTitle" class="chat-title" style="margin: 0; font-size: 1.2em; font-weight: bold;">${data.title}</h1>
+                        </div>
+                        <button class="settings-gear" data-target="header-settings" style="background: rgba(0, 0, 0, 0.15); border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255, 255, 255, 0.3); cursor: pointer; transition: all 0.3s ease; font-size: 18px;">⚙️</button>
+                        <div id="header-settings" class="settings-popup" style="display: none;">
+                          <button class="close-btn">✕</button>
+                          <div class="color-picker-wrapper">
+                            <label for="titleColor">لون نص العنوان:</label>
+                            <input type="color" class="color-input" id="titleColorInput" data-color-id="titleColor" value="${data.titleColor || '#ffffff'}">
+                          </div>
+                          <div class="color-picker-wrapper">
+                            <label for="headerColor">لون الهيدر:</label>
+                            <input type="color" class="color-input" id="headerColorInput" data-color-id="headerColor" value="${data.colors.header}">
+                          </div>
+                        </div>
+                      </div>
+                      <div class="section-with-settings">
+                        <div id="previewSuggestedQuestions" class="suggested-questions" style="
+                          display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};
+                          padding: 8px 15px;
+                          flex-wrap: wrap;
+                          gap: 8px;
+                          justify-content: center;
+                          text-align: center;
+                        ">
+                          <!-- الأسئلة هتتعرض ديناميكيًا هنا -->
+                        </div>
+                        <button class="settings-gear" data-target="suggested-questions-settings" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'}; background: rgba(0, 0, 0, 0.15); border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255, 255, 255, 0.3); cursor: pointer; transition: all 0.3s ease; font-size: 18px;" id="suggestedQuestionsGear">⚙️</button>
+                        <div id="suggested-questions-settings" class="settings-popup" style="display: none;">
+                          <button class="close-btn">✕</button>
+                          <div class="color-picker-wrapper">
+                            <label for="buttonColor">لون الأزرار المقترحة:</label>
+                            <input type="color" class="color-input" id="buttonColorInput" data-color-id="buttonColor" value="${data.colors.button}">
+                          </div>
+                        </div>
+                      </div>
+                      <div class="section-with-settings">
+                        <div id="previewChatMessages" class="chat-messages" style="
+                          padding: 10px;
+                          height: 200px;
+                          overflow-y: auto;
+                          display: flex;
+                          flex-direction: column;
+                          gap: 8px;
+                        ">
+                          <div class="message user-message" style="
+                            max-width: 70%;
+                            padding: 8px 12px;
+                            border-radius: 12px;
+                            line-height: 1.4;
+                            word-wrap: break-word;
+                            align-self: flex-end;
+                            margin-left: 10px;
+                            border-bottom-right-radius: 4px;
+                          ">رسالة المستخدم</div>
+                          <div class="message bot-message" style="
+                            max-width: 70%;
+                            padding: 8px 12px;
+                            border-radius: 12px;
+                            line-height: 1.4;
+                            word-wrap: break-word;
+                            align-self: flex-start;
+                            margin-right: 10px;
+                            border-bottom-left-radius: 4px;
+                          ">رد البوت</div>
+                        </div>
+                        <button class="settings-gear" data-target="messages-settings" style="background: rgba(0, 0, 0, 0.15); border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255, 255, 255, 0.3); cursor: pointer; transition: all 0.3s ease; font-size: 18px;">⚙️</button>
+                        <div id="messages-settings" class="settings-popup" style="display: none;">
+                          <button class="close-btn">✕</button>
+                          <div class="color-picker-wrapper">
+                            <label for="chatAreaBackgroundColor">لون خلفية مربع الدردشة:</label>
+                            <input type="color" class="color-input" id="chatAreaBackgroundColorInput" data-color-id="chatAreaBackgroundColor" value="${data.colors.chatAreaBackground || '#ffffff'}">
+                          </div>
+                          <div class="color-picker-wrapper">
+                            <label for="userMessageBackgroundColor">لون فقاعة المستخدم:</label>
+                            <input type="color" class="color-input" id="userMessageBackgroundColorInput" data-color-id="userMessageBackgroundColor" value="${data.colors.userMessageBackground || '#007bff'}">
+                          </div>
+                          <div class="color-picker-wrapper">
+                            <label for="userMessageTextColor">لون نص المستخدم:</label>
+                            <input type="color" class="color-input" id="userMessageTextColorInput" data-color-id="userMessageTextColor" value="${data.colors.userMessageTextColor || '#ffffff'}">
+                          </div>
+                          <div class="color-picker-wrapper">
+                            <label for="botMessageBackgroundColor">لون فقاعة البوت:</label>
+                            <input type="color" class="color-input" id="botMessageBackgroundColorInput" data-color-id="botMessageBackgroundColor" value="${data.colors.botMessageBackground || '#e9ecef'}">
+                          </div>
+                          <div class="color-picker-wrapper">
+                            <label for="botMessageTextColor">لون نص البوت:</label>
+                            <input type="color" class="color-input" id="botMessageTextColorInput" data-color-id="botMessageTextColor" value="${data.colors.botMessageTextColor || '#000000'}">
+                          </div>
+                        </div>
+                      </div>
+                      <div class="section-with-settings">
+                        <div class="chat-input" style="
+                          display: flex;
+                          align-items: center;
+                          padding: 10px 15px;
+                          gap: 8px;
+                          border-top: 1px solid #e0e0e0;
+                          margin-bottom: -15px;
+                        ">
+                          <input type="text" id="previewMessageInput" placeholder="اكتب رسالتك..." style="
+                            flex: 1;
+                            padding: 8px;
+                            border: none;
+                            border-radius: 8px;
+                            font-size: 0.9em;
+                            outline: none;
+                            background-color: rgba(255, 255, 255, 0.1);
+                            backdrop-filter: blur(5px);
+                            -webkit-backdrop-filter: blur(5px);
+                          ">
+                          <label id="previewImageInputBtn" for="previewImageInput" style="
+                            display: ${data.imageUploadEnabled ? 'flex' : 'none'};
+                            background-color: ${data.colors.sendButtonColor || '#007bff'};
+                            border: none;
+                            border-radius: 50%;
+                            width: 40px;
+                            height: 40px;
+                            justify-content: center;
+                            align-items: center;
+                            cursor: pointer;
+                            transition: transform 0.2s, background-color: 0.3s;
+                          ">
+                            <i class="fas fa-image" style="color: #ffffff; font-size: 18px;"></i>
+                            <input type="file" id="previewImageInput" accept="image/*" style="display: none;">
+                          </label>
+                          <button id="previewSendMessageBtn" style="
+                            background-color: ${data.colors.sendButtonColor || '#007bff'};
+                            border: none;
+                            border-radius: 50%;
+                            width: 40px;
+                            height: 40px;
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            cursor: pointer;
+                            transition: transform 0.2s, background-color: 0.3s;
+                          ">
+                            <i class="fas fa-arrow-up" style="color: #ffffff; font-size: 18px;"></i>
+                          </button>
+                        </div>
+                        <button class="settings-gear" data-target="input-settings" style="background: rgba(0, 0, 0, 0.15); border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(255, 255, 255, 0.3); cursor: pointer; transition: all 0.3s ease; font-size: 18px;">⚙️</button>
+                        <div id="input-settings" class="settings-popup" style="display: none;">
+                          <button class="close-btn">✕</button>
+                          <div class="color-picker-wrapper">
+                            <label for="inputTextColor">لون نص مربع الإدخال:</label>
+                            <input type="color" class="color-input" id="inputTextColorInput" data-color-id="inputTextColor" value="${data.colors.inputTextColor || '#333333'}">
+                          </div>
+                          <div class="color-picker-wrapper">
+                            <label for="sendButtonColor">لون زر الإرسال:</label>
+                            <input type="color" class="color-input" id="sendButtonColorInput" data-color-id="sendButtonColor" value="${data.colors.sendButtonColor || '#007bff'}">
+                          </div>
+                          <div class="color-picker-wrapper">
+                            <label for="containerBackgroundColor">لون خلفية حاوية الدردشة:</label>
+                            <input type="color" class="color-input" id="containerBackgroundColorInput" data-color-id="containerBackgroundColor" value="${data.colors.containerBackgroundColor || '#ffffff'}">
+                          </div>
+                          <div class="color-picker-wrapper">
+                            <label for="outerBackgroundColor">لون الخلفية الخارجية (المحيطة):</label>
+                            <input type="color" class="color-input" id="outerBackgroundColorInput" data-color-id="outerBackgroundColor" value="${data.colors.outerBackgroundColor || '#000000'}">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Color Schemes Section - Below Preview -->
+                <div style="margin-top: 30px; padding: 20px; background: var(--chat-section-bg, #ffffff); border-radius: 12px; border: 1px solid var(--border-color, #e0e0e0); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
+                  <label style="font-size: 1.1em; color: var(--text-primary, #333); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-weight: 600;"><i class="fas fa-palette"></i> نماذج الألوان المقترحة</label>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;">
+                    ${colorSchemes
+                      .map(
+                        (scheme, index) => `
+                        <button type="button" class="color-scheme-btn" data-scheme-index="${index}" style="
+                          background: linear-gradient(
+                            45deg,
+                            ${scheme.colors.headerColor} 20%,
+                            ${scheme.colors.inputTextColor} 20%, ${scheme.colors.inputTextColor} 40%,
+                            ${scheme.colors.userMessageBackgroundColor} 40%, ${scheme.colors.userMessageBackgroundColor} 60%,
+                            ${scheme.colors.botMessageBackgroundColor} 60%, ${scheme.colors.botMessageBackgroundColor} 80%,
+                            ${scheme.colors.buttonColor} 80%
+                          );
+                          color: #ffffff;
+                          padding: 8px 16px;
+                          border: 2px solid transparent;
+                          border-radius: 20px;
+                          cursor: pointer;
+                          font-size: 0.85em;
+                          transition: all 0.3s ease;
+                          font-weight: 600;
+                        ">
+                          ${scheme.name}
+                        </button>
+                      `
+                      )
+                      .join('')}
+                  </div>
+                </div>
+
+                <!-- Settings Section -->
+                <div class="settings-section">
+                  <h3><i class="fas fa-sliders-h"></i> إعدادات الدردشة</h3>
+                  
+                  <form id="customizationForm" class="settings-form" enctype="multipart/form-data">
+                    <!-- Title -->
+                    <div class="form-group">
+                      <label for="title"><i class="fas fa-heading"></i> عنوان الصفحة:</label>
+                      <input type="text" id="title" name="title" value="${data.title}" required placeholder="أدخل عنوان الصفحة" class="form-input">
+                    </div>
+
+                    <!-- Logo Upload -->
+                    <div class="form-group logo-upload-group">
+                      <label><i class="fas fa-image"></i> شعار الصفحة</label>
+                      <div class="logo-upload-container">
+                        <label for="logo" class="logo-upload-btn">
+                          <i class="fas fa-cloud-upload-alt"></i>
+                          <span>اختر صورة</span>
+                          <input type="file" id="logo" name="logo" accept="image/png" style="display: none;">
+                        </label>
+                        <div class="logo-preview-container">
+                          <div class="logo-preview-box">
+                            ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo Preview" class="logo-preview-img" />` : '<p>لم يتم تحديد صورة</p>'}
+                          </div>
+                          <img id="logoPreview" class="logo-preview-img" style="display: none;" alt="Logo Preview" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Checkboxes -->
+                    <div class="form-group checkboxes-group">
+                      <div class="checkbox-item">
+                        <label class="checkbox-label">
+                          <input type="checkbox" id="headerHidden" name="headerHidden" ${data.headerHidden ? 'checked' : ''}>
+                          <span class="checkbox-text"><i class="fas fa-eye-slash"></i> إخفاء الهيدر</span>
+                        </label>
+                      </div>
+
+                      <div class="checkbox-item">
+                        <label class="checkbox-label">
+                          <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled" ${data.imageUploadEnabled ? 'checked' : ''}>
+                          <span class="checkbox-text"><i class="fas fa-image"></i> تفعيل إرفاق الصور</span>
+                        </label>
+                      </div>
+
+                      <div class="checkbox-item">
+                        <label class="checkbox-label">
+                          <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled" ${data.suggestedQuestionsEnabled ? 'checked' : ''}>
+                          <span class="checkbox-text"><i class="fas fa-lightbulb"></i> تفعيل الأسئلة المقترحة</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <!-- Suggested Questions -->
+                    <div id="suggestedQuestionsContainer" class="form-group suggested-questions-group" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
+                      <label><i class="fas fa-comments"></i> إدارة الأسئلة المقترحة</label>
+                      <div class="question-input-group">
+                        <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا" class="form-input">
+                        <button type="button" id="addQuestionBtn" class="btn-add">
+                          <i class="fas fa-plus"></i>
                         </button>
                       </div>
-                      <button class="settings-gear" data-target="input-settings">⚙️</button>
-                      <div id="input-settings" class="settings-popup" style="display: none;">
-                        <button class="close-btn">✕</button>
-                        <div class="color-picker-wrapper">
-                          <label for="inputTextColor">لون نص مربع الإدخال:</label>
-                          <input type="color" class="color-input" id="inputTextColorInput" data-color-id="inputTextColor" value="${data.colors.inputTextColor || '#333333'}">
-                        </div>
-                        <div class="color-picker-wrapper">
-                          <label for="sendButtonColor">لون زر الإرسال:</影像>
-                          <input type="color" class="color-input" id="sendButtonColorInput" data-color-id="sendButtonColor" value="${data.colors.sendButtonColor || '#007bff'}">
-                        </div>
-                        <div class="color-picker-wrapper">
-                          <label for="containerBackgroundColor">لون خلفية حاوية الدردشة:</label>
-                          <input type="color" class="color-input" id="containerBackgroundColorInput" data-color-id="containerBackgroundColor" value="${data.colors.containerBackgroundColor || '#ffffff'}">
-                        </div>
-                        <div class="color-picker-wrapper">
-                          <label for="outerBackgroundColor">لون الخلفية الخارجية (المحيطة):</label>
-                          <input type="color" class="color-input" id="outerBackgroundColorInput" data-color-id="outerBackgroundColor" value="${data.colors.outerBackgroundColor || '#000000'}">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div class="settings-section">
-                  <h3>نماذج الألوان</h3>
-                  <div class="color-schemes-container">
-                    <div class="color-schemes-buttons" style="
-                      display: flex;
-                      flex-wrap: wrap;
-                      gap: 8px;
-                      justify-content: center;
-                      max-width: 400px;
-                      margin: 0 auto;
-                    ">
-                      ${colorSchemes
-                        .map(
-                          (scheme, index) => `
-                          <button class="color-scheme-btn" data-scheme-index="${index}" style="
-                            background: linear-gradient(
-                              45deg,
-                              ${scheme.colors.headerColor} 20%,
-                              ${scheme.colors.inputTextColor} 20%, ${scheme.colors.inputTextColor} 40%,
-                              ${scheme.colors.userMessageBackgroundColor} 40%, ${scheme.colors.userMessageBackgroundColor} 60%,
-                              ${scheme.colors.botMessageBackgroundColor} 60%, ${scheme.colors.botMessageBackgroundColor} 80%,
-                              ${scheme.colors.buttonColor} 80%
-                            );
-                            color: #ffffff;
-                            padding: 6px 12px;
-                            border: none;
-                            border-radius: 16px;
-                            cursor: pointer;
-                            font-size: 0.8em;
-                            margin: 3px;
-                            transition: transform 0.2s;
-                            flex: 1 1 auto;
-                            box-sizing: border-box;
-                          ">
-                            ${scheme.name}
-                          </button>
-                        `
-                        )
-                        .join('')}
-                    </div>
-                  </div>
-                  <form id="customizationForm" class="settings-group" enctype="multipart/form-data">
-                    <div class="form-group">
-                      <label for="title">عنوان الصفحة:</label>
-                      <input type="text" id="title" name="title" value="${data.title}" required placeholder="أدخل عنوان الصفحة">
-                    </div>
-                    <div class="form-group logo-section">
-                      <label for="logo">شعار الصفحة (PNG):</label>
-                      <label for="logo" style="
-                        background-color: ${data.colors.sendButtonColor || '#007bff'};
-                        border: none;
-                        border-radius: 50%;
-                        width: 40px;
-                        height: 40px;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        cursor: pointer;
-                        transition: transform 0.2s, background-color: 0.3s;
-                      ">
-                        <i class="fas fa-image" style="color: #ffffff; font-size: 18px;"></i>
-                        <input type="file" id="logo" name="logo" accept="image/png" style="display: none;">
-                      </label>
-                      <div class="logo-preview-container">
-                        <p style="font-size: 0.8em; margin-bottom: 5px;">الشعار الحالي:</p>
-                        ${data.logoUrl ? `<img src="${data.logoUrl}" alt="Logo Preview" class="logo-preview-img" />` : '<p style="font-size: 0.8em;">لا يوجد</p>'}
-                      </div>
-                      <img id="logoPreview" class="logo-preview-img" style="display: none;" alt="Logo Preview" />
-                    </div>
-                    <div class="form-group checkbox-group">
-                      <label class="checkbox-label">
-                        <input type="checkbox" id="headerHidden" name="headerHidden" ${data.headerHidden ? 'checked' : ''}>
-                        إخفاء الهيدر
-                      </label>
-                    </div>
-                    <div class="form-group checkbox-group">
-                      <label class="checkbox-label">
-                        <input type="checkbox" id="suggestedQuestionsEnabled" name="suggestedQuestionsEnabled" ${data.suggestedQuestionsEnabled ? 'checked' : ''}>
-                        تفعيل الأسئلة المقترحة
-                      </label>
-                    </div>
-                    <div id="suggestedQuestionsContainer" class="suggested-questions-container" style="display: ${data.suggestedQuestionsEnabled ? 'block' : 'none'};">
-                      <h3>إدارة الأسئلة المقترحة</h3>
-                      <div class="question-input-group">
-                        <input type="text" id="newQuestion" placeholder="أدخل سؤالًا جديدًا">
-                        <button type="button" id="addQuestionBtn" class="submit-btn">إضافة سؤال</button>
-                      </div>
                       <ul id="questionsList" class="questions-list"></ul>
-                      <p class="suggested-questions-note">20 سؤال عدد جيد، 50 مثالي، وكلما زادت قل التكرار أثناء المحادثة. ملاحظة: الأسئلة تظهر بترتيب عشوائي في كل مرة.</p>
+                      <p class="questions-note"><i class="fas fa-info-circle"></i> 20 سؤال عدد جيد، 50 مثالي</p>
                     </div>
-                    <div class="form-group checkbox-group">
-                      <label class="checkbox-label">
-                        <input type="checkbox" id="imageUploadEnabled" name="imageUploadEnabled" ${data.imageUploadEnabled ? 'checked' : ''}>
-                        تفعيل إرفاق الصور
-                      </label>
-                    </div>
-                    <button type="submit" class="submit-btn">حفظ الإعدادات</button>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="submit-btn-main">
+                      <i class="fas fa-save"></i> حفظ الإعدادات
+                    </button>
                   </form>
                 </div>
               </div>
-            `;
+            </div>
+          `;
 
           const previewChat = document.getElementById('previewChat');
           const previewChatHeader = document.getElementById('previewChatHeader');
@@ -676,6 +1013,25 @@ async function loadChatPage() {
               const isVisible = popup.style.display === 'block';
               document.querySelectorAll('.settings-popup').forEach(p => p.style.display = 'none');
               popup.style.display = isVisible ? 'none' : 'block';
+              
+              // تأثير الدوران عند الضغط
+              gear.style.transform = 'rotate(90deg)';
+              setTimeout(() => {
+                gear.style.transform = 'rotate(0deg)';
+              }, 300);
+            });
+            
+            // تأثير عند المرور
+            gear.addEventListener('mouseenter', () => {
+              gear.style.background = 'rgba(0, 0, 0, 0.25)';
+              gear.style.boxShadow = '0 0 10px rgba(0, 0, 0, 0.3)';
+              gear.style.transform = 'scale(1.1)';
+            });
+            
+            gear.addEventListener('mouseleave', () => {
+              gear.style.background = 'rgba(0, 0, 0, 0.15)';
+              gear.style.boxShadow = 'none';
+              gear.style.transform = 'scale(1)';
             });
           });
 
