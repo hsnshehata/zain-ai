@@ -833,7 +833,7 @@ async function loadChatPage() {
                 <!-- Color Schemes Section - Below Preview -->
                 <div style="margin-top: 30px; padding: 20px; background: var(--chat-section-bg, #ffffff); border-radius: 12px; border: 1px solid var(--border-color, #e0e0e0); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
                   <label style="font-size: 1.1em; color: var(--text-primary, #333); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-weight: 600;"><i class="fas fa-palette"></i> نماذج الألوان المقترحة</label>
-                  <p style="font-size: 0.9em; color: var(--text-secondary, #666); margin-bottom: 10px;"><i class="fas fa-hand-pointer"></i> مرر لمعاينة النماذج</p>
+                  <p style="font-size: 0.9em; color: var(--text-secondary, #666); margin-bottom: 10px;"><i class="fas fa-hand-pointer"></i> اضغط على أي نموذج لتطبيقه</p>
                   <div class="color-schemes-carousel-wrapper">
                     <div class="color-schemes-carousel" id="colorSchemesCarousel">
                       ${colorSchemes
@@ -1054,7 +1054,14 @@ async function loadChatPage() {
 
           // Intersection Observer للتطبيق التلقائي عند التمرير
           const carousel = document.getElementById('colorSchemesCarousel');
+          let userHasScrolled = false; // Flag لمنع التطبيق التلقائي عند التحميل
+          
           if (carousel && 'IntersectionObserver' in window) {
+            // مراقبة scroll للتأكد إن المستخدم بدأ يتفاعل
+            carousel.addEventListener('scroll', () => {
+              userHasScrolled = true;
+            }, { once: true });
+            
             const observerOptions = {
               root: carousel,
               rootMargin: '0px',
@@ -1063,7 +1070,8 @@ async function loadChatPage() {
 
             const observer = new IntersectionObserver((entries) => {
               entries.forEach(entry => {
-                if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+                // نطبق بس لو المستخدم عمل scroll فعلاً
+                if (entry.isIntersecting && entry.intersectionRatio >= 0.6 && userHasScrolled) {
                   const btn = entry.target;
                   
                   // إزالة active من الجميع وإضافتها للعنصر الحالي
