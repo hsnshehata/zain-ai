@@ -8,7 +8,7 @@ try {
     let isInitialLoad = true; // Flag to control initial load
 
     // Valid pages to prevent unexpected page loads
-    const validPages = ['overview', 'bots', 'rules', 'chat-page', 'store-manager', 'facebook', 'instagram', 'whatsapp', 'messages', 'feedback', 'wasenderpro', 'settings'];
+    const validPages = ['overview', 'bots', 'rules', 'chat-page', 'store-manager', 'channels', 'facebook', 'instagram', 'whatsapp', 'messages', 'feedback', 'wasenderpro', 'settings'];
 
     // Pages configuration for dashboard cards
     const pages = [
@@ -185,6 +185,7 @@ try {
       "store-manager": "/js/store-dashboard/main.js",
       messages: "/js/messages.js",
       feedback: "/js/feedback.js",
+      channels: "/js/channels.js",
       facebook: "/js/facebook.js",
       instagram: "/js/instagram.js",
       whatsapp: "/js/whatsapp.js",
@@ -869,7 +870,7 @@ try {
         return;
       }
 
-      const allowedInitialPage = initialHash || (role === "superadmin" ? "bots" : "rules");
+      const allowedInitialPage = initialHash || "overview";
       if (isInitialLoad && page !== allowedInitialPage) {
         console.warn(`⚠️ Attempted to load ${page} during initial load, allowed: ${allowedInitialPage}`);
         return;
@@ -920,6 +921,11 @@ try {
             const loadStoreManagerPage = await waitForFunction("loadStoreManagerPage");
             console.log(`Loading store-manager page`);
             await loadStoreManagerPage();
+            break;
+          case "channels":
+            const loadChannelsPage = await waitForFunction("loadChannelsPage");
+            console.log(`Loading channels page`);
+            await loadChannelsPage();
             break;
           case "facebook":
             const loadFacebookPage = await waitForFunction("loadFacebookPage");
