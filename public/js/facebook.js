@@ -1,11 +1,11 @@
 // public/js/facebook.js
 
-async function loadFacebookPage() {
+async function loadFacebookPage(rootEl = document.getElementById("content")) {
   const link = document.createElement("link");
   link.rel = "stylesheet";
   link.href = "/css/facebook.css";
   document.head.appendChild(link);
-  const content = document.getElementById("content");
+  const content = rootEl || document.getElementById("content");
   const token = localStorage.getItem("token");
   const selectedBotId = localStorage.getItem("selectedBotId");
 
