@@ -1052,49 +1052,6 @@ async function loadChatPage() {
             });
           });
 
-          // Intersection Observer للتطبيق التلقائي عند التمرير
-          const carousel = document.getElementById('colorSchemesCarousel');
-          let userHasScrolled = false; // Flag لمنع التطبيق التلقائي عند التحميل
-          
-          if (carousel && 'IntersectionObserver' in window) {
-            // مراقبة scroll للتأكد إن المستخدم بدأ يتفاعل
-            carousel.addEventListener('scroll', () => {
-              userHasScrolled = true;
-            }, { once: true });
-            
-            const observerOptions = {
-              root: carousel,
-              rootMargin: '0px',
-              threshold: 0.6
-            };
-
-            const observer = new IntersectionObserver((entries) => {
-              entries.forEach(entry => {
-                // نطبق بس لو المستخدم عمل scroll فعلاً
-                if (entry.isIntersecting && entry.intersectionRatio >= 0.6 && userHasScrolled) {
-                  const btn = entry.target;
-                  
-                  // إزالة active من الجميع وإضافتها للعنصر الحالي
-                  document.querySelectorAll('.color-scheme-btn').forEach(b => b.classList.remove('active'));
-                  btn.classList.add('active');
-                  
-                  // تطبيق الألوان تلقائياً
-                  const schemeIndex = btn.getAttribute('data-scheme-index');
-                  const selectedScheme = colorSchemes[schemeIndex];
-                  colorValues = { ...selectedScheme.colors };
-                  updatePreviewStyles();
-                  
-                  console.log('🎨 Auto-applied scheme on scroll:', btn.textContent);
-                }
-              });
-            }, observerOptions);
-
-            // مراقبة كل الأزرار
-            document.querySelectorAll('.color-scheme-btn').forEach(btn => {
-              observer.observe(btn);
-            });
-          }
-
           setTimeout(() => {
             const colorInputs = document.querySelectorAll('.color-input');
             colorInputs.forEach(input => {
