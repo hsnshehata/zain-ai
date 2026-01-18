@@ -8,7 +8,7 @@ try {
     let isInitialLoad = true; // Flag to control initial load
 
     // Valid pages to prevent unexpected page loads
-    const validPages = ['bots', 'rules', 'chat-page', 'store-manager', 'facebook', 'instagram', 'whatsapp', 'messages', 'feedback', 'wasenderpro', 'settings'];
+    const validPages = ['overview', 'bots', 'rules', 'chat-page', 'store-manager', 'facebook', 'instagram', 'whatsapp', 'messages', 'feedback', 'wasenderpro', 'settings'];
 
     // Pages configuration for dashboard cards
     const pages = [
@@ -163,7 +163,6 @@ try {
     const notificationsList = document.getElementById("notifications-list");
     const notificationsCount = document.getElementById("notifications-count");
     const closeNotificationsBtn = document.getElementById("close-notifications-btn");
-    const homeBtn = document.getElementById("home-btn");
 
     // Map of pages to their respective CSS files
     const pageCssMap = {
@@ -389,28 +388,463 @@ try {
       }
     });
 
-    // Render Dashboard Cards
-    function renderDashboardCards() {
-      console.log("renderDashboardCards called...");
-      content.innerHTML = '<div class="dashboard-cards-container"></div>';
-      const container = content.querySelector('.dashboard-cards-container');
-      const filteredPages = pages.filter(page => !page.role || page.role === role);
-      filteredPages.forEach((page, index) => {
-        const card = document.createElement('div');
-        card.className = 'dashboard-card';
-        card.style.setProperty('--index', index);
-        card.dataset.tooltip = page.description;
-        card.dataset.page = page.id;
-        card.innerHTML = `
-          <i class="${page.icon}"></i>
-          <h3>${page.name}</h3>
-          <p>${page.description}</p>
-        `;
-        card.addEventListener('click', () => {
-          window.location.hash = page.id;
+    // Render Overview Page
+    async function renderOverview() {
+      console.log("renderOverview called...");
+      const selectedBotId = localStorage.getItem("selectedBotId");
+      
+      if (!selectedBotId) {
+        content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض الإحصائيات.</p></div>`;
+        return;
+      }
+
+      content.innerHTML = `
+        <div class="overview-container">
+          <h2 class="section-title"><i class="fas fa-chart-line"></i> لمحة عامة</h2>
+          
+          <div class="stats-grid">
+            <div class="stat-card">
+              <div class="stat-icon"><i class="fas fa-comments"></i></div>
+              <div class="stat-info">
+                <h3>المحادثات</h3>
+                <p class="stat-value" id="total-conversations">جاري التحميل...</p>
+                <small>إجمالي المحادثات</small>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon"><i class="fas fa-users"></i></div>
+              <div class="stat-info">
+                <h3>العملاء</h3>
+                <p class="stat-value" id="total-customers">جاري التحميل...</p>
+                <small>عدد العملاء</small>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
+              <div class="stat-info">
+                <h3>الطلبات</h3>
+                <p class="stat-value" id="total-orders">جاري التحميل...</p>
+                <small>إجمالي الطلبات</small>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
+              <div class="stat-info">
+                <h3>المبيعات</h3>
+                <p class="stat-value" id="total-revenue">جاري التحميل...</p>
+                <small>إجمالي المبيعات</small>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon"><i class="fas fa-box"></i></div>
+              <div class="stat-info">
+                <h3>المنتجات</h3>
+                <p class="stat-value" id="total-products">جاري التحميل...</p>
+                <small>عدد المنتجات</small>
+              </div>
+            </div>
+            
+            <div class="stat-card">
+              <div class="stat-icon"><i class="fas fa-star"></i></div>
+              <div class="stat-info">
+                <h3>التقييمات</h3>
+                <p class="stat-value" id="total-feedback">جاري التحميل...</p>
+                <small>عدد التقييمات</small>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Charts Section -->
+          <div class="charts-section">
+            <div class="chart-card">
+              <h3><i class="fas fa-chart-pie"></i> توزيع المحادثات حسب القناة</h3>
+              <canvas id="channelsChart"></canvas>
+            </div>
+            
+            <div class="chart-card">
+              <h3><i class="fas fa-chart-bar"></i> الطلبات حسب الحالة</h3>
+              <canvas id="ordersStatusChart"></canvas>
+            </div>
+          </div>
+          
+          <div class="chart-card-full">
+            <h3><i class="fas fa-chart-line"></i> المحادثات اليومية (آخر 7 أيام)</h3>
+            <canvas id="dailyMessagesChart"></canvas>
+          </div>
+          
+          <div class="bot-status-card">
+            <h3><i class="fas fa-robot"></i> حالة البوت</h3>
+            <div class="bot-status-info">
+              <div class="status-item">
+                <span class="status-label">الحالة:</span>
+                <span class="status-value" id="bot-status">جاري التحميل...</span>
+              </div>
+              <div class="status-item">
+                <span class="status-label">نوع الاشتراك:</span>
+                <span class="status-value" id="bot-subscription">جاري التحميل...</span>
+              </div>
+              <div class="status-item">
+                <span class="status-label">انتهاء الاشتراك:</span>
+                <span class="status-value" id="bot-expiry">جاري التحميل...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Load statistics
+      await loadOverviewStats();
+    }
+
+    // Load Overview Statistics
+    async function loadOverviewStats() {
+      console.log("loadOverviewStats called...");
+      const selectedBotId = localStorage.getItem("selectedBotId");
+      
+      if (!selectedBotId) return;
+
+      // Store data for charts
+      let channelsData = { facebook: 0, instagram: 0, whatsapp: 0 };
+      let ordersData = { pending: 0, completed: 0, cancelled: 0 };
+      let dailyMessagesData = [];
+
+      try {
+        // Fetch bot info
+        const bot = availableBots.find(b => String(b._id) === String(selectedBotId));
+        if (bot) {
+          const subscriptionTypes = {
+            free: 'مجاني',
+            monthly: 'شهري',
+            yearly: 'سنوي'
+          };
+          document.getElementById('bot-status').textContent = bot.isActive ? '🟢 نشط' : '🔴 متوقف';
+          document.getElementById('bot-subscription').textContent = subscriptionTypes[bot.subscriptionType] || 'غير معروف';
+          if (bot.autoStopDate) {
+            const endDate = new Date(bot.autoStopDate);
+            document.getElementById('bot-expiry').textContent = endDate.toLocaleDateString('ar-EG');
+          } else {
+            document.getElementById('bot-expiry').textContent = 'غير محدد';
+          }
+        }
+
+        // Fetch conversations count from all channels
+        try {
+          let totalConversations = 0;
+          const channels = ['facebook', 'instagram', 'whatsapp'];
+          
+          for (const channel of channels) {
+            try {
+              const response = await fetch(
+                `/api/messages/${selectedBotId}?type=${channel}&page=1&limit=1`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              );
+              
+              if (response.ok) {
+                const data = await response.json();
+                const count = data.totalConversations || 0;
+                totalConversations += count;
+                channelsData[channel] = count;
+              }
+            } catch (err) {
+              console.log(`No ${channel} conversations`);
+            }
+          }
+          
+          document.getElementById('total-conversations').textContent = totalConversations;
+        } catch (err) {
+          console.error('Error fetching conversations:', err);
+          document.getElementById('total-conversations').textContent = '0';
+        }
+
+        // Fetch daily messages for chart
+        try {
+          const response = await fetch(
+            `/api/messages/daily/${selectedBotId}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          
+          if (response.ok) {
+            dailyMessagesData = await response.json();
+          }
+        } catch (err) {
+          console.log('No daily messages data');
+        }
+
+        // Get store info from bot
+        try {
+          const bot = availableBots.find(b => String(b._id) === String(selectedBotId));
+          const storeId = bot && bot.storeId ? (typeof bot.storeId === 'object' ? bot.storeId._id : bot.storeId) : null;
+          
+          if (storeId) {
+            // Fetch customers
+            try {
+              const customers = await handleApiRequest(
+                `/api/customers/${storeId}/customers`,
+                { headers: { Authorization: `Bearer ${token}` } },
+                null,
+                'فشل في جلب العملاء'
+              );
+              document.getElementById('total-customers').textContent = customers.length || 0;
+            } catch (err) {
+              console.log('No customers found');
+              document.getElementById('total-customers').textContent = '0';
+            }
+
+            // Fetch orders
+            try {
+              const orders = await handleApiRequest(
+                `/api/orders/${storeId}/orders`,
+                { headers: { Authorization: `Bearer ${token}` } },
+                null,
+                'فشل في جلب الطلبات'
+              );
+              document.getElementById('total-orders').textContent = orders.length || 0;
+              
+              const revenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+              document.getElementById('total-revenue').textContent = `${revenue.toFixed(2)} ج.م`;
+              
+              // Count orders by status
+              orders.forEach(order => {
+                if (order.status === 'pending') ordersData.pending++;
+                else if (order.status === 'completed') ordersData.completed++;
+                else if (order.status === 'cancelled') ordersData.cancelled++;
+              });
+            } catch (err) {
+              console.log('No orders found');
+              document.getElementById('total-orders').textContent = '0';
+              document.getElementById('total-revenue').textContent = '0 ج.م';
+            }
+
+            // Fetch products
+            try {
+              const products = await handleApiRequest(
+                `/api/products/${storeId}/products`,
+                { headers: { Authorization: `Bearer ${token}` } },
+                null,
+                'فشل في جلب المنتجات'
+              );
+              document.getElementById('total-products').textContent = products.length || 0;
+            } catch (err) {
+              console.log('No products found');
+              document.getElementById('total-products').textContent = '0';
+            }
+          } else {
+            // No store linked
+            document.getElementById('total-customers').textContent = 'لا يوجد متجر';
+            document.getElementById('total-orders').textContent = 'لا يوجد متجر';
+            document.getElementById('total-revenue').textContent = 'لا يوجد متجر';
+            document.getElementById('total-products').textContent = 'لا يوجد متجر';
+          }
+        } catch (err) {
+          console.error('Error in store operations:', err);
+          document.getElementById('total-customers').textContent = '0';
+          document.getElementById('total-orders').textContent = '0';
+          document.getElementById('total-revenue').textContent = '0 ج.م';
+          document.getElementById('total-products').textContent = '0';
+        }
+
+        // Fetch feedback count
+        try {
+          const feedbackData = await handleApiRequest(
+            `/api/chat-page/bot/${selectedBotId}`,
+            { headers: { Authorization: `Bearer ${token}` } },
+            null,
+            'فشل في جلب بيانات الدردشة'
+          );
+          
+          // Count feedback if exists
+          const feedbackCount = feedbackData && feedbackData.feedback ? feedbackData.feedback.length : 0;
+          document.getElementById('total-feedback').textContent = feedbackCount;
+        } catch (err) {
+          console.error('Error fetching feedback:', err);
+          document.getElementById('total-feedback').textContent = '0';
+        }
+        
+        // Render Charts
+        renderCharts(channelsData, ordersData, dailyMessagesData);
+      } catch (err) {
+        console.error('Error loading overview stats:', err);
+      }
+    }
+
+    // Render Charts
+    let channelsChart, ordersStatusChart, dailyMessagesChart;
+    
+    function renderCharts(channelsData, ordersData, dailyMessagesData) {
+      const isDarkMode = document.body.classList.contains('dark-mode');
+      const textColor = isDarkMode ? '#E0E0E0' : '#333333';
+      const gridColor = isDarkMode ? '#3A3A4E' : '#D1D5DB';
+
+      // Destroy existing charts
+      if (channelsChart) channelsChart.destroy();
+      if (ordersStatusChart) ordersStatusChart.destroy();
+      if (dailyMessagesChart) dailyMessagesChart.destroy();
+
+      // Channels Distribution Chart (Pie)
+      const channelsCtx = document.getElementById('channelsChart');
+      if (channelsCtx) {
+        channelsChart = new Chart(channelsCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['فيسبوك', 'إنستجرام', 'واتساب'],
+            datasets: [{
+              data: [channelsData.facebook, channelsData.instagram, channelsData.whatsapp],
+              backgroundColor: [
+                '#1877F2',
+                '#E4405F',
+                '#25D366'
+              ],
+              borderWidth: 2,
+              borderColor: isDarkMode ? '#1A1A2E' : '#FFFFFF'
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  color: textColor,
+                  font: { size: 14, family: 'Cairo, sans-serif' },
+                  padding: 15
+                }
+              },
+              tooltip: {
+                rtl: true,
+                textDirection: 'rtl'
+              }
+            }
+          }
         });
-        container.appendChild(card);
-      });
+      }
+
+      // Orders Status Chart (Bar)
+      const ordersCtx = document.getElementById('ordersStatusChart');
+      if (ordersCtx) {
+        ordersStatusChart = new Chart(ordersCtx, {
+          type: 'bar',
+          data: {
+            labels: ['قيد الانتظار', 'مكتملة', 'ملغاة'],
+            datasets: [{
+              label: 'عدد الطلبات',
+              data: [ordersData.pending, ordersData.completed, ordersData.cancelled],
+              backgroundColor: [
+                '#FFA500',
+                '#00C4B4',
+                '#FF6B6B'
+              ],
+              borderWidth: 0,
+              borderRadius: 8
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                rtl: true,
+                textDirection: 'rtl'
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  color: textColor,
+                  font: { family: 'Cairo, sans-serif' }
+                },
+                grid: {
+                  color: gridColor
+                }
+              },
+              x: {
+                ticks: {
+                  color: textColor,
+                  font: { family: 'Cairo, sans-serif' }
+                },
+                grid: {
+                  display: false
+                }
+              }
+            }
+          }
+        });
+      }
+
+      // Daily Messages Chart (Line)
+      const dailyCtx = document.getElementById('dailyMessagesChart');
+      if (dailyCtx && dailyMessagesData.length > 0) {
+        // Get last 7 days
+        const last7Days = dailyMessagesData.slice(-7);
+        
+        dailyMessagesChart = new Chart(dailyCtx, {
+          type: 'line',
+          data: {
+            labels: last7Days.map(d => new Date(d.date).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })),
+            datasets: [{
+              label: 'عدد المحادثات',
+              data: last7Days.map(d => d.count),
+              borderColor: '#00C4B4',
+              backgroundColor: 'rgba(0, 196, 180, 0.1)',
+              borderWidth: 3,
+              fill: true,
+              tension: 0.4,
+              pointRadius: 5,
+              pointHoverRadius: 7,
+              pointBackgroundColor: '#00C4B4',
+              pointBorderColor: '#FFFFFF',
+              pointBorderWidth: 2
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+              legend: {
+                display: false
+              },
+              tooltip: {
+                rtl: true,
+                textDirection: 'rtl',
+                backgroundColor: isDarkMode ? '#2A2A3E' : '#FFFFFF',
+                titleColor: textColor,
+                bodyColor: textColor,
+                borderColor: '#00C4B4',
+                borderWidth: 1
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  color: textColor,
+                  font: { family: 'Cairo, sans-serif' }
+                },
+                grid: {
+                  color: gridColor
+                }
+              },
+              x: {
+                ticks: {
+                  color: textColor,
+                  font: { family: 'Cairo, sans-serif' }
+                },
+                grid: {
+                  color: gridColor
+                }
+              }
+            }
+          }
+        });
+      }
     }
 
     // دالة مساعدة للانتظار حتى تتعرف الدالة المطلوبة
@@ -522,6 +956,10 @@ try {
             console.log(`Loading settings page`);
             await loadSettingsPage();
             break;
+          case "overview":
+            console.log(`Loading overview page`);
+            await renderOverview();
+            break;
           default:
             throw new Error("الصفحة المطلوبة غير متوفرة.");
         }
@@ -530,6 +968,59 @@ try {
         content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>${error.message || "حدث خطأ أثناء تحميل محتوى الصفحة."}</p></div>`;
       }
     };
+
+    // Update Sidebar Active State
+    function updateSidebarActive(page) {
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.remove('active');
+        if (item.dataset.page === page) {
+          item.classList.add('active');
+        }
+      });
+    }
+
+    // Sidebar Toggle for Mobile
+    const sidebar = document.getElementById('sidebar');
+    const sidebarToggle = document.getElementById('sidebar-toggle');
+    const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+
+    if (mobileMenuBtn) {
+      mobileMenuBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('active');
+      });
+    }
+
+    if (sidebarToggle) {
+      sidebarToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+      });
+    }
+
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+      if (window.innerWidth <= 768 && 
+          sidebar.classList.contains('active') &&
+          !sidebar.contains(e.target) && 
+          !mobileMenuBtn.contains(e.target)) {
+        sidebar.classList.remove('active');
+      }
+    });
+
+    // Sidebar navigation items
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', (e) => {
+        e.preventDefault();
+        const page = item.dataset.page;
+        window.location.hash = page;
+      });
+    });
+
+    // Hide superadmin-only items for non-superadmins
+    if (role !== 'superadmin') {
+      document.querySelectorAll('.superadmin-only').forEach(el => {
+        el.style.display = 'none';
+      });
+    }
 
     // Debounce function
     function debounce(func, wait) {
@@ -548,38 +1039,37 @@ try {
     // Initial Page Load
     const loadInitialPage = async () => {
       console.log("loadInitialPage called...");
-      let pageToLoad = initialHash || '';
+      let pageToLoad = initialHash || 'overview';
       if (!validPages.includes(pageToLoad)) {
-        console.log(`Loading dashboard cards as default view`);
-        renderDashboardCards();
-        window.location.hash = '';
-      } else {
-        console.log(`Loading page: ${pageToLoad}`);
-        await loadPageContent(pageToLoad);
+        console.log(`Loading overview as default view`);
+        pageToLoad = 'overview';
+        window.location.hash = 'overview';
       }
+      console.log(`Loading page: ${pageToLoad}`);
+      await loadPageContent(pageToLoad);
+      updateSidebarActive(pageToLoad);
     };
 
     // Handle hash change with debounce
     const debouncedHashChange = debounce(async () => {
-      const hash = window.location.hash.substring(1);
-      if (hash && validPages.includes(hash)) {
+      const hash = window.location.hash.substring(1) || 'overview';
+      if (validPages.includes(hash)) {
         console.log(`Hash changed, loading page: ${hash}`);
         await loadPageContent(hash);
+        updateSidebarActive(hash);
+        // Close sidebar on mobile after navigation
+        if (window.innerWidth <= 768) {
+          document.getElementById('sidebar').classList.remove('active');
+        }
       } else {
-        console.log(`Hash empty or invalid, loading dashboard cards`);
-        renderDashboardCards();
-        window.location.hash = '';
+        console.log(`Hash invalid, loading overview`);
+        window.location.hash = 'overview';
+        await loadPageContent('overview');
+        updateSidebarActive('overview');
       }
     }, 100);
 
     window.addEventListener('hashchange', debouncedHashChange);
-
-    // Home Button Event
-    homeBtn.addEventListener("click", () => {
-      console.log("Home button clicked...");
-      window.location.hash = '';
-      renderDashboardCards();
-    });
 
     // Logout
     async function logoutUser() {
