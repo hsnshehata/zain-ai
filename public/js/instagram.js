@@ -1,11 +1,11 @@
 // public/js/instagram.js
 
-async function loadInstagramPage() {
+async function loadInstagramPage(rootEl = document.getElementById("content")) {
   const link = document.createElement("link");
   link.rel = "stylesheet";
   link.href = "/css/facebook.css";
   document.head.appendChild(link);
-  const content = document.getElementById("content");
+  const content = rootEl || document.getElementById("content");
   const token = localStorage.getItem("token");
   const selectedBotId = localStorage.getItem("selectedBotId");
 
