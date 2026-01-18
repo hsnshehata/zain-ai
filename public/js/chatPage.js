@@ -833,33 +833,29 @@ async function loadChatPage() {
                 <!-- Color Schemes Section - Below Preview -->
                 <div style="margin-top: 30px; padding: 20px; background: var(--chat-section-bg, #ffffff); border-radius: 12px; border: 1px solid var(--border-color, #e0e0e0); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);">
                   <label style="font-size: 1.1em; color: var(--text-primary, #333); margin-bottom: 15px; display: flex; align-items: center; gap: 10px; font-weight: 600;"><i class="fas fa-palette"></i> نماذج الألوان المقترحة</label>
-                  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;">
-                    ${colorSchemes
-                      .map(
-                        (scheme, index) => `
-                        <button type="button" class="color-scheme-btn" data-scheme-index="${index}" style="
-                          background: linear-gradient(
-                            45deg,
-                            ${scheme.colors.headerColor} 20%,
-                            ${scheme.colors.inputTextColor} 20%, ${scheme.colors.inputTextColor} 40%,
-                            ${scheme.colors.userMessageBackgroundColor} 40%, ${scheme.colors.userMessageBackgroundColor} 60%,
-                            ${scheme.colors.botMessageBackgroundColor} 60%, ${scheme.colors.botMessageBackgroundColor} 80%,
-                            ${scheme.colors.buttonColor} 80%
-                          );
-                          color: #ffffff;
-                          padding: 8px 16px;
-                          border: 2px solid transparent;
-                          border-radius: 20px;
-                          cursor: pointer;
-                          font-size: 0.85em;
-                          transition: all 0.3s ease;
-                          font-weight: 600;
-                        ">
-                          ${scheme.name}
-                        </button>
-                      `
-                      )
-                      .join('')}
+                  <p style="font-size: 0.9em; color: var(--text-secondary, #666); margin-bottom: 10px;"><i class="fas fa-hand-pointer"></i> مرر لمعاينة النماذج</p>
+                  <div class="color-schemes-carousel-wrapper">
+                    <div class="color-schemes-carousel" id="colorSchemesCarousel">
+                      ${colorSchemes
+                        .map(
+                          (scheme, index) => `
+                          <button type="button" class="color-scheme-btn" data-scheme-index="${index}" style="
+                            background: linear-gradient(
+                              45deg,
+                              ${scheme.colors.headerColor} 20%,
+                              ${scheme.colors.inputTextColor} 20%, ${scheme.colors.inputTextColor} 40%,
+                              ${scheme.colors.userMessageBackgroundColor} 40%, ${scheme.colors.userMessageBackgroundColor} 60%,
+                              ${scheme.colors.botMessageBackgroundColor} 60%, ${scheme.colors.botMessageBackgroundColor} 80%,
+                              ${scheme.colors.buttonColor} 80%
+                            );
+                            color: #ffffff;
+                          ">
+                            ${scheme.name}
+                          </button>
+                        `
+                        )
+                        .join('')}
+                    </div>
                   </div>
                 </div>
 
@@ -1049,8 +1045,47 @@ async function loadChatPage() {
               const selectedScheme = colorSchemes[schemeIndex];
               colorValues = { ...selectedScheme.colors };
               updatePreviewStyles();
+              
+              // إضافة active class
+              document.querySelectorAll('.color-scheme-btn').forEach(b => b.classList.remove('active'));
+              btn.classList.add('active');
             });
           });
+
+          // Intersection Observer للتطبيق التلقائي عند التمرير
+          const carousel = document.getElementById('colorSchemesCarousel');
+          if (carousel && 'IntersectionObserver' in window) {
+            const observerOptions = {
+              root: carousel,
+              rootMargin: '0px',
+              threshold: 0.6
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+              entries.forEach(entry => {
+                if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+                  const btn = entry.target;
+                  
+                  // إزالة active من الجميع وإضافتها للعنصر الحالي
+                  document.querySelectorAll('.color-scheme-btn').forEach(b => b.classList.remove('active'));
+                  btn.classList.add('active');
+                  
+                  // تطبيق الألوان تلقائياً
+                  const schemeIndex = btn.getAttribute('data-scheme-index');
+                  const selectedScheme = colorSchemes[schemeIndex];
+                  colorValues = { ...selectedScheme.colors };
+                  updatePreviewStyles();
+                  
+                  console.log('🎨 Auto-applied scheme on scroll:', btn.textContent);
+                }
+              });
+            }, observerOptions);
+
+            // مراقبة كل الأزرار
+            document.querySelectorAll('.color-scheme-btn').forEach(btn => {
+              observer.observe(btn);
+            });
+          }
 
           setTimeout(() => {
             const colorInputs = document.querySelectorAll('.color-input');
