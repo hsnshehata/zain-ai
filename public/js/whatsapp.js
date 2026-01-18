@@ -1,11 +1,11 @@
 // public/js/whatsapp.js
 
-async function loadWhatsAppPage() {
+async function loadWhatsAppPage(rootEl = document.getElementById("content")) {
   const link = document.createElement("link");
   link.rel = "stylesheet";
   link.href = "/css/facebook.css";
   document.head.appendChild(link);
-  const content = document.getElementById("content");
+  const content = rootEl || document.getElementById("content");
   const token = localStorage.getItem("token");
   const selectedBotId = localStorage.getItem("selectedBotId");
 
@@ -41,7 +41,7 @@ async function loadWhatsAppPage() {
             <strong>تحميل تطبيق سطح المكتب:</strong> لازم تحمل تطبيق زين بوت لسطح المكتب عشان تقدر تربط حسابك على واتساب.
             <br>
             <span style="display: block; margin-top: 5px;">
-              <a href="https://drive.google.com/file/d/19-TYg_jeAmc1FEEDDRZnU53mrdVOSl-t/view?usp=sharing" target="_blank" class="btn btn-primary" style="margin-top: 10px; color: #000000;">
+              <a href="https://drive.google.com/file/d/1S66j00RE5n4WcnccflxYklNLfvW4Er5D/view?usp=drive_link" target="_blank" class="btn btn-primary" style="margin-top: 10px; color: #000000;">
                 <i class="fas fa-download"></i> تحميل تطبيق زين بوت لسطح المكتب
               </a>
             </span>
