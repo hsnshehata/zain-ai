@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="/css/common.css">
   <link rel="stylesheet" href="/css/dashboard.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA==" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="/js/utils.js"></script>
   <script src="/js/assistantBot.js"></script>
   <script src="/js/dashboard_new.js"></script>
@@ -22,10 +23,93 @@
 
 <body class="dashboard-page dark-mode">
   <div class="dashboard-layout">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <i class="fas fa-robot"></i>
+          <span>زين بوت</span>
+        </div>
+        <button class="sidebar-toggle" id="sidebar-toggle">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+      
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-page="overview">
+          <i class="fas fa-chart-line"></i>
+          <span>لمحة عامة</span>
+        </a>
+        <a href="#bots" class="nav-item superadmin-only" data-page="bots">
+          <i class="fas fa-robot"></i>
+          <span>إدارة البوتات</span>
+        </a>
+        <a href="#rules" class="nav-item" data-page="rules">
+          <i class="fas fa-book"></i>
+          <span>القواعد</span>
+        </a>
+        <a href="#chat-page" class="nav-item" data-page="chat-page">
+          <i class="fas fa-comment-alt"></i>
+          <span>صفحة الدردشة</span>
+        </a>
+        <a href="#store-manager" class="nav-item" data-page="store-manager">
+          <i class="fas fa-store"></i>
+          <span>المتجر الذكي</span>
+        </a>
+        <a href="#facebook" class="nav-item" data-page="facebook">
+          <i class="fab fa-facebook"></i>
+          <span>فيسبوك</span>
+        </a>
+        <a href="#instagram" class="nav-item" data-page="instagram">
+          <i class="fab fa-instagram"></i>
+          <span>إنستجرام</span>
+        </a>
+        <a href="#whatsapp" class="nav-item" data-page="whatsapp">
+          <i class="fab fa-whatsapp"></i>
+          <span>واتساب</span>
+        </a>
+        <a href="#messages" class="nav-item" data-page="messages">
+          <i class="fas fa-envelope"></i>
+          <span>الرسائل</span>
+        </a>
+        <a href="#feedback" class="nav-item" data-page="feedback">
+          <i class="fas fa-comments"></i>
+          <span>التقييمات</span>
+        </a>
+        <a href="#wasenderpro" class="nav-item" data-page="wasenderpro">
+          <i class="fas fa-bolt"></i>
+          <span>Wasender Pro</span>
+        </a>
+        <a href="#settings" class="nav-item" data-page="settings">
+          <i class="fas fa-cog"></i>
+          <span>الإعدادات</span>
+        </a>
+      </nav>
+      
+      <!-- Sidebar Footer Actions -->
+      <div class="sidebar-footer">
+        <button class="sidebar-action-btn logout-btn" title="تسجيل الخروج">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>تسجيل الخروج</span>
+        </button>
+        <button id="assistantButton" class="sidebar-action-btn" title="المساعد الذكي">
+          <i class="fas fa-headset"></i>
+          <span>المساعد الذكي</span>
+        </button>
+        <button id="theme-toggle" class="sidebar-action-btn" title="تبديل الوضع">
+          <i class="fas fa-moon"></i>
+          <span>الوضع</span>
+        </button>
+      </div>
+    </aside>
+
     <!-- Main Content -->
     <main class="main-content">
       <header class="main-header">
         <div class="header-left">
+          <button class="mobile-menu-btn" id="mobile-menu-btn">
+            <i class="fas fa-bars"></i>
+          </button>
           <div class="form-group bot-selector">
             <label for="botSelectDashboard">البوت:</label>
             <select id="botSelectDashboard">
@@ -79,26 +163,6 @@
         </div>
       </div>
     </main>
-
-    <!-- Fixed Footer -->
-    <footer class="fixed-footer">
-      <button id="home-btn" class="footer-btn" title="الرئيسية">
-        <i class="fas fa-home"></i>
-        <span>الرئيسية</span>
-      </button>
-      <button class="logout-btn footer-btn" title="تسجيل الخروج">
-        <i class="fas fa-sign-out-alt"></i>
-        <span>خروج</span>
-      </button>
-      <button id="assistantButton" class="footer-btn" title="المساعد الذكي">
-        <i class="fas fa-headset"></i>
-        <span>دعم</span>
-      </button>
-      <button id="theme-toggle" class="footer-btn" title="تبديل الوضع">
-        <i class="fas fa-moon"></i>
-        <span>الوضع</span>
-      </button>
-    </footer>
 
     <!-- Assistant Chat Modal -->
     <div id="assistantChatModal" class="modal assistant-chat-modal" style="display: none;">
