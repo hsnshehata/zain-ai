@@ -36,6 +36,25 @@ const STATUS_LABELS = {
 	delivered: 'تم التسليم',
 	cancelled: 'ملغي'
 };
+
+	// Helper function to convert text to URL-friendly slug
+	function slugify(text) {
+		return text
+			.toString()
+			.toLowerCase()
+			.trim()
+			.replace(/\s+/g, '-')           // Replace spaces with -
+			.replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+			.replace(/\-\-+/g, '-')         // Replace multiple - with single -
+			.replace(/^-+/, '')             // Trim - from start of text
+			.replace(/-+$/, '');            // Trim - from end of text
+	}
+
+	// Helper function to validate slug format
+	function isValidSlug(slug) {
+		return /^[a-zA-Z0-9_-]{4,}$/.test(slug);
+	}
+
 	function getContentElement() {
 		return document.getElementById('content');
 	}
@@ -1491,7 +1510,7 @@ async function renderReportsPanel() {
 							<div class="form-group">
 								<label for="newStoreLink">رابط المتجر (إنجليزي فقط)</label>
 								<div class="input-with-action">
-									<input type="text" id="newStoreLink" name="storeLink" placeholder="مثال: nile-store" pattern="^[a-zA-Z0-9_-]{4,}$" required>
+									<input type="text" id="newStoreLink" name="storeLink" placeholder="مثال: nile-store" pattern="[a-zA-Z0-9_-]{4,}" required>
 									<button type="button" class="btn btn-secondary btn-sm" id="checkNewStoreLink"><i class="fas fa-check-circle"></i> تحقق</button>
 								</div>
 								<small class="input-hint">سيظهر الرابط بهذا الشكل: ${escapeHtml(`${window.location.origin}/store/`)}<span id="storeLinkPreview">...</span></small>
