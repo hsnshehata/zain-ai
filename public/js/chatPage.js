@@ -1402,7 +1402,163 @@ async function loadChatPage() {
           resolve();
         } catch (err) {
           chatPageContent.innerHTML = `
-            <button id="createChatPageBtn" class="submit-btn">إنشاء صفحة دردشة</button>
+            <div style="
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: center;
+              min-height: 60vh;
+              padding: 40px 20px;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+              border-radius: 20px;
+              box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            ">
+              <div style="
+                text-align: center;
+                color: white;
+                margin-bottom: 30px;
+                animation: fadeInUp 0.6s ease-out;
+              ">
+                <div style="
+                  font-size: 80px;
+                  margin-bottom: 20px;
+                  animation: bounce 2s infinite;
+                ">
+                  💬
+                </div>
+                <h2 style="
+                  font-size: 2em;
+                  margin: 0 0 15px 0;
+                  font-weight: 700;
+                  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+                ">
+                  ابدأ رحلتك مع الدردشة الذكية
+                </h2>
+                <p style="
+                  font-size: 1.1em;
+                  margin: 0;
+                  opacity: 0.95;
+                  max-width: 500px;
+                  line-height: 1.6;
+                ">
+                  قم بإنشاء صفحة دردشة مخصصة لعملائك مع إمكانيات متقدمة للتخصيص والتفاعل
+                </p>
+              </div>
+              
+              <button id="createChatPageBtn" style="
+                background: white;
+                color: #667eea;
+                border: none;
+                padding: 18px 50px;
+                font-size: 1.3em;
+                font-weight: 700;
+                border-radius: 50px;
+                cursor: pointer;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                animation: pulse 2s infinite;
+              " 
+              onmouseover="this.style.transform='translateY(-5px) scale(1.05)'; this.style.boxShadow='0 15px 40px rgba(0, 0, 0, 0.3)'"
+              onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 10px 30px rgba(0, 0, 0, 0.2)'">
+                <span style="font-size: 1.2em;">✨</span>
+                <span>إنشاء صفحة دردشة</span>
+                <span style="font-size: 1em;">🚀</span>
+              </button>
+
+              <div style="
+                margin-top: 40px;
+                display: flex;
+                gap: 30px;
+                flex-wrap: wrap;
+                justify-content: center;
+                max-width: 700px;
+              ">
+                <div style="
+                  background: rgba(255, 255, 255, 0.15);
+                  backdrop-filter: blur(10px);
+                  padding: 20px;
+                  border-radius: 15px;
+                  text-align: center;
+                  flex: 1;
+                  min-width: 180px;
+                  transition: transform 0.3s ease;
+                "
+                onmouseover="this.style.transform='translateY(-5px)'"
+                onmouseout="this.style.transform='translateY(0)'">
+                  <div style="font-size: 2em; margin-bottom: 10px;">🎨</div>
+                  <h4 style="color: white; margin: 0 0 8px 0; font-size: 1.1em;">تخصيص كامل</h4>
+                  <p style="color: rgba(255, 255, 255, 0.9); margin: 0; font-size: 0.9em;">ألوان وشعار مخصص</p>
+                </div>
+                
+                <div style="
+                  background: rgba(255, 255, 255, 0.15);
+                  backdrop-filter: blur(10px);
+                  padding: 20px;
+                  border-radius: 15px;
+                  text-align: center;
+                  flex: 1;
+                  min-width: 180px;
+                  transition: transform 0.3s ease;
+                "
+                onmouseover="this.style.transform='translateY(-5px)'"
+                onmouseout="this.style.transform='translateY(0)'">
+                  <div style="font-size: 2em; margin-bottom: 10px;">💡</div>
+                  <h4 style="color: white; margin: 0 0 8px 0; font-size: 1.1em;">أسئلة مقترحة</h4>
+                  <p style="color: rgba(255, 255, 255, 0.9); margin: 0; font-size: 0.9em;">تفاعل ذكي مع العملاء</p>
+                </div>
+                
+                <div style="
+                  background: rgba(255, 255, 255, 0.15);
+                  backdrop-filter: blur(10px);
+                  padding: 20px;
+                  border-radius: 15px;
+                  text-align: center;
+                  flex: 1;
+                  min-width: 180px;
+                  transition: transform 0.3s ease;
+                "
+                onmouseover="this.style.transform='translateY(-5px)'"
+                onmouseout="this.style.transform='translateY(0)'">
+                  <div style="font-size: 2em; margin-bottom: 10px;">🔗</div>
+                  <h4 style="color: white; margin: 0 0 8px 0; font-size: 1.1em;">سهل التضمين</h4>
+                  <p style="color: rgba(255, 255, 255, 0.9); margin: 0; font-size: 0.9em;">كود جاهز للاستخدام</p>
+                </div>
+              </div>
+            </div>
+
+            <style>
+              @keyframes fadeInUp {
+                from {
+                  opacity: 0;
+                  transform: translateY(30px);
+                }
+                to {
+                  opacity: 1;
+                  transform: translateY(0);
+                }
+              }
+
+              @keyframes bounce {
+                0%, 100% {
+                  transform: translateY(0);
+                }
+                50% {
+                  transform: translateY(-20px);
+                }
+              }
+
+              @keyframes pulse {
+                0%, 100% {
+                  opacity: 1;
+                }
+                50% {
+                  opacity: 0.9;
+                }
+              }
+            </style>
           `;
 
           const createChatPageBtn = document.getElementById('createChatPageBtn');
