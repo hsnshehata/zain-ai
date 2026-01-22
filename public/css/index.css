@@ -532,6 +532,140 @@ body.dark-mode .pricing {
   }
 }
 
+/* Store Section Styles */
+.store-section {
+  background: linear-gradient(135deg, rgba(0, 196, 180, 0.1) 0%, rgba(42, 42, 78, 0.1) 100%);
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.store-section h2 {
+  font-size: 2.8em;
+  margin-bottom: 15px;
+  color: var(--turquoise);
+  text-shadow: 0 2px 8px rgba(0, 196, 180, 0.3);
+}
+
+.store-section h2 i {
+  margin-left: 10px;
+  color: #ffd700;
+}
+
+.store-section > .container > p {
+  font-size: 1.3em;
+  margin-bottom: 50px;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.8;
+}
+
+.store-highlights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 30px;
+  margin-bottom: 60px;
+}
+
+.store-highlight-card {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 30px 20px;
+  text-align: center;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(0, 196, 180, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.store-highlight-card:hover {
+  transform: translateY(-8px);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--turquoise);
+  box-shadow: 0 8px 25px rgba(0, 196, 180, 0.3);
+}
+
+.store-highlight-card i {
+  font-size: 3em;
+  color: var(--turquoise);
+  margin-bottom: 15px;
+  display: block;
+}
+
+.store-highlight-card h3 {
+  font-size: 1.4em;
+  margin-bottom: 12px;
+  color: white;
+  font-weight: 700;
+}
+
+.store-highlight-card p {
+  font-size: 1em;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.7;
+}
+
+.store-cta {
+  background: linear-gradient(135deg, rgba(0, 196, 180, 0.15) 0%, rgba(255, 215, 0, 0.1) 100%);
+  padding: 40px 30px;
+  border-radius: 15px;
+  margin-top: 40px;
+  border: 2px solid rgba(0, 196, 180, 0.3);
+  box-shadow: 0 6px 20px rgba(0, 196, 180, 0.2);
+}
+
+.store-cta h3 {
+  font-size: 2em;
+  margin-bottom: 15px;
+  color: #ffd700;
+  text-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.store-cta p {
+  font-size: 1.2em;
+  margin-bottom: 25px;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.7;
+}
+
+.store-cta .btn {
+  font-size: 1.2em;
+  padding: 15px 40px;
+  display: inline-block;
+}
+
+.store-cta .btn i {
+  margin-left: 8px;
+}
+
+/* Responsive adjustments for store section */
+@media (max-width: 768px) {
+  .store-section h2 {
+    font-size: 2.2em;
+  }
+
+  .store-section > .container > p {
+    font-size: 1.1em;
+  }
+
+  .store-highlights {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .store-highlight-card {
+    padding: 25px 15px;
+  }
+
+  .store-cta h3 {
+    font-size: 1.6em;
+  }
+
+  .store-cta p {
+    font-size: 1em;
+  }
+}
+
 /* Accessibility */
 @media (prefers-reduced-motion: reduce) {
   .feature-item:hover {
@@ -549,4 +683,5 @@ body.dark-mode .pricing {
   .btn-highlight:hover, .download-app:hover, .plan .btn:hover {
     transform: none;
   }
-}
+
+  .store-highlight-card:hover {
