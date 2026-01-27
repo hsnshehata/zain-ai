@@ -83,6 +83,7 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
       </div>
       <div class="header-actions">
         <button id="connectFacebookBtn" class="btn btn-primary"><i class="fab fa-facebook"></i> ربط صفحتك على فيسبوك</button>
+        <button id="resetFacebookBtn" class="btn btn-secondary"><i class="fas fa-sign-out-alt"></i> تبديل حساب فيسبوك</button>
         <div id="pageStatus" class="page-status" style="margin-left: 20px;"></div>
       </div>
     </div>
@@ -155,6 +156,7 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
   const settingsContainer = document.getElementById("facebookSettingsContainer");
   const instructionsContainer = document.getElementById("instructionsContainer");
   const connectFacebookBtn = document.getElementById("connectFacebookBtn");
+  const resetFacebookBtn = document.getElementById("resetFacebookBtn");
   const pageStatus = document.getElementById("pageStatus");
 
   // Toggle elements
@@ -412,7 +414,16 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
     });
   }
 
-  function performFacebookLogin() {
+  function performFacebookLogin(forceReauth = false) {
+    const loginOptions = {
+      scope: 'pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement,pages_manage_posts',
+      auth_type: forceReauth ? 'reauthenticate' : 'rerequest' // reauthenticate تطلب اختيار/تأكيد الحساب
+    };
+
+    if (forceReauth) {
+      loginOptions.auth_nonce = Date.now().toString(); // يجبر فيسبوك على فتح حوار جديد
+    }
+
     FB.login(function (response) {
       if (response.authResponse) {
         console.log('✅ تم تسجيل الدخول بنجاح:', response.authResponse);
@@ -422,9 +433,32 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
         errorMessage.textContent = 'تم إلغاء تسجيل الدخول أو حدث خطأ، جرب تاني.';
         errorMessage.style.display = 'block';
       }
-    }, { 
-      scope: 'pages_messaging,pages_show_list,pages_manage_metadata,pages_read_engagement,pages_manage_posts',
-      auth_type: 'rerequest' // استخدام rerequest عشان ما يطلبش كلمة المرور لو مسجّل
+    }, loginOptions);
+  }
+
+  function resetFacebookSession() {
+    errorMessage.style.display = 'none';
+
+    if (typeof FB === 'undefined') {
+      errorMessage.textContent = 'مطلوب تحميل SDK الخاص بفيسبوك أولاً، جرّب إعادة تحميل الصفحة.';
+      errorMessage.style.display = 'block';
+      return;
+    }
+
+    const proceed = confirm('سيتم تسجيل خروج فيسبوك لهذا التطبيق لتقدر تختار حساب/صفحة مختلفة. متابعة؟');
+    if (!proceed) return;
+
+    console.log('🔄 جاري تسجيل الخروج من جلسة فيسبوك للتطبيق...');
+    FB.getLoginStatus(function (statusResponse) {
+      if (statusResponse.status === 'connected') {
+        FB.logout(function (logoutResponse) {
+          console.log('✅ تم تسجيل الخروج من جلسة التطبيق:', logoutResponse);
+          performFacebookLogin(true);
+        });
+      } else {
+        console.log('ℹ️ لا توجد جلسة نشطة للتطبيق، سيتم طلب تسجيل دخول جديد.');
+        performFacebookLogin(true);
+      }
     });
   }
 
@@ -579,6 +613,12 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
     connectFacebookBtn.addEventListener("click", loginWithFacebook);
   } else {
     console.error("❌ connectFacebookBtn is not found in the DOM");
+  }
+
+  if (resetFacebookBtn) {
+    resetFacebookBtn.addEventListener("click", resetFacebookSession);
+  } else {
+    console.error("❌ resetFacebookBtn is not found in the DOM");
   }
 
   toggles.forEach(toggle => {
