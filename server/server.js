@@ -26,6 +26,7 @@ const suppliersRoutes = require('./routes/suppliers');
 const salesRoutes = require('./routes/sales');
 const ordersRoutes = require('./routes/orders');
 const expensesRoutes = require('./routes/expenses');
+const chatOrdersRoutes = require('./routes/chatOrders');
 // removed waRoutes (local WA app)
 const connectDB = require('./db');
 const Conversation = require('./models/Conversation');
@@ -128,6 +129,7 @@ app.use('/api/suppliers', suppliersRoutes);
 app.use('/api/sales', salesRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/expenses', expensesRoutes);
+app.use('/api/chat-orders', chatOrdersRoutes);
 app.use('/', indexRoutes);
 
 // Route لصفحة المتجر
