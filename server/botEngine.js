@@ -36,6 +36,7 @@ const getMediaAuthHeader = (channel) => {
 
 async function fetchImageAsBase64(imageUrl, channel = 'web') {
   try {
+    if (isDataUrl(imageUrl)) return imageUrl;
     const response = await axios.get(imageUrl, {
       responseType: 'arraybuffer',
       headers: {
@@ -52,6 +53,11 @@ async function fetchImageAsBase64(imageUrl, channel = 'web') {
     console.error('❌ خطأ أثناء تحميل الصورة:', err.message);
     throw new Error('عذرًا، لم أتمكن من تحميل الصورة. حاول مرة أخرى أو أرسل صورة أخرى.');
   }
+}
+
+// احتفظ بالاسم القديم للتوافق مع الاستدعاءات الحالية
+async function downloadImageToBase64(imageUrl, channel = 'web') {
+  return fetchImageAsBase64(imageUrl, channel);
 }
 
 async function transcribeAudio(audioUrl, channel = 'web') {
