@@ -12,6 +12,7 @@ const Conversation = require('./models/Conversation');
 const Feedback = require('./models/Feedback');
 const Store = require('./models/Store');
 const Product = require('./models/Product');
+const { createOrUpdateFromExtraction } = require('./controllers/chatOrdersController');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -33,10 +34,8 @@ const getMediaAuthHeader = (channel) => {
   return {};
 };
 
-async function downloadImageToBase64(imageUrl, channel = 'web') {
+async function fetchImageAsBase64(imageUrl, channel = 'web') {
   try {
-    if (isDataUrl(imageUrl)) return imageUrl;
-    console.log('📥 جاري تحميل الصورة من:', imageUrl);
     const response = await axios.get(imageUrl, {
       responseType: 'arraybuffer',
       headers: {
@@ -44,6 +43,7 @@ async function downloadImageToBase64(imageUrl, channel = 'web') {
         ...getMediaAuthHeader(channel),
       },
     });
+
     const imageBuffer = Buffer.from(response.data);
     const base64Image = imageBuffer.toString('base64');
     console.log('✅ تم تحميل الصورة وتحويلها إلى base64');
@@ -137,6 +137,68 @@ const placeholderForMedia = (isImage, isVoice) => {
   if (isVoice) return '[صوت]';
   return '[وسائط]';
 };
+
+async function extractChatOrderIntent({ bot, channel, userMessageContent, conversationId, sourceUserId, sourceUsername, messageId, transcript = [] }) {
+  try {
+    if (!userMessageContent || typeof userMessageContent !== 'string') return null;
+
+    const transcriptText = Array.isArray(transcript)
+      ? transcript
+          .slice(-10)
+          .map((m) => `${m.role === 'assistant' ? 'البوت' : 'العميل'}: ${m.content || ''}`)
+          .join('\n')
+      : '';
+
+    const prompt = `أنت مساعد لاستخلاص طلبات العملاء من محادثة متعددة الرسائل.
+اعتمد على المحادثة كاملة (الترانسكربت) لبناء الطلب حتى لو كانت الرسالة الأخيرة ناقصة.
+أعد دائماً JSON فقط دون أي نص آخر بالمفاتيح التالية:
+- intent: ضع true إذا توفرت أي بيانات طلب (منتج/كمية/اسم/هاتف/عنوان)، وإلا false.
+- customerName, customerPhone, customerAddress, customerNote.
+- items: مصفوفة عناصر { title, quantity, note } (quantity رقم صحيح >=1).
+- status: one of pending|processing|confirmed|shipped|delivered|cancelled. اختر confirmed لو العميل قدّم كل البيانات ووافق، وإلا pending/processing.
+- freeText: تلخيص مختصر للطلب.
+لا تُدخل نصاً خارج JSON.`;
+
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      response_format: { type: 'json_object' },
+      messages: [
+        { role: 'system', content: prompt },
+        { role: 'user', content: `المحادثة الكاملة:\n${transcriptText}\n---\nآخر رسالة من العميل: ${userMessageContent.slice(0, 2000)}` }
+      ],
+      max_tokens: 400
+    });
+
+    const raw = response.choices?.[0]?.message?.content || '{}';
+    const parsed = JSON.parse(raw);
+    if (!parsed || parsed.intent === false) return null;
+
+    const safeItems = Array.isArray(parsed.items) ? parsed.items : [];
+
+    const chatOrder = await createOrUpdateFromExtraction({
+      botId: bot._id,
+      channel,
+      conversationId,
+      sourceUserId,
+      sourceUsername,
+      customerName: parsed.customerName || '',
+      customerPhone: parsed.customerPhone || '',
+      customerEmail: parsed.customerEmail || '',
+      customerAddress: parsed.customerAddress || '',
+      customerNote: parsed.customerNote || '',
+      items: safeItems,
+      freeText: parsed.freeText || userMessageContent,
+      status: parsed.status || 'pending',
+      messageId
+    });
+
+    console.log('🧾 Chat order extracted/updated:', chatOrder?._id);
+    return chatOrder;
+  } catch (err) {
+    console.error('❌ فشل في استخراج طلب المحادثة:', err.message);
+    return null;
+  }
+}
 
 async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'web', mediaUrl = null) {
   try {
@@ -274,6 +336,22 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     await conversation.save();
     console.log('💬 User message added to conversation:', userMessageContent);
+
+    // محاولة استخراج طلب محادثة تلقائياً
+    try {
+      await extractChatOrderIntent({
+        bot,
+        channel: finalChannel,
+        userMessageContent,
+        conversationId: conversation._id,
+        sourceUserId: finalUserId,
+        sourceUsername: conversation.username,
+        messageId: messageId || undefined,
+        transcript: conversation.messages
+      });
+    } catch (e) {
+      console.warn('⚠️ تعذر استخراج طلب المحادثة:', e.message);
+    }
 
     const contextMessages = conversation.messages
       .slice(-50) // take latest 50

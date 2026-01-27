@@ -8,7 +8,7 @@ try {
     let isInitialLoad = true; // Flag to control initial load
 
     // Valid pages to prevent unexpected page loads
-    const validPages = ['overview', 'bots', 'rules', 'chat-page', 'store-manager', 'channels', 'facebook', 'instagram', 'whatsapp', 'messages', 'feedback', 'wasenderpro', 'settings'];
+    const validPages = ['overview', 'bots', 'rules', 'chat-page', 'store-manager', 'orders-center', 'channels', 'facebook', 'instagram', 'whatsapp', 'messages', 'feedback', 'wasenderpro', 'settings'];
 
     // Pages configuration for dashboard cards
     const pages = [
@@ -16,6 +16,7 @@ try {
       { id: 'rules', name: 'القواعد', icon: 'fas fa-book', description: 'إضافة وتعديل قواعد الردود التلقائية' },
       { id: 'chat-page', name: 'صفحة الدردشة', icon: 'fas fa-comment-alt', description: 'تخصيص واجهة الدردشة' },
       { id: 'store-manager', name: 'المتجر الذكي', icon: 'fas fa-store', description: 'إدارة متجرك الذكي ومنتجاتك' },
+      { id: 'orders-center', name: 'متابعة الطلبات', icon: 'fas fa-clipboard-list', description: 'عرض طلبات المتجر والمحادثات في مكان واحد' },
       { id: 'facebook', name: 'فيسبوك', icon: 'fab fa-facebook', description: 'ربط وإدارة حساب فيسبوك' },
       { id: 'instagram', name: 'إنستجرام', icon: 'fab fa-instagram', description: 'ربط وإدارة حساب إنستجرام' },
       { id: 'whatsapp', name: 'واتساب', icon: 'fab fa-whatsapp', description: 'ربط وإدارة حساب واتساب' },
@@ -170,6 +171,8 @@ try {
       rules: "/css/rules.css",
       "chat-page": "/css/chatPage.css",
       "store-manager": "/css/storeManager.css",
+      "orders-center": "/css/storeManager.css",
+      messages: "/css/messages.css",
       facebook: "/css/facebook.css",
       instagram: "/css/facebook.css",
       whatsapp: "/css/facebook.css",
@@ -183,6 +186,7 @@ try {
       rules: "/js/rules.js",
       "chat-page": "/js/chatPage.js",
       "store-manager": "/js/store-dashboard/main.js",
+      "orders-center": "/js/orders-center.js",
       messages: "/js/messages.js",
       feedback: "/js/feedback.js",
       channels: "/js/channels.js",
@@ -404,7 +408,7 @@ try {
           <h2 class="section-title"><i class="fas fa-chart-line"></i> لمحة عامة</h2>
           
           <div class="stats-grid">
-            <div class="stat-card">
+            <div class="stat-card" data-target-page="messages" style="cursor:pointer;">
               <div class="stat-icon"><i class="fas fa-comments"></i></div>
               <div class="stat-info">
                 <h3>المحادثات</h3>
@@ -413,25 +417,16 @@ try {
               </div>
             </div>
             
-            <div class="stat-card">
-              <div class="stat-icon"><i class="fas fa-users"></i></div>
-              <div class="stat-info">
-                <h3>العملاء</h3>
-                <p class="stat-value" id="total-customers">جاري التحميل...</p>
-                <small>عدد العملاء</small>
-              </div>
-            </div>
-            
-            <div class="stat-card">
+            <div class="stat-card" data-target-page="orders-center" style="cursor:pointer;">
               <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
               <div class="stat-info">
-                <h3>الطلبات</h3>
+                <h3 id="orders-card-title">الطلبات</h3>
                 <p class="stat-value" id="total-orders">جاري التحميل...</p>
-                <small>إجمالي الطلبات</small>
+                <small id="orders-card-sub">جاري التحميل...</small>
               </div>
             </div>
             
-            <div class="stat-card">
+            <div class="stat-card" data-target-page="store-manager" style="cursor:pointer;">
               <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
               <div class="stat-info">
                 <h3>المبيعات</h3>
@@ -440,7 +435,7 @@ try {
               </div>
             </div>
             
-            <div class="stat-card">
+            <div class="stat-card" data-target-page="store-manager" style="cursor:pointer;">
               <div class="stat-icon"><i class="fas fa-box"></i></div>
               <div class="stat-info">
                 <h3>المنتجات</h3>
@@ -448,8 +443,17 @@ try {
                 <small>عدد المنتجات</small>
               </div>
             </div>
+
+            <div class="stat-card" data-target-page="bots" style="cursor:pointer;">
+              <div class="stat-icon"><i class="fas fa-users"></i></div>
+              <div class="stat-info">
+                <h3>العملاء</h3>
+                <p class="stat-value" id="total-customers">جاري التحميل...</p>
+                <small>عدد العملاء</small>
+              </div>
+            </div>
             
-            <div class="stat-card">
+            <div class="stat-card" data-target-page="feedback" style="cursor:pointer;">
               <div class="stat-icon"><i class="fas fa-star"></i></div>
               <div class="stat-info">
                 <h3>التقييمات</h3>
@@ -497,6 +501,17 @@ try {
         </div>
       `;
 
+      // البطاقات تعمل كأزرار تنقل للصفحات المرتبطة
+      content.querySelectorAll('.stat-card').forEach((card) => {
+        card.addEventListener('click', () => {
+          const target = card.getAttribute('data-target-page');
+          if (target) {
+            window.location.hash = `#${target}`;
+            loadPage(target);
+          }
+        });
+      });
+
       // Load statistics
       await loadOverviewStats();
     }
@@ -509,9 +524,12 @@ try {
       if (!selectedBotId) return;
 
       // Store data for charts
-      let channelsData = { facebook: 0, instagram: 0, whatsapp: 0 };
+      let channelsData = { facebook: 0, instagram: 0, whatsapp: 0, web: 0 };
       let ordersData = { pending: 0, completed: 0, cancelled: 0 };
       let dailyMessagesData = [];
+      let chatOrdersCounts = { total: 0, pending: 0, byStatus: {} };
+      let chatOrdersNewestTs = 0;
+      let totalOrdersCount = 0;
 
       try {
         // Fetch bot info
@@ -535,7 +553,7 @@ try {
         // Fetch conversations count from all channels
         try {
           let totalConversations = 0;
-          const channels = ['facebook', 'instagram', 'whatsapp'];
+          const channels = ['facebook', 'instagram', 'whatsapp', 'web'];
           
           for (const channel of channels) {
             try {
@@ -575,6 +593,36 @@ try {
           console.log('No daily messages data');
         }
 
+        // Fetch chat orders (always include, even without a store)
+        try {
+          const chatOrdersUrl = selectedBotId ? `/api/chat-orders?botId=${selectedBotId}` : '/api/chat-orders';
+          const chatResp = await handleApiRequest(
+            chatOrdersUrl,
+            { headers: { Authorization: `Bearer ${token}` } },
+            null,
+            'فشل في جلب طلبات المحادثة'
+          );
+
+          chatOrdersCounts = chatResp?.counts || { total: 0, pending: 0, byStatus: {} };
+          const chatOrders = Array.isArray(chatResp?.orders) ? chatResp.orders : [];
+
+          chatOrdersNewestTs = Math.max(
+            0,
+            ...chatOrders.map((o) => new Date(o.createdAt || o.updatedAt || o.lastModifiedAt || 0).getTime())
+          );
+
+          totalOrdersCount += chatOrdersCounts.total || chatOrders.length || 0;
+
+          chatOrders.forEach((order) => {
+            const st = (order.status || '').toLowerCase();
+            if (st === 'cancelled') ordersData.cancelled++;
+            else if (st === 'delivered') ordersData.completed++;
+            else ordersData.pending++; // pending/processing/confirmed/shipped → انتظار
+          });
+        } catch (err) {
+          console.log('No chat orders data');
+        }
+
         // Get store info from bot
         try {
           const bot = availableBots.find(b => String(b._id) === String(selectedBotId));
@@ -595,7 +643,7 @@ try {
               document.getElementById('total-customers').textContent = '0';
             }
 
-            // Fetch orders
+            // Fetch store orders
             try {
               const orders = await handleApiRequest(
                 `/api/orders/${storeId}/orders`,
@@ -607,12 +655,14 @@ try {
               
               const revenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
               document.getElementById('total-revenue').textContent = `${revenue.toFixed(2)} ج.م`;
+              totalOrdersCount += orders.length;
               
               // Count orders by status
               orders.forEach(order => {
-                if (order.status === 'pending') ordersData.pending++;
-                else if (order.status === 'completed') ordersData.completed++;
-                else if (order.status === 'cancelled') ordersData.cancelled++;
+                const status = (order.status || '').toLowerCase();
+                if (status === 'cancelled') ordersData.cancelled++;
+                else if (status === 'delivered') ordersData.completed++;
+                else ordersData.pending++; // pending/processing/confirmed/shipped → انتظار
               });
             } catch (err) {
               console.log('No orders found');
@@ -636,14 +686,12 @@ try {
           } else {
             // No store linked
             document.getElementById('total-customers').textContent = 'لا يوجد متجر';
-            document.getElementById('total-orders').textContent = 'لا يوجد متجر';
             document.getElementById('total-revenue').textContent = 'لا يوجد متجر';
             document.getElementById('total-products').textContent = 'لا يوجد متجر';
           }
         } catch (err) {
           console.error('Error in store operations:', err);
           document.getElementById('total-customers').textContent = '0';
-          document.getElementById('total-orders').textContent = '0';
           document.getElementById('total-revenue').textContent = '0 ج.م';
           document.getElementById('total-products').textContent = '0';
         }
@@ -651,20 +699,34 @@ try {
         // Fetch feedback count
         try {
           const feedbackData = await handleApiRequest(
-            `/api/chat-page/bot/${selectedBotId}`,
+            `/api/feedback/${selectedBotId}`,
             { headers: { Authorization: `Bearer ${token}` } },
             null,
-            'فشل في جلب بيانات الدردشة'
+            'فشل في جلب التقييمات'
           );
-          
-          // Count feedback if exists
-          const feedbackCount = feedbackData && feedbackData.feedback ? feedbackData.feedback.length : 0;
+          const feedbackCount = Array.isArray(feedbackData) ? feedbackData.length : 0;
           document.getElementById('total-feedback').textContent = feedbackCount;
         } catch (err) {
           console.error('Error fetching feedback:', err);
           document.getElementById('total-feedback').textContent = '0';
         }
         
+        // عكس حالة الطلبات في البطاقة
+        const lastSeen = Number(localStorage.getItem('chatOrdersLastSeen') || 0);
+        const hasNewOrders = chatOrdersCounts.pending > 0 || chatOrdersNewestTs > lastSeen;
+        const ordersTitleEl = document.getElementById('orders-card-title');
+        const ordersSubEl = document.getElementById('orders-card-sub');
+        if (ordersTitleEl) ordersTitleEl.textContent = hasNewOrders ? 'يوجد طلبات جديدة ♥' : 'الطلبات';
+        if (ordersSubEl) {
+          if (hasNewOrders) {
+            const pending = chatOrdersCounts.pending || 0;
+            ordersSubEl.textContent = pending > 0 ? `${pending} طلب محادثة جديد` : 'طلبات محادثة جديدة';
+          } else {
+            ordersSubEl.textContent = 'إجمالي الطلبات';
+          }
+        }
+        document.getElementById('total-orders').textContent = totalOrdersCount || 0;
+
         // Render Charts
         renderCharts(channelsData, ordersData, dailyMessagesData);
       } catch (err) {
@@ -691,13 +753,14 @@ try {
         channelsChart = new Chart(channelsCtx, {
           type: 'doughnut',
           data: {
-            labels: ['فيسبوك', 'إنستجرام', 'واتساب'],
+            labels: ['فيسبوك', 'إنستجرام', 'واتساب', 'ويب'],
             datasets: [{
-              data: [channelsData.facebook, channelsData.instagram, channelsData.whatsapp],
+              data: [channelsData.facebook, channelsData.instagram, channelsData.whatsapp, channelsData.web],
               backgroundColor: [
                 '#1877F2',
                 '#E4405F',
-                '#25D366'
+                '#25D366',
+                '#0ea5e9'
               ],
               borderWidth: 2,
               borderColor: isDarkMode ? '#1A1A2E' : '#FFFFFF'
@@ -921,6 +984,11 @@ try {
             const loadStoreManagerPage = await waitForFunction("loadStoreManagerPage");
             console.log(`Loading store-manager page`);
             await loadStoreManagerPage();
+            break;
+          case "orders-center":
+            const loadOrdersCenterPage = await waitForFunction("loadOrdersCenterPage");
+            console.log(`Loading orders-center page`);
+            await loadOrdersCenterPage();
             break;
           case "channels":
             const loadChannelsPage = await waitForFunction("loadChannelsPage");

@@ -31,6 +31,7 @@
 // Human-friendly status labels used across modules
 const STATUS_LABELS = {
 	pending: 'قيد المعالجة',
+	processing: 'تحت المراجعة',
 	confirmed: 'مؤكد',
 	shipped: 'تم الشحن',
 	delivered: 'تم التسليم',
@@ -1288,6 +1289,7 @@ async function renderReportsPanel() {
 			if (window.storeDashboard && window.storeDashboard.orders && window.storeDashboard.orders._loaded) {
 				return resolve(window.storeDashboard.orders);
 			}
+
 			const src = '/js/store-dashboard/orders.js';
 			const existing = Array.from(document.scripts).find(s => s.src && s.src.endsWith('store-dashboard/orders.js'));
 			if (existing) {

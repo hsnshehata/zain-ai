@@ -35,28 +35,43 @@ try {
     }
 
     content.innerHTML = `
-      <div class="page-header">
-        <h2><i class="fas fa-envelope"></i> سجل الرسائل</h2>
-        <div class="header-actions filter-group">
-          <label for="startDateFilter">من:</label>
-          <input type="date" id="startDateFilter" class="form-control form-control-sm">
-          <label for="endDateFilter">إلى:</label>
-          <input type="date" id="endDateFilter" class="form-control form-control-sm">
-          <button id="applyFilterBtn" class="btn btn-secondary btn-sm"><i class="fas fa-filter"></i> تطبيق</button>
-          <button id="resetFilterBtn" class="btn btn-outline-secondary btn-sm"><i class="fas fa-undo"></i> إعادة تعيين</button>
+      <div class="messages-header">
+        <div>
+          <h2><i class="fas fa-envelope"></i> سجل الرسائل</h2>
+          <p class="messages-subtitle">تصفية وقراءة المحادثات لكل القنوات في مكان واحد</p>
+        </div>
+        <div class="toolbar-actions">
+          <button id="downloadMessagesBtn" class="btn btn-secondary btn-sm" title="تنزيل رسائل القناة الحالية (TXT)"><i class="fas fa-download"></i> تنزيل</button>
+          <button id="deleteAllConversationsBtn" class="btn btn-danger btn-sm" title="حذف كل محادثات القناة الحالية"><i class="fas fa-trash-alt"></i> حذف الكل</button>
         </div>
       </div>
 
-      <div class="tabs-container">
-        <div class="tabs">
-          <button id="facebookMessagesTab" class="tab-button active" data-channel="facebook"><i class="fab fa-facebook-square"></i> فيسبوك</button>
-          <button id="webMessagesTab" class="tab-button" data-channel="web"><i class="fas fa-globe"></i> ويب</button>
-          <button id="instagramMessagesTab" class="tab-button" data-channel="instagram"><i class="fab fa-instagram"></i> إنستجرام</button>
-          <button id="whatsappMessagesTab" class="tab-button" data-channel="whatsapp"><i class="fab fa-whatsapp"></i> واتساب</button>
+      <div class="filters-card">
+        <div class="date-filters">
+          <div class="input-wrap">
+            <label for="startDateFilter">من</label>
+            <div class="input-shell">
+              <i class="far fa-calendar-alt"></i>
+              <input type="date" id="startDateFilter" class="form-control form-control-sm">
+            </div>
+          </div>
+          <div class="input-wrap">
+            <label for="endDateFilter">إلى</label>
+            <div class="input-shell">
+              <i class="far fa-calendar-alt"></i>
+              <input type="date" id="endDateFilter" class="form-control form-control-sm">
+            </div>
+          </div>
+          <div class="filter-actions">
+            <button id="applyFilterBtn" class="btn btn-primary btn-sm"><i class="fas fa-filter"></i> تطبيق</button>
+            <button id="resetFilterBtn" class="btn btn-ghost btn-sm"><i class="fas fa-undo"></i> إعادة تعيين</button>
+          </div>
         </div>
-        <div class="tab-actions">
-          <button id="downloadMessagesBtn" class="btn btn-secondary btn-sm" title="تنزيل رسائل القناة الحالية (TXT)"><i class="fas fa-download"></i> تنزيل</button>
-          <button id="deleteAllConversationsBtn" class="btn btn-danger btn-sm" title="حذف كل محادثات القناة الحالية"><i class="fas fa-trash-alt"></i> حذف الكل</button>
+        <div class="channel-chips">
+          <button id="facebookMessagesTab" class="tab-button channel-chip active" data-channel="facebook"><i class="fab fa-facebook-square"></i> فيسبوك</button>
+          <button id="webMessagesTab" class="tab-button channel-chip" data-channel="web"><i class="fas fa-globe"></i> ويب</button>
+          <button id="instagramMessagesTab" class="tab-button channel-chip" data-channel="instagram"><i class="fab fa-instagram"></i> إنستجرام</button>
+          <button id="whatsappMessagesTab" class="tab-button channel-chip" data-channel="whatsapp"><i class="fab fa-whatsapp"></i> واتساب</button>
         </div>
       </div>
 
@@ -255,33 +270,50 @@ try {
 
       userNamesCache[conv._id] = userName;
 
+      let channelLabel = "قناة";
+      if (currentChannel === "facebook") channelLabel = "فيسبوك";
+      else if (currentChannel === "instagram") channelLabel = "إنستجرام";
+      else if (currentChannel === "whatsapp") channelLabel = "واتساب";
+      else if (currentChannel === "web") channelLabel = "ويب";
+
       const lastMessage = conv.messages[conv.messages.length - 1];
       const lastMessageTimestamp = lastMessage
         ? new Date(lastMessage.timestamp).toLocaleString("ar-EG")
         : "لا يوجد";
-      const messageCount = conv.messages.filter(
-        (msg) => msg.role === "assistant"
-      ).length;
+      const lastMessageText = lastMessage?.content || "لا توجد رسائل بعد";
+      const snippet = lastMessageText.length > 140
+        ? `${lastMessageText.slice(0, 137)}...`
+        : lastMessageText;
+      const messageCount = conv.messages.length;
+      const avatarInitial = (userName && userName.trim()[0]) || "•";
 
       card.innerHTML = `
-        <div class="card-body">
-          <h4 class="card-title"><i class="${iconClass}"></i> ${escapeHtml(
-        userName
-      )}</h4>
-          <p class="card-text"><small>المعرف: ${escapeHtml(
-            userIdentifier
-          )}</small></p>
-          <p class="card-text">عدد الرسائل: ${messageCount}</p>
-          <p class="card-text">آخر رسالة: ${lastMessageTimestamp}</p>
+        <div class="conversation-top">
+          <div class="avatar channel-${currentChannel}">${escapeHtml(avatarInitial)}</div>
+          <div class="conversation-meta">
+            <div class="title-row">
+              <span class="conversation-name">${escapeHtml(userName)}</span>
+              <span class="channel-badge channel-${currentChannel}"><i class="${iconClass}"></i>${channelLabel}</span>
+            </div>
+            <div class="conversation-id">المعرف: ${escapeHtml(userIdentifier)}</div>
+          </div>
+          <div class="conversation-stats">
+            <span class="stat-badge"><i class="fas fa-comment-dots"></i> ${messageCount}</span>
+            <span class="stat-time">${lastMessageTimestamp}</span>
+          </div>
         </div>
-        <div class="card-footer">
+        <div class="conversation-snippet" title="${escapeHtml(lastMessageText)}">${escapeHtml(snippet)}</div>
+        <div class="card-actions">
           <button class="btn btn-sm btn-primary view-chat-btn"><i class="fas fa-eye"></i> عرض المحادثة</button>
         </div>
       `;
 
-      card.querySelector(".view-chat-btn").addEventListener("click", () =>
-        openChatModal(conv._id, conv.userId)
-      );
+      const openHandler = () => openChatModal(conv._id, conv.userId);
+      card.querySelector(".view-chat-btn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        openHandler();
+      });
+      card.addEventListener("click", openHandler);
       return card;
     }
 
@@ -437,6 +469,7 @@ try {
         button.addEventListener("click", handleCancelEditClick);
       });
 
+      document.body.classList.add("modal-open");
       chatModal.style.display = "flex";
       chatModalBody.scrollTop = chatModalBody.scrollHeight;
     }
@@ -446,6 +479,7 @@ try {
       chatModal.style.display = "none";
       currentOpenConversationId = null;
       currentOpenUserId = null;
+      document.body.classList.remove("modal-open");
       console.log(
         "Chat modal closed, cleared currentOpenConversationId and currentOpenUserId"
       );
