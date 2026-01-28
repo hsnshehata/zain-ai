@@ -191,22 +191,22 @@ async function createOrUpdateFromExtraction({
   totalAmount,
 }) {
   if (!botId || !channel || !sourceUserId) throw new Error('botId, channel, sourceUserId مطلوبة');
+  const safeStatus = STATUS_ENUM.includes(status) ? status : 'pending';
+  const normalizedItems = inferBallPrices(normalizeItems(items));
+  const fee = Math.max(Number(deliveryFee) || 0, 0);
+  const totals = calcTotals(normalizedItems, fee);
 
+  // تحقق البيانات المطلوبة بعد التطبيع والتسعير التلقائي
   const hasRequiredOrderData = () => {
     const nameOk = Boolean((customerName || '').trim());
     const phoneOk = Boolean((customerPhone || '').trim());
     const addressOk = Boolean((customerAddress || '').trim());
-    const itemsArr = Array.isArray(items) ? items : [];
+    const itemsArr = Array.isArray(normalizedItems) ? normalizedItems : [];
     const pricedItems = itemsArr.filter(
       (it) => Math.max(Number(it.price) || 0, 0) > 0 && Math.max(Number(it.quantity) || 0, 0) > 0
     );
     return nameOk && phoneOk && addressOk && pricedItems.length > 0;
   };
-
-  const safeStatus = STATUS_ENUM.includes(status) ? status : 'pending';
-  const normalizedItems = inferBallPrices(normalizeItems(items));
-  const fee = Math.max(Number(deliveryFee) || 0, 0);
-  const totals = calcTotals(normalizedItems, fee);
 
   const latestOrder = await ChatOrder.findOne({ botId, channel, conversationId }).sort({ createdAt: -1 });
 
