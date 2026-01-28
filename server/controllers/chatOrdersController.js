@@ -1,4 +1,4 @@
-﻿const ChatOrder = require('../models/ChatOrder');
+const ChatOrder = require('../models/ChatOrder');
 const Bot = require('../models/Bot');
 
 const STATUS_ENUM = ['pending', 'processing', 'confirmed', 'shipped', 'delivered', 'cancelled'];
@@ -76,6 +76,9 @@ async function listOrders(req, res) {
       botFilter.botId = { $in: botIds };
     } else if (req.query.botId) {
       botFilter.botId = req.query.botId;
+    } else {
+      // superadmin without explicit botId: لا نعيد أي بيانات لمنع رؤية كل الطلبات
+      return res.json({ orders: [], counts: { total: 0, pending: 0, byStatus: {} } });
     }
 
     const orders = await ChatOrder.find(botFilter).sort({ lastModifiedAt: -1, createdAt: -1 }).limit(200);
@@ -189,6 +192,17 @@ async function createOrUpdateFromExtraction({
 }) {
   if (!botId || !channel || !sourceUserId) throw new Error('botId, channel, sourceUserId مطلوبة');
 
+  const hasRequiredOrderData = () => {
+    const nameOk = Boolean((customerName || '').trim());
+    const phoneOk = Boolean((customerPhone || '').trim());
+    const addressOk = Boolean((customerAddress || '').trim());
+    const itemsArr = Array.isArray(items) ? items : [];
+    const pricedItems = itemsArr.filter(
+      (it) => Math.max(Number(it.price) || 0, 0) > 0 && Math.max(Number(it.quantity) || 0, 0) > 0
+    );
+    return nameOk && phoneOk && addressOk && pricedItems.length > 0;
+  };
+
   const safeStatus = STATUS_ENUM.includes(status) ? status : 'pending';
   const normalizedItems = inferBallPrices(normalizeItems(items));
   const fee = Math.max(Number(deliveryFee) || 0, 0);
@@ -233,13 +247,21 @@ async function createOrUpdateFromExtraction({
 
       latestOrder.deliveryFee = fee;
       latestOrder.totalAmount = totalAmount && totalAmount > 0 ? totalAmount : totals.grand;
-
+      // لا نقوم بالحفظ إذا لم تكتمل البيانات المطلوبة
+      if (!hasRequiredOrderData()) {
+        return latestOrder;
+      }
       await latestOrder.save();
       return latestOrder;
     }
   }
 
   const history = [{ status: safeStatus, changedBy: null, note: 'تم الإنشاء من المحادثة', changedAt: new Date() }];
+
+  // منع إنشاء طلب ببيانات ناقصة (اسم، هاتف، عنوان، بنود مسعّرة)
+  if (!hasRequiredOrderData()) {
+    return null;
+  }
 
   const chatOrder = await ChatOrder.create({
     botId,
