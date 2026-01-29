@@ -91,7 +91,10 @@
           <summary style="cursor:pointer;font-weight:600;"><i class="fas fa-history"></i> سجل التعديلات</summary>
           <ul style="list-style:none;padding:8px 0 0;margin:0;">${historyHtml}</ul>
         </details>
-        <div style="display:flex;justify-content:flex-start;align-items:center;gap:8px;margin-top:4px;">
+        <div style="display:flex;justify-content:flex-start;align-items:center;gap:10px;margin-top:4px;flex-wrap:wrap;">
+          <button data-action="chat-open-conversation" data-id="${order._id}" data-conv="${order.conversationId||''}" data-user="${order.sourceUserId||''}" class="btn btn-outline-primary btn-sm" style="display:flex;align-items:center;gap:6px;">
+            <i class="fas fa-comments"></i> اذهب للمحادثة
+          </button>
           <button data-action="chat-delete" data-id="${order._id}" title="حذف الطلب" style="border:none;background:transparent;color:#ef4444;cursor:pointer;padding:4px;display:flex;align-items:center;gap:6px;font-size:14px;">
             <i class="fas fa-trash"></i>
           </button>
@@ -160,6 +163,20 @@
           return;
         }
         await deleteOrder(orderId);
+      } else if (action === 'chat-open-conversation') {
+        const convId = btn.dataset.conv;
+        const userId = btn.dataset.user;
+        if (convId) {
+          try {
+            localStorage.setItem('openConversationId', convId);
+            if (userId) localStorage.setItem('openConversationUserId', userId);
+          } catch(_) {}
+          const messagesNav = document.querySelector('.nav-item[data-page="messages"]');
+          if (messagesNav) messagesNav.click();
+          else window.location.hash = '#messages';
+        } else {
+          module.ctx.helpers?.showToast?.('لا يوجد معرّف محادثة مرتبط بهذا الطلب', 'error');
+        }
       }
     });
   }
