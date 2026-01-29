@@ -237,6 +237,15 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       }).sort({ createdAt: -1 });
     }
 
+    // احتياطي: لو مفيش موبايل أو ملقيناش بالرقم، نحاول نجيب آخر طلب مفتوح لنفس المستخدم
+    if (!existingOpenOrder && sourceUserId) {
+      existingOpenOrder = await ChatOrder.findOne({
+        botId: bot._id,
+        sourceUserId,
+        status: { $in: ['pending', 'processing', 'confirmed'] }
+      }).sort({ createdAt: -1 });
+    }
+
     let safeItems = Array.isArray(parsed.items) ? parsed.items.map((it) => ({
       title: (it.title || '').trim(),
       quantity: Math.max(Number(it.quantity) || 0, 0),
