@@ -8,6 +8,7 @@ async function loadSettingsPage() {
   const content = document.getElementById("content");
   const token = localStorage.getItem("token");
   const userId = localStorage.getItem("userId");
+  const selectedBotId = localStorage.getItem("selectedBotId");
 
   if (!token || !userId) {
     console.error("Token or userId not found in localStorage");
@@ -49,7 +50,37 @@ async function loadSettingsPage() {
       }
     }
 
+    // جلب بيانات البوت النشط (إن وجد) مع كاش خفيف
+    let activeBot = null;
+    if (selectedBotId) {
+      const botCacheKey = 'settingsBot';
+      const cachedBot = window.readPageCache ? window.readPageCache(botCacheKey, selectedBotId, 3 * 60 * 1000) : null;
+      const fetchBot = () => handleApiRequest(`/api/bots/${selectedBotId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, content, 'فشل في جلب بيانات البوت');
+
+      if (cachedBot) {
+        console.log("Using cached bot data for botId:", selectedBotId);
+        activeBot = cachedBot;
+        fetchBot()
+          .then((fresh) => {
+            if (fresh && window.writePageCache) {
+              window.writePageCache(botCacheKey, selectedBotId, fresh);
+            }
+          })
+          .catch((err) => {
+            console.warn('⚠️ Failed to refresh bot data, using cache', err);
+          });
+      } else {
+        activeBot = await fetchBot();
+        if (window.writePageCache) {
+          window.writePageCache(botCacheKey, selectedBotId, activeBot);
+        }
+      }
+    }
+
     console.log("User data fetched successfully:", user);
+    const botNameValue = activeBot && activeBot.name ? activeBot.name.replace(/"/g, '&quot;') : '';
     content.innerHTML = `
       <div class="page-header">
         <h2><i class="fas fa-cog"></i> إعدادات المستخدم</h2>
@@ -79,6 +110,25 @@ async function loadSettingsPage() {
           <button type="submit">حفظ التغييرات</button>
         </form>
         <p id="error" role="alert"></p>
+      </div>
+
+      <div class="form-card">
+        <div class="form-header">
+          <h3><i class="fas fa-robot"></i> اسم البوت النشط</h3>
+          <p class="form-hint">سيتم تعديل اسم البوت المختار من القائمة العلوية فقط.</p>
+        </div>
+        ${selectedBotId ? `
+        <div class="form-group">
+          <label for="botName">اسم البوت</label>
+          <input type="text" id="botName" value="${botNameValue}" placeholder="اكتب اسم البوت" required>
+        </div>
+        <button type="button" id="saveBotNameBtn">حفظ اسم البوت</button>
+        <p id="botNameError" role="alert"></p>
+        ` : `
+        <div class="placeholder">
+          <p>اختر بوتًا من القائمة العلوية لتعديل اسمه.</p>
+        </div>
+        `}
       </div>
     `;
 
@@ -122,6 +172,46 @@ async function loadSettingsPage() {
         errorDiv.textContent = 'خطأ في السيرفر، حاول مرة أخرى';
       }
     });
+
+    // تحديث اسم البوت النشط
+    if (selectedBotId) {
+      const botNameInput = document.getElementById('botName');
+      const saveBotNameBtn = document.getElementById('saveBotNameBtn');
+      const botNameError = document.getElementById('botNameError');
+
+      saveBotNameBtn.addEventListener('click', async () => {
+        const newName = (botNameInput.value || '').trim();
+        if (!newName) {
+          botNameError.style.display = 'block';
+          botNameError.textContent = 'يرجى إدخال اسم صالح للبوت';
+          return;
+        }
+
+        try {
+          botNameError.style.display = 'none';
+          const updated = await handleApiRequest(`/api/bots/${selectedBotId}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ name: newName })
+          }, content, 'فشل في تحديث اسم البوت');
+
+          if (updated && updated.name) {
+            botNameInput.value = updated.name;
+            if (window.writePageCache) {
+              window.writePageCache('settingsBot', selectedBotId, updated);
+            }
+            alert('تم تحديث اسم البوت بنجاح');
+          }
+        } catch (err) {
+          console.error('Error updating bot name:', err);
+          botNameError.style.display = 'block';
+          botNameError.textContent = 'فشل في تحديث اسم البوت، حاول مرة أخرى';
+        }
+      });
+    }
   } catch (err) {
     console.error("Error loading settings page:", err);
     content.innerHTML = `
