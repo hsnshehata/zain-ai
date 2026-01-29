@@ -293,17 +293,30 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       price: it.price
     })) : [];
 
-    const ensurePrice = (title = '', price) => {
+    const ensurePrice = (title = '', price, quantity = 1) => {
       const numeric = Number(price) || 0;
-      return numeric > 0 ? numeric : 0;
+      if (numeric > 0) return numeric;
+
+      // استخدم تسعير النظام الافتراضي للكور في حال غياب السعر من النموذج
+      const name = (title || '').toLowerCase();
+      const isBall = ['كرة', 'كور', 'كوره', 'كورة', 'ball', 'ميكاسا'].some((kw) => name.includes(kw));
+      if (!isBall) return 0;
+
+      const qty = Math.max(Number(quantity) || 1, 1);
+      if (qty >= 5) return 1900; // خمس الواحد ب 1900
+      if (qty === 2) return 1950; // الكورتين 3900
+      return 2100; // الكورة الواحد 2100
     };
 
     // إذا لم يعد النموذج عناصر أو كانت الكميات غير صالحة، أنشئ بند افتراضي من المحادثة
     if (!safeItems.length || safeItems.every((it) => !it.quantity)) {
       const qty = extractQuantity() || 1;
-      safeItems = [{ title: safeItems[0]?.title || 'كرة', quantity: qty, note: parsed.customerNote || '', price: ensurePrice('كرة', parsed.items?.[0]?.price) }];
+      safeItems = [{ title: safeItems[0]?.title || 'كرة', quantity: qty, note: parsed.customerNote || '', price: ensurePrice('كرة', parsed.items?.[0]?.price, qty) }];
     } else {
-      safeItems = safeItems.map((it) => ({ ...it, quantity: Math.max(Number(it.quantity) || 1, 1), price: ensurePrice(it.title, it.price) }));
+      safeItems = safeItems.map((it) => {
+        const qty = Math.max(Number(it.quantity) || 1, 1);
+        return { ...it, quantity: qty, price: ensurePrice(it.title, it.price, qty) };
+      });
     }
 
     const effectiveName = (parsed.customerName || existingOpenOrder?.customerName || existingCustomer?.name || '').trim();
