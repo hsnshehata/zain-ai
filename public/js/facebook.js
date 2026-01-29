@@ -630,6 +630,9 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
       // الاشتراك في Webhook Events
       const subscribedFields = [
         'messages',
+        'message_echoes',
+        'message_deliveries',
+        'message_reads',
         'messaging_postbacks',
         'messaging_optins',
         'messaging_optouts',
