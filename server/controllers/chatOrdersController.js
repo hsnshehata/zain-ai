@@ -17,18 +17,6 @@ const normalizeItems = (items) =>
       }))
     : [];
 
-const inferBallPrices = (items) => {
-  if (!items.length || items.some((it) => it.price > 0)) return items;
-  const ballItem = items.find(
-    (it) => (it.title || '').includes('كورة') || (it.title || '').toLowerCase().includes('ball')
-  );
-  if (!ballItem) return items;
-  const qty = Math.max(Number(ballItem.quantity) || 1, 1);
-  const total = qty >= 2 ? 3900 : 2100 * qty;
-  const unitPrice = Math.round(total / qty);
-  return items.map((it) => ({ ...it, price: unitPrice }));
-};
-
 const calcTotals = (items, deliveryFee = 0) => {
   const itemsTotal = (items || []).reduce(
     (sum, it) => sum + Number(it.price || 0) * Math.max(Number(it.quantity) || 1, 1),
@@ -112,7 +100,7 @@ async function updateOrder(req, res) {
     let touched = false;
 
     if (Array.isArray(items)) {
-      order.items = inferBallPrices(normalizeItems(items));
+      order.items = normalizeItems(items);
       touched = true;
     }
 
@@ -192,11 +180,11 @@ async function createOrUpdateFromExtraction({
 }) {
   if (!botId || !channel || !sourceUserId) throw new Error('botId, channel, sourceUserId مطلوبة');
   const safeStatus = STATUS_ENUM.includes(status) ? status : 'pending';
-  const normalizedItems = inferBallPrices(normalizeItems(items));
+  const normalizedItems = normalizeItems(items);
   const fee = Math.max(Number(deliveryFee) || 0, 0);
   const totals = calcTotals(normalizedItems, fee);
 
-  // تحقق البيانات المطلوبة بعد التطبيع والتسعير التلقائي
+  // تحقق البيانات المطلوبة بعد التطبيع فقط (لا تسعير تلقائي)
   const hasRequiredOrderData = () => {
     const nameOk = Boolean((customerName || '').trim());
     const phoneOk = Boolean((customerPhone || '').trim());

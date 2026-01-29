@@ -13,7 +13,9 @@ const Feedback = require('./models/Feedback');
 const Store = require('./models/Store');
 const Product = require('./models/Product');
 const ChatOrder = require('./models/ChatOrder');
+const ChatCustomer = require('./models/ChatCustomer');
 const { createOrUpdateFromExtraction } = require('./controllers/chatOrdersController');
+const { upsertChatCustomerProfile } = require('./controllers/chatCustomersController');
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -167,7 +169,7 @@ const isStatusInquiry = (text = '') => /(حالة|متابعة|وصل|الشحن
 const isModifyIntent = (text = '') => /(تعديل|عدّل|عدل|غير|غيّر).*طلب/i.test(text) || /(عايز|حابب).*أعدل/i.test(text);
 const isCancelIntent = (text = '') => /(الغاء|إلغاء|cancel|الغى|الغي|عايز الغي|عايز ألغي|الغى الطلب|الغي الطلب)/i.test(text);
 const isNewOrderIntent = (text = '') => /(طلب جديد|طلب تاني|طلب ثاني|عايز اطلب تاني|عايز أطلب تاني|أعمل طلب تاني)/i.test(text);
-const isConfirmIntent = (text = '') => /(تأكيد|أكد|أكدت|تمام|اوكي|أوكي|موافق|ايوه|ايوا|أيوه|أه|اه|اكيد|أكيد)/i.test(text);
+const isConfirmIntent = (text = '') => /(تأكيد|أكد|أكدت|تمام|اوكي|أوكي|موافق|ايوه|ايوا|أيوه|أه|اه|اكيد|اكد|اكده|أكيد)/i.test(text);
 const isOptionOne = (text = '') => /^\s*(1|١)\s*$/.test(text.trim());
 const isOptionTwo = (text = '') => /^\s*(2|٢)\s*$/.test(text.trim());
 const DRAFT_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
@@ -240,6 +242,18 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       parsed.customerPhone = '';
     }
 
+    const phoneFromThread = extractPhoneFromText(transcriptText) || extractPhoneFromText(userMessageContent);
+
+    // جلب عميل سابق لملء البيانات الناقصة وتحديثها بأحدث قيمة
+    const existingCustomer = await ChatCustomer.findOne({
+      botId: bot._id,
+      $or: [
+        { sourceUserId },
+        parsed.customerPhone ? { phone: parsed.customerPhone } : null,
+        phoneFromThread ? { phone: phoneFromThread } : null,
+      ].filter(Boolean),
+    }).sort({ updatedAt: -1 });
+
     const extractQuantity = () => {
       const haystack = `${transcriptText}\n${userMessageContent}`;
       const m1 = haystack.match(/العدد\s*[:\-]?\s*(\d{1,3})/i);
@@ -251,7 +265,6 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
 
     const latestOpenOrder = async () => {
       const filters = [];
-      const phoneFromThread = extractPhoneFromText(transcriptText) || extractPhoneFromText(userMessageContent);
       const phoneToUse = isValidPhone(parsed.customerPhone) ? parsed.customerPhone : phoneFromThread;
 
       if (phoneToUse) filters.push({ customerPhone: phoneToUse });
@@ -293,9 +306,10 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       safeItems = safeItems.map((it) => ({ ...it, quantity: Math.max(Number(it.quantity) || 1, 1), price: ensurePrice(it.title, it.price) }));
     }
 
-    const effectiveName = (parsed.customerName || existingOpenOrder?.customerName || '').trim();
-    const effectivePhone = (parsed.customerPhone || existingOpenOrder?.customerPhone || '').trim();
-    const effectiveAddress = (parsed.customerAddress || existingOpenOrder?.customerAddress || '').trim();
+    const effectiveName = (parsed.customerName || existingOpenOrder?.customerName || existingCustomer?.name || '').trim();
+    const effectivePhone = (parsed.customerPhone || existingOpenOrder?.customerPhone || existingCustomer?.phone || '').trim();
+    const effectiveAddress = (parsed.customerAddress || existingOpenOrder?.customerAddress || existingCustomer?.address || '').trim();
+    const effectiveEmail = (parsed.customerEmail || existingOpenOrder?.customerEmail || existingCustomer?.email || '').trim();
     const effectiveItems = safeItems.length ? safeItems : (existingOpenOrder?.items || []);
 
     const hasRequiredData = () => {
@@ -422,7 +436,7 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       sourceUsername,
       customerName: effectiveName || '',
       customerPhone: effectivePhone || '',
-      customerEmail: parsed.customerEmail || '',
+      customerEmail: effectiveEmail,
       customerAddress: effectiveAddress || '',
       customerNote: parsed.customerNote || '',
       items: effectiveItems,
@@ -441,6 +455,29 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
         effectiveItems,
       });
     }
+
+    // حدّث سجل العميل بأحدث بيانات الطلب والمحادثة
+    try {
+      if (effectiveName || effectivePhone || effectiveAddress || chatOrder) {
+        await upsertChatCustomerProfile({
+          botId: bot._id,
+          conversationId,
+          channel,
+          sourceUserId,
+          sourceUsername,
+          name: effectiveName,
+          phone: effectivePhone,
+          address: effectiveAddress,
+          email: effectiveEmail,
+          lastOrderId: chatOrder?._id || existingOpenOrder?._id,
+          lastOrderAt: chatOrder?.updatedAt || existingOpenOrder?.updatedAt,
+          lastMessageId: messageId || undefined,
+        });
+      }
+    } catch (e) {
+      console.warn('⚠️ تعذر تحديث بيانات العميل:', e.message);
+    }
+
     return {
       chatOrder,
       rememberPhone: isValidPhone(effectivePhone) ? effectivePhone : undefined,
