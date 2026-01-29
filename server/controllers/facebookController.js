@@ -51,6 +51,38 @@ const handleMessage = async (req, res) => {
             continue;
           }
 
+          // دعم كتم المحادثة عبر رسالة المالك سواء وصلت كـ echo أو كرسالة عادية
+          const maybeOwnerText = webhookEvent.message?.text || '';
+          if (pauseKeyword && isOwnerMessage && maybeOwnerText.toLowerCase().includes(pauseKeyword)) {
+            const targetUserId = webhookEvent.recipient?.id;
+            if (targetUserId) {
+              const prefixedTargetUserId = `facebook_${targetUserId}`;
+              let targetConversation = await Conversation.findOne({
+                botId: bot._id,
+                channel: 'facebook',
+                userId: prefixedTargetUserId
+              });
+
+              if (!targetConversation) {
+                targetConversation = new Conversation({
+                  botId: bot._id,
+                  channel: 'facebook',
+                  userId: prefixedTargetUserId,
+                  username: 'مستخدم فيسبوك',
+                  messages: []
+                });
+              }
+
+              const durationMs = pauseDurationMinutes > 0 ? pauseDurationMinutes * 60000 : 30 * 60000;
+              targetConversation.mutedUntil = new Date(Date.now() + durationMs);
+              targetConversation.mutedBy = 'owner_keyword';
+              await targetConversation.save();
+              console.log(`🔇 Applied mute (owner message) for ${prefixedTargetUserId} until ${targetConversation.mutedUntil.toISOString()} using keyword "${bot.ownerPauseKeyword}"`);
+            } else {
+              console.log('⚠️ Owner pause keyword detected but recipient userId missing.');
+            }
+          }
+
           if (webhookEvent.message && webhookEvent.message.is_echo) {
             const echoText = webhookEvent.message.text || '';
             console.log(`ℹ️ Echo message detected. sender=${senderPsid}, recipient=${recipientId}, text=${echoText}`);
