@@ -12,6 +12,7 @@ const Conversation = require('./models/Conversation');
 const Feedback = require('./models/Feedback');
 const Store = require('./models/Store');
 const Product = require('./models/Product');
+const ChatOrder = require('./models/ChatOrder');
 const { createOrUpdateFromExtraction } = require('./controllers/chatOrdersController');
 
 const openai = new OpenAI({
@@ -152,6 +153,19 @@ const extractPhoneFromText = (text = '') => {
   return match ? match[0] : '';
 };
 
+const STATUS_LABELS = {
+  pending: 'قيد المراجعة',
+  processing: 'قيد التنفيذ',
+  confirmed: 'تم التأكيد ويُجهَّز للشحن',
+  shipped: 'تم الشحن',
+  delivered: 'تم التسليم',
+  cancelled: 'تم الإلغاء',
+};
+
+const statusText = (status) => STATUS_LABELS[status] || status || 'غير معروف';
+const isStatusInquiry = (text = '') => /(حالة|متابعة|وصل|الشحنة|الشحن|تتبع|اوردر|أوردر|طلبى|طلبي|رقم الطلب|order|tracking)/i.test(text);
+const isModifyIntent = (text = '') => /(تعديل|عدّل|عدل|غير|غيّر).*طلب/i.test(text) || /(عايز|حابب).*أعدل/i.test(text);
+
 async function extractChatOrderIntent({ bot, channel, userMessageContent, conversationId, sourceUserId, sourceUsername, messageId, transcript = [] }) {
   try {
     if (!userMessageContent || typeof userMessageContent !== 'string') return null;
@@ -208,6 +222,16 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       return null;
     };
 
+    let existingOpenOrder = null;
+    if (parsed.customerPhone && isValidPhone(parsed.customerPhone)) {
+      existingOpenOrder = await ChatOrder.findOne({ botId: bot._id, customerPhone: parsed.customerPhone, status: { $in: ['pending', 'processing', 'confirmed'] } }).sort({ createdAt: -1 });
+    }
+
+    if (existingOpenOrder) {
+      console.log('ℹ️ Existing open order found for phone, skipping creation to avoid duplicate');
+      return { conflict: true, existingOrder: existingOpenOrder, customerPhone: parsed.customerPhone };
+    }
+
     let safeItems = Array.isArray(parsed.items) ? parsed.items.map((it) => ({
       title: (it.title || '').trim(),
       quantity: Math.max(Number(it.quantity) || 0, 0),
@@ -241,7 +265,7 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
     });
 
     console.log('🧾 Chat order extracted/updated:', chatOrder?._id);
-    return chatOrder;
+    return { chatOrder };
   } catch (err) {
     console.error('❌ فشل في استخراج طلب المحادثة:', err.message);
     return null;
@@ -386,8 +410,9 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     console.log('💬 User message added to conversation:', userMessageContent);
 
     // محاولة استخراج طلب محادثة تلقائياً
+    let extractionResult = null;
     try {
-      await extractChatOrderIntent({
+      extractionResult = await extractChatOrderIntent({
         bot,
         channel: finalChannel,
         userMessageContent,
@@ -414,7 +439,51 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     let reply = '';
 
-    if (userMessageContent && !isImage && !isVoice) {
+    // ردود خاصة بالحالة أو التعارض قبل الذكاء الاصطناعي العام
+    if (extractionResult?.conflict) {
+      const existing = extractionResult.existingOrder;
+      reply = `في طلب جاري بنفس الرقم ${extractionResult.customerPhone} حالته ${statusText(existing.status)}. تحب تعدل الطلب الحالي ولا تسجل طلب جديد؟`;
+    } else if (isStatusInquiry(userMessageContent)) {
+      let latestOrder = await ChatOrder.findOne({ botId, sourceUserId: finalUserId }).sort({ createdAt: -1 });
+      if (!latestOrder) {
+        const phoneInMessage = extractPhoneFromText(userMessageContent);
+        if (phoneInMessage) {
+          latestOrder = await ChatOrder.findOne({ botId, customerPhone: phoneInMessage }).sort({ createdAt: -1 });
+        }
+      }
+
+      if (latestOrder) {
+        const baseStatus = statusText(latestOrder.status);
+        if (['shipped', 'delivered'].includes(latestOrder.status)) {
+          reply = `حالة طلبك: ${baseStatus}. الإجمالي ${latestOrder.totalAmount || 0} جنيه. لو محتاج طلب جديد، ابعت التفاصيل.`;
+        } else {
+          reply = `حالة طلبك الحالي: ${baseStatus}. لو حابب تعدل أي تفاصيل قبل الشحن، قولّي التعديل.`;
+        }
+      } else {
+        reply = 'مش لاقي طلب برقمك. ممكن تبعت رقم الموبايل أو رقم الطلب علشان أتحقق؟';
+      }
+    } else if (isModifyIntent(userMessageContent)) {
+      let latestOrder = await ChatOrder.findOne({ botId, sourceUserId: finalUserId }).sort({ createdAt: -1 });
+      if (!latestOrder) {
+        const phoneInMessage = extractPhoneFromText(userMessageContent);
+        if (phoneInMessage) {
+          latestOrder = await ChatOrder.findOne({ botId, customerPhone: phoneInMessage }).sort({ createdAt: -1 });
+        }
+      }
+
+      if (latestOrder) {
+        const baseStatus = statusText(latestOrder.status);
+        if (['shipped', 'delivered'].includes(latestOrder.status)) {
+          reply = `الطلب حالته ${baseStatus} وبالتالي لا يمكن تعديله بعد الشحن. لو عايز طلب جديد، ابعت البيانات.`;
+        } else {
+          reply = `تمام، هنعدل على طلبك الحالي (حالته ${baseStatus}). ايه التعديل اللي تحب تعمله؟`;
+        }
+      } else {
+        reply = 'عشان أعدل، محتاج ألاقي الطلب. ابعت رقم الموبايل أو رقم الطلب.';
+      }
+    }
+
+    if (userMessageContent && !isImage && !isVoice && !reply) {
       for (const rule of rules) {
         if (rule.type === 'qa' && userMessageContent.toLowerCase().includes(rule.content.question.toLowerCase())) {
           reply = rule.content.answer;
