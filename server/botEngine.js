@@ -168,8 +168,12 @@ const isModifyIntent = (text = '') => /(تعديل|عدّل|عدل|غير|غيّ
 const isCancelIntent = (text = '') => /(الغاء|إلغاء|cancel|الغى|الغي|عايز الغي|عايز ألغي|الغى الطلب|الغي الطلب)/i.test(text);
 const isNewOrderIntent = (text = '') => /(طلب جديد|طلب تاني|طلب ثاني|عايز اطلب تاني|عايز أطلب تاني|أعمل طلب تاني)/i.test(text);
 const isConfirmIntent = (text = '') => /(تأكيد|أكد|أكدت|تمام|اوكي|أوكي|موافق|ايوه|ايوا|أيوه|أه|اه|اكيد|أكيد)/i.test(text);
+const isOptionOne = (text = '') => /^\s*(1|١)\s*$/.test(text.trim());
+const isOptionTwo = (text = '') => /^\s*(2|٢)\s*$/.test(text.trim());
+const DRAFT_EXPIRY_MS = 30 * 60 * 1000; // 30 minutes
+const DUP_CONFIRM_MS = 10 * 60 * 1000; // 10 minutes
 
-async function extractChatOrderIntent({ bot, channel, userMessageContent, conversationId, sourceUserId, sourceUsername, messageId, transcript = [] }) {
+async function extractChatOrderIntent({ bot, channel, userMessageContent, conversationId, sourceUserId, sourceUsername, messageId, transcript = [], conversation = null }) {
   try {
     if (!userMessageContent || typeof userMessageContent !== 'string') return null;
 
@@ -203,10 +207,22 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
 
     const raw = response.choices?.[0]?.message?.content || '{}';
     const parsed = JSON.parse(raw);
+    const nowTs = Date.now();
+    const lastUserTs = Array.isArray(transcript)
+      ? (transcript
+          .filter((m) => m.role === 'user' && m.timestamp)
+          .map((m) => new Date(m.timestamp).getTime())
+          .filter(Boolean)
+          .slice(-1)[0])
+      : null;
+    const draftExpired = conversation?.pendingDraftAt
+      ? nowTs - new Date(conversation.pendingDraftAt).getTime() > DRAFT_EXPIRY_MS
+      : false;
 
     const cancelIntent = isCancelIntent(userMessageContent);
     const newOrderIntent = isNewOrderIntent(userMessageContent);
-    const modifyIntent = isModifyIntent(userMessageContent);
+    const modifyIntent = isModifyIntent(userMessageContent) || isOptionOne(userMessageContent);
+    const forceNewOrder = newOrderIntent || isOptionTwo(userMessageContent);
     const statusInquiry = isStatusInquiry(userMessageContent);
     const confirmIntent = isConfirmIntent(userMessageContent);
 
@@ -257,6 +273,7 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
 
     let existingOpenOrder = await latestOpenOrder();
 
+    let usedFallbackPrice = false;
     let safeItems = Array.isArray(parsed.items) ? parsed.items.map((it) => ({
       title: (it.title || '').trim(),
       quantity: Math.max(Number(it.quantity) || 0, 0),
@@ -267,7 +284,11 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
     const ensurePrice = (title = '', price) => {
       const numeric = Number(price) || 0;
       if (numeric > 0) return numeric;
-      if (/(كوره|كورة|كرة|كرات|ball)/i.test(title)) return 1900;
+      if (/(كوره|كورة|كرة|كرات|ball)/i.test(title)) {
+        usedFallbackPrice = true;
+        return 1900;
+      }
+      usedFallbackPrice = true;
       return 0;
     };
 
@@ -292,8 +313,25 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       return nameOk && phoneOk && addressOk && priced.length > 0;
     };
 
+    const sameItems = (a = [], b = []) => {
+      if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+      return a.every((item, idx) => {
+        const other = b[idx];
+        return (
+          (item.title || '') === (other?.title || '') &&
+          Math.max(Number(item.quantity) || 1, 1) === Math.max(Number(other?.quantity) || 1, 1) &&
+          (item.note || '') === (other?.note || '') &&
+          Math.max(Number(item.price) || 0, 0) === Math.max(Number(other?.price) || 0, 0)
+        );
+      });
+    };
+
     if (cancelIntent && existingOpenOrder) {
       if (['shipped', 'delivered'].includes(existingOpenOrder.status)) {
+        if (!Array.isArray(existingOpenOrder.history)) existingOpenOrder.history = [];
+        existingOpenOrder.history.push({ status: existingOpenOrder.status, changedBy: null, note: 'رفض إلغاء بعد الشحن', changedAt: new Date() });
+        existingOpenOrder.lastMessageId = messageId || existingOpenOrder.lastMessageId;
+        await existingOpenOrder.save();
         return { chatOrder: existingOpenOrder, cancelled: false, cancelBlocked: true, customerPhone: effectivePhone };
       }
       existingOpenOrder.status = 'cancelled';
@@ -301,13 +339,28 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       existingOpenOrder.history.push({ status: 'cancelled', changedBy: null, note: 'إلغاء من المحادثة', changedAt: new Date() });
       existingOpenOrder.lastMessageId = messageId || existingOpenOrder.lastMessageId;
       await existingOpenOrder.save();
-      return { chatOrder: existingOpenOrder, cancelled: true, customerPhone: effectivePhone };
+      return { chatOrder: existingOpenOrder, cancelled: true, customerPhone: effectivePhone, rememberPhone: isValidPhone(effectivePhone) ? effectivePhone : undefined };
+    }
+
+    // تأكيد مكرر خلال مدة قصيرة بنفس البيانات
+    if (confirmIntent && existingOpenOrder && ['pending', 'processing', 'confirmed'].includes(existingOpenOrder.status)) {
+      const samePayload = sameItems(existingOpenOrder.items || [], effectiveItems) &&
+        (existingOpenOrder.customerName || '') === (effectiveName || '') &&
+        (existingOpenOrder.customerAddress || '') === (effectiveAddress || '') &&
+        (existingOpenOrder.customerPhone || '') === (effectivePhone || '');
+      const recentUpdate = existingOpenOrder.updatedAt ? (nowTs - new Date(existingOpenOrder.updatedAt).getTime()) < DUP_CONFIRM_MS : false;
+      if (samePayload && recentUpdate) {
+        return { chatOrder: existingOpenOrder, alreadyConfirmed: true, customerPhone: effectivePhone };
+      }
     }
 
     if (existingOpenOrder && !['shipped', 'delivered', 'cancelled'].includes(existingOpenOrder.status)) {
-      // لو عميل بيطلب طلب جديد بنفس الرقم، ما نعدلش الطلب الحالي ونرجع تعارض
-      if (newOrderIntent && !modifyIntent) {
+      // لو عميل بيطلب طلب جديد بنفس الرقم، ما نعدلش الطلب الحالي ونرجع تعارض إلا لو اختار صراحة خيار 2
+      if (newOrderIntent && !modifyIntent && !forceNewOrder) {
         return { conflict: true, existingOrder: existingOpenOrder, customerPhone: effectivePhone, reason: 'open-order-exists' };
+      } else if (newOrderIntent && forceNewOrder && !modifyIntent) {
+        // السماح ببدء طلب جديد مع إبقاء القديم كما هو
+        existingOpenOrder = null;
       }
 
       // تحديث الطلب الحالي في حالة التأكيد/التعديل
@@ -327,7 +380,7 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       if (itemsTotal > 0) existingOpenOrder.totalAmount = itemsTotal + Math.max(Number(existingOpenOrder.deliveryFee) || 0, 0);
       if (hasRequiredData()) {
         await existingOpenOrder.save();
-        return { chatOrder: existingOpenOrder, conflict: false, customerPhone: effectivePhone };
+        return { chatOrder: existingOpenOrder, conflict: false, customerPhone: effectivePhone, rememberPhone: isValidPhone(effectivePhone) ? effectivePhone : undefined };
       }
       // لو البيانات ناقصة رغم وجود طلب مفتوح، نرجع تعارض لكن بدون حفظ
       return { conflict: true, existingOrder: existingOpenOrder, customerPhone: effectivePhone, reason: 'missing-data' };
@@ -347,6 +400,11 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       return { chatOrder: null, cancelled: false };
     }
 
+    // لو محاولة تأكيد لكن الدرفت أقدم من 30 دقيقة، اطلب البيانات من جديد
+    if (confirmIntent && draftExpired && hasRequiredData() && !existingOpenOrder) {
+      return { chatOrder: null, needFreshData: true, pendingDraftAt: null };
+    }
+
     // لو البيانات كاملة لكن مفيش تأكيد صريح ولسه مفيش طلب مفتوح، نوقف الحفظ ونطلب تأكيد
     if (!existingOpenOrder && !cancelIntent && !modifyIntent && !statusInquiry && hasRequiredData() && !confirmIntent) {
       return {
@@ -358,6 +416,9 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
           customerAddress: effectiveAddress,
           items: effectiveItems,
         },
+        pendingDraftAt: new Date(),
+        priceWarning: usedFallbackPrice,
+        rememberPhone: isValidPhone(effectivePhone) ? effectivePhone : undefined,
       };
     }
 
@@ -388,7 +449,12 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
         effectiveItems,
       });
     }
-    return { chatOrder };
+    return {
+      chatOrder,
+      rememberPhone: isValidPhone(effectivePhone) ? effectivePhone : undefined,
+      pendingDraftAt: chatOrder ? null : undefined,
+      priceWarning: usedFallbackPrice,
+    };
   } catch (err) {
     console.error('❌ فشل في استخراج طلب المحادثة:', err.message);
     return null;
@@ -543,10 +609,29 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         sourceUserId: finalUserId,
         sourceUsername: conversation.username,
         messageId: messageId || undefined,
-        transcript: conversation.messages
+        transcript: conversation.messages,
+        conversation,
       });
     } catch (e) {
       console.warn('⚠️ تعذر استخراج طلب المحادثة:', e.message);
+    }
+
+    // تخزين آخر رقم موبايل معروف ووقت الدرفت إن وجد
+    let conversationTouched = false;
+    if (extractionResult?.rememberPhone && extractionResult.rememberPhone !== conversation.lastKnownPhone) {
+      conversation.lastKnownPhone = extractionResult.rememberPhone;
+      conversation.lastKnownPhoneAt = new Date();
+      conversationTouched = true;
+    }
+    if (extractionResult?.pendingDraftAt) {
+      conversation.pendingDraftAt = extractionResult.pendingDraftAt;
+      conversationTouched = true;
+    } else if (extractionResult?.pendingDraftAt === null && conversation.pendingDraftAt) {
+      conversation.pendingDraftAt = undefined;
+      conversationTouched = true;
+    }
+    if (conversationTouched) {
+      await conversation.save();
     }
 
     const contextMessages = conversation.messages
@@ -566,7 +651,14 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     if (extractionResult?.conflict) {
       const existing = extractionResult.existingOrder || extractionResult.chatOrder;
       const st = existing ? statusText(existing.status) : 'غير معروف';
-      reply = `في طلب جاري بنفس الرقم ${extractionResult.customerPhone} حالته ${st}. تحب تعدل الطلب الحالي ولا تسجل طلب جديد؟`;
+      reply = `في طلب جاري بنفس الرقم ${extractionResult.customerPhone} حالته ${st}.
+اختر:
+1) تعديل الطلب الحالي
+2) تسجيل طلب جديد بنفس الرقم`;
+    } else if (extractionResult?.alreadyConfirmed) {
+      reply = 'الطلب مسجل ومؤكد بالفعل خلال الدقائق الأخيرة. لو محتاج تعديل، قل لي التعديل المطلوب.';
+    } else if (extractionResult?.needFreshData) {
+      reply = 'البيانات القديمة انتهت صلاحيتها. ابعت العدد والاسم والعنوان ورقم الموبايل لتأكيد طلب جديد.';
     } else if (extractionResult?.needConfirmation && extractionResult.draft) {
       const itemsText = (extractionResult.draft.items || [])
         .map((it) => `${Math.max(Number(it.quantity) || 1, 1)} × ${it.title}`)
@@ -577,6 +669,10 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 الموبايل: ${extractionResult.draft.customerPhone}
 الاصناف: ${itemsText || '—'}
 أكد لي لو حابب نسجل الطلب الآن.`;
+      if (extractionResult.priceWarning) {
+        reply += '
+تنويه: تم استخدام سعر افتراضي للكور بدون سعر (1900). لو السعر مختلف بلغني.';
+      }
     } else if (extractionResult?.cancelled) {
       reply = 'تم إلغاء الطلب الحالي. لو حابب تعمل طلب جديد ابعت البيانات من جديد.';
     } else if (extractionResult?.cancelBlocked) {
@@ -589,9 +685,9 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         latestOrder = await ChatOrder.findOne({ botId, conversationId: conversation._id }).sort({ createdAt: -1 });
       }
 
-      // حاول برقم الهاتف من الرسالة أو الترانسكربت
+      // حاول برقم الهاتف من الذاكرة أو الرسالة أو الترانسكربت
       if (!latestOrder) {
-        const phoneInMessage = extractPhoneFromText(userMessageContent) || extractPhoneFromText(context.map((c) => c.content).join(' '));
+        const phoneInMessage = extractPhoneFromText(userMessageContent) || extractPhoneFromText(context.map((c) => c.content).join(' ')) || conversation.lastKnownPhone;
         if (phoneInMessage) {
           latestOrder = await ChatOrder.findOne({ botId, customerPhone: phoneInMessage }).sort({ createdAt: -1 });
         }
