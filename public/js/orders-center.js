@@ -129,7 +129,7 @@
       const storeId = bot && bot.storeId ? (bot.storeId._id || bot.storeId) : null;
 
       // جلب طلبات المحادثة
-      const chatResp = await handleApiRequest('/api/chat-orders', { headers: { Authorization: `Bearer ${token}` } }, null, 'فشل في جلب طلبات المحادثة');
+      const chatResp = await handleApiRequest(`/api/chat-orders?botId=${selectedBotId}`, { headers: { Authorization: `Bearer ${token}` } }, null, 'فشل في جلب طلبات المحادثة');
       const chatOrders = Array.isArray(chatResp?.orders) ? chatResp.orders : [];
       const chatCounts = chatResp?.counts || { total: 0, pending: 0, byStatus: {} };
 
