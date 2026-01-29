@@ -144,6 +144,14 @@ const placeholderForMedia = (isImage, isVoice) => {
   return '[وسائط]';
 };
 
+// أرقام مصر المسموح بها: 01xxxxxxxxx أو 00201xxxxxxxxx أو +201xxxxxxxxx
+const PHONE_REGEX = /(\+201\d{9}|00201\d{9}|01\d{9})/;
+const isValidPhone = (phone = '') => PHONE_REGEX.test(phone.trim());
+const extractPhoneFromText = (text = '') => {
+  const match = text.match(PHONE_REGEX);
+  return match ? match[0] : '';
+};
+
 async function extractChatOrderIntent({ bot, channel, userMessageContent, conversationId, sourceUserId, sourceUsername, messageId, transcript = [] }) {
   try {
     if (!userMessageContent || typeof userMessageContent !== 'string') return null;
@@ -156,14 +164,14 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       : '';
 
     const prompt = `أنت مساعد لاستخلاص طلبات العملاء من محادثة متعددة الرسائل.
-اعتمد على المحادثة كاملة (الترانسكربت) لبناء الطلب حتى لو كانت الرسالة الأخيرة ناقصة.
-أعد دائماً JSON فقط دون أي نص آخر بالمفاتيح التالية:
-- intent: ضع true إذا توفرت أي بيانات طلب (منتج/كمية/اسم/هاتف/عنوان)، وإلا false.
-- customerName, customerPhone, customerAddress, customerNote.
-- items: مصفوفة عناصر { title, quantity, note } (quantity رقم صحيح >=1).
-- status: one of pending|processing|confirmed|shipped|delivered|cancelled. اختر confirmed لو العميل قدّم كل البيانات ووافق، وإلا pending/processing.
-- freeText: تلخيص مختصر للطلب.
-لا تُدخل نصاً خارج JSON.`;
+  اعتمد على المحادثة كاملة (الترانسكربت) لبناء الطلب حتى لو كانت الرسالة الأخيرة ناقصة.
+  أعد دائماً JSON فقط دون أي نص آخر بالمفاتيح التالية:
+  - intent: ضع true إذا توفرت بيانات كافية (منتج/كمية/اسم/هاتف/عنوان)، وإلا false.
+  - customerName, customerPhone, customerAddress, customerNote.
+  - items: مصفوفة عناصر { title, quantity, note } (quantity رقم صحيح >=1).
+  - status: one of pending|processing|confirmed|shipped|delivered|cancelled. اختر confirmed لو العميل قدّم كل البيانات ووافق، وإلا pending/processing.
+  - freeText: تلخيص مختصر للطلب.
+  التزم بتنسيق رقم الهاتف المصري: 01xxxxxxxxx أو 00201xxxxxxxxx أو +201xxxxxxxxx.`;
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -178,6 +186,17 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
     const raw = response.choices?.[0]?.message?.content || '{}';
     const parsed = JSON.parse(raw);
     if (!parsed || parsed.intent === false) return null;
+
+    // حاول استخراج رقم صالح وفق الأنماط المسموحة
+    let phoneCandidate = parsed.customerPhone || '';
+    if (!isValidPhone(phoneCandidate)) {
+      phoneCandidate = extractPhoneFromText(transcriptText) || extractPhoneFromText(userMessageContent) || phoneCandidate;
+    }
+    if (isValidPhone(phoneCandidate)) {
+      parsed.customerPhone = phoneCandidate;
+    } else {
+      parsed.customerPhone = '';
+    }
 
     const safeItems = Array.isArray(parsed.items) ? parsed.items : [];
 
