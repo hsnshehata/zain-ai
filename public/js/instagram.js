@@ -123,24 +123,6 @@ async function loadInstagramPage(rootEl = document.getElementById("content")) {
         </div>
         <p id="togglesError" class="error-message small-error" style="display: none;"></p>
       </div>
-      <div class="card settings-card">
-        <div class="card-header"><h3><i class="fas fa-pause-circle"></i> إيقاف ردود البوت بكلمة</h3></div>
-        <div class="card-body">
-          <div class="form-group">
-            <label for="pauseKeywordInput">الكلمة التي يرسلها المالك لإيقاف الردود في المحادثة</label>
-            <input type="text" id="pauseKeywordInput" class="form-control" placeholder="مثال: stopbot">
-          </div>
-          <div class="form-group" style="margin-top: 12px;">
-            <label for="pauseDurationInput">مدة الإيقاف بالدقائق</label>
-            <input type="number" min="1" max="10080" id="pauseDurationInput" class="form-control" placeholder="30">
-          </div>
-          <div class="form-actions" style="margin-top: 16px; display: flex; gap: 10px; align-items: center;">
-            <button id="savePauseSettingsBtn" class="btn btn-primary"><i class="fas fa-save"></i> حفظ الإعداد</button>
-            <small class="text-muted">عند إرسال الكلمة من حساب الصفحة للمحادثة سيتم إيقاف الردود لمدة المدة المحددة.</small>
-          </div>
-          <p id="pauseSettingsError" class="error-message small-error" style="display: none;"></p>
-        </div>
-      </div>
     </div>
   `;
 
@@ -154,10 +136,6 @@ async function loadInstagramPage(rootEl = document.getElementById("content")) {
   // Toggle elements
   const toggles = settingsContainer.querySelectorAll(".switch input[type=\"checkbox\"]");
   const togglesError = document.getElementById("togglesError");
-  const pauseKeywordInput = document.getElementById("pauseKeywordInput");
-  const pauseDurationInput = document.getElementById("pauseDurationInput");
-  const savePauseSettingsBtn = document.getElementById("savePauseSettingsBtn");
-  const pauseSettingsError = document.getElementById("pauseSettingsError");
 
   // --- Functions ---
 
@@ -221,21 +199,6 @@ async function loadInstagramPage(rootEl = document.getElementById("content")) {
   }
 
   async function loadPauseSettings(botId) {
-    try {
-      const response = await handleApiRequest(`/api/bots/${botId}/settings`, {
-        headers: { Authorization: `Bearer ${token}` },
-      }, pauseSettingsError, "حدث خطأ أثناء تحميل إعدادات الإيقاف");
-
-      if (response.success && response.data) {
-        const data = response.data;
-        if (pauseKeywordInput) pauseKeywordInput.value = data.ownerPauseKeyword || '';
-        if (pauseDurationInput) pauseDurationInput.value = data.ownerPauseDurationMinutes ?? 30;
-      }
-    } catch (err) {
-      console.error('خطأ في تحميل إعدادات الإيقاف:', err);
-      if (pauseKeywordInput) pauseKeywordInput.value = '';
-      if (pauseDurationInput) pauseDurationInput.value = 30;
-    }
   }
 
   async function loadAccountStatus(botId) {
@@ -376,39 +339,6 @@ async function loadInstagramPage(rootEl = document.getElementById("content")) {
   }
 
   async function savePauseSettings(botId) {
-    pauseSettingsError.style.display = "none";
-
-    const keyword = pauseKeywordInput?.value?.trim() || '';
-    const duration = Number(pauseDurationInput?.value || 0);
-
-    if (Number.isNaN(duration) || duration <= 0 || duration > 10080) {
-      pauseSettingsError.textContent = "مدة الإيقاف يجب أن تكون بين 1 و 10080 دقيقة.";
-      pauseSettingsError.style.display = "block";
-      pauseSettingsError.style.color = "red";
-      return;
-    }
-
-    try {
-      const response = await handleApiRequest(`/api/bots/${botId}/settings`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ ownerPauseKeyword: keyword, ownerPauseDurationMinutes: duration }),
-      }, pauseSettingsError, "فشل حفظ إعدادات الإيقاف");
-
-      if (response.success) {
-        pauseSettingsError.textContent = "تم حفظ إعدادات الإيقاف بنجاح.";
-        pauseSettingsError.style.display = "block";
-        pauseSettingsError.style.color = "green";
-      }
-    } catch (err) {
-      console.error('خطأ في حفظ إعدادات الإيقاف:', err);
-      pauseSettingsError.textContent = err.message || "حدث خطأ أثناء الحفظ";
-      pauseSettingsError.style.display = "block";
-      pauseSettingsError.style.color = "red";
-    }
   }
 
   // Initialize Instagram SDK (Using Facebook SDK for Instagram login)
@@ -597,7 +527,6 @@ async function loadInstagramPage(rootEl = document.getElementById("content")) {
   }
 
   if (savePauseSettingsBtn) {
-    savePauseSettingsBtn.addEventListener("click", () => savePauseSettings(selectedBotId));
   }
 
   toggles.forEach(toggle => {
@@ -617,7 +546,6 @@ async function loadInstagramPage(rootEl = document.getElementById("content")) {
   // --- Initial Load ---
   await loadAccountStatus(selectedBotId);
   await loadBotSettings(selectedBotId);
-  await loadPauseSettings(selectedBotId);
 }
 
 // Make loadInstagramPage globally accessible
