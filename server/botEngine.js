@@ -167,6 +167,7 @@ const isStatusInquiry = (text = '') => /(حالة|متابعة|وصل|الشحن
 const isModifyIntent = (text = '') => /(تعديل|عدّل|عدل|غير|غيّر).*طلب/i.test(text) || /(عايز|حابب).*أعدل/i.test(text);
 const isCancelIntent = (text = '') => /(الغاء|إلغاء|cancel|الغى|الغي|عايز الغي|عايز ألغي|الغى الطلب|الغي الطلب)/i.test(text);
 const isNewOrderIntent = (text = '') => /(طلب جديد|طلب تاني|طلب ثاني|عايز اطلب تاني|عايز أطلب تاني|أعمل طلب تاني)/i.test(text);
+const isConfirmIntent = (text = '') => /(تأكيد|أكد|أكدت|تمام|اوكي|أوكي|موافق|ايوه|ايوا|أيوه|أه|اه|اكيد|أكيد)/i.test(text);
 
 async function extractChatOrderIntent({ bot, channel, userMessageContent, conversationId, sourceUserId, sourceUsername, messageId, transcript = [] }) {
   try {
@@ -207,9 +208,10 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
     const newOrderIntent = isNewOrderIntent(userMessageContent);
     const modifyIntent = isModifyIntent(userMessageContent);
     const statusInquiry = isStatusInquiry(userMessageContent);
+    const confirmIntent = isConfirmIntent(userMessageContent);
 
     // لو هو إلغاء فقط بدون بيانات كافية، لا نخرج مبكرًا لكي نلتقط الطلب المفتوح ونلغيه
-    if (!parsed || (parsed.intent === false && !cancelIntent)) return null;
+    if (!parsed || (parsed.intent === false && !cancelIntent && !confirmIntent)) return null;
 
     // حاول استخراج رقم صالح وفق الأنماط المسموحة
     let phoneCandidate = parsed.customerPhone || '';
@@ -345,6 +347,20 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       return { chatOrder: null, cancelled: false };
     }
 
+    // لو البيانات كاملة لكن مفيش تأكيد صريح ولسه مفيش طلب مفتوح، نوقف الحفظ ونطلب تأكيد
+    if (!existingOpenOrder && !cancelIntent && !modifyIntent && !statusInquiry && hasRequiredData() && !confirmIntent) {
+      return {
+        chatOrder: null,
+        needConfirmation: true,
+        draft: {
+          customerName: effectiveName,
+          customerPhone: effectivePhone,
+          customerAddress: effectiveAddress,
+          items: effectiveItems,
+        },
+      };
+    }
+
     const chatOrder = await createOrUpdateFromExtraction({
       botId: bot._id,
       channel,
@@ -358,7 +374,7 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       customerNote: parsed.customerNote || '',
       items: effectiveItems,
       freeText: parsed.freeText || userMessageContent,
-      status: parsed.status || 'pending',
+      status: confirmIntent ? 'confirmed' : (parsed.status || 'pending'),
       messageId
     });
 
@@ -551,6 +567,16 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       const existing = extractionResult.existingOrder || extractionResult.chatOrder;
       const st = existing ? statusText(existing.status) : 'غير معروف';
       reply = `في طلب جاري بنفس الرقم ${extractionResult.customerPhone} حالته ${st}. تحب تعدل الطلب الحالي ولا تسجل طلب جديد؟`;
+    } else if (extractionResult?.needConfirmation && extractionResult.draft) {
+      const itemsText = (extractionResult.draft.items || [])
+        .map((it) => `${Math.max(Number(it.quantity) || 1, 1)} × ${it.title}`)
+        .join('، ');
+      reply = `وصلت التفاصيل:
+الاسم: ${extractionResult.draft.customerName}
+العنوان: ${extractionResult.draft.customerAddress}
+الموبايل: ${extractionResult.draft.customerPhone}
+الاصناف: ${itemsText || '—'}
+أكد لي لو حابب نسجل الطلب الآن.`;
     } else if (extractionResult?.cancelled) {
       reply = 'تم إلغاء الطلب الحالي. لو حابب تعمل طلب جديد ابعت البيانات من جديد.';
     } else if (extractionResult?.cancelBlocked) {
