@@ -165,6 +165,8 @@ const STATUS_LABELS = {
 const statusText = (status) => STATUS_LABELS[status] || status || 'غير معروف';
 const isStatusInquiry = (text = '') => /(حالة|متابعة|وصل|الشحنة|الشحن|تتبع|اوردر|أوردر|طلبى|طلبي|رقم الطلب|order|tracking)/i.test(text);
 const isModifyIntent = (text = '') => /(تعديل|عدّل|عدل|غير|غيّر).*طلب/i.test(text) || /(عايز|حابب).*أعدل/i.test(text);
+const isCancelIntent = (text = '') => /(الغاء|إلغاء|cancel|الغى|الغي|عايز الغي|عايز ألغي|الغى الطلب|الغي الطلب)/i.test(text);
+const isNewOrderIntent = (text = '') => /(طلب جديد|طلب تاني|طلب ثاني|عايز اطلب تاني|عايز أطلب تاني|أعمل طلب تاني)/i.test(text);
 
 async function extractChatOrderIntent({ bot, channel, userMessageContent, conversationId, sourceUserId, sourceUsername, messageId, transcript = [] }) {
   try {
@@ -213,6 +215,10 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       parsed.customerPhone = '';
     }
 
+    const cancelIntent = isCancelIntent(userMessageContent);
+    const newOrderIntent = isNewOrderIntent(userMessageContent);
+    const modifyIntent = isModifyIntent(userMessageContent);
+
     const extractQuantity = () => {
       const haystack = `${transcriptText}\n${userMessageContent}`;
       const m1 = haystack.match(/العدد\s*[:\-]?\s*(\d{1,3})/i);
@@ -221,6 +227,11 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       if (m2 && Number(m2[1]) > 0) return Number(m2[1]);
       return null;
     };
+
+    let existingOpenOrder = null;
+    if (parsed.customerPhone && isValidPhone(parsed.customerPhone)) {
+      existingOpenOrder = await ChatOrder.findOne({ botId: bot._id, customerPhone: parsed.customerPhone, status: { $in: ['pending', 'processing', 'confirmed'] } }).sort({ createdAt: -1 });
+    }
 
     let safeItems = Array.isArray(parsed.items) ? parsed.items.map((it) => ({
       title: (it.title || '').trim(),
@@ -262,7 +273,25 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       existingOpenOrder = await ChatOrder.findOne({ botId: bot._id, customerPhone: parsed.customerPhone, status: { $in: ['pending', 'processing', 'confirmed'] } }).sort({ createdAt: -1 });
     }
 
+    if (cancelIntent && existingOpenOrder) {
+      if (['shipped', 'delivered'].includes(existingOpenOrder.status)) {
+        return { chatOrder: existingOpenOrder, cancelled: false, cancelBlocked: true, customerPhone: effectivePhone };
+      }
+      existingOpenOrder.status = 'cancelled';
+      if (!Array.isArray(existingOpenOrder.history)) existingOpenOrder.history = [];
+      existingOpenOrder.history.push({ status: 'cancelled', changedBy: null, note: 'إلغاء من المحادثة', changedAt: new Date() });
+      existingOpenOrder.lastMessageId = messageId || existingOpenOrder.lastMessageId;
+      await existingOpenOrder.save();
+      return { chatOrder: existingOpenOrder, cancelled: true, customerPhone: effectivePhone };
+    }
+
     if (existingOpenOrder && !['shipped', 'delivered', 'cancelled'].includes(existingOpenOrder.status)) {
+      // لو عميل بيطلب طلب جديد بنفس الرقم، ما نعدلش الطلب الحالي ونرجع تعارض
+      if (newOrderIntent && !modifyIntent) {
+        return { conflict: true, existingOrder: existingOpenOrder, customerPhone: effectivePhone, reason: 'open-order-exists' };
+      }
+
+      // تحديث الطلب الحالي في حالة التأكيد/التعديل
       console.log('ℹ️ Updating existing open order instead of creating new one');
       if (effectiveItems.length) existingOpenOrder.items = effectiveItems;
       if (effectiveName) existingOpenOrder.customerName = effectiveName;
@@ -292,6 +321,12 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       status: parsed.status,
       items: effectiveItems
     });
+
+    // لو العميل طلب إلغاء ومافيش طلب مفتوح، ما تنشئش جديد
+    if (cancelIntent && !existingOpenOrder) {
+      console.log('⚠️ Cancel intent with no existing order; skipping creation');
+      return { chatOrder: null, cancelled: false };
+    }
 
     const chatOrder = await createOrUpdateFromExtraction({
       botId: bot._id,
@@ -499,6 +534,10 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       const existing = extractionResult.existingOrder || extractionResult.chatOrder;
       const st = existing ? statusText(existing.status) : 'غير معروف';
       reply = `في طلب جاري بنفس الرقم ${extractionResult.customerPhone} حالته ${st}. تحب تعدل الطلب الحالي ولا تسجل طلب جديد؟`;
+    } else if (extractionResult?.cancelled) {
+      reply = 'تم إلغاء الطلب الحالي. لو حابب تعمل طلب جديد ابعت البيانات من جديد.';
+    } else if (extractionResult?.cancelBlocked) {
+      reply = 'الطلب تم شحنه بالفعل، لذلك لا يمكن إلغاؤه الآن. لو محتاج مساعدة إضافية، بلغني.';
     } else if (isStatusInquiry(userMessageContent)) {
       let latestOrder = await ChatOrder.findOne({ botId, sourceUserId: finalUserId }).sort({ createdAt: -1 });
       if (!latestOrder) {
