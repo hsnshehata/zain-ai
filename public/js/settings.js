@@ -143,8 +143,12 @@ async function loadSettingsPage() {
             <div class="stat-value" id="statMessagesCount">--</div>
           </div>
           <div class="stat-card">
-            <div class="stat-label">معدل نجاح الردود</div>
-            <div class="stat-value" id="statSuccessRate">--%</div>
+            <div class="stat-label">إجمالي المحادثات</div>
+            <div class="stat-value" id="statConversationsCount">--</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">طلبات صادرة من المحادثات</div>
+            <div class="stat-value" id="statChatOrdersCount">--</div>
           </div>
           <div class="stat-card">
             <div class="stat-label">القواعد الفعالة</div>
@@ -242,7 +246,8 @@ async function loadSettingsPage() {
       // جلب عدادات البوت
       const statsEls = {
         messages: document.getElementById('statMessagesCount'),
-        success: document.getElementById('statSuccessRate'),
+        conversations: document.getElementById('statConversationsCount'),
+        chatOrders: document.getElementById('statChatOrdersCount'),
         rules: document.getElementById('statActiveRules'),
       };
 
@@ -255,7 +260,8 @@ async function loadSettingsPage() {
       const applyStats = (stats) => {
         if (!stats || !statsEls.messages) return;
         statsEls.messages.textContent = stats.messagesCount != null ? stats.messagesCount : '--';
-        statsEls.success.textContent = stats.successRate != null ? `${stats.successRate}%` : '--%';
+        statsEls.conversations.textContent = stats.conversationsCount != null ? stats.conversationsCount : '--';
+        statsEls.chatOrders.textContent = stats.chatOrdersCount != null ? stats.chatOrdersCount : '--';
         statsEls.rules.textContent = stats.activeRules != null ? stats.activeRules : '--';
       };
 
