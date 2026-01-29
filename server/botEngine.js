@@ -199,7 +199,29 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       parsed.customerPhone = '';
     }
 
-    const safeItems = Array.isArray(parsed.items) ? parsed.items : [];
+    const extractQuantity = () => {
+      const haystack = `${transcriptText}\n${userMessageContent}`;
+      const m1 = haystack.match(/العدد\s*[:\-]?\s*(\d{1,3})/i);
+      if (m1 && Number(m1[1]) > 0) return Number(m1[1]);
+      const m2 = haystack.match(/(\d{1,3})\s*(كرة|كرات|كوره|كورة)/i);
+      if (m2 && Number(m2[1]) > 0) return Number(m2[1]);
+      return null;
+    };
+
+    let safeItems = Array.isArray(parsed.items) ? parsed.items.map((it) => ({
+      title: (it.title || '').trim(),
+      quantity: Math.max(Number(it.quantity) || 0, 0),
+      note: (it.note || '').trim(),
+      price: it.price
+    })) : [];
+
+    // إذا لم يعد النموذج عناصر أو كانت الكميات غير صالحة، أنشئ بند افتراضي من المحادثة
+    if (!safeItems.length || safeItems.every((it) => !it.quantity)) {
+      const qty = extractQuantity() || 1;
+      safeItems = [{ title: safeItems[0]?.title || 'كرة', quantity: qty, note: parsed.customerNote || '' }];
+    } else {
+      safeItems = safeItems.map((it) => ({ ...it, quantity: Math.max(Number(it.quantity) || 1, 1) }));
+    }
 
     const chatOrder = await createOrUpdateFromExtraction({
       botId: bot._id,
