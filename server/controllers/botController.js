@@ -384,6 +384,9 @@ exports.linkSocial = async (req, res) => {
       try {
         const subscribedFields = [
           'messages',
+          'message_echoes',
+          'message_deliveries',
+          'message_reads',
           'messaging_postbacks',
           'messaging_optins',
           'messaging_optouts',
@@ -398,7 +401,7 @@ exports.linkSocial = async (req, res) => {
         ].join(',');
         const subscriptionResponse = await axios.post(
           `https://graph.facebook.com/v22.0/${facebookPageId}/subscribed_apps`,
-          { subscribed_fields, access_token: facebookApiKey }
+          { subscribed_fields: subscribedFields, access_token: facebookApiKey }
         );
         if (!subscriptionResponse.data.success) {
           console.log(`[${getTimestamp()}] ❌ فشل في الاشتراك في Webhook Events لفيسبوك | Bot ID: ${botId}`);
