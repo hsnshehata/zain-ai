@@ -202,7 +202,13 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
 
     const raw = response.choices?.[0]?.message?.content || '{}';
     const parsed = JSON.parse(raw);
-    if (!parsed || parsed.intent === false) return null;
+
+    const cancelIntent = isCancelIntent(userMessageContent);
+    const newOrderIntent = isNewOrderIntent(userMessageContent);
+    const modifyIntent = isModifyIntent(userMessageContent);
+
+    // لو هو إلغاء فقط بدون بيانات كافية، لا نخرج مبكرًا لكي نلتقط الطلب المفتوح ونلغيه
+    if (!parsed || (parsed.intent === false && !cancelIntent)) return null;
 
     // حاول استخراج رقم صالح وفق الأنماط المسموحة
     let phoneCandidate = parsed.customerPhone || '';
@@ -215,10 +221,6 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       parsed.customerPhone = '';
     }
 
-    const cancelIntent = isCancelIntent(userMessageContent);
-    const newOrderIntent = isNewOrderIntent(userMessageContent);
-    const modifyIntent = isModifyIntent(userMessageContent);
-
     const extractQuantity = () => {
       const haystack = `${transcriptText}\n${userMessageContent}`;
       const m1 = haystack.match(/العدد\s*[:\-]?\s*(\d{1,3})/i);
@@ -228,23 +230,25 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       return null;
     };
 
-    let existingOpenOrder = null;
-    if (parsed.customerPhone && isValidPhone(parsed.customerPhone)) {
-      existingOpenOrder = await ChatOrder.findOne({
-        botId: bot._id,
-        customerPhone: parsed.customerPhone,
-        status: { $in: ['pending', 'processing', 'confirmed'] }
-      }).sort({ createdAt: -1 });
-    }
+    const latestOpenOrder = async () => {
+      const filters = [];
+      const phoneFromThread = extractPhoneFromText(transcriptText) || extractPhoneFromText(userMessageContent);
+      const phoneToUse = isValidPhone(parsed.customerPhone) ? parsed.customerPhone : phoneFromThread;
 
-    // احتياطي: لو مفيش موبايل أو ملقيناش بالرقم، نحاول نجيب آخر طلب مفتوح لنفس المستخدم
-    if (!existingOpenOrder && sourceUserId) {
-      existingOpenOrder = await ChatOrder.findOne({
+      if (phoneToUse) filters.push({ customerPhone: phoneToUse });
+      if (sourceUserId) filters.push({ sourceUserId });
+      if (conversationId) filters.push({ conversationId });
+
+      if (!filters.length) return null;
+
+      return ChatOrder.findOne({
         botId: bot._id,
-        sourceUserId,
-        status: { $in: ['pending', 'processing', 'confirmed'] }
+        status: { $in: ['pending', 'processing', 'confirmed'] },
+        $or: filters,
       }).sort({ createdAt: -1 });
-    }
+    };
+
+    let existingOpenOrder = await latestOpenOrder();
 
     let safeItems = Array.isArray(parsed.items) ? parsed.items.map((it) => ({
       title: (it.title || '').trim(),
