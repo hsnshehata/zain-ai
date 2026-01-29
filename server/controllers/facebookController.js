@@ -42,18 +42,19 @@ const handleMessage = async (req, res) => {
         }
 
         const prefixedSenderId = `facebook_${senderPsid}`;
+        const isOwnerMessage = senderPsid === bot.facebookPageId;
+        const pauseKeyword = (bot.ownerPauseKeyword || '').trim().toLowerCase();
+        const pauseDurationMinutes = Number(bot.ownerPauseDurationMinutes) || 0;
 
-        if (recipientId !== bot.facebookPageId) {
+        if (!isOwnerMessage && recipientId !== bot.facebookPageId) {
           console.log(`⚠️ Skipping message because recipientId (${recipientId}) does not match pageId (${bot.facebookPageId})`);
           continue;
         }
 
-        const pauseKeyword = (bot.ownerPauseKeyword || '').trim().toLowerCase();
-        const pauseDurationMinutes = Number(bot.ownerPauseDurationMinutes) || 0;
-
         if (webhookEvent.message && webhookEvent.message.is_echo) {
           const echoText = webhookEvent.message.text || '';
-          if (pauseKeyword && echoText.toLowerCase().includes(pauseKeyword)) {
+          console.log(`ℹ️ Echo message detected. sender=${senderPsid}, recipient=${recipientId}, text=${echoText}`);
+          if (pauseKeyword && echoText.toLowerCase().includes(pauseKeyword) && isOwnerMessage) {
             const targetUserId = webhookEvent.recipient?.id;
             if (targetUserId) {
               const prefixedTargetUserId = `facebook_${targetUserId}`;
@@ -78,14 +79,11 @@ const handleMessage = async (req, res) => {
               targetConversation.mutedBy = 'owner_keyword';
               await targetConversation.save();
               console.log(`🔇 Applied mute for ${prefixedTargetUserId} until ${targetConversation.mutedUntil.toISOString()} using keyword "${bot.ownerPauseKeyword}"`);
+            } else {
+              console.log('⚠️ Echo pause keyword received but no recipient userId found.');
             }
           }
           console.log(`⚠️ Ignoring echo message from bot: ${webhookEvent.message.text}`);
-          continue;
-        }
-
-        if (senderPsid === bot.facebookPageId) {
-          console.log(`⚠️ Skipping message because senderId (${senderPsid}) is the page itself`);
           continue;
         }
 
