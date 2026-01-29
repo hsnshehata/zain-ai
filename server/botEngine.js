@@ -158,7 +158,7 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
 
     const transcriptText = Array.isArray(transcript)
       ? transcript
-          .slice(-10)
+          .slice(-12) // ركز على أحدث الرسائل لتجنب سحب بيانات قديمة
           .map((m) => `${m.role === 'assistant' ? 'البوت' : 'العميل'}: ${m.content || ''}`)
           .join('\n')
       : '';
@@ -171,7 +171,8 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
   - items: مصفوفة عناصر { title, quantity, note } (quantity رقم صحيح >=1).
   - status: one of pending|processing|confirmed|shipped|delivered|cancelled. اختر confirmed لو العميل قدّم كل البيانات ووافق، وإلا pending/processing.
   - freeText: تلخيص مختصر للطلب.
-  التزم بتنسيق رقم الهاتف المصري: 01xxxxxxxxx أو 00201xxxxxxxxx أو +201xxxxxxxxx.`;
+  التزم بتنسيق رقم الهاتف المصري: 01xxxxxxxxx أو 00201xxxxxxxxx أو +201xxxxxxxxx.
+  عند وجود أكثر من قيمة لنفس الحقل، استخدم أحدث قيمة ذُكرت في نهاية المحادثة وتجاهل القيم الأقدم.`;
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
