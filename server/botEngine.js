@@ -228,6 +228,15 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       return null;
     };
 
+    let existingOpenOrder = null;
+    if (parsed.customerPhone && isValidPhone(parsed.customerPhone)) {
+      existingOpenOrder = await ChatOrder.findOne({
+        botId: bot._id,
+        customerPhone: parsed.customerPhone,
+        status: { $in: ['pending', 'processing', 'confirmed'] }
+      }).sort({ createdAt: -1 });
+    }
+
     let safeItems = Array.isArray(parsed.items) ? parsed.items.map((it) => ({
       title: (it.title || '').trim(),
       quantity: Math.max(Number(it.quantity) || 0, 0),
@@ -262,11 +271,6 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       const priced = (effectiveItems || []).filter((it) => Math.max(Number(it.quantity) || 0, 0) > 0 && Math.max(Number(it.price) || 0, 0) > 0);
       return nameOk && phoneOk && addressOk && priced.length > 0;
     };
-
-    let existingOpenOrder = null;
-    if (parsed.customerPhone && isValidPhone(parsed.customerPhone)) {
-      existingOpenOrder = await ChatOrder.findOne({ botId: bot._id, customerPhone: parsed.customerPhone, status: { $in: ['pending', 'processing', 'confirmed'] } }).sort({ createdAt: -1 });
-    }
 
     if (cancelIntent && existingOpenOrder) {
       if (['shipped', 'delivered'].includes(existingOpenOrder.status)) {
