@@ -32,182 +32,183 @@ const handleMessage = async (req, res) => {
       }
 
       if (entry.messaging && entry.messaging.length > 0) {
-        const webhookEvent = entry.messaging[0];
-        const senderPsid = webhookEvent.sender?.id;
-        const recipientId = webhookEvent.recipient?.id;
+        for (const webhookEvent of entry.messaging) {
+          const senderPsid = webhookEvent.sender?.id;
+          const recipientId = webhookEvent.recipient?.id;
 
-        if (!senderPsid) {
-          console.log('❌ Sender PSID not found in webhook event:', webhookEvent);
-          continue;
-        }
+          if (!senderPsid) {
+            console.log('❌ Sender PSID not found in webhook event:', webhookEvent);
+            continue;
+          }
 
-        const prefixedSenderId = `facebook_${senderPsid}`;
-        const isOwnerMessage = senderPsid === bot.facebookPageId;
-        const pauseKeyword = (bot.ownerPauseKeyword || '').trim().toLowerCase();
-        const pauseDurationMinutes = Number(bot.ownerPauseDurationMinutes) || 0;
+          const prefixedSenderId = `facebook_${senderPsid}`;
+          const isOwnerMessage = senderPsid === bot.facebookPageId;
+          const pauseKeyword = (bot.ownerPauseKeyword || '').trim().toLowerCase();
+          const pauseDurationMinutes = Number(bot.ownerPauseDurationMinutes) || 0;
 
-        if (!isOwnerMessage && recipientId !== bot.facebookPageId) {
-          console.log(`⚠️ Skipping message because recipientId (${recipientId}) does not match pageId (${bot.facebookPageId})`);
-          continue;
-        }
+          if (!isOwnerMessage && recipientId !== bot.facebookPageId) {
+            console.log(`⚠️ Skipping message because recipientId (${recipientId}) does not match pageId (${bot.facebookPageId})`);
+            continue;
+          }
 
-        if (webhookEvent.message && webhookEvent.message.is_echo) {
-          const echoText = webhookEvent.message.text || '';
-          console.log(`ℹ️ Echo message detected. sender=${senderPsid}, recipient=${recipientId}, text=${echoText}`);
-          if (pauseKeyword && echoText.toLowerCase().includes(pauseKeyword) && isOwnerMessage) {
-            const targetUserId = webhookEvent.recipient?.id;
-            if (targetUserId) {
-              const prefixedTargetUserId = `facebook_${targetUserId}`;
-              let targetConversation = await Conversation.findOne({
-                botId: bot._id,
-                channel: 'facebook',
-                userId: prefixedTargetUserId
-              });
-
-              if (!targetConversation) {
-                targetConversation = new Conversation({
+          if (webhookEvent.message && webhookEvent.message.is_echo) {
+            const echoText = webhookEvent.message.text || '';
+            console.log(`ℹ️ Echo message detected. sender=${senderPsid}, recipient=${recipientId}, text=${echoText}`);
+            if (pauseKeyword && echoText.toLowerCase().includes(pauseKeyword) && isOwnerMessage) {
+              const targetUserId = webhookEvent.recipient?.id;
+              if (targetUserId) {
+                const prefixedTargetUserId = `facebook_${targetUserId}`;
+                let targetConversation = await Conversation.findOne({
                   botId: bot._id,
                   channel: 'facebook',
-                  userId: prefixedTargetUserId,
-                  username: 'مستخدم فيسبوك',
-                  messages: []
+                  userId: prefixedTargetUserId
                 });
+
+                if (!targetConversation) {
+                  targetConversation = new Conversation({
+                    botId: bot._id,
+                    channel: 'facebook',
+                    userId: prefixedTargetUserId,
+                    username: 'مستخدم فيسبوك',
+                    messages: []
+                  });
+                }
+
+                const durationMs = pauseDurationMinutes > 0 ? pauseDurationMinutes * 60000 : 30 * 60000;
+                targetConversation.mutedUntil = new Date(Date.now() + durationMs);
+                targetConversation.mutedBy = 'owner_keyword';
+                await targetConversation.save();
+                console.log(`🔇 Applied mute for ${prefixedTargetUserId} until ${targetConversation.mutedUntil.toISOString()} using keyword "${bot.ownerPauseKeyword}"`);
+              } else {
+                console.log('⚠️ Echo pause keyword received but no recipient userId found.');
               }
-
-              const durationMs = pauseDurationMinutes > 0 ? pauseDurationMinutes * 60000 : 30 * 60000;
-              targetConversation.mutedUntil = new Date(Date.now() + durationMs);
-              targetConversation.mutedBy = 'owner_keyword';
-              await targetConversation.save();
-              console.log(`🔇 Applied mute for ${prefixedTargetUserId} until ${targetConversation.mutedUntil.toISOString()} using keyword "${bot.ownerPauseKeyword}"`);
-            } else {
-              console.log('⚠️ Echo pause keyword received but no recipient userId found.');
             }
+            console.log(`⚠️ Ignoring echo message from bot: ${webhookEvent.message.text}`);
+            continue;
           }
-          console.log(`⚠️ Ignoring echo message from bot: ${webhookEvent.message.text}`);
-          continue;
-        }
 
-        // تم حذف جلب الاسم من فيسبوك، واستخدمنا اسم افتراضي
-        const username = 'مستخدم فيسبوك';
+          // تم حذف جلب الاسم من فيسبوك، واستخدمنا اسم افتراضي
+          const username = 'مستخدم فيسبوك';
 
-        let conversation = await Conversation.findOne({
-          botId: bot._id,
-          channel: 'facebook',
-          userId: prefixedSenderId
-        });
-
-        if (!conversation) {
-          conversation = new Conversation({
+          let conversation = await Conversation.findOne({
             botId: bot._id,
             channel: 'facebook',
-            userId: prefixedSenderId,
-            username: username,
-            messages: []
+            userId: prefixedSenderId
           });
-          await conversation.save();
-        } else if (!conversation.username || conversation.username === "مستخدم فيسبوك") {
-          conversation.username = username;
-          await conversation.save();
-        }
 
-        if (webhookEvent.optin && bot.messagingOptinsEnabled) {
-          console.log(`📩 Processing opt-in event from ${prefixedSenderId}`);
-          const welcomeMessage = bot.welcomeMessage || 'مرحبًا! كيف يمكنني مساعدتك اليوم؟';
-          await sendMessage(senderPsid, welcomeMessage, bot.facebookApiKey);
-          continue;
-        } else if (webhookEvent.optin && !bot.messagingOptinsEnabled) {
-          console.log(`⚠️ Opt-in messages disabled for bot ${bot.name} (ID: ${bot._id}), skipping opt-in processing.`);
-          continue;
-        }
+          if (!conversation) {
+            conversation = new Conversation({
+              botId: bot._id,
+              channel: 'facebook',
+              userId: prefixedSenderId,
+              username: username,
+              messages: []
+            });
+            await conversation.save();
+          } else if (!conversation.username || conversation.username === "مستخدم فيسبوك") {
+            conversation.username = username;
+            await conversation.save();
+          }
 
-        if (webhookEvent.reaction && bot.messageReactionsEnabled) {
-          console.log(`📩 Processing reaction event from ${prefixedSenderId}: ${webhookEvent.reaction.reaction}`);
-          const responseText = `شكرًا على تفاعلك (${webhookEvent.reaction.reaction})!`;
-          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
-          continue;
-        } else if (webhookEvent.reaction && !bot.messageReactionsEnabled) {
-          console.log(`⚠️ Message reactions disabled for bot ${bot.name} (ID: ${bot._id}), skipping reaction processing.`);
-          continue;
-        }
-
-        if (webhookEvent.referral && bot.messagingReferralsEnabled) {
-          console.log(`📩 Processing referral event from ${prefixedSenderId}: ${webhookEvent.referral.ref}`);
-          const responseText = `مرحبًا! وصلتني من ${webhookEvent.referral.source}، كيف يمكنني مساعدتك؟`;
-          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
-          continue;
-        } else if (webhookEvent.referral && !bot.messagingReferralsEnabled) {
-          console.log(`⚠️ Messaging referrals disabled for bot ${bot.name} (ID: ${bot._id}), skipping referral processing.`);
-          continue;
-        }
-
-        if (webhookEvent.message_edit && bot.messageEditsEnabled) {
-          const editedMessage = webhookEvent.message_edit.message;
-          const mid = editedMessage.mid || `temp_${Date.now()}`;
-          console.log(`📩 Processing message edit event from ${prefixedSenderId}: ${editedMessage.text}`);
-          const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid, 'facebook');
-          if (responseText === null) {
-            console.log(`🔇 Conversation for ${prefixedSenderId} muted, skipping reply to edited message.`);
+          if (webhookEvent.optin && bot.messagingOptinsEnabled) {
+            console.log(`📩 Processing opt-in event from ${prefixedSenderId}`);
+            const welcomeMessage = bot.welcomeMessage || 'مرحبًا! كيف يمكنني مساعدتك اليوم؟';
+            await sendMessage(senderPsid, welcomeMessage, bot.facebookApiKey);
+            continue;
+          } else if (webhookEvent.optin && !bot.messagingOptinsEnabled) {
+            console.log(`⚠️ Opt-in messages disabled for bot ${bot.name} (ID: ${bot._id}), skipping opt-in processing.`);
             continue;
           }
-          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
-          continue;
-        } else if (webhookEvent.message_edit && !bot.messageEditsEnabled) {
-          console.log(`⚠️ Message edits disabled for bot ${bot.name} (ID: ${bot._id}), skipping message edit processing.`);
-          continue;
-        }
 
-        if (webhookEvent.message) {
-          const message = webhookEvent.message;
-          const mid = message.mid || `temp_${Date.now()}`;
-          let text = message.text || '';
-          let isImage = false;
-          let isVoice = false;
-          let mediaUrl = null;
+          if (webhookEvent.reaction && bot.messageReactionsEnabled) {
+            console.log(`📩 Processing reaction event from ${prefixedSenderId}: ${webhookEvent.reaction.reaction}`);
+            const responseText = `شكرًا على تفاعلك (${webhookEvent.reaction.reaction})!`;
+            await sendMessage(senderPsid, responseText, bot.facebookApiKey);
+            continue;
+          } else if (webhookEvent.reaction && !bot.messageReactionsEnabled) {
+            console.log(`⚠️ Message reactions disabled for bot ${bot.name} (ID: ${bot._id}), skipping reaction processing.`);
+            continue;
+          }
 
-          if (message.text) {
-            console.log(`📝 Text message received from ${prefixedSenderId}: ${text}`);
-          } else if (message.attachments) {
-            const attachment = message.attachments[0];
-            if (attachment.type === 'image') {
-              isImage = true;
-              mediaUrl = attachment.payload.url;
-              text = '[صورة]';
-              console.log(`🖼️ Image received from ${prefixedSenderId}: ${mediaUrl}`);
-            } else if (attachment.type === 'audio') {
-              isVoice = true;
-              mediaUrl = attachment.payload.url;
-              text = '';
-              console.log(`🎙️ Audio received from ${prefixedSenderId}: ${mediaUrl}`);
-            } else {
-              console.log(`📎 Unsupported attachment type from ${prefixedSenderId}: ${attachment.type}`);
-              text = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
+          if (webhookEvent.referral && bot.messagingReferralsEnabled) {
+            console.log(`📩 Processing referral event from ${prefixedSenderId}: ${webhookEvent.referral.ref}`);
+            const responseText = `مرحبًا! وصلتني من ${webhookEvent.referral.source}، كيف يمكنني مساعدتك؟`;
+            await sendMessage(senderPsid, responseText, bot.facebookApiKey);
+            continue;
+          } else if (webhookEvent.referral && !bot.messagingReferralsEnabled) {
+            console.log(`⚠️ Messaging referrals disabled for bot ${bot.name} (ID: ${bot._id}), skipping referral processing.`);
+            continue;
+          }
+
+          if (webhookEvent.message_edit && bot.messageEditsEnabled) {
+            const editedMessage = webhookEvent.message_edit.message;
+            const mid = editedMessage.mid || `temp_${Date.now()}`;
+            console.log(`📩 Processing message edit event from ${prefixedSenderId}: ${editedMessage.text}`);
+            const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid, 'facebook');
+            if (responseText === null) {
+              console.log(`🔇 Conversation for ${prefixedSenderId} muted, skipping reply to edited message.`);
+              continue;
             }
+            await sendMessage(senderPsid, responseText, bot.facebookApiKey);
+            continue;
+          } else if (webhookEvent.message_edit && !bot.messageEditsEnabled) {
+            console.log(`⚠️ Message edits disabled for bot ${bot.name} (ID: ${bot._id}), skipping message edit processing.`);
+            continue;
+          }
+
+          if (webhookEvent.message) {
+            const message = webhookEvent.message;
+            const mid = message.mid || `temp_${Date.now()}`;
+            let text = message.text || '';
+            let isImage = false;
+            let isVoice = false;
+            let mediaUrl = null;
+
+            if (message.text) {
+              console.log(`📝 Text message received from ${prefixedSenderId}: ${text}`);
+            } else if (message.attachments) {
+              const attachment = message.attachments[0];
+              if (attachment.type === 'image') {
+                isImage = true;
+                mediaUrl = attachment.payload.url;
+                text = '[صورة]';
+                console.log(`🖼️ Image received from ${prefixedSenderId}: ${mediaUrl}`);
+              } else if (attachment.type === 'audio') {
+                isVoice = true;
+                mediaUrl = attachment.payload.url;
+                text = '';
+                console.log(`🎙️ Audio received from ${prefixedSenderId}: ${mediaUrl}`);
+              } else {
+                console.log(`📎 Unsupported attachment type from ${prefixedSenderId}: ${attachment.type}`);
+                text = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
+              }
+            } else {
+              console.log(`❓ Unknown message type from ${prefixedSenderId}`);
+              text = 'عذرًا، لا أستطيع فهم هذه الرسالة.';
+            }
+
+            console.log(`📤 Sending to botEngine: botId=${bot._id}, userId=${prefixedSenderId}, message=${text}, isImage=${isImage}, isVoice=${isVoice}, mediaUrl=${mediaUrl}`);
+            const responseText = await processMessage(bot._id, prefixedSenderId, text, isImage, isVoice, mid, 'facebook', mediaUrl);
+            if (responseText === null) {
+              console.log(`🔇 Conversation for ${prefixedSenderId} muted, skipping reply.`);
+              continue;
+            }
+            await sendMessage(senderPsid, responseText, bot.facebookApiKey);
+          } else if (webhookEvent.response_feedback) {
+            const feedbackData = webhookEvent.response_feedback;
+            const mid = feedbackData.mid;
+            const feedback = feedbackData.feedback;
+
+            if (!mid || !feedback) {
+              console.log(`❌ Invalid feedback data: mid=${mid}, feedback=${feedback}`);
+              continue;
+            }
+
+            console.log(`📊 Feedback received from ${prefixedSenderId}: ${feedback} for message ID: ${mid}`);
+            await processFeedback(bot._id, prefixedSenderId, mid, feedback);
           } else {
-            console.log(`❓ Unknown message type from ${prefixedSenderId}`);
-            text = 'عذرًا، لا أستطيع فهم هذه الرسالة.';
+            console.log('❌ No message or feedback found in webhook event:', webhookEvent);
           }
-
-          console.log(`📤 Sending to botEngine: botId=${bot._id}, userId=${prefixedSenderId}, message=${text}, isImage=${isImage}, isVoice=${isVoice}, mediaUrl=${mediaUrl}`);
-          const responseText = await processMessage(bot._id, prefixedSenderId, text, isImage, isVoice, mid, 'facebook', mediaUrl);
-          if (responseText === null) {
-            console.log(`🔇 Conversation for ${prefixedSenderId} muted, skipping reply.`);
-            continue;
-          }
-          await sendMessage(senderPsid, responseText, bot.facebookApiKey);
-        } else if (webhookEvent.response_feedback) {
-          const feedbackData = webhookEvent.response_feedback;
-          const mid = feedbackData.mid;
-          const feedback = feedbackData.feedback;
-
-          if (!mid || !feedback) {
-            console.log(`❌ Invalid feedback data: mid=${mid}, feedback=${feedback}`);
-            continue;
-          }
-
-          console.log(`📊 Feedback received from ${prefixedSenderId}: ${feedback} for message ID: ${mid}`);
-          await processFeedback(bot._id, prefixedSenderId, mid, feedback);
-        } else {
-          console.log('❌ No message or feedback found in webhook event:', webhookEvent);
         }
       }
 
