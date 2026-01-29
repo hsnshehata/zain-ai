@@ -228,11 +228,6 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       return null;
     };
 
-    let existingOpenOrder = null;
-    if (parsed.customerPhone && isValidPhone(parsed.customerPhone)) {
-      existingOpenOrder = await ChatOrder.findOne({ botId: bot._id, customerPhone: parsed.customerPhone, status: { $in: ['pending', 'processing', 'confirmed'] } }).sort({ createdAt: -1 });
-    }
-
     let safeItems = Array.isArray(parsed.items) ? parsed.items.map((it) => ({
       title: (it.title || '').trim(),
       quantity: Math.max(Number(it.quantity) || 0, 0),
