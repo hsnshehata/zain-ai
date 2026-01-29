@@ -244,11 +244,16 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       safeItems = safeItems.map((it) => ({ ...it, quantity: Math.max(Number(it.quantity) || 1, 1), price: ensurePrice(it.title, it.price) }));
     }
 
+    const effectiveName = (parsed.customerName || existingOpenOrder?.customerName || '').trim();
+    const effectivePhone = (parsed.customerPhone || existingOpenOrder?.customerPhone || '').trim();
+    const effectiveAddress = (parsed.customerAddress || existingOpenOrder?.customerAddress || '').trim();
+    const effectiveItems = safeItems.length ? safeItems : (existingOpenOrder?.items || []);
+
     const hasRequiredData = () => {
-      const nameOk = Boolean((parsed.customerName || '').trim());
-      const phoneOk = isValidPhone(parsed.customerPhone || '');
-      const addressOk = Boolean((parsed.customerAddress || '').trim());
-      const priced = safeItems.filter((it) => Math.max(Number(it.quantity) || 0, 0) > 0 && Math.max(Number(it.price) || 0, 0) > 0);
+      const nameOk = Boolean(effectiveName);
+      const phoneOk = isValidPhone(effectivePhone || '');
+      const addressOk = Boolean(effectiveAddress);
+      const priced = (effectiveItems || []).filter((it) => Math.max(Number(it.quantity) || 0, 0) > 0 && Math.max(Number(it.price) || 0, 0) > 0);
       return nameOk && phoneOk && addressOk && priced.length > 0;
     };
 
@@ -259,10 +264,10 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
 
     if (existingOpenOrder && !['shipped', 'delivered', 'cancelled'].includes(existingOpenOrder.status)) {
       console.log('ℹ️ Updating existing open order instead of creating new one');
-      if (safeItems.length) existingOpenOrder.items = safeItems;
-      if (parsed.customerName) existingOpenOrder.customerName = parsed.customerName;
-      if (parsed.customerAddress) existingOpenOrder.customerAddress = parsed.customerAddress;
-      if (parsed.customerPhone) existingOpenOrder.customerPhone = parsed.customerPhone;
+      if (effectiveItems.length) existingOpenOrder.items = effectiveItems;
+      if (effectiveName) existingOpenOrder.customerName = effectiveName;
+      if (effectiveAddress) existingOpenOrder.customerAddress = effectiveAddress;
+      if (effectivePhone) existingOpenOrder.customerPhone = effectivePhone;
       if (parsed.customerNote) existingOpenOrder.customerNote = parsed.customerNote;
       if (parsed.status && parsed.status !== existingOpenOrder.status) {
         existingOpenOrder.status = parsed.status;
@@ -270,22 +275,22 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
         existingOpenOrder.history.push({ status: parsed.status, changedBy: null, note: 'تحديث من المحادثة', changedAt: new Date() });
       }
       existingOpenOrder.lastMessageId = messageId || existingOpenOrder.lastMessageId;
-      const itemsTotal = safeItems.reduce((sum, it) => sum + (Math.max(Number(it.price) || 0, 0) * Math.max(Number(it.quantity) || 1, 1)), 0);
+      const itemsTotal = (existingOpenOrder.items || []).reduce((sum, it) => sum + (Math.max(Number(it.price) || 0, 0) * Math.max(Number(it.quantity) || 1, 1)), 0);
       if (itemsTotal > 0) existingOpenOrder.totalAmount = itemsTotal + Math.max(Number(existingOpenOrder.deliveryFee) || 0, 0);
       if (hasRequiredData()) {
         await existingOpenOrder.save();
-        return { chatOrder: existingOpenOrder, conflict: true, customerPhone: parsed.customerPhone };
+        return { chatOrder: existingOpenOrder, conflict: false, customerPhone: effectivePhone };
       }
       // لو البيانات ناقصة رغم وجود طلب مفتوح، نرجع تعارض لكن بدون حفظ
-      return { conflict: true, existingOrder: existingOpenOrder, customerPhone: parsed.customerPhone };
+      return { conflict: true, existingOrder: existingOpenOrder, customerPhone: effectivePhone, reason: 'missing-data' };
     }
 
     console.log('📦 Parsed order payload:', {
-      customerName: parsed.customerName,
-      customerPhone: parsed.customerPhone,
-      customerAddress: parsed.customerAddress,
+      customerName: effectiveName,
+      customerPhone: effectivePhone,
+      customerAddress: effectiveAddress,
       status: parsed.status,
-      items: safeItems
+      items: effectiveItems
     });
 
     const chatOrder = await createOrUpdateFromExtraction({
@@ -294,12 +299,12 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       conversationId,
       sourceUserId,
       sourceUsername,
-      customerName: parsed.customerName || '',
-      customerPhone: parsed.customerPhone || '',
+      customerName: effectiveName || '',
+      customerPhone: effectivePhone || '',
       customerEmail: parsed.customerEmail || '',
-      customerAddress: parsed.customerAddress || '',
+      customerAddress: effectiveAddress || '',
       customerNote: parsed.customerNote || '',
-      items: safeItems,
+      items: effectiveItems,
       freeText: parsed.freeText || userMessageContent,
       status: parsed.status || 'pending',
       messageId
@@ -307,7 +312,13 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
 
     console.log('🧾 Chat order extracted/updated:', chatOrder?._id || 'none');
     if (!chatOrder) {
-      console.log('⚠️ Chat order not saved (missing required data after controller validation)');
+      console.log('⚠️ Chat order not saved (missing required data after controller validation)', {
+        hasRequiredData: hasRequiredData(),
+        effectiveName,
+        effectivePhone,
+        effectiveAddress,
+        effectiveItems,
+      });
     }
     return { chatOrder };
   } catch (err) {
