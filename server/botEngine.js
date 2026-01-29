@@ -158,7 +158,7 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
 
     const transcriptText = Array.isArray(transcript)
       ? transcript
-          .slice(-12) // ركز على أحدث الرسائل لتجنب سحب بيانات قديمة
+          .slice(-30) // نطاق أحدث الرسائل مع سياق كافٍ لاستخلاص العناصر
           .map((m) => `${m.role === 'assistant' ? 'البوت' : 'العميل'}: ${m.content || ''}`)
           .join('\n')
       : '';
