@@ -198,8 +198,7 @@ async function loadInstagramPage(rootEl = document.getElementById("content")) {
     }
   }
 
-  async function loadPauseSettings(botId) {
-  }
+  // لا يوجد إعداد إيقاف بالكلمة في إنستجرام
 
   async function loadAccountStatus(botId) {
     console.log(`جاري جلب بيانات البوت بالـ ID: ${botId}`);
@@ -336,9 +335,6 @@ async function loadInstagramPage(rootEl = document.getElementById("content")) {
       const toggleInput = document.querySelector(`input[data-setting-key="${key}"]`);
       if (toggleInput) toggleInput.checked = !value;
     }
-  }
-
-  async function savePauseSettings(botId) {
   }
 
   // Initialize Instagram SDK (Using Facebook SDK for Instagram login)
@@ -524,9 +520,6 @@ async function loadInstagramPage(rootEl = document.getElementById("content")) {
     connectInstagramBtn.addEventListener("click", loginWithInstagram);
   } else {
     console.error("❌ connectInstagramBtn is not found in the DOM");
-  }
-
-  if (savePauseSettingsBtn) {
   }
 
   toggles.forEach(toggle => {
