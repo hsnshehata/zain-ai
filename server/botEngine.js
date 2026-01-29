@@ -206,6 +206,7 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
     const cancelIntent = isCancelIntent(userMessageContent);
     const newOrderIntent = isNewOrderIntent(userMessageContent);
     const modifyIntent = isModifyIntent(userMessageContent);
+    const statusInquiry = isStatusInquiry(userMessageContent);
 
     // لو هو إلغاء فقط بدون بيانات كافية، لا نخرج مبكرًا لكي نلتقط الطلب المفتوح ونلغيه
     if (!parsed || (parsed.intent === false && !cancelIntent)) return null;
@@ -241,9 +242,13 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
 
       if (!filters.length) return null;
 
+      const statuses = cancelIntent || statusInquiry
+        ? ['pending', 'processing', 'confirmed', 'shipped', 'delivered']
+        : ['pending', 'processing', 'confirmed'];
+
       return ChatOrder.findOne({
         botId: bot._id,
-        status: { $in: ['pending', 'processing', 'confirmed'] },
+        status: { $in: statuses },
         $or: filters,
       }).sort({ createdAt: -1 });
     };
@@ -552,8 +557,15 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       reply = 'الطلب تم شحنه بالفعل، لذلك لا يمكن إلغاؤه الآن. لو محتاج مساعدة إضافية، بلغني.';
     } else if (isStatusInquiry(userMessageContent)) {
       let latestOrder = await ChatOrder.findOne({ botId, sourceUserId: finalUserId }).sort({ createdAt: -1 });
+
+      // حاول بنفس المحادثة لو ما لقيناش
       if (!latestOrder) {
-        const phoneInMessage = extractPhoneFromText(userMessageContent);
+        latestOrder = await ChatOrder.findOne({ botId, conversationId: conversation._id }).sort({ createdAt: -1 });
+      }
+
+      // حاول برقم الهاتف من الرسالة أو الترانسكربت
+      if (!latestOrder) {
+        const phoneInMessage = extractPhoneFromText(userMessageContent) || extractPhoneFromText(context.map((c) => c.content).join(' '));
         if (phoneInMessage) {
           latestOrder = await ChatOrder.findOne({ botId, customerPhone: phoneInMessage }).sort({ createdAt: -1 });
         }
