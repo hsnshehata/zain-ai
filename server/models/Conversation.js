@@ -13,6 +13,9 @@ const conversationSchema = new mongoose.Schema({
   channel: { type: String, required: true }, // Add channel field
   username: { type: String },
   messages: [messageSchema],
+  lastKnownPhone: { type: String, default: "" },
+  lastKnownPhoneAt: { type: Date },
+  pendingDraftAt: { type: Date },
 });
 
 // إضافة Index على messages.timestamp لتسريع الـ Sort
