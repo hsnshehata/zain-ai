@@ -56,7 +56,7 @@
     setTimeout(() => { toast.classList.remove('visible'); setTimeout(() => toast.remove(), 300); }, 4000);
   };
 
-  let pageState = { orders: [], chatOrders: [], chatOrdersCounts: { total:0, pending:0, byStatus:{} }, store: null, token: null, analytics: { currency: 'EGP' } };
+  let pageState = { orders: [], chatOrders: [], chatOrdersCounts: { total:0, pending:0, byStatus:{} }, chatCustomers: [], store: null, token: null, analytics: { currency: 'EGP' } };
   const ORDERS_CACHE_PAGE = 'orders-center';
 
   function applyOrdersCache(snapshot) {
@@ -67,6 +67,7 @@
         store: snapshot.store || null,
         orders: Array.isArray(snapshot.orders) ? snapshot.orders : [],
         chatOrders: Array.isArray(snapshot.chatOrders) ? snapshot.chatOrders : [],
+        chatCustomers: Array.isArray(snapshot.chatCustomers) ? snapshot.chatCustomers : [],
         chatOrdersCounts: snapshot.chatOrdersCounts || { total:0, pending:0, byStatus:{} },
         analytics: snapshot.analytics || { currency: 'EGP' },
       });
@@ -162,6 +163,9 @@
       const chatOrders = Array.isArray(chatResp?.orders) ? chatResp.orders : [];
       const chatCounts = chatResp?.counts || { total: 0, pending: 0, byStatus: {} };
 
+      const customersResp = await handleApiRequest(`/api/chat-customers?botId=${selectedBotId}`, { headers: { Authorization: `Bearer ${token}` } }, null, 'فشل في جلب بيانات العملاء');
+      const chatCustomers = Array.isArray(customersResp?.customers) ? customersResp.customers : [];
+
       let storeOrders = [];
       let storeName = '';
       let storeCurrency = 'EGP';
@@ -181,6 +185,7 @@
         store: storeId ? { _id: storeId, name: storeName } : null,
         orders: storeOrders,
         chatOrders,
+        chatCustomers,
         chatOrdersCounts: chatCounts,
         analytics: { currency: storeCurrency }
       };
@@ -205,6 +210,7 @@
         store: pageState.store,
         orders: storeOrders,
         chatOrders,
+        chatCustomers,
         chatOrdersCounts: chatCounts,
         analytics: { currency: storeCurrency },
       });
@@ -236,10 +242,18 @@
           </div>
           ${pageState.store ? '<div id="store-orders-panel"></div>' : storeNote}
         </div>
+        <div class="card" style="width:100%;">
+          <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+            <h3 style="margin:0;display:flex;align-items:center;gap:8px;"><i class="fas fa-user"></i> بيانات العملاء</h3>
+            <button id="refreshChatCustomers" class="btn btn-secondary btn-sm"><i class="fas fa-sync"></i> تحديث</button>
+          </div>
+          <div id="chat-customers-panel"></div>
+        </div>
       </div>
     `;
 
     document.getElementById('refreshOrdersCenter')?.addEventListener('click', () => loadOrdersCenterPage());
+    document.getElementById('refreshChatCustomers')?.addEventListener('click', () => loadOrdersCenterPage());
   }
 
   async function loadModulesAndRender(){
@@ -271,6 +285,24 @@
     } catch (err) {
       console.error('Chat orders module load error:', err.message);
       const panel = document.getElementById('chat-orders-panel');
+      if (panel) panel.innerHTML = `<div class="placeholder error"><p>${escapeHtml(err.message)}</p></div>`;
+    }
+
+    // Chat customers
+    try {
+      await loadScriptOnce('/js/store-dashboard/chat-customers.js');
+      if (window.storeDashboard?.chatCustomers) {
+        const custMod = window.storeDashboard.chatCustomers;
+        if (!custMod._inited && typeof custMod.init === 'function') {
+          custMod.init({ state: pageState, helpers });
+        } else if (custMod._inited) {
+          custMod.ctx = { state: pageState, helpers };
+        }
+        if (typeof custMod.renderPanel === 'function') custMod.renderPanel();
+      }
+    } catch (err) {
+      console.error('Chat customers module load error:', err.message);
+      const panel = document.getElementById('chat-customers-panel');
       if (panel) panel.innerHTML = `<div class="placeholder error"><p>${escapeHtml(err.message)}</p></div>`;
     }
 

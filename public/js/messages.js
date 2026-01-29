@@ -177,6 +177,20 @@ try {
       paginationContainer.style.display = "flex";
     }
 
+    function openPendingConversationIfAny() {
+      const pendingId = localStorage.getItem("openConversationId");
+      if (!pendingId) return;
+      const pendingUserId = localStorage.getItem("openConversationUserId");
+      const conv = conversations.find((c) => c._id === pendingId);
+      if (conv) {
+        openChatModal(conv._id, pendingUserId || conv.userId);
+        try {
+          localStorage.removeItem("openConversationId");
+          localStorage.removeItem("openConversationUserId");
+        } catch (_) {}
+      }
+    }
+
     async function fetchConversations(botId, channel, startDate, endDate, page = 1) {
       console.log(
         "fetchConversations called with botId:",
@@ -213,6 +227,7 @@ try {
           `Loaded ${conversations.length} conversations for ${channel}, total pages: ${totalPages} on page ${currentPage}`
         );
         renderConversations();
+        openPendingConversationIfAny();
         showContent();
 
         window.writePageCache && window.writePageCache('messages', botId, {
