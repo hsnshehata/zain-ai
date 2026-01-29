@@ -222,16 +222,6 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       return null;
     };
 
-    let existingOpenOrder = null;
-    if (parsed.customerPhone && isValidPhone(parsed.customerPhone)) {
-      existingOpenOrder = await ChatOrder.findOne({ botId: bot._id, customerPhone: parsed.customerPhone, status: { $in: ['pending', 'processing', 'confirmed'] } }).sort({ createdAt: -1 });
-    }
-
-    if (existingOpenOrder) {
-      console.log('ℹ️ Existing open order found for phone, skipping creation to avoid duplicate');
-      return { conflict: true, existingOrder: existingOpenOrder, customerPhone: parsed.customerPhone };
-    }
-
     let safeItems = Array.isArray(parsed.items) ? parsed.items.map((it) => ({
       title: (it.title || '').trim(),
       quantity: Math.max(Number(it.quantity) || 0, 0),
@@ -239,13 +229,64 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       price: it.price
     })) : [];
 
+    const ensurePrice = (title = '', price) => {
+      const numeric = Number(price) || 0;
+      if (numeric > 0) return numeric;
+      if (/(كوره|كورة|كرة|كرات|ball)/i.test(title)) return 1900;
+      return 0;
+    };
+
     // إذا لم يعد النموذج عناصر أو كانت الكميات غير صالحة، أنشئ بند افتراضي من المحادثة
     if (!safeItems.length || safeItems.every((it) => !it.quantity)) {
       const qty = extractQuantity() || 1;
-      safeItems = [{ title: safeItems[0]?.title || 'كرة', quantity: qty, note: parsed.customerNote || '' }];
+      safeItems = [{ title: safeItems[0]?.title || 'كرة', quantity: qty, note: parsed.customerNote || '', price: ensurePrice('كرة', parsed.items?.[0]?.price) }];
     } else {
-      safeItems = safeItems.map((it) => ({ ...it, quantity: Math.max(Number(it.quantity) || 1, 1) }));
+      safeItems = safeItems.map((it) => ({ ...it, quantity: Math.max(Number(it.quantity) || 1, 1), price: ensurePrice(it.title, it.price) }));
     }
+
+    const hasRequiredData = () => {
+      const nameOk = Boolean((parsed.customerName || '').trim());
+      const phoneOk = isValidPhone(parsed.customerPhone || '');
+      const addressOk = Boolean((parsed.customerAddress || '').trim());
+      const priced = safeItems.filter((it) => Math.max(Number(it.quantity) || 0, 0) > 0 && Math.max(Number(it.price) || 0, 0) > 0);
+      return nameOk && phoneOk && addressOk && priced.length > 0;
+    };
+
+    let existingOpenOrder = null;
+    if (parsed.customerPhone && isValidPhone(parsed.customerPhone)) {
+      existingOpenOrder = await ChatOrder.findOne({ botId: bot._id, customerPhone: parsed.customerPhone, status: { $in: ['pending', 'processing', 'confirmed'] } }).sort({ createdAt: -1 });
+    }
+
+    if (existingOpenOrder && !['shipped', 'delivered', 'cancelled'].includes(existingOpenOrder.status)) {
+      console.log('ℹ️ Updating existing open order instead of creating new one');
+      if (safeItems.length) existingOpenOrder.items = safeItems;
+      if (parsed.customerName) existingOpenOrder.customerName = parsed.customerName;
+      if (parsed.customerAddress) existingOpenOrder.customerAddress = parsed.customerAddress;
+      if (parsed.customerPhone) existingOpenOrder.customerPhone = parsed.customerPhone;
+      if (parsed.customerNote) existingOpenOrder.customerNote = parsed.customerNote;
+      if (parsed.status && parsed.status !== existingOpenOrder.status) {
+        existingOpenOrder.status = parsed.status;
+        if (!Array.isArray(existingOpenOrder.history)) existingOpenOrder.history = [];
+        existingOpenOrder.history.push({ status: parsed.status, changedBy: null, note: 'تحديث من المحادثة', changedAt: new Date() });
+      }
+      existingOpenOrder.lastMessageId = messageId || existingOpenOrder.lastMessageId;
+      const itemsTotal = safeItems.reduce((sum, it) => sum + (Math.max(Number(it.price) || 0, 0) * Math.max(Number(it.quantity) || 1, 1)), 0);
+      if (itemsTotal > 0) existingOpenOrder.totalAmount = itemsTotal + Math.max(Number(existingOpenOrder.deliveryFee) || 0, 0);
+      if (hasRequiredData()) {
+        await existingOpenOrder.save();
+        return { chatOrder: existingOpenOrder, conflict: true, customerPhone: parsed.customerPhone };
+      }
+      // لو البيانات ناقصة رغم وجود طلب مفتوح، نرجع تعارض لكن بدون حفظ
+      return { conflict: true, existingOrder: existingOpenOrder, customerPhone: parsed.customerPhone };
+    }
+
+    console.log('📦 Parsed order payload:', {
+      customerName: parsed.customerName,
+      customerPhone: parsed.customerPhone,
+      customerAddress: parsed.customerAddress,
+      status: parsed.status,
+      items: safeItems
+    });
 
     const chatOrder = await createOrUpdateFromExtraction({
       botId: bot._id,
@@ -264,7 +305,10 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       messageId
     });
 
-    console.log('🧾 Chat order extracted/updated:', chatOrder?._id);
+    console.log('🧾 Chat order extracted/updated:', chatOrder?._id || 'none');
+    if (!chatOrder) {
+      console.log('⚠️ Chat order not saved (missing required data after controller validation)');
+    }
     return { chatOrder };
   } catch (err) {
     console.error('❌ فشل في استخراج طلب المحادثة:', err.message);
@@ -441,8 +485,9 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     // ردود خاصة بالحالة أو التعارض قبل الذكاء الاصطناعي العام
     if (extractionResult?.conflict) {
-      const existing = extractionResult.existingOrder;
-      reply = `في طلب جاري بنفس الرقم ${extractionResult.customerPhone} حالته ${statusText(existing.status)}. تحب تعدل الطلب الحالي ولا تسجل طلب جديد؟`;
+      const existing = extractionResult.existingOrder || extractionResult.chatOrder;
+      const st = existing ? statusText(existing.status) : 'غير معروف';
+      reply = `في طلب جاري بنفس الرقم ${extractionResult.customerPhone} حالته ${st}. تحب تعدل الطلب الحالي ولا تسجل طلب جديد؟`;
     } else if (isStatusInquiry(userMessageContent)) {
       let latestOrder = await ChatOrder.findOne({ botId, sourceUserId: finalUserId }).sort({ createdAt: -1 });
       if (!latestOrder) {
