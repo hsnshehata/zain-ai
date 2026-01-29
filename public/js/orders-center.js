@@ -57,6 +57,28 @@
   };
 
   let pageState = { orders: [], chatOrders: [], chatOrdersCounts: { total:0, pending:0, byStatus:{} }, store: null, token: null, analytics: { currency: 'EGP' } };
+  const ORDERS_CACHE_PAGE = 'orders-center';
+
+  function applyOrdersCache(snapshot) {
+    if (!snapshot) return;
+    try {
+      pageState = Object.assign({}, pageState, {
+        token: localStorage.getItem('token'),
+        store: snapshot.store || null,
+        orders: Array.isArray(snapshot.orders) ? snapshot.orders : [],
+        chatOrders: Array.isArray(snapshot.chatOrders) ? snapshot.chatOrders : [],
+        chatOrdersCounts: snapshot.chatOrdersCounts || { total:0, pending:0, byStatus:{} },
+        analytics: snapshot.analytics || { currency: 'EGP' },
+      });
+      renderLayout();
+      loadModulesAndRender();
+      const pending = pageState.chatOrdersCounts?.pending || 0;
+      updateOrdersNavDot({ pendingCount: pending, hasNew: pending > 0 });
+      console.log('Applied cached orders-center snapshot');
+    } catch (err) {
+      console.warn('Failed to apply cached orders-center snapshot:', err);
+    }
+  }
 
   // حدّث زر "متابعة الطلبات" في النافبار لإبراز الطلبات الجديدة غير المعروضة
   function updateOrdersNavDot({ pendingCount = 0, hasNew = false }){
@@ -120,7 +142,14 @@
       return;
     }
 
+    pageState.token = token;
+
     content.innerHTML = `<div class="spinner"><div class="loader"></div></div>`;
+
+    const cached = window.readPageCache ? window.readPageCache(ORDERS_CACHE_PAGE, selectedBotId, 3 * 60 * 1000) : null;
+    if (cached) {
+      applyOrdersCache(cached);
+    }
 
     try {
       // جلب بيانات البوت للحصول على storeId
@@ -171,6 +200,14 @@
 
       // اعتبر أن المستخدم شاهد الطلبات الآن
       localStorage.setItem('chatOrdersLastSeen', String(Date.now()));
+
+      window.writePageCache && window.writePageCache(ORDERS_CACHE_PAGE, selectedBotId, {
+        store: pageState.store,
+        orders: storeOrders,
+        chatOrders,
+        chatOrdersCounts: chatCounts,
+        analytics: { currency: storeCurrency },
+      });
     } catch (err) {
       console.error('Error loading orders-center:', err.message);
       content.innerHTML = `<div class="placeholder error"><h2><i class="fas fa-exclamation-circle"></i> خطأ</h2><p>${escapeHtml(err.message || 'تعذر تحميل الطلبات')}</p></div>`;

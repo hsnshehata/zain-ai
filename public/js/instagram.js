@@ -137,6 +137,39 @@ async function loadInstagramPage(rootEl = document.getElementById("content")) {
   const toggles = settingsContainer.querySelectorAll(".switch input[type=\"checkbox\"]");
   const togglesError = document.getElementById("togglesError");
 
+  const cacheKey = 'instagram-settings';
+
+  function applyCachedSettings(snapshot) {
+    try {
+      if (snapshot?.settings) {
+        toggles.forEach(toggle => {
+          const key = toggle.dataset.settingKey;
+          if (key && snapshot.settings.hasOwnProperty(key)) {
+            toggle.checked = !!snapshot.settings[key];
+          }
+        });
+        settingsContainer.style.display = "grid";
+        loadingSpinner.style.display = "none";
+      }
+      if (typeof snapshot?.statusHtml === 'string') {
+        accountStatus.innerHTML = snapshot.statusHtml;
+        instructionsContainer.style.display = snapshot.showInstructions ? "block" : "none";
+      }
+      if (snapshot?.errorMessage) {
+        errorMessage.textContent = snapshot.errorMessage;
+        errorMessage.style.display = 'block';
+      }
+      console.log('Applied cached Instagram settings snapshot');
+    } catch (err) {
+      console.warn('Failed to apply Instagram cache:', err);
+    }
+  }
+
+  const cached = window.readPageCache ? window.readPageCache(cacheKey, selectedBotId, 5 * 60 * 1000) : null;
+  if (cached) {
+    applyCachedSettings(cached);
+  }
+
   // --- Functions ---
 
   async function handleApiRequest(url, options, errorElement, defaultErrorMessage) {
@@ -186,6 +219,12 @@ async function loadInstagramPage(rootEl = document.getElementById("content")) {
         });
 
         settingsContainer.style.display = "grid";
+
+        window.writePageCache && window.writePageCache(cacheKey, botId, {
+          settings,
+          statusHtml: accountStatus.innerHTML,
+          showInstructions: instructionsContainer.style.display !== 'none'
+        });
       } else {
         throw new Error("فشل في جلب الإعدادات: البيانات غير متاحة");
       }
@@ -300,6 +339,12 @@ async function loadInstagramPage(rootEl = document.getElementById("content")) {
         `;
         instructionsContainer.style.display = "block";
       }
+
+      window.writePageCache && window.writePageCache(cacheKey, botId, {
+        settings: null,
+        statusHtml: accountStatus.innerHTML,
+        showInstructions: instructionsContainer.style.display !== 'none'
+      });
     } catch (err) {
       console.error('Error loading account status:', err);
       accountStatus.innerHTML = `
@@ -309,6 +354,12 @@ async function loadInstagramPage(rootEl = document.getElementById("content")) {
         </div>
       `;
       instructionsContainer.style.display = "block";
+      window.writePageCache && window.writePageCache(cacheKey, botId, {
+        settings: null,
+        statusHtml: accountStatus.innerHTML,
+        showInstructions: instructionsContainer.style.display !== 'none',
+        errorMessage: err.message || 'غير معروف'
+      });
     }
   }
 

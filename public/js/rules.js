@@ -103,6 +103,7 @@ async function loadRulesPage() {
 
   let currentPage = 1;
   const rulesPerPage = 20;
+  const cacheKey = 'rules-page-cache';
 
   // إضافة Event Listener لإغلاق المودال لما نضغط برا
   ruleModal.addEventListener('click', (e) => {
@@ -224,6 +225,20 @@ async function loadRulesPage() {
   });
 
   // Initial load
+  const cached = window.readPageCache ? window.readPageCache(cacheKey, selectedBotId || 'global', 3 * 60 * 1000) : null;
+  if (cached && Array.isArray(cached.rules)) {
+    currentPage = cached.currentPage || 1;
+    typeFilter.value = cached.type || 'all';
+    searchInput.value = cached.search || '';
+    cached.rules.forEach(rule => {
+      rulesList.appendChild(createRuleCard(rule));
+    });
+    setupPagination(paginationContainer, cached.currentPage || 1, cached.totalPages || 1, (newPage) => {
+      loadRules(cached.botId, rulesList, token, cached.type, cached.search, newPage, rulesPerPage, paginationContainer, loadingSpinner, errorMessage);
+    });
+    loadingSpinner.style.display = 'none';
+  }
+
   triggerLoadRules();
 }
 
@@ -265,6 +280,15 @@ async function loadRules(botId, listElement, token, type, search, page, limit, p
 
     setupPagination(paginationContainer, page, totalPages, (newPage) => {
       loadRules(botId, listElement, token, type, search, newPage, limit, paginationContainer, spinner, errorElement);
+    });
+
+    window.writePageCache && window.writePageCache(cacheKey, botId || 'global', {
+      botId,
+      type,
+      search,
+      currentPage: page,
+      totalPages,
+      rules,
     });
 
   } catch (err) {

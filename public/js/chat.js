@@ -50,13 +50,12 @@ try {
       console.log(`📋 Fallback: Generated temporary userId due to localStorage error: ${userId}`);
     }
 
-    try {
-      console.log('📢 Fetching chat page settings for linkId:', linkId);
-      const response = await window.handleApiRequest(`/api/chat-page/${linkId}`);
-      if (!response) {
+    const applySettings = (data) => {
+      if (!data) {
         throw new Error('فشل في جلب إعدادات الصفحة');
       }
-      settings = response;
+
+      settings = data;
       botId = settings.botId;
 
       console.log('🔍 Settings loaded:', settings);
@@ -184,6 +183,33 @@ try {
         imageInput.parentElement.style.display = 'block';
       } else {
         imageInput.parentElement.style.display = 'none';
+      }
+    };
+
+    try {
+      const cachePageKey = 'publicChatPage';
+      const cachedSettings = window.readPageCache ? window.readPageCache(cachePageKey, linkId, 5 * 60 * 1000) : null;
+      const fetchSettings = () => window.handleApiRequest(`/api/chat-page/${linkId}`);
+
+      if (cachedSettings) {
+        console.log('⚡ استخدام الكاش لإعدادات صفحة الدردشة');
+        applySettings(cachedSettings);
+        fetchSettings()
+          .then((fresh) => {
+            if (fresh && window.writePageCache) {
+              window.writePageCache(cachePageKey, linkId, fresh);
+            }
+          })
+          .catch((err) => {
+            console.warn('⚠️ فشل تحديث إعدادات صفحة الدردشة في الخلفية، الاستمرار بالكاش', err);
+          });
+      } else {
+        console.log('📢 Fetching chat page settings for linkId:', linkId);
+        const response = await fetchSettings();
+        applySettings(response);
+        if (window.writePageCache) {
+          window.writePageCache(cachePageKey, linkId, response);
+        }
       }
     } catch (err) {
       console.error('❌ خطأ في جلب إعدادات الصفحة:', err);

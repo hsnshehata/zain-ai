@@ -57,6 +57,7 @@ async function loadBotsPage() {
   const botSearchInput = document.getElementById("botSearchInput");
 
   let allUsers = []; // Store all fetched users for local filtering
+  const cacheKey = 'bots-page-cache';
 
   showCreateUserBtn.addEventListener("click", () => showCreateUserForm(formContainer));
   showCreateBotBtn.addEventListener("click", () => showCreateBotForm(formContainer));
@@ -73,6 +74,13 @@ async function loadBotsPage() {
     });
     renderUsersGrid(filteredUsers, usersGrid);
   });
+
+  // Apply cached list instantly if available
+  const cached = window.readPageCache ? window.readPageCache(cacheKey, 'global', 3 * 60 * 1000) : null;
+  if (cached?.users) {
+    allUsers = cached.users;
+    renderUsersGrid(allUsers, usersGrid);
+  }
 
   try {
     loadingSpinner.style.display = "flex";
@@ -140,6 +148,7 @@ async function fetchUsersAndBots(gridElement, spinner, errorElement) {
       headers: { Authorization: `Bearer ${token}` },
     }, errorElement, "فشل في جلب المستخدمين");
     renderUsersGrid(allUsers, gridElement);
+    window.writePageCache && window.writePageCache(cacheKey, 'global', { users: allUsers });
     spinner.style.display = "none";
   } catch (err) {
     spinner.style.display = "none";

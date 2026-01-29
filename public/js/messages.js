@@ -122,6 +122,37 @@ try {
     let totalPages = 1;
     let currentOpenConversationId = null;
     let currentOpenUserId = null;
+    let hasAppliedCache = false;
+
+    const cachedSnapshot = window.readPageCache ? window.readPageCache('messages', selectedBotId, 3 * 60 * 1000) : null;
+
+    function setActiveTab(channel) {
+      tabs.forEach((t) => t.classList.toggle('active', t.dataset.channel === channel));
+    }
+
+    function applyCachedMessages(snapshot) {
+      try {
+        if (!snapshot) return;
+        currentChannel = snapshot.channel || currentChannel;
+        currentPage = snapshot.currentPage || 1;
+        totalPages = snapshot.totalPages || 1;
+        conversations = Array.isArray(snapshot.conversations) ? snapshot.conversations : [];
+        userNamesCache = snapshot.userNamesCache || {};
+        startDateFilter.value = snapshot.startDate || "";
+        endDateFilter.value = snapshot.endDate || "";
+        setActiveTab(currentChannel);
+        renderConversations();
+        showContent();
+        hasAppliedCache = true;
+        console.log('Applied messages cache for channel', currentChannel, 'page', currentPage);
+      } catch (err) {
+        console.warn('Failed to apply messages cache:', err);
+      }
+    }
+
+    if (cachedSnapshot) {
+      applyCachedMessages(cachedSnapshot);
+    }
 
     function showLoading() {
       console.log("showLoading called...");
@@ -155,7 +186,7 @@ try {
         "page:",
         page
       );
-      showLoading();
+      if (!hasAppliedCache) showLoading();
       try {
         const params = new URLSearchParams({
           type: channel,
@@ -183,6 +214,16 @@ try {
         );
         renderConversations();
         showContent();
+
+        window.writePageCache && window.writePageCache('messages', botId, {
+          channel,
+          startDate: startDate || '',
+          endDate: endDate || '',
+          currentPage,
+          totalPages,
+          conversations,
+          userNamesCache,
+        });
       } catch (err) {
         showError(err.message || "حدث خطأ أثناء جلب المحادثات.");
       }

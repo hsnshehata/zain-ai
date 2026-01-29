@@ -22,10 +22,32 @@ async function loadSettingsPage() {
   }
 
   try {
-    console.log("Fetching user data for userId:", userId);
-    const user = await handleApiRequest('/api/users/me', {
+    const cachePageKey = 'settingsUser';
+    const cachedUser = window.readPageCache ? window.readPageCache(cachePageKey, userId, 5 * 60 * 1000) : null;
+    const fetchUser = () => handleApiRequest('/api/users/me', {
       headers: { Authorization: `Bearer ${token}` },
     }, content, 'فشل في جلب بيانات المستخدم');
+
+    let user = cachedUser || null;
+
+    if (cachedUser) {
+      console.log("Using cached user data for userId:", userId);
+      fetchUser()
+        .then((fresh) => {
+          if (fresh && window.writePageCache) {
+            window.writePageCache(cachePageKey, userId, fresh);
+          }
+        })
+        .catch((err) => {
+          console.warn('⚠️ Failed to refresh user settings, using cache', err);
+        });
+    } else {
+      console.log("Fetching user data for userId:", userId);
+      user = await fetchUser();
+      if (window.writePageCache) {
+        window.writePageCache(cachePageKey, userId, user);
+      }
+    }
 
     console.log("User data fetched successfully:", user);
     content.innerHTML = `

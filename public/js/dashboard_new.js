@@ -10,6 +10,29 @@ try {
     // Valid pages to prevent unexpected page loads
     const validPages = ['overview', 'bots', 'rules', 'chat-page', 'store-manager', 'orders-center', 'channels', 'facebook', 'instagram', 'whatsapp', 'messages', 'feedback', 'wasenderpro', 'settings'];
 
+    // Local cache keys for fast client-side rendering
+    const OVERVIEW_CACHE_PREFIX = 'dashboard_overview_cache_v1';
+    const buildOverviewCacheKey = (botId) => `${OVERVIEW_CACHE_PREFIX}:${botId || 'anonymous'}`;
+    const readOverviewCache = (botId) => {
+      try {
+        const cached = localStorage.getItem(buildOverviewCacheKey(botId));
+        return cached ? JSON.parse(cached) : null;
+      } catch (err) {
+        console.warn('Failed to read overview cache:', err);
+        return null;
+      }
+    };
+    const writeOverviewCache = (botId, snapshot) => {
+      try {
+        localStorage.setItem(buildOverviewCacheKey(botId), JSON.stringify({
+          ...snapshot,
+          cachedAt: Date.now(),
+        }));
+      } catch (err) {
+        console.warn('Failed to write overview cache:', err);
+      }
+    };
+
     // Pages configuration for dashboard cards
     const pages = [
       { id: 'bots', name: 'إدارة البوتات', icon: 'fas fa-robot', description: 'تحكم في إنشاء وتعديل البوتات الخاصة بك', role: 'superadmin' },
@@ -507,13 +530,77 @@ try {
           const target = card.getAttribute('data-target-page');
           if (target) {
             window.location.hash = `#${target}`;
-            loadPage(target);
+            loadPageContent(target);
           }
         });
       });
 
-      // Load statistics
+      // Render cached snapshot instantly (if available) then refresh from network
+      const cachedSnapshot = readOverviewCache(selectedBotId);
+      if (cachedSnapshot && cachedSnapshot.botId === selectedBotId) {
+        console.log('Applying overview cache for bot', selectedBotId);
+        applyOverviewData(cachedSnapshot, 'cache');
+      }
+
+      // Load statistics (will refresh UI and cache when network finishes)
       await loadOverviewStats();
+    }
+
+    // Apply overview snapshot to DOM and charts
+    function applyOverviewData(snapshot, source = 'network') {
+      if (!snapshot) return;
+      const totals = snapshot.totals || {};
+      const ordersCard = snapshot.ordersCard || {};
+      const botInfo = snapshot.botInfo || {};
+      const charts = snapshot.charts || {};
+
+      const formatCount = (value, fallback = '0') => {
+        if (value === undefined || value === null) return fallback;
+        return typeof value === 'number' ? value.toLocaleString('ar-EG') : value;
+      };
+
+      const totalConversationsEl = document.getElementById('total-conversations');
+      if (totalConversationsEl) totalConversationsEl.textContent = formatCount(totals.conversations);
+
+      const totalOrdersEl = document.getElementById('total-orders');
+      if (totalOrdersEl) totalOrdersEl.textContent = formatCount(totals.orders);
+
+      const totalRevenueEl = document.getElementById('total-revenue');
+      if (totalRevenueEl) {
+        const revenueText = totals.revenueText !== undefined ? totals.revenueText : `${Number(totals.revenue || 0).toFixed(2)} ج.م`;
+        totalRevenueEl.textContent = revenueText;
+      }
+
+      const totalProductsEl = document.getElementById('total-products');
+      if (totalProductsEl) totalProductsEl.textContent = formatCount(totals.productsText ?? totals.products);
+
+      const totalCustomersEl = document.getElementById('total-customers');
+      if (totalCustomersEl) totalCustomersEl.textContent = formatCount(totals.customersText ?? totals.customers);
+
+      const totalFeedbackEl = document.getElementById('total-feedback');
+      if (totalFeedbackEl) totalFeedbackEl.textContent = formatCount(totals.feedback);
+
+      const botStatusEl = document.getElementById('bot-status');
+      if (botStatusEl && botInfo.statusText) botStatusEl.textContent = botInfo.statusText;
+
+      const botSubscriptionEl = document.getElementById('bot-subscription');
+      if (botSubscriptionEl && botInfo.subscriptionText) botSubscriptionEl.textContent = botInfo.subscriptionText;
+
+      const botExpiryEl = document.getElementById('bot-expiry');
+      if (botExpiryEl && botInfo.expiryText) botExpiryEl.textContent = botInfo.expiryText;
+
+      const ordersTitleEl = document.getElementById('orders-card-title');
+      if (ordersTitleEl && ordersCard.title) ordersTitleEl.textContent = ordersCard.title;
+
+      const ordersSubEl = document.getElementById('orders-card-sub');
+      if (ordersSubEl && ordersCard.subtitle) ordersSubEl.textContent = ordersCard.subtitle;
+
+      const safeChannelsData = charts.channelsData || { facebook: 0, instagram: 0, whatsapp: 0, web: 0 };
+      const safeOrdersData = charts.ordersData || { pending: 0, completed: 0, cancelled: 0 };
+      const safeDailyMessagesData = charts.dailyMessagesData || [];
+      renderCharts(safeChannelsData, safeOrdersData, safeDailyMessagesData);
+
+      console.log(`Overview UI updated from ${source} snapshot at`, new Date().toISOString());
     }
 
     // Load Overview Statistics
@@ -523,13 +610,33 @@ try {
       
       if (!selectedBotId) return;
 
-      // Store data for charts
-      let channelsData = { facebook: 0, instagram: 0, whatsapp: 0, web: 0 };
-      let ordersData = { pending: 0, completed: 0, cancelled: 0 };
-      let dailyMessagesData = [];
+      const snapshot = {
+        botId: selectedBotId,
+        totals: {
+          conversations: 0,
+          orders: 0,
+          revenue: 0,
+          revenueText: '0 ج.م',
+          products: 0,
+          productsText: '0',
+          customers: 0,
+          customersText: '0',
+          feedback: 0,
+        },
+        ordersCard: { title: 'الطلبات', subtitle: 'إجمالي الطلبات' },
+        botInfo: { statusText: 'جاري التحميل...', subscriptionText: 'جاري التحميل...', expiryText: 'جاري التحميل...' },
+        charts: {
+          channelsData: { facebook: 0, instagram: 0, whatsapp: 0, web: 0 },
+          ordersData: { pending: 0, completed: 0, cancelled: 0 },
+          dailyMessagesData: [],
+        },
+        meta: { updatedAt: Date.now() },
+      };
+
       let chatOrdersCounts = { total: 0, pending: 0, byStatus: {} };
       let chatOrdersNewestTs = 0;
       let totalOrdersCount = 0;
+      let revenueTotal = 0;
 
       try {
         // Fetch bot info
@@ -540,13 +647,13 @@ try {
             monthly: 'شهري',
             yearly: 'سنوي'
           };
-          document.getElementById('bot-status').textContent = bot.isActive ? '🟢 نشط' : '🔴 متوقف';
-          document.getElementById('bot-subscription').textContent = subscriptionTypes[bot.subscriptionType] || 'غير معروف';
+          snapshot.botInfo.statusText = bot.isActive ? '🟢 نشط' : '🔴 متوقف';
+          snapshot.botInfo.subscriptionText = subscriptionTypes[bot.subscriptionType] || 'غير معروف';
           if (bot.autoStopDate) {
             const endDate = new Date(bot.autoStopDate);
-            document.getElementById('bot-expiry').textContent = endDate.toLocaleDateString('ar-EG');
+            snapshot.botInfo.expiryText = endDate.toLocaleDateString('ar-EG');
           } else {
-            document.getElementById('bot-expiry').textContent = 'غير محدد';
+            snapshot.botInfo.expiryText = 'غير محدد';
           }
         }
 
@@ -566,17 +673,17 @@ try {
                 const data = await response.json();
                 const count = data.totalConversations || 0;
                 totalConversations += count;
-                channelsData[channel] = count;
+                snapshot.charts.channelsData[channel] = count;
               }
             } catch (err) {
               console.log(`No ${channel} conversations`);
             }
           }
           
-          document.getElementById('total-conversations').textContent = totalConversations;
+          snapshot.totals.conversations = totalConversations;
         } catch (err) {
           console.error('Error fetching conversations:', err);
-          document.getElementById('total-conversations').textContent = '0';
+          snapshot.totals.conversations = 0;
         }
 
         // Fetch daily messages for chart
@@ -587,7 +694,7 @@ try {
           );
           
           if (response.ok) {
-            dailyMessagesData = await response.json();
+            snapshot.charts.dailyMessagesData = await response.json();
           }
         } catch (err) {
           console.log('No daily messages data');
@@ -615,9 +722,9 @@ try {
 
           chatOrders.forEach((order) => {
             const st = (order.status || '').toLowerCase();
-            if (st === 'cancelled') ordersData.cancelled++;
-            else if (st === 'delivered') ordersData.completed++;
-            else ordersData.pending++; // pending/processing/confirmed/shipped → انتظار
+            if (st === 'cancelled') snapshot.charts.ordersData.cancelled++;
+            else if (st === 'delivered') snapshot.charts.ordersData.completed++;
+            else snapshot.charts.ordersData.pending++; // pending/processing/confirmed/shipped → انتظار
           });
         } catch (err) {
           console.log('No chat orders data');
@@ -637,10 +744,12 @@ try {
                 null,
                 'فشل في جلب العملاء'
               );
-              document.getElementById('total-customers').textContent = customers.length || 0;
+              snapshot.totals.customers = customers.length || 0;
+              snapshot.totals.customersText = String(customers.length || 0);
             } catch (err) {
               console.log('No customers found');
-              document.getElementById('total-customers').textContent = '0';
+              snapshot.totals.customers = 0;
+              snapshot.totals.customersText = '0';
             }
 
             // Fetch store orders
@@ -651,23 +760,25 @@ try {
                 null,
                 'فشل في جلب الطلبات'
               );
-              document.getElementById('total-orders').textContent = orders.length || 0;
-              
-              const revenue = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
-              document.getElementById('total-revenue').textContent = `${revenue.toFixed(2)} ج.م`;
+              snapshot.totals.orders = orders.length || 0;
               totalOrdersCount += orders.length;
+              
+              revenueTotal += orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0);
+              snapshot.totals.revenue = revenueTotal;
+              snapshot.totals.revenueText = `${revenueTotal.toFixed(2)} ج.م`;
               
               // Count orders by status
               orders.forEach(order => {
                 const status = (order.status || '').toLowerCase();
-                if (status === 'cancelled') ordersData.cancelled++;
-                else if (status === 'delivered') ordersData.completed++;
-                else ordersData.pending++; // pending/processing/confirmed/shipped → انتظار
+                if (status === 'cancelled') snapshot.charts.ordersData.cancelled++;
+                else if (status === 'delivered') snapshot.charts.ordersData.completed++;
+                else snapshot.charts.ordersData.pending++; // pending/processing/confirmed/shipped → انتظار
               });
             } catch (err) {
               console.log('No orders found');
-              document.getElementById('total-orders').textContent = '0';
-              document.getElementById('total-revenue').textContent = '0 ج.م';
+              snapshot.totals.orders = totalOrdersCount;
+              snapshot.totals.revenue = revenueTotal;
+              snapshot.totals.revenueText = '0 ج.م';
             }
 
             // Fetch products
@@ -678,22 +789,27 @@ try {
                 null,
                 'فشل في جلب المنتجات'
               );
-              document.getElementById('total-products').textContent = products.length || 0;
+              snapshot.totals.products = products.length || 0;
+              snapshot.totals.productsText = String(products.length || 0);
             } catch (err) {
               console.log('No products found');
-              document.getElementById('total-products').textContent = '0';
+              snapshot.totals.products = 0;
+              snapshot.totals.productsText = '0';
             }
           } else {
             // No store linked
-            document.getElementById('total-customers').textContent = 'لا يوجد متجر';
-            document.getElementById('total-revenue').textContent = 'لا يوجد متجر';
-            document.getElementById('total-products').textContent = 'لا يوجد متجر';
+            snapshot.totals.customersText = 'لا يوجد متجر';
+            snapshot.totals.revenueText = 'لا يوجد متجر';
+            snapshot.totals.productsText = 'لا يوجد متجر';
           }
         } catch (err) {
           console.error('Error in store operations:', err);
-          document.getElementById('total-customers').textContent = '0';
-          document.getElementById('total-revenue').textContent = '0 ج.م';
-          document.getElementById('total-products').textContent = '0';
+          snapshot.totals.customers = 0;
+          snapshot.totals.customersText = '0';
+          snapshot.totals.revenue = 0;
+          snapshot.totals.revenueText = '0 ج.م';
+          snapshot.totals.products = 0;
+          snapshot.totals.productsText = '0';
         }
 
         // Fetch feedback count
@@ -705,30 +821,28 @@ try {
             'فشل في جلب التقييمات'
           );
           const feedbackCount = Array.isArray(feedbackData) ? feedbackData.length : 0;
-          document.getElementById('total-feedback').textContent = feedbackCount;
+          snapshot.totals.feedback = feedbackCount;
         } catch (err) {
           console.error('Error fetching feedback:', err);
-          document.getElementById('total-feedback').textContent = '0';
+          snapshot.totals.feedback = 0;
         }
         
         // عكس حالة الطلبات في البطاقة
         const lastSeen = Number(localStorage.getItem('chatOrdersLastSeen') || 0);
         const hasNewOrders = chatOrdersCounts.pending > 0 || chatOrdersNewestTs > lastSeen;
-        const ordersTitleEl = document.getElementById('orders-card-title');
-        const ordersSubEl = document.getElementById('orders-card-sub');
-        if (ordersTitleEl) ordersTitleEl.textContent = hasNewOrders ? 'يوجد طلبات جديدة ♥' : 'الطلبات';
-        if (ordersSubEl) {
-          if (hasNewOrders) {
-            const pending = chatOrdersCounts.pending || 0;
-            ordersSubEl.textContent = pending > 0 ? `${pending} طلب محادثة جديد` : 'طلبات محادثة جديدة';
-          } else {
-            ordersSubEl.textContent = 'إجمالي الطلبات';
-          }
+        if (hasNewOrders) {
+          const pending = chatOrdersCounts.pending || 0;
+          snapshot.ordersCard.title = 'يوجد طلبات جديدة ♥';
+          snapshot.ordersCard.subtitle = pending > 0 ? `${pending} طلب محادثة جديد` : 'طلبات محادثة جديدة';
+        } else {
+          snapshot.ordersCard.title = 'الطلبات';
+          snapshot.ordersCard.subtitle = 'إجمالي الطلبات';
         }
-        document.getElementById('total-orders').textContent = totalOrdersCount || 0;
+        snapshot.totals.orders = totalOrdersCount || snapshot.totals.orders || 0;
 
-        // Render Charts
-        renderCharts(channelsData, ordersData, dailyMessagesData);
+        // Render and cache snapshot
+        applyOverviewData(snapshot, 'network');
+        writeOverviewCache(selectedBotId, snapshot);
       } catch (err) {
         console.error('Error loading overview stats:', err);
       }
@@ -1086,6 +1200,10 @@ try {
         e.preventDefault();
         const page = item.dataset.page;
         window.location.hash = page;
+        // Close sidebar immediately on mobile to avoid waiting for navigation
+        if (window.innerWidth <= 768) {
+          sidebar.classList.remove('active');
+        }
       });
     });
 

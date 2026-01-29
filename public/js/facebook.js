@@ -185,6 +185,37 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
   const savePauseSettingsBtn = document.getElementById("savePauseSettingsBtn");
   const pauseSettingsError = document.getElementById("pauseSettingsError");
 
+  const cacheKey = 'facebook-settings';
+
+  function applyCachedSettings(snapshot) {
+    try {
+      if (!snapshot?.settings) return;
+      const settings = snapshot.settings;
+      toggles.forEach(toggle => {
+        const key = toggle.dataset.settingKey;
+        if (key && settings.hasOwnProperty(key)) {
+          toggle.checked = !!settings[key];
+        }
+      });
+      if (pauseKeywordInput) pauseKeywordInput.value = settings.ownerPauseKeyword || '';
+      if (pauseDurationInput) pauseDurationInput.value = settings.ownerPauseDurationMinutes ?? 30;
+      if (typeof snapshot.statusHtml === 'string') {
+        pageStatus.innerHTML = snapshot.statusHtml;
+        instructionsContainer.style.display = snapshot.showInstructions ? "block" : "none";
+      }
+      settingsContainer.style.display = "grid";
+      loadingSpinner.style.display = "none";
+      console.log('Applied cached Facebook settings snapshot');
+    } catch (err) {
+      console.warn('Failed to apply Facebook cache:', err);
+    }
+  }
+
+  const cached = window.readPageCache ? window.readPageCache(cacheKey, selectedBotId, 5 * 60 * 1000) : null;
+  if (cached) {
+    applyCachedSettings(cached);
+  }
+
   // --- Functions ---
 
   async function handleApiRequest(url, options, errorElement, defaultErrorMessage) {
@@ -254,6 +285,12 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
         if (pauseDurationInput) pauseDurationInput.value = settings.ownerPauseDurationMinutes ?? defaultSettings.ownerPauseDurationMinutes;
 
         settingsContainer.style.display = "grid";
+
+        window.writePageCache && window.writePageCache(cacheKey, botId, {
+          settings,
+          statusHtml: pageStatus.innerHTML,
+          showInstructions: instructionsContainer.style.display !== 'none'
+        });
       } else {
         throw new Error("فشل في جلب الإعدادات: البيانات غير متاحة");
       }
@@ -374,6 +411,12 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
         `;
         instructionsContainer.style.display = "block";
       }
+
+      window.writePageCache && window.writePageCache(cacheKey, botId, {
+        settings: null,
+        statusHtml: pageStatus.innerHTML,
+        showInstructions: instructionsContainer.style.display !== 'none'
+      });
     } catch (err) {
       console.error('Error loading page status:', err);
       pageStatus.innerHTML = `
@@ -383,6 +426,11 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
         </div>
       `;
       instructionsContainer.style.display = "block";
+      window.writePageCache && window.writePageCache(cacheKey, botId, {
+        settings: null,
+        statusHtml: pageStatus.innerHTML,
+        showInstructions: instructionsContainer.style.display !== 'none'
+      });
     }
   }
 

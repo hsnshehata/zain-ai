@@ -549,9 +549,30 @@ async function loadChatPage() {
     async function loadChatPageSettings() {
       return new Promise(async (resolve, reject) => {
         try {
-          const data = await handleApiRequest(`/api/chat-page/bot/${selectedBotId}`, {
+          const cachePageKey = 'chatPageSettings';
+          const cached = window.readPageCache ? window.readPageCache(cachePageKey, selectedBotId, 5 * 60 * 1000) : null;
+          const fetchSettings = () => handleApiRequest(`/api/chat-page/bot/${selectedBotId}`, {
             headers: { Authorization: `Bearer ${token}` },
           }, chatPageContent, "تعذر جلب صفحة الدردشة");
+
+          let data = cached || null;
+
+          if (cached) {
+            fetchSettings()
+              .then((fresh) => {
+                if (fresh && window.writePageCache) {
+                  window.writePageCache(cachePageKey, selectedBotId, fresh);
+                }
+              })
+              .catch((err) => {
+                console.warn('⚠️ Failed to refresh chat page settings, using cache', err);
+              });
+          } else {
+            data = await fetchSettings();
+            if (window.writePageCache) {
+              window.writePageCache(cachePageKey, selectedBotId, data);
+            }
+          }
 
           let floatingButtonCode = `
 <div id="supportButtonContainer" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">

@@ -29,3 +29,35 @@ async function handleApiRequest(url, options, errorElement = null, errorMessageP
 
 // تصدير الدالة
 window.handleApiRequest = handleApiRequest;
+
+// خفيف: أدوات كاش موحدة للصفحات
+const PAGE_CACHE_VERSION = 'v1';
+const buildPageCacheKey = (page, botId) => `zain-cache-${PAGE_CACHE_VERSION}:${page}:${botId || 'global'}`;
+
+function readPageCache(page, botId, maxAgeMs = 5 * 60 * 1000) {
+  try {
+    const raw = localStorage.getItem(buildPageCacheKey(page, botId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || !parsed.cachedAt) return null;
+    if (Date.now() - parsed.cachedAt > maxAgeMs) return null;
+    return parsed;
+  } catch (err) {
+    console.warn('Failed to read cache for', page, err);
+    return null;
+  }
+}
+
+function writePageCache(page, botId, payload) {
+  try {
+    localStorage.setItem(buildPageCacheKey(page, botId), JSON.stringify({
+      ...payload,
+      cachedAt: Date.now(),
+    }));
+  } catch (err) {
+    console.warn('Failed to write cache for', page, err);
+  }
+}
+
+window.readPageCache = readPageCache;
+window.writePageCache = writePageCache;

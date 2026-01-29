@@ -28,6 +28,8 @@
 		supplierSearch: '',
 	};
 
+const STORE_CACHE_PAGE = 'store-manager';
+
 // Human-friendly status labels used across modules
 const STATUS_LABELS = {
 	pending: 'قيد المعالجة',
@@ -325,6 +327,24 @@ const STATUS_LABELS = {
 			state.catalogSnapshot = Array.isArray(snapshotResp?.products) ? snapshotResp.products : [];
 			state.analytics = state.analytics || {};
 			computeAnalytics();
+
+			window.writePageCache && window.writePageCache(STORE_CACHE_PAGE, storeId, {
+				state: {
+					store: state.store,
+					categories: state.categories,
+					products: state.products,
+					productTotal: state.productTotal,
+					productPage: state.productPage,
+					productPageSize: state.productPageSize,
+					productSearch: state.productSearch,
+					productCategoryFilter: state.productCategoryFilter,
+					orders: state.orders,
+					sales: state.sales,
+					catalogSnapshot: state.catalogSnapshot,
+					analytics: state.analytics,
+					currentTab: state.currentTab,
+				},
+			});
 		} catch (err) {
 			console.error('Failed to fetch initial store data:', err);
 			throw err;
@@ -1675,6 +1695,17 @@ async function renderReportsPanel() {
 				}
 
 				state.store = await handleApiRequest(`/api/stores/${state.bot.storeId}`, { headers }, null, 'فشل في جلب بيانات المتجر');
+
+				const cached = window.readPageCache ? window.readPageCache(STORE_CACHE_PAGE, state.store._id, 4 * 60 * 1000) : null;
+				if (cached?.state) {
+					try {
+						Object.assign(state, cached.state, { token: state.token, selectedBotId: state.selectedBotId, store: cached.state.store });
+						renderStoreDashboard();
+						console.log('Applied cached store manager snapshot');
+					} catch (err) {
+						console.warn('Failed to apply store cache:', err);
+					}
+				}
 
 				await fetchInitialStoreData();
 				renderStoreDashboard();

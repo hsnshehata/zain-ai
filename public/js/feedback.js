@@ -78,11 +78,36 @@ async function loadFeedback(botId, token) {
   const negativeSpinner = document.getElementById("negativeSpinner");
   const positiveError = document.getElementById("positiveError");
   const negativeError = document.getElementById("negativeError");
+  const cacheKey = 'feedback-cache';
 
   if (!positiveList || !negativeList || !positiveSpinner || !negativeSpinner || !positiveError || !negativeError) {
     console.error("Feedback elements not found in DOM");
     alert("خطأ في تحميل واجهة التقييمات، حاول مرة أخرى.");
     return;
+  }
+
+  const cached = window.readPageCache ? window.readPageCache(cacheKey, botId, 5 * 60 * 1000) : null;
+  if (cached) {
+    try {
+      const { positiveFeedback = [], negativeFeedback = [] } = cached;
+      if (positiveFeedback.length === 0) {
+        positiveList.innerHTML = `<div class="card placeholder-card"><p>لا توجد تقييمات إيجابية.</p></div>`;
+      } else {
+        positiveFeedback.forEach(item => positiveList.appendChild(createFeedbackCard(item, botId)));
+      }
+      if (negativeFeedback.length === 0) {
+        negativeList.innerHTML = `<div class="card placeholder-card"><p>لا توجد تقييمات سلبية.</p></div>`;
+      } else {
+        negativeFeedback.forEach(item => negativeList.appendChild(createFeedbackCard(item, botId)));
+      }
+      positiveSpinner.style.display = "none";
+      negativeSpinner.style.display = "none";
+      positiveError.style.display = "none";
+      negativeError.style.display = "none";
+      console.log('Applied cached feedback snapshot');
+    } catch (err) {
+      console.warn('Failed to apply cached feedback:', err);
+    }
   }
 
   positiveSpinner.style.display = "flex";
@@ -125,6 +150,11 @@ async function loadFeedback(botId, token) {
     });
     document.querySelectorAll(".cancel-edit-btn").forEach(button => {
       button.addEventListener("click", handleCancelEditClick);
+    });
+
+    window.writePageCache && window.writePageCache(cacheKey, botId, {
+      positiveFeedback,
+      negativeFeedback,
     });
 
   } catch (err) {
