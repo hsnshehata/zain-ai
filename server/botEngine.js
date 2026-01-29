@@ -375,35 +375,35 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
     }
 
     if (existingOpenOrder && !['shipped', 'delivered', 'cancelled'].includes(existingOpenOrder.status)) {
-      // لو عميل بيطلب طلب جديد بنفس الرقم، ما نعدلش الطلب الحالي ونرجع تعارض إلا لو اختار صراحة خيار 2
-      if (newOrderIntent && !modifyIntent && !forceNewOrder) {
-        return { conflict: true, existingOrder: existingOpenOrder, customerPhone: effectivePhone, reason: 'open-order-exists' };
-      } else if (newOrderIntent && forceNewOrder && !modifyIntent) {
-        // السماح ببدء طلب جديد مع إبقاء القديم كما هو
+      // إذا طلب العميل صراحة إنشاء طلب جديد، لا نلمس الطلب المفتوح ونبدأ طلبًا جديدًا
+      if (newOrderIntent && !modifyIntent) {
+        console.log('🆕 Starting a new chat order per explicit user request, keeping the previous open order untouched');
         existingOpenOrder = null;
       }
 
-      // تحديث الطلب الحالي في حالة التأكيد/التعديل
-      console.log('ℹ️ Updating existing open order instead of creating new one');
-      if (effectiveItems.length) existingOpenOrder.items = effectiveItems;
-      if (effectiveName) existingOpenOrder.customerName = effectiveName;
-      if (effectiveAddress) existingOpenOrder.customerAddress = effectiveAddress;
-      if (effectivePhone) existingOpenOrder.customerPhone = effectivePhone;
-      if (parsed.customerNote) existingOpenOrder.customerNote = parsed.customerNote;
-      if (parsed.status && parsed.status !== existingOpenOrder.status) {
-        existingOpenOrder.status = parsed.status;
-        if (!Array.isArray(existingOpenOrder.history)) existingOpenOrder.history = [];
-        existingOpenOrder.history.push({ status: parsed.status, changedBy: null, note: 'تحديث من المحادثة', changedAt: new Date() });
+      if (existingOpenOrder) {
+        // تحديث الطلب الحالي في حالة التأكيد/التعديل
+        console.log('ℹ️ Updating existing open order instead of creating new one');
+        if (effectiveItems.length) existingOpenOrder.items = effectiveItems;
+        if (effectiveName) existingOpenOrder.customerName = effectiveName;
+        if (effectiveAddress) existingOpenOrder.customerAddress = effectiveAddress;
+        if (effectivePhone) existingOpenOrder.customerPhone = effectivePhone;
+        if (parsed.customerNote) existingOpenOrder.customerNote = parsed.customerNote;
+        if (parsed.status && parsed.status !== existingOpenOrder.status) {
+          existingOpenOrder.status = parsed.status;
+          if (!Array.isArray(existingOpenOrder.history)) existingOpenOrder.history = [];
+          existingOpenOrder.history.push({ status: parsed.status, changedBy: null, note: 'تحديث من المحادثة', changedAt: new Date() });
+        }
+        existingOpenOrder.lastMessageId = messageId || existingOpenOrder.lastMessageId;
+        const itemsTotal = (existingOpenOrder.items || []).reduce((sum, it) => sum + (Math.max(Number(it.price) || 0, 0) * Math.max(Number(it.quantity) || 1, 1)), 0);
+        if (itemsTotal > 0) existingOpenOrder.totalAmount = itemsTotal + Math.max(Number(existingOpenOrder.deliveryFee) || 0, 0);
+        if (hasRequiredData()) {
+          await existingOpenOrder.save();
+          return { chatOrder: existingOpenOrder, conflict: false, customerPhone: effectivePhone, rememberPhone: isValidPhone(effectivePhone) ? effectivePhone : undefined };
+        }
+        // لو البيانات ناقصة رغم وجود طلب مفتوح، نرجع تعارض لكن بدون حفظ
+        return { conflict: true, existingOrder: existingOpenOrder, customerPhone: effectivePhone, reason: 'missing-data' };
       }
-      existingOpenOrder.lastMessageId = messageId || existingOpenOrder.lastMessageId;
-      const itemsTotal = (existingOpenOrder.items || []).reduce((sum, it) => sum + (Math.max(Number(it.price) || 0, 0) * Math.max(Number(it.quantity) || 1, 1)), 0);
-      if (itemsTotal > 0) existingOpenOrder.totalAmount = itemsTotal + Math.max(Number(existingOpenOrder.deliveryFee) || 0, 0);
-      if (hasRequiredData()) {
-        await existingOpenOrder.save();
-        return { chatOrder: existingOpenOrder, conflict: false, customerPhone: effectivePhone, rememberPhone: isValidPhone(effectivePhone) ? effectivePhone : undefined };
-      }
-      // لو البيانات ناقصة رغم وجود طلب مفتوح، نرجع تعارض لكن بدون حفظ
-      return { conflict: true, existingOrder: existingOpenOrder, customerPhone: effectivePhone, reason: 'missing-data' };
     }
 
     console.log('📦 Parsed order payload:', {
