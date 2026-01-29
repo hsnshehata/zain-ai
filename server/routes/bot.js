@@ -81,6 +81,11 @@ router.post('/', async (req, res) => {
     // تمرير mediaUrl لدالة processMessage
     console.log(`[POST /api/bot] 📤 Calling botEngine with mediaUrl: ${mediaUrl}`);
     const reply = await botEngine.processMessage(botId, userId, message, isImage, isVoice, null, channel || 'web', mediaUrl);
+
+    if (reply === null) {
+      console.log(`[POST /api/bot] 🔇 Conversation muted, no reply will be sent for user ${userId}.`);
+      return res.status(204).send();
+    }
     res.status(200).json({ reply });
   } catch (err) {
     console.error(`[POST /api/bot] ❌ خطأ في معالجة رسالة البوت:`, err.message, err.stack);

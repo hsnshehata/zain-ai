@@ -123,6 +123,11 @@ const processWebhook = async (req, res) => {
           mediaUrl
         );
 
+        if (reply === null) {
+          console.log(`🔇 Conversation for ${userId} muted, skipping WhatsApp reply.`);
+          return res.sendStatus(200);
+        }
+
         // Send reply back to WhatsApp
         await fetch(
           `https://graph.facebook.com/v20.0/${body.entry[0].changes[0].value.metadata.phone_number_id}/messages`,

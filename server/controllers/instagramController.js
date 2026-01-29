@@ -152,12 +152,43 @@ const handleMessage = async (req, res) => {
 
           const prefixedSenderId = `instagram_${senderId}`;
 
+          const pauseKeyword = (bot.ownerPauseKeyword || '').trim().toLowerCase();
+          const pauseDurationMinutes = Number(bot.ownerPauseDurationMinutes) || 0;
+
           if (senderId === recipientId) {
             console.log(`[${getTimestamp()}] ⚠️ Ignoring message sent by the page itself: ${senderId}`);
             continue;
           }
 
           if (event.message && event.message.is_echo) {
+            const echoText = event.message.text || '';
+            if (pauseKeyword && echoText.toLowerCase().includes(pauseKeyword)) {
+              const targetUserId = event.recipient?.id;
+              if (targetUserId) {
+                const prefixedTargetUserId = `instagram_${targetUserId}`;
+                let targetConversation = await Conversation.findOne({
+                  botId: bot._id,
+                  channel: 'instagram',
+                  userId: prefixedTargetUserId
+                });
+
+                if (!targetConversation) {
+                  targetConversation = new Conversation({
+                    botId: bot._id,
+                    channel: 'instagram',
+                    userId: prefixedTargetUserId,
+                    username: 'مستخدم إنستجرام',
+                    messages: []
+                  });
+                }
+
+                const durationMs = pauseDurationMinutes > 0 ? pauseDurationMinutes * 60000 : 30 * 60000;
+                targetConversation.mutedUntil = new Date(Date.now() + durationMs);
+                targetConversation.mutedBy = 'owner_keyword';
+                await targetConversation.save();
+                console.log(`[${getTimestamp()}] 🔇 Applied mute for ${prefixedTargetUserId} until ${targetConversation.mutedUntil.toISOString()} using keyword "${bot.ownerPauseKeyword}"`);
+              }
+            }
             console.log(`[${getTimestamp()}] ⚠️ Ignoring echo message from bot: ${senderId}`);
             continue;
           }
@@ -226,6 +257,10 @@ const handleMessage = async (req, res) => {
             const mid = editedMessage.mid || `temp_${Date.now()}`;
             console.log(`📩 Processing message edit event from ${prefixedSenderId}: ${editedMessage.text}`);
             const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid, 'instagram');
+            if (responseText === null) {
+              console.log(`[${getTimestamp()}] 🔇 Conversation for ${prefixedSenderId} muted, skipping reply to edited message.`);
+              continue;
+            }
             await sendMessage(senderId, responseText, bot.instagramApiKey);
             continue;
           } else if (event.message_edit && !bot.instagramMessageEditsEnabled) {
@@ -266,6 +301,11 @@ const handleMessage = async (req, res) => {
 
             console.log(`[${getTimestamp()}] 📤 Sending to botEngine: botId=${bot._id}, userId=${prefixedSenderId}, message=${text}, isImage=${isImage}, isVoice=${isVoice}, mediaUrl=${mediaUrl}`);
             const reply = await processMessage(bot._id, prefixedSenderId, text, isImage, isVoice, messageId, 'instagram', mediaUrl);
+
+            if (reply === null) {
+              console.log(`[${getTimestamp()}] 🔇 Conversation for ${prefixedSenderId} muted, skipping reply.`);
+              continue;
+            }
 
             console.log(`[${getTimestamp()}] 📤 Attempting to send message to ${senderId} with token: ${bot.instagramApiKey.slice(0, 10)}...`);
             await sendMessage(senderId, reply, bot.instagramApiKey);
@@ -328,6 +368,11 @@ const handleMessage = async (req, res) => {
 
             console.log(`[${getTimestamp()}] 🤖 Processing comment for bot: ${bot._id} user: ${prefixedCommenterId} comment: ${commentText}`);
             const reply = await processMessage(bot._id, prefixedCommenterId, commentText, false, false, commentId, 'instagram');
+
+            if (reply === null) {
+              console.log(`[${getTimestamp()}] 🔇 Conversation for ${prefixedCommenterId} muted, skipping comment reply.`);
+              continue;
+            }
 
             console.log(`[${getTimestamp()}] 📤 Attempting to reply to comment ${commentId} with token: ${bot.instagramApiKey.slice(0, 10)}...`);
             await replyToComment(commentId, reply, bot.instagramApiKey);

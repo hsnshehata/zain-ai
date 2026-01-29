@@ -43,18 +43,49 @@ const handleMessage = async (req, res) => {
 
         const prefixedSenderId = `facebook_${senderPsid}`;
 
-        if (senderPsid === bot.facebookPageId) {
-          console.log(`⚠️ Skipping message because senderId (${senderPsid}) is the page itself`);
-          continue;
-        }
-
         if (recipientId !== bot.facebookPageId) {
           console.log(`⚠️ Skipping message because recipientId (${recipientId}) does not match pageId (${bot.facebookPageId})`);
           continue;
         }
 
+        const pauseKeyword = (bot.ownerPauseKeyword || '').trim().toLowerCase();
+        const pauseDurationMinutes = Number(bot.ownerPauseDurationMinutes) || 0;
+
         if (webhookEvent.message && webhookEvent.message.is_echo) {
+          const echoText = webhookEvent.message.text || '';
+          if (pauseKeyword && echoText.toLowerCase().includes(pauseKeyword)) {
+            const targetUserId = webhookEvent.recipient?.id;
+            if (targetUserId) {
+              const prefixedTargetUserId = `facebook_${targetUserId}`;
+              let targetConversation = await Conversation.findOne({
+                botId: bot._id,
+                channel: 'facebook',
+                userId: prefixedTargetUserId
+              });
+
+              if (!targetConversation) {
+                targetConversation = new Conversation({
+                  botId: bot._id,
+                  channel: 'facebook',
+                  userId: prefixedTargetUserId,
+                  username: 'مستخدم فيسبوك',
+                  messages: []
+                });
+              }
+
+              const durationMs = pauseDurationMinutes > 0 ? pauseDurationMinutes * 60000 : 30 * 60000;
+              targetConversation.mutedUntil = new Date(Date.now() + durationMs);
+              targetConversation.mutedBy = 'owner_keyword';
+              await targetConversation.save();
+              console.log(`🔇 Applied mute for ${prefixedTargetUserId} until ${targetConversation.mutedUntil.toISOString()} using keyword "${bot.ownerPauseKeyword}"`);
+            }
+          }
           console.log(`⚠️ Ignoring echo message from bot: ${webhookEvent.message.text}`);
+          continue;
+        }
+
+        if (senderPsid === bot.facebookPageId) {
+          console.log(`⚠️ Skipping message because senderId (${senderPsid}) is the page itself`);
           continue;
         }
 
@@ -116,6 +147,10 @@ const handleMessage = async (req, res) => {
           const mid = editedMessage.mid || `temp_${Date.now()}`;
           console.log(`📩 Processing message edit event from ${prefixedSenderId}: ${editedMessage.text}`);
           const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid, 'facebook');
+          if (responseText === null) {
+            console.log(`🔇 Conversation for ${prefixedSenderId} muted, skipping reply to edited message.`);
+            continue;
+          }
           await sendMessage(senderPsid, responseText, bot.facebookApiKey);
           continue;
         } else if (webhookEvent.message_edit && !bot.messageEditsEnabled) {
@@ -156,6 +191,10 @@ const handleMessage = async (req, res) => {
 
           console.log(`📤 Sending to botEngine: botId=${bot._id}, userId=${prefixedSenderId}, message=${text}, isImage=${isImage}, isVoice=${isVoice}, mediaUrl=${mediaUrl}`);
           const responseText = await processMessage(bot._id, prefixedSenderId, text, isImage, isVoice, mid, 'facebook', mediaUrl);
+          if (responseText === null) {
+            console.log(`🔇 Conversation for ${prefixedSenderId} muted, skipping reply.`);
+            continue;
+          }
           await sendMessage(senderPsid, responseText, bot.facebookApiKey);
         } else if (webhookEvent.response_feedback) {
           const feedbackData = webhookEvent.response_feedback;
@@ -227,6 +266,10 @@ const handleMessage = async (req, res) => {
             }
 
             const responseText = await processMessage(bot._id, prefixedCommenterId, message, false, false, `comment_${commentId}`, 'facebook');
+            if (responseText === null) {
+              console.log(`🔇 Conversation for ${prefixedCommenterId} muted, skipping comment reply.`);
+              continue;
+            }
             await replyToComment(commentId, responseText, bot.facebookApiKey);
           } else {
             console.log('❌ Not a comment event or not an "add" verb:', change);

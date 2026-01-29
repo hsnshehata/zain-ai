@@ -16,6 +16,8 @@ const conversationSchema = new mongoose.Schema({
   lastKnownPhone: { type: String, default: "" },
   lastKnownPhoneAt: { type: Date },
   pendingDraftAt: { type: Date },
+  mutedUntil: { type: Date },
+  mutedBy: { type: String },
 });
 
 // إضافة Index على messages.timestamp لتسريع الـ Sort

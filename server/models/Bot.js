@@ -23,6 +23,9 @@ const botSchema = new mongoose.Schema({
   messageEditsEnabled: { type: Boolean, default: true },
   inboxLabelsEnabled: { type: Boolean, default: true },
   commentsRepliesEnabled: { type: Boolean, default: true },
+  // إعدادات إيقاف الردود بكلمة مفتاحية من المالك
+  ownerPauseKeyword: { type: String, trim: true },
+  ownerPauseDurationMinutes: { type: Number, default: 30 },
   // إعدادات Webhook لإنستجرام
   instagramMessagingOptinsEnabled: { type: Boolean, default: true },
   instagramMessageReactionsEnabled: { type: Boolean, default: true },

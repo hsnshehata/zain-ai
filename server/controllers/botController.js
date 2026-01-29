@@ -32,6 +32,8 @@ exports.getSettings = async (req, res) => {
       messageEditsEnabled: bot.messageEditsEnabled,
       inboxLabelsEnabled: bot.inboxLabelsEnabled,
       commentsRepliesEnabled: bot.commentsRepliesEnabled,
+      ownerPauseKeyword: bot.ownerPauseKeyword || '',
+      ownerPauseDurationMinutes: bot.ownerPauseDurationMinutes ?? 30,
     };
 
     console.log(`[${getTimestamp()}] ✅ تم جلب إعدادات البوت بنجاح:`, settings);
@@ -46,7 +48,7 @@ exports.getSettings = async (req, res) => {
 exports.updateSettings = async (req, res) => {
   try {
     const botId = req.params.id;
-    const { workingHours, messagingOptinsEnabled, messageReactionsEnabled, messagingReferralsEnabled, messageEditsEnabled, inboxLabelsEnabled, commentsRepliesEnabled } = req.body;
+    const { workingHours, messagingOptinsEnabled, messageReactionsEnabled, messagingReferralsEnabled, messageEditsEnabled, inboxLabelsEnabled, commentsRepliesEnabled, ownerPauseKeyword, ownerPauseDurationMinutes } = req.body;
 
     console.log(`[${getTimestamp()}] 📝 محاولة تحديث إعدادات البوت | Bot ID: ${botId} | Data:`, req.body);
 
@@ -92,6 +94,25 @@ exports.updateSettings = async (req, res) => {
       }
     }
 
+    if (ownerPauseKeyword !== undefined) {
+      if (ownerPauseKeyword !== null && typeof ownerPauseKeyword !== 'string') {
+        console.log(`[${getTimestamp()}] ⚠️ صيغة الكلمة غير صحيحة | Bot ID: ${botId} | ownerPauseKeyword:`, ownerPauseKeyword);
+        return res.status(400).json({ success: false, message: 'كلمة الإيقاف يجب أن تكون نصًا' });
+      }
+      bot.ownerPauseKeyword = ownerPauseKeyword ? ownerPauseKeyword.trim() : '';
+      hasChanges = true;
+    }
+
+    if (ownerPauseDurationMinutes !== undefined) {
+      const durationNumber = Number(ownerPauseDurationMinutes);
+      if (Number.isNaN(durationNumber) || durationNumber < 0 || durationNumber > 10080) {
+        console.log(`[${getTimestamp()}] ⚠️ مدة الإيقاف غير صحيحة | Bot ID: ${botId} | ownerPauseDurationMinutes:`, ownerPauseDurationMinutes);
+        return res.status(400).json({ success: false, message: 'مدة الإيقاف يجب أن تكون بين 0 و 10080 دقيقة' });
+      }
+      bot.ownerPauseDurationMinutes = durationNumber;
+      hasChanges = true;
+    }
+
     if (hasChanges || (workingHours && (workingHours.start !== bot.workingHours?.start || workingHours.end !== bot.workingHours?.end))) {
       await bot.save();
       console.log(`[${getTimestamp()}] ✅ تم تحديث إعدادات البوت بنجاح | Bot ID: ${botId}`);
@@ -107,6 +128,8 @@ exports.updateSettings = async (req, res) => {
       messageEditsEnabled: bot.messageEditsEnabled,
       inboxLabelsEnabled: bot.inboxLabelsEnabled,
       commentsRepliesEnabled: bot.commentsRepliesEnabled,
+      ownerPauseKeyword: bot.ownerPauseKeyword || '',
+      ownerPauseDurationMinutes: bot.ownerPauseDurationMinutes ?? 30,
     };
 
     res.status(200).json({ success: true, data: updatedSettings });

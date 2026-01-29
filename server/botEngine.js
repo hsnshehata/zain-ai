@@ -598,6 +598,12 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     await conversation.save();
     console.log('💬 User message added to conversation:', userMessageContent);
 
+    const muteUntil = conversation.mutedUntil ? new Date(conversation.mutedUntil) : null;
+    if (muteUntil && muteUntil > new Date()) {
+      console.log(`🔇 Conversation ${conversation._id} muted until ${muteUntil.toISOString()}, skipping bot reply.`);
+      return null;
+    }
+
     // محاولة استخراج طلب محادثة تلقائياً
     let extractionResult = null;
     try {
@@ -670,8 +676,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 الاصناف: ${itemsText || '—'}
 أكد لي لو حابب نسجل الطلب الآن.`;
       if (extractionResult.priceWarning) {
-        reply += '
-تنويه: تم استخدام سعر افتراضي للكور بدون سعر (1900). لو السعر مختلف بلغني.';
+        reply += '\nتنويه: تم استخدام سعر افتراضي للكور بدون سعر (1900). لو السعر مختلف بلغني.';
       }
     } else if (extractionResult?.cancelled) {
       reply = 'تم إلغاء الطلب الحالي. لو حابب تعمل طلب جديد ابعت البيانات من جديد.';
