@@ -122,11 +122,38 @@ async function loadSettingsPage() {
           <label for="botName">اسم البوت</label>
           <input type="text" id="botName" value="${botNameValue}" placeholder="اكتب اسم البوت" required>
         </div>
-        <button type="button" id="saveBotNameBtn">حفظ اسم البوت</button>
+        <button type="button" id="saveBotNameBtn" class="btn btn-primary">حفظ اسم البوت</button>
         <p id="botNameError" role="alert"></p>
         ` : `
         <div class="placeholder">
           <p>اختر بوتًا من القائمة العلوية لتعديل اسمه.</p>
+        </div>
+        `}
+      </div>
+
+      <div class="form-card">
+        <div class="form-header">
+          <h3><i class="fas fa-chart-line"></i> عدادات البوت</h3>
+          <p class="form-hint">أرقام سريعة من نشاط البوت المختار.</p>
+        </div>
+        ${selectedBotId ? `
+        <div class="stats-grid" id="botStatsGrid">
+          <div class="stat-card">
+            <div class="stat-label">إجمالي الرسائل</div>
+            <div class="stat-value" id="statMessagesCount">--</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">معدل نجاح الردود</div>
+            <div class="stat-value" id="statSuccessRate">--%</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">القواعد الفعالة</div>
+            <div class="stat-value" id="statActiveRules">--</div>
+          </div>
+        </div>
+        ` : `
+        <div class="placeholder">
+          <p>اختر بوتًا من القائمة العلوية لعرض العدادات.</p>
         </div>
         `}
       </div>
@@ -211,6 +238,51 @@ async function loadSettingsPage() {
           botNameError.textContent = 'فشل في تحديث اسم البوت، حاول مرة أخرى';
         }
       });
+
+      // جلب عدادات البوت
+      const statsEls = {
+        messages: document.getElementById('statMessagesCount'),
+        success: document.getElementById('statSuccessRate'),
+        rules: document.getElementById('statActiveRules'),
+      };
+
+      const statsCacheKey = 'settingsBotStats';
+      const cachedStats = window.readPageCache ? window.readPageCache(statsCacheKey, selectedBotId, 2 * 60 * 1000) : null;
+      const fetchStats = () => handleApiRequest(`/api/analytics?botId=${selectedBotId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, content, 'فشل في جلب عدادات البوت');
+
+      const applyStats = (stats) => {
+        if (!stats || !statsEls.messages) return;
+        statsEls.messages.textContent = stats.messagesCount != null ? stats.messagesCount : '--';
+        statsEls.success.textContent = stats.successRate != null ? `${stats.successRate}%` : '--%';
+        statsEls.rules.textContent = stats.activeRules != null ? stats.activeRules : '--';
+      };
+
+      if (cachedStats) {
+        applyStats(cachedStats);
+        fetchStats()
+          .then((fresh) => {
+            if (fresh && window.writePageCache) {
+              window.writePageCache(statsCacheKey, selectedBotId, fresh);
+            }
+            applyStats(fresh);
+          })
+          .catch((err) => {
+            console.warn('⚠️ فشل تحديث عدادات البوت، استخدام الكاش', err);
+          });
+      } else {
+        fetchStats()
+          .then((fresh) => {
+            applyStats(fresh);
+            if (fresh && window.writePageCache) {
+              window.writePageCache(statsCacheKey, selectedBotId, fresh);
+            }
+          })
+          .catch((err) => {
+            console.warn('⚠️ فشل جلب عدادات البوت', err);
+          });
+      }
     }
   } catch (err) {
     console.error("Error loading settings page:", err);
