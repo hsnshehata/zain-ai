@@ -151,7 +151,7 @@ body.light-mode .chat-messages {
   text-align: right;
   border-top-right-radius: 0;
   position: relative;
-  padding-right: 40px;
+  padding-right: 26px; /* مساحة تكفي الأيقونة على الحافة */
 }
 
 .user-message::before {
@@ -160,7 +160,7 @@ body.light-mode .chat-messages {
   font-weight: 900;
   font-size: 0.9em;
   position: absolute;
-  right: 10px;
+  right: -12px; /* نصف خارج الفقاعة ليظل ظاهر */
   top: 50%;
   transform: translateY(-50%);
   color: #ffffff;
@@ -171,7 +171,7 @@ body.light-mode .chat-messages {
   background: rgba(128, 128, 128, 0.15);
   border-top-left-radius: 0;
   position: relative;
-  padding-left: 40px;
+  padding-left: 26px; /* مساحة تكفي الأيقونة على الحافة */
 }
 
 body.dark-mode .bot-message {
@@ -188,7 +188,7 @@ body.light-mode .bot-message {
   font-weight: 900;
   font-size: 0.9em;
   position: absolute;
-  left: 10px;
+  left: -12px; /* نصف خارج الفقاعة ليظل ظاهر */
   top: 50%;
   transform: translateY(-50%);
   color: #888;

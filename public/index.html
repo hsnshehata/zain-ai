@@ -47,6 +47,7 @@
 
   <section class="hero" role="region" aria-label="مقدمة Zain AI">
     <div class="container">
+      <div class="hero-brand-stack" aria-hidden="true"></div>
       <h1>عزز مبيعاتك ورضا عملائك مع بوتات ذكية ومتجر إلكتروني</h1>
       <p>بوتات Zain AI مصممة لأصحاب المتاجر، المشاريع الصغيرة والمتوسطة، والتجارة الإلكترونية. كل بوت بيجي معاه متجر إلكتروني كامل مع إدارة شاملة للمنتجات والمبيعات! تعزز المبيعات، تبني ولاء العملاء، وتوفر تجربة عملاء لا مثيل لها على مدار الساعة!</p>
       <div class="hero-buttons">
@@ -55,6 +56,24 @@
       </div>
     </div>
   </section>
+
+  <script>
+    (function buildHeroStack() {
+      const stack = document.querySelector('.hero-brand-stack');
+      if (!stack) return;
+      const layers = 14;
+      const frag = document.createDocumentFragment();
+      for (let i = 1; i <= layers; i += 1) {
+        const layer = document.createElement('div');
+        layer.className = 'layer';
+        layer.style.setProperty('--i', i);
+        layer.style.animationDelay = `${-0.12 * i}s`;
+        frag.appendChild(layer);
+      }
+      stack.appendChild(frag);
+    })();
+
+  </script>
 
   <section id="features" class="features" role="region" aria-label="مميزات Zain AI">
     <div class="container">
@@ -129,6 +148,11 @@
           <i class="fas fa-file-invoice"></i>
           <h3>استخلاص الطلبات تلقائيًا</h3>
           <p>أي طلب بيظهر في المحادثة بيتحول لطلب مسجل في لوحة التحكم مع البنود والكمية، ومتوسم بالقناة اللي جه منها سواء فيسبوك، إنستجرام، واتساب، أو الويب.</p>
+        </div>
+        <div class="feature-item">
+          <i class="fas fa-user-circle"></i>
+          <h3>تجميع بيانات العملاء وتتبع المحادثات</h3>
+          <p>كل عميل بيتسجل تلقائيًا مع بيانات التواصل، وتاريخ الطلبات، ومسار كل محادثة عبر القنوات المختلفة، عشان تقدر ترجع للسياق وتتابع تعاملاته بسهولة من لوحة التحكم.</p>
         </div>
         <div class="feature-item">
           <i class="fas fa-route"></i>

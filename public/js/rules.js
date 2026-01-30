@@ -1,5 +1,8 @@
 // public/js/rules.js (Updated for new dashboard design and unified error handling)
 
+// مفتاح التخزين المؤقت موحّد لكل استدعاءات الصفحة
+const cacheKey = 'rules-page-cache';
+
 async function loadRulesPage() {
   const link = document.createElement("link");
   link.rel = "stylesheet";
@@ -103,7 +106,6 @@ async function loadRulesPage() {
 
   let currentPage = 1;
   const rulesPerPage = 20;
-  const cacheKey = 'rules-page-cache';
 
   // إضافة Event Listener لإغلاق المودال لما نضغط برا
   ruleModal.addEventListener('click', (e) => {

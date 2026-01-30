@@ -23,6 +23,60 @@ document.addEventListener('DOMContentLoaded', () => {
   let userId = localStorage.getItem('userId') || 'dashboard_user_' + Date.now();
   let conversationHistory = JSON.parse(localStorage.getItem(`conversationHistory_${userId}`)) || [];
   let pendingAction = null; // لتخزين أمر حساس بانتظار التأكيد
+  const PAGE_GUIDE = {
+    rules: {
+      title: 'القواعد',
+      desc: 'صفحة إدارة قواعد ردود البوت: إضافة/تعديل/حذف قاعدة، واستيراد أو تصدير القواعد كـ JSON. استخدمها لتدريب البوت على إجاباتك المخصصة.',
+    },
+    'chat-page': {
+      title: 'واجهة الدردشة',
+      desc: 'تخصيص واجهة الدردشة العامة: الرابط أو الزر العائم/التضمين، الشعار، الألوان، الأسئلة المقترحة، رفع الصور، إخفاء الهيدر، ومعاينة مباشرة.',
+    },
+    messages: {
+      title: 'الرسائل',
+      desc: 'سجل المحادثات متعددة القنوات مع فلاتر وتصفح وفتح محادثة في نافذة جانبية أو مودال.',
+    },
+    'orders-center': {
+      title: 'متابعة الطلبات',
+      desc: 'عرض الطلبات الواردة من الدردشة والمتجر في مكان واحد مع إبراز الطلبات الجديدة.',
+    },
+    'store-manager': {
+      title: 'المتجر الذكي',
+      desc: 'لوحة إدارة المتجر بتبويبات المنتجات والطلبات والعملاء والموردين والتصميم والإعدادات.',
+    },
+    channels: {
+      title: 'قنوات البوت',
+      desc: 'بوابة إدارة القنوات مع تبويبات فيسبوك/إنستجرام/واتساب وإعدادات الربط لكل قناة.',
+    },
+    facebook: {
+      title: 'إعدادات فيسبوك',
+      desc: 'ربط أو تبديل حساب فيسبوك، ضبط webhook، وكلمة الإيقاف المؤقت.',
+    },
+    instagram: {
+      title: 'إعدادات إنستجرام',
+      desc: 'ربط إنستجرام ومراجعة حالة الربط وقنوات التراسل.',
+    },
+    whatsapp: {
+      title: 'إعدادات واتساب',
+      desc: 'إرشادات ربط واتساب عبر تطبيق سطح المكتب وQR.',
+    },
+    bots: {
+      title: 'إدارة البوتات',
+      desc: 'إنشاء/تعديل البوتات والمستخدمين المصرح لهم، مخصص للسوبر أدمن.',
+    },
+    feedback: {
+      title: 'التقييمات',
+      desc: 'عرض التقييمات الإيجابية/السلبية، تنزيل CSV أو تحويل تقييم إلى قاعدة.',
+    },
+    settings: {
+      title: 'الإعدادات',
+      desc: 'إعدادات الحساب وتحديث كلمة المرور واسم البوت والإحصاءات السريعة.',
+    },
+    wasenderpro: {
+      title: 'Wasender Pro',
+      desc: 'دليل ثابت وروابط تحميل وفيديو شرح للأداة.',
+    },
+  };
 
   if (!selectedBotId) {
     assistantChatMessages.innerHTML = `
@@ -31,7 +85,81 @@ document.addEventListener('DOMContentLoaded', () => {
         <small>${new Date().toLocaleString('ar-EG')}</small>
       </div>
     `;
-    return;
+  }
+
+  function normalizePageKey(page) {
+    return (page || '').toString().trim().toLowerCase().replace(/\s+/g, '-');
+  }
+
+  function describePage(pageKey) {
+    const entry = PAGE_GUIDE[pageKey];
+    if (!entry) {
+      return `لا أملك دليلاً لصفحة "${pageKey || 'غير معروفة'}". جرّب طلب صفحة معروفة مثل القواعد أو الرسائل.`;
+    }
+    if (entry.desc) return entry.desc;
+    const req = entry.requirements ? `المتطلبات: ${entry.requirements}.` : '';
+    const tasks = entry.tasks ? `المهام الأساسية: ${entry.tasks}.` : '';
+    const notes = entry.notes ? `ملاحظات: ${entry.notes}.` : '';
+    return `${entry.title}\n${req}\n${tasks}\n${notes}`.trim();
+  }
+
+  function extractPageMarker(text) {
+    if (!text) return null;
+    const match = text.match(/\[\[page:([a-z0-9\-]+)\]\]/i);
+    return match ? normalizePageKey(match[1]) : null;
+  }
+
+  async function autoNavigateToPage(pageKey) {
+    if (!pageKey) return;
+    try {
+      await executeInternalCommand({ action: 'navigate', page: pageKey });
+      console.log('[assistantBot] auto-navigated to page', pageKey);
+    } catch (err) {
+      console.warn('فشل التنقل التلقائي للصفحة:', pageKey, err);
+    }
+  }
+
+  function ensurePageMarker(message, plan, userMessage) {
+    const userDetected = detectPageFromText(userMessage);
+    let pageKey = extractPageMarker(message);
+    if (userDetected) {
+      if (!pageKey || pageKey !== userDetected) {
+        pageKey = userDetected;
+      }
+    }
+    if (!pageKey) {
+      const candidate = normalizePageKey((plan?.params?.page || plan?.page || (plan?.intent === 'pageGuide' ? plan?.params?.page : '')) || '');
+      let known = PAGE_GUIDE[candidate] ? candidate : null;
+      if (!known) {
+        known = detectPageFromText(message);
+      }
+      if (known) {
+        pageKey = known;
+      }
+    }
+    if (pageKey && !message.includes(`[[page:${pageKey}]]`)) {
+      message = `[[page:${pageKey}]] ${message}`.trim();
+    }
+    return { message, pageKey };
+  }
+
+  function detectPageFromText(text) {
+    if (!text) return null;
+    const lower = text.toLowerCase();
+    if (/تخصيص\s+الدردشة|صفحة\s+الدردشة|واجهة\s+الدردشة|وجهه\s+الدردشة|وجهة\s+الدردشة|واجهه\s+الدردشة|chat\s*-?page/.test(lower)) return 'chat-page';
+    if (/القواعد|rules/.test(lower)) return 'rules';
+    if (/البوتات|bots/.test(lower)) return 'bots';
+    if (/الرسائل|الرسايل|messages/.test(lower)) return 'messages';
+    if (/التقييمات|feedback/.test(lower)) return 'feedback';
+    if (/فيسبوك|facebook/.test(lower)) return 'facebook';
+    if (/انستجرام|إنستجرام|instagram/.test(lower)) return 'instagram';
+    if (/واتساب|whatsapp/.test(lower)) return 'whatsapp';
+    if (/المتجر|store|catalog|orders|customers/.test(lower)) return 'store-manager';
+    if (/متابعة الطلبات|orders-center/.test(lower)) return 'orders-center';
+    if (/قنوات|channels/.test(lower)) return 'channels';
+    if (/الاعدادات|الإعدادات|settings/.test(lower)) return 'settings';
+    if (/wasender|واسندر|واتسندر/.test(lower)) return 'wasenderpro';
+    return null;
   }
 
   // تحديث الـ cache بعد كل رسالة
@@ -61,6 +189,30 @@ document.addEventListener('DOMContentLoaded', () => {
   closeAssistantChatBtn.addEventListener('click', () => {
     assistantChatModal.style.display = 'none';
     assistantButton.style.transform = 'scale(1)';
+  });
+
+  // إغلاق المساعد عند الضغط خارج الإطار أو زر Esc
+  assistantChatModal.addEventListener('click', (e) => {
+    // لو الخلفية هي اللي اتضغطت عليها (وليس محتوى الدردشة) نغلق
+    if (e.target === assistantChatModal) {
+      assistantChatModal.style.display = 'none';
+      assistantButton.style.transform = 'scale(1)';
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    const clickedOutside = assistantChatModal.style.display === 'flex' && !assistantChatModal.contains(e.target) && !assistantButton.contains(e.target);
+    if (assistantChatModal.style.display === 'flex' && clickedOutside) {
+      assistantChatModal.style.display = 'none';
+      assistantButton.style.transform = 'scale(1)';
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && assistantChatModal.style.display === 'flex') {
+      assistantChatModal.style.display = 'none';
+      assistantButton.style.transform = 'scale(1)';
+    }
   });
 
   assistantSendMessageBtn.addEventListener('click', sendMessage);
@@ -123,7 +275,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     switch (intent) {
       case 'navigate': {
-        return await executeInternalCommand({ action: 'navigate', page: params.page });
+        const pageKey = normalizePageKey(params.page || plan.page);
+        const message = plan.responseMessage || `[[page:${pageKey}]] تم الانتقال إلى الصفحة.`;
+        await executeInternalCommand({ action: 'navigate', page: pageKey });
+        return { message };
+      }
+      case 'pageGuide': {
+        const key = normalizePageKey(params.page || plan.page);
+        const desc = describePage(key);
+        return { message: `[[page:${key}]] ${desc}` };
       }
       case 'addRule': {
         const content = params.content || plan.responseMessage || 'رد عام';
@@ -157,14 +317,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
   async function planUserIntent(message) {
     const plannerPrompt = `أنت مساعد تنفيذي في لوحة تحكم زين. حلّل طلب المستخدم وارجع JSON فقط بدون نص زائد.
-المفاتيح: intent (navigate | addRule | deleteProduct | chat)، params (object)، responseMessage (نص قصير)، requiresConfirmation (true/false).
-القواعد:
-- ضع requiresConfirmation=true لأي حذف أو تعديل حساس (منتجات، قواعد، مستخدمين...).
-- addRule: لو كان الطلب سؤال/إجابة، ضع type='qa' وcontent={question,answer}، وإلا type='general' مع النص.
-- navigate: الصفحات المسموحة bots, rules, chat-page, store-manager, facebook, instagram, whatsapp, messages, feedback, settings, wasenderpro.
-- deleteProduct: لو الاسم فقط متاح ضعه في productName واطلب storeId وproductId.
-- لو الطلب دردشة أو غير مدعوم، استخدم intent='chat' مع responseMessage مهذب.
-أعد JSON صالح فقط.`;
+  المفاتيح: intent (navigate | addRule | deleteProduct | pageGuide | chat)، params (object)، responseMessage (نص قصير)، requiresConfirmation (true/false).
+  سياق:
+  - القواعد: ليست كلمات مفتاحية؛ هي تعليمات/معلومات تُدمج في برومبت واحد يستهلكه الذكاء الاصطناعي للردود (تدريب للبوت). الأنواع: عامة، سؤال/جواب، أسعار، قنوات، وموحّدة للسوبر أدمن.
+  - chat-page: صفحة تخصيص واجهة الدردشة العامة للعملاء؛ تسمح بتعديل رابط الصفحة وزر الدعم العائم/التضمين، رفع الشعار، تخصيص ألوان الهيدر/فقاعات المستخدم والبوت/الأزرار/الخلفيات، تفعيل رفع الصور، تفعيل وإدارة الأسئلة المقترحة، إخفاء الهيدر، ومعاينة التغييرات وأكواد التضمين الجاهزة.
+  - messages: سجل الرسائل متعدد القنوات (فيسبوك/ويب/إنستجرام/واتساب) مع فلاتر وتصفح ومودال محادثة.
+  - لا تشرح أكثر من صفحة في الرد الواحد. إذا احتاج الأمر ذكر صفحة، اذكر صفحة واحدة فقط.
+  - أي طلب بصيغة اشرح/شرح/عرّف/ما هي/ممكن تفهمني/افهمني/فسر/ماهي صفحة X → استخدم intent=pageGuide واملأ params.page بالمفتاح الصحيح.
+  - عند ذكر صفحة، أدرج وسمًا بالصيغة [[page:<key>]] حيث <key> من القائمة المسموحة، مرة واحدة فقط في الرد.
+  - addRule: لو كان الطلب سؤال/إجابة، ضع type='qa' وcontent={question,answer}، وإلا type='general' مع النص.
+  - navigate: الصفحات المسموحة bots, rules, chat-page, store-manager, orders-center, channels, facebook, instagram, whatsapp, messages, feedback, settings, wasenderpro.
+  - pageGuide: استخدمه لشرح صفحة واحدة بناءً على السياق أعلاه.
+  - deleteProduct: لو الاسم فقط متاح ضعه في productName واطلب storeId وproductId.
+  - لو الطلب دردشة أو غير مدعوم، استخدم intent='chat' مع responseMessage مهذب.
+  أعد JSON صالح فقط.`;
+
+    const payloadMessage = selectedBotId ? `CTX_BOT:${selectedBotId}||${message}` : message;
 
     const aiResponse = await handleApiRequest('/api/bot', {
       method: 'POST',
@@ -174,7 +342,7 @@ document.addEventListener('DOMContentLoaded', () => {
       },
       body: JSON.stringify({
         botId: assistantBotId,
-        message,
+        message: payloadMessage,
         userId,
         history: conversationHistory,
         systemPrompt: plannerPrompt,
@@ -182,9 +350,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }, null, 'فشل في تحليل الطلب');
 
     try {
+      if (!aiResponse || !aiResponse.reply) {
+        return { intent: 'chat', responseMessage: 'أنا هنا، كيف أساعدك؟' };
+      }
       return JSON.parse(aiResponse.reply || '{}');
     } catch (err) {
-      return { intent: 'chat', responseMessage: aiResponse.reply || 'لم أفهم الطلب، وضح أكثر.' };
+      // لو الرد نصّي وليس JSON، استخدمه كرسالة دردشة بدلاً من رسالة خطأ
+      if (aiResponse && aiResponse.reply) {
+        return { intent: 'chat', responseMessage: aiResponse.reply };
+      }
+      const fallbackPage = detectPageFromText(message);
+      if (fallbackPage) {
+        return { intent: 'pageGuide', params: { page: fallbackPage } };
+      }
+      return { intent: 'chat', responseMessage: 'لم أفهم الطلب، وضح أكثر.' };
     }
   }
 
@@ -216,7 +395,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const result = await executePlannedIntent(plan);
-      appendBotMessage(result.message || plan.responseMessage || 'تم التنفيذ.');
+      let messageText = result.message || plan.responseMessage || 'تم التنفيذ.';
+      // إذا كان المستخدم طلب شرح صفحة و AI لم يستخدم pageGuide، نُحوّل الرد للوصف الموثوق
+      const enforced = ensurePageMarker(messageText, plan, message);
+      messageText = enforced.message;
+      if (enforced.pageKey) {
+        await autoNavigateToPage(enforced.pageKey);
+      }
+      appendBotMessage(messageText);
     } catch (err) {
       console.error('خطأ في معالجة الرسالة:', err);
       const errorMessage = 'عذرًا، حدث خطأ أثناء معالجة طلبك. حاول مرة أخرى!';
@@ -323,6 +509,48 @@ document.addEventListener('DOMContentLoaded', () => {
               window.loadFacebookPage();
             }
             return { message: 'تم الانتقال إلى صفحة إعدادات فيسبوك' };
+          case 'instagram':
+            window.location.hash = 'instagram';
+            if (typeof window.loadInstagramPage === 'function') {
+              window.loadInstagramPage();
+            }
+            return { message: 'تم الانتقال إلى صفحة إعدادات إنستجرام' };
+          case 'whatsapp':
+            window.location.hash = 'whatsapp';
+            if (typeof window.loadWhatsAppPage === 'function') {
+              window.loadWhatsAppPage();
+            }
+            return { message: 'تم الانتقال إلى صفحة إعدادات واتساب' };
+          case 'settings':
+            window.location.hash = 'settings';
+            if (typeof window.loadSettingsPage === 'function') {
+              window.loadSettingsPage();
+            }
+            return { message: 'تم الانتقال إلى صفحة الإعدادات' };
+          case 'wasenderpro':
+            window.location.hash = 'wasenderpro';
+            if (typeof window.loadWasenderProPage === 'function') {
+              window.loadWasenderProPage();
+            }
+            return { message: 'تم الانتقال إلى Wasender Pro' };
+          case 'channels':
+            window.location.hash = 'channels';
+            if (typeof window.loadChannelsPage === 'function') {
+              window.loadChannelsPage();
+            }
+            return { message: 'تم الانتقال إلى قنوات البوت' };
+          case 'orders-center':
+            window.location.hash = 'orders-center';
+            if (typeof window.loadOrdersCenterPage === 'function') {
+              window.loadOrdersCenterPage();
+            }
+            return { message: 'تم الانتقال إلى متابعة الطلبات' };
+          case 'store-manager':
+            window.location.hash = 'store-manager';
+            if (typeof window.loadStoreManagerPage === 'function') {
+              window.loadStoreManagerPage();
+            }
+            return { message: 'تم الانتقال إلى مدير المتجر' };
           case 'bots':
             window.location.hash = 'bots';
             if (typeof window.loadBotsPage === 'function') {

@@ -186,12 +186,12 @@
 
 .modal-content {
   background: #fff;
-  border-radius: 8px;
+  border-radius: 12px;
   width: 90%;
-  max-width: 600px;
-  max-height: 80vh;
+  max-width: 640px;
+  max-height: 84vh;
   overflow-y: auto;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 14px 45px rgba(0, 0, 0, 0.35);
 }
 
 /* Form inside Modal */
@@ -237,6 +237,41 @@
   color: red;
   margin-top: 10px;
   font-size: 0.9em;
+}
+
+/* Dark mode adjustments for modals and inputs */
+body.dark-mode .modal {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+body.dark-mode .modal-content {
+  background: var(--dark-card);
+  color: var(--dark-text);
+  border: 1px solid var(--dark-border);
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.55);
+}
+
+body.dark-mode .modal-content .form-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--dark-border);
+  border-radius: 12px;
+}
+
+body.dark-mode .modal-content .form-group label {
+  color: var(--dark-text);
+}
+
+body.dark-mode .modal-content .form-group input,
+body.dark-mode .modal-content .form-group textarea,
+body.dark-mode .modal-content .form-group select {
+  background: var(--input-bg-dark);
+  color: var(--dark-text);
+  border-color: var(--input-border-dark);
+}
+
+body.dark-mode .modal-content .form-group input::placeholder,
+body.dark-mode .modal-content .form-group textarea::placeholder {
+  color: rgba(224, 224, 224, 0.65);
 }
 
 /* Responsive Adjustments */

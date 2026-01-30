@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الصفحة غير موجودة | Zain Bot</title>
+  <link rel="stylesheet" href="/css/404.css">
+</head>
+<body>
+  <div class="error-shell">
+    <div class="brand-pill">
+      <span class="brand-dot"></span>
+      <span>منصة Zain Bot</span>
+    </div>
+
+    <div class="error-card">
+      <div class="scene">
+        <div class="stack stack-404"></div>
+        <div class="stack stack-brand"></div>
+      </div>
+
+      <p class="hint">اللينك اللي بتحاول توصله مش موجود، جرب ترجع للرئيسية أو تكمل رحلتك من لوحة التحكم.</p>
+
+      <div class="actions">
+        <a class="action-btn action-primary" href="/">الصفحة الرئيسية</a>
+        <a class="action-btn action-ghost hidden" id="login-btn" href="/login.html">تسجيل الدخول</a>
+        <a class="action-btn action-secondary hidden" id="dashboard-btn" href="/dashboard_new.html">لوحة التحكم</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function buildStacks() {
+      const stacks = [
+        { selector: '.stack-404', layers: 16 },
+        { selector: '.stack-brand', layers: 18 },
+        { selector: '.stack-msg', layers: 14 }
+      ];
+
+      stacks.forEach((cfg) => {
+        const el = document.querySelector(cfg.selector);
+        if (!el) return;
+        const frag = document.createDocumentFragment();
+        for (let i = 1; i <= cfg.layers; i += 1) {
+          const layer = document.createElement('div');
+          layer.className = 'layer';
+          layer.style.setProperty('--i', i);
+          layer.style.animationDelay = `${-0.15 * i}s`;
+          frag.appendChild(layer);
+        }
+        el.appendChild(frag);
+      });
+    })();
+
+    (function toggleButtons() {
+      const token = localStorage.getItem('token');
+      const loginBtn = document.getElementById('login-btn');
+      const dashBtn = document.getElementById('dashboard-btn');
+      if (!loginBtn || !dashBtn) return;
+      if (token) {
+        dashBtn.classList.remove('hidden');
+      } else {
+        loginBtn.classList.remove('hidden');
+      }
+    })();
+  </script>
+</body>
+</html>
