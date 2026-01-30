@@ -173,10 +173,11 @@ const handleMessage = async (req, res) => {
           }
 
           if (webhookEvent.message_edit && bot.messageEditsEnabled) {
-            const editedMessage = webhookEvent.message_edit.message;
-            const mid = editedMessage.mid || `temp_${Date.now()}`;
-            console.log(`📩 Processing message edit event from ${prefixedSenderId}: ${editedMessage.text}`);
-            const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid, 'facebook');
+            const editedMessage = webhookEvent.message_edit.message || webhookEvent.message_edit;
+            const mid = editedMessage?.mid || webhookEvent.message_edit.mid || `temp_${Date.now()}`;
+            const editedText = editedMessage?.text || webhookEvent.message_edit.text || '';
+            console.log(`📩 Processing message edit event from ${prefixedSenderId}: ${editedText}`);
+            const responseText = await processMessage(bot._id, prefixedSenderId, editedText, false, false, mid, 'facebook');
             if (responseText === null) {
               console.log(`🔇 Conversation for ${prefixedSenderId} muted, skipping reply to edited message.`);
               continue;
