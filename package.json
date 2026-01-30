@@ -1,11 +1,17 @@
 {
-  "name": "ai-chat-controller",
+  "name": "Zain Bot",
   "version": "1.0.0",
   "description": "AI Chat Controller with Bot Management for Facebook and WhatsApp",
+  "license": "MIT",
   "main": "server/server.js",
+  "bin": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
-    "dev": "nodemon server/server.js"
+    "dev": "nodemon server/server.js",
+    "build:win": "pkg . --targets node18-win-x64 --output dist/zainbot-win.exe",
+    "build:linux": "pkg . --targets node18-linux-x64 --output dist/zainbot-linux",
+    "build:mac": "pkg . --targets node18-macos-x64 --output dist/zainbot-macos",
+    "build:all": "npm run build:win && npm run build:linux && npm run build:mac"
   },
   "dependencies": {
     "axios": "^1.13.2",
@@ -25,14 +31,24 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.10",
     "openai": "^4.67.1",
+    "qrcode": "^1.5.3",
     "request": "^2.88.2",
     "sanitize-html": "^2.13.0",
     "uuid": "^9.0.1",
     "whatsapp-web.js": "^1.26.0",
-    "wwebjs-mongo": "^1.1.0",
-    "qrcode": "^1.5.3"
+    "wwebjs-mongo": "^1.1.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.7"
+    "nodemon": "^3.1.7",
+    "pkg": "^5.8.1"
+  },
+  "pkg": {
+    "assets": [
+      "public/**/*",
+      "uploads/**/*",
+      "server/**/*.json",
+      "node_modules/axios/dist/**/*"
+    ],
+    "outputPath": "dist"
   }
 }
