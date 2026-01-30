@@ -140,7 +140,6 @@ storeSchema.pre('validate', function (next) {
 
 // فهرس لتحسين البحث
 storeSchema.index({ userId: 1 });
-storeSchema.index({ storeLink: 1 });
 storeSchema.index({ botId: 1 });
 
 module.exports = mongoose.model('Store', storeSchema);
