@@ -17,10 +17,12 @@ const ChatCustomer = require('./models/ChatCustomer');
 const { createOrUpdateFromExtraction } = require('./controllers/chatOrdersController');
 const { upsertChatCustomerProfile } = require('./controllers/chatCustomersController');
 
+// معرف المساعد الداخلي لتخطي هوكات الطلبات
+const ASSISTANT_BOT_ID = process.env.ASSISTANT_BOT_ID || '688ebdc24f6bd5cf70cb071d';
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
 // دالة لجلب الوقت الحالي
 function getCurrentTime() {
   return new Date().toLocaleString('ar-EG', { timeZone: 'Africa/Cairo' });
@@ -427,18 +429,7 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
 
     // لو البيانات كاملة لكن مفيش تأكيد صريح ولسه مفيش طلب مفتوح، نوقف الحفظ ونطلب تأكيد
     if (!existingOpenOrder && !cancelIntent && !modifyIntent && !statusInquiry && hasRequiredData() && !confirmIntent) {
-      return {
-        chatOrder: null,
-        needConfirmation: true,
-        draft: {
-          customerName: effectiveName,
-          customerPhone: effectivePhone,
-          customerAddress: effectiveAddress,
-          items: effectiveItems,
-        },
-        pendingDraftAt: new Date(),
-        rememberPhone: isValidPhone(effectivePhone) ? effectivePhone : undefined,
-      };
+      parsed.status = 'processing';
     }
 
     const chatOrder = await createOrUpdateFromExtraction({
@@ -561,7 +552,16 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       }
     }
 
-    const rules = await Rule.find({ $or: [{ botId }, { type: 'global' }] });
+    const isAssistantBotId = botId === ASSISTANT_BOT_ID;
+
+    // لو المساعد أرسل سياق بوت آخر في بداية الرسالة، نفصله ونستخدمه لجلب القواعد فقط
+    let rulesBotId = botId;
+    const ctxMatch = isAssistantBotId && typeof message === 'string' ? message.match(/^CTX_BOT:([a-f0-9]{24})\|\|(.+)/i) : null;
+    if (ctxMatch) {
+      rulesBotId = ctxMatch[1];
+      message = ctxMatch[2];
+    }
+    const rules = await Rule.find({ $or: [{ botId: rulesBotId }, { type: 'global' }] });
     console.log('📜 Rules found:', rules.length);
 
     let systemPrompt = `أنت بوت ذكي يساعد المستخدمين بناءً على القواعد التالية. الوقت الحالي هو: ${getCurrentTime()}.\n`;
@@ -650,22 +650,24 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       return null;
     }
 
-    // محاولة استخراج طلب محادثة تلقائياً
+    // محاولة استخراج طلب محادثة تلقائياً (مع تخطي المساعد الداخلي)
     let extractionResult = null;
-    try {
-      extractionResult = await extractChatOrderIntent({
-        bot,
-        channel: finalChannel,
-        userMessageContent,
-        conversationId: conversation._id,
-        sourceUserId: finalUserId,
-        sourceUsername: conversation.username,
-        messageId: messageId || undefined,
-        transcript: conversation.messages,
-        conversation,
-      });
-    } catch (e) {
-      console.warn('⚠️ تعذر استخراج طلب المحادثة:', e.message);
+    if (!isAssistantBotId) {
+      try {
+        extractionResult = await extractChatOrderIntent({
+          bot,
+          channel: finalChannel,
+          userMessageContent,
+          conversationId: conversation._id,
+          sourceUserId: finalUserId,
+          sourceUsername: conversation.username,
+          messageId: messageId || undefined,
+          transcript: conversation.messages,
+          conversation,
+        });
+      } catch (e) {
+        console.warn('⚠️ تعذر استخراج طلب المحادثة:', e.message);
+      }
     }
 
     // تخزين آخر رقم موبايل معروف ووقت الدرفت إن وجد
@@ -725,7 +727,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       reply = 'تم إلغاء الطلب الحالي. لو حابب تعمل طلب جديد ابعت البيانات من جديد.';
     } else if (extractionResult?.cancelBlocked) {
       reply = 'الطلب تم شحنه بالفعل، لذلك لا يمكن إلغاؤه الآن. لو محتاج مساعدة إضافية، بلغني.';
-    } else if (isStatusInquiry(userMessageContent)) {
+    } else if (!isAssistantBotId && isStatusInquiry(userMessageContent)) {
       let latestOrder = await ChatOrder.findOne({ botId, sourceUserId: finalUserId }).sort({ createdAt: -1 });
 
       // حاول بنفس المحادثة لو ما لقيناش
@@ -751,7 +753,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       } else {
         reply = 'مش لاقي طلب برقمك. ممكن تبعت رقم الموبايل أو رقم الطلب علشان أتحقق؟';
       }
-    } else if (isModifyIntent(userMessageContent)) {
+    } else if (!isAssistantBotId && isModifyIntent(userMessageContent)) {
       let latestOrder = await ChatOrder.findOne({ botId, sourceUserId: finalUserId }).sort({ createdAt: -1 });
       if (!latestOrder) {
         const phoneInMessage = extractPhoneFromText(userMessageContent);

@@ -427,12 +427,23 @@ app.get('/chat/:linkId', (req, res) => {
   }
 });
 
-// Middleware لمعالجة 404 (يضمن رد JSON)
-app.use((req, res, next) => {
+// Middleware لمعالجة 404: صفحات المنصة ترجع صفحة 404، و الـ API يحتفظ برد JSON
+app.use((req, res) => {
   console.log(`[${getTimestamp()}] ❌ 404 Not Found: ${req.method} ${req.url}`);
-  res.status(404).json({
-    message: 'الطلب غير موجود',
-    error: 'NotFound',
+
+  if (req.path.startsWith('/api')) {
+    return res.status(404).json({
+      message: 'الطلب غير موجود',
+      error: 'NotFound',
+    });
+  }
+
+  const filePath = path.join(__dirname, '../public/404.html');
+  return res.status(404).sendFile(filePath, (err) => {
+    if (err) {
+      console.error(`[${getTimestamp()}] Error serving 404.html:`, err);
+      res.status(404).send('الصفحة غير موجودة');
+    }
   });
 });
 
