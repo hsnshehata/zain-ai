@@ -10,6 +10,18 @@ const now = () => new Date();
 const minutesFromNow = (mins) => new Date(Date.now() + mins * 60 * 1000);
 const safeCurrency = (c) => (c || 'EGP').toUpperCase();
 
+const STATUS_LABEL_MAP = {
+  pending: 'قيد الانتظار',
+  processing: 'جاري التجهيز',
+  confirmed: 'مؤكد',
+  shipped: 'تم الشحن',
+  delivered: 'تم التسليم',
+  on_hold: 'معلّق',
+  cancelled: 'ملغي',
+};
+
+const statusLabel = (key) => STATUS_LABEL_MAP[key] || key;
+
 const formatMoney = (total = 0, currency = 'EGP') => {
   const rounded = Number(total || 0);
   try {
@@ -165,7 +177,7 @@ const buildNewOrderMessage = ({ storeName, orderId, total, currency, status, cus
     '📦 طلب جديد وصل',
     storeName ? `المتجر: ${storeName}` : null,
     orderId ? `رقم الطلب: ${orderId}` : null,
-    status ? `الحالة: ${status}` : null,
+    status ? `الحالة: ${statusLabel(status)}` : null,
     customerName ? `العميل: ${customerName}` : null,
     customerWhatsapp ? `واتساب: ${customerWhatsapp}` : null,
     customerAddress ? `العنوان: ${customerAddress}` : null,
@@ -181,7 +193,7 @@ const buildOrderStatusMessage = ({ storeName, orderId, status, note }) => {
     '🔄 تحديث حالة طلب',
     storeName ? `المتجر: ${storeName}` : null,
     orderId ? `رقم الطلب: ${orderId}` : null,
-    status ? `الحالة الجديدة: ${status}` : null,
+    status ? `الحالة الجديدة: ${statusLabel(status)}` : null,
     note ? `ملاحظة: ${note}` : null,
   ].filter(Boolean);
   return lines.join('\n');
@@ -195,7 +207,7 @@ const buildChatOrderMessage = ({ botName, orderId, status, customerName, custome
     '💬 طلب جديد من البوت',
     botName ? `البوت: ${botName}` : null,
     orderId ? `رقم الطلب: ${orderId}` : null,
-    status ? `الحالة: ${status}` : null,
+    status ? `الحالة: ${statusLabel(status)}` : null,
     customerName ? `العميل: ${customerName}` : null,
     customerPhone ? `هاتف: ${customerPhone}` : null,
     customerAddress ? `العنوان: ${customerAddress}` : null,
