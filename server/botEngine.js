@@ -558,7 +558,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     let rulesBotId = botId;
     const ctxMatch = isAssistantBotId && typeof message === 'string' ? message.match(/^CTX_BOT:([a-f0-9]{24})\|\|(.+)/i) : null;
     if (ctxMatch) {
-      rulesBotId = ctxMatch[1];
+      // المساعد الذكي يجب أن يعمل بقواعد البوت المخصص له فقط، فنزيل الوسم ونترك rulesBotId كما هو
       message = ctxMatch[2];
     }
     const rules = await Rule.find({ $or: [{ botId: rulesBotId }, { type: 'global' }] });
