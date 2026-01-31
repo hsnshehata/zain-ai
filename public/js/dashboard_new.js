@@ -578,6 +578,9 @@ try {
       }
     }
 
+    // إتاحة الدالة على المستوى العام لضمان عملها مع handleApiRequest في كل الصفحات
+    window.logoutUser = logoutUser;
+
     if (logoutBtn) {
       logoutBtn.addEventListener("click", logoutUser);
     }
