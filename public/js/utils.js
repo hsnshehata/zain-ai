@@ -4,7 +4,13 @@ async function handleApiRequest(url, options, errorElement = null, errorMessageP
     const response = await fetch(url, options);
     if (response.status === 401 || response.status === 403) {
       alert('جلسة غير صالحة أو غير مصرح لك، يرجى تسجيل الدخول مرة أخرى.');
-      logoutUser(); // يفترض إن logoutUser موجودة في dashboard_new.js
+      if (typeof logoutUser === 'function') {
+        logoutUser();
+      } else {
+        // احتياطي لو لم تُحمَّل الدالة بعد
+        localStorage.clear();
+        window.location.href = '/login.html';
+      }
       const error = new Error('جلسة غير صالحة');
       error.status = response.status;
       throw error;
