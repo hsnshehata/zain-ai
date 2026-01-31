@@ -19,7 +19,19 @@ const userSchema = new mongoose.Schema({
   googleId: { type: String },
   isVerified: { type: Boolean, default: false },
   subscriptionType: { type: String, enum: ['free', 'monthly', 'yearly'], default: 'free' },
-  subscriptionEndDate: { type: Date }
+  subscriptionEndDate: { type: Date },
+  // تكامل تيليجرام
+  telegramUserId: { type: String, unique: true, sparse: true, default: '' },
+  telegramUsername: { type: String, default: '' },
+  telegramLinkCode: { type: String, default: '' },
+  telegramLinkExpiresAt: { type: Date, default: null },
+  telegramNotifications: {
+    newOrder: { type: Boolean, default: true },
+    orderStatus: { type: Boolean, default: true },
+    chatOrder: { type: Boolean, default: true },
+    dailySummary: { type: Boolean, default: false },
+  },
+  telegramLanguage: { type: String, enum: ['ar', 'en'], default: 'ar' }
 });
 
 module.exports = mongoose.model('User', userSchema);

@@ -3,6 +3,8 @@ const Order = require('../models/Order');
 const Store = require('../models/Store');
 const Product = require('../models/Product');
 const Notification = require('../models/Notification');
+const Bot = require('../models/Bot');
+const { notifyNewOrder, notifyOrderStatus } = require('../services/telegramService');
 const { upsertFromOrder } = require('./customersController');
 
 // دالة مساعدة لإضافة timestamp للـ logs
@@ -176,6 +178,29 @@ exports.createOrder = async (req, res) => {
     await notification.save();
     console.log(`[${getTimestamp()}] ✅ Notification sent to user ${store.userId} for order ${newOrder._id}`);
 
+    // حدد البوت المرتبط بالمتجر (لو لم يُخزَّن botId في المتجر نبحث عنه)
+    let botIdForNotify = store.botId || null;
+    if (!botIdForNotify) {
+      const botForStore = await Bot.findOne({ storeId: store._id }).select('_id');
+      if (botForStore) botIdForNotify = botForStore._id;
+    }
+
+    try {
+      await notifyNewOrder(store.userId, {
+        storeName: store.storeName,
+        orderId: newOrder._id,
+        status: newOrder.status,
+        total: totalPrice,
+        currency: orderCurrency,
+        customerName: safeCustomerName,
+        customerAddress: safeAddress,
+        customerWhatsapp: sanitizedWhatsapp,
+        items: orderProducts,
+      }, botIdForNotify);
+    } catch (notifyErr) {
+      console.warn(`[${getTimestamp()}] ⚠️ Telegram notifyNewOrder failed for order ${newOrder._id}:`, notifyErr.message);
+    }
+
     res.status(201).json(newOrder);
   } catch (err) {
     console.error(`[${getTimestamp()}] ❌ Error creating order:`, err.message, err.stack);
@@ -238,6 +263,21 @@ exports.updateOrder = async (req, res) => {
       });
       await notification.save();
       console.log(`[${getTimestamp()}] ✅ Notification sent to user ${store.userId} for order ${order._id}`);
+
+      try {
+        let botIdForNotify = store.botId || null;
+        if (!botIdForNotify) {
+          const botForStore = await Bot.findOne({ storeId: store._id }).select('_id');
+          if (botForStore) botIdForNotify = botForStore._id;
+        }
+        await notifyOrderStatus(store.userId, {
+          storeName: store.storeName,
+          orderId: order._id,
+          status: order.status,
+        }, botIdForNotify);
+      } catch (notifyErr) {
+        console.warn(`[${getTimestamp()}] ⚠️ Telegram notifyOrderStatus failed for order ${order._id}:`, notifyErr.message);
+      }
     } else {
       // لو نفس الحالة أو مافي status جديد نرجع الطلب كما هو
       await order.save();

@@ -18,7 +18,7 @@ const chatOrderHistorySchema = new mongoose.Schema({
 const chatOrderSchema = new mongoose.Schema({
   botId: { type: mongoose.Schema.Types.ObjectId, ref: 'Bot', required: true },
   conversationId: { type: mongoose.Schema.Types.ObjectId, ref: 'Conversation' },
-  channel: { type: String, enum: ['facebook', 'instagram', 'whatsapp', 'web'], required: true },
+  channel: { type: String, enum: ['facebook', 'instagram', 'whatsapp', 'web', 'telegram'], required: true },
   sourceUserId: { type: String, trim: true, required: true },
   sourceUsername: { type: String, trim: true, default: '' },
   customerName: { type: String, trim: true, default: '' },
