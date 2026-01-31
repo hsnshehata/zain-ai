@@ -1,4 +1,4 @@
-﻿const ChatOrder = require('../models/ChatOrder');
+const ChatOrder = require('../models/ChatOrder');
 const Bot = require('../models/Bot');
 const { notifyChatOrder, notifyOrderStatus } = require('../services/telegramService');
 
@@ -226,6 +226,7 @@ async function createOrUpdateFromExtraction({
   }
 
   if (latestOrder) {
+    const prevStatus = latestOrder.status;
     const sameCustomer =
       (latestOrder.customerPhone || '') === (customerPhone || '') &&
       (latestOrder.customerAddress || '') === (customerAddress || '') &&
@@ -282,6 +283,16 @@ async function createOrUpdateFromExtraction({
             total: latestOrder.totalAmount,
             currency: (latestOrder.items?.[0] && latestOrder.items[0].currency) || 'EGP',
           }, botId);
+
+          if (prevStatus !== latestOrder.status) {
+            console.info(`[${getTimestamp()}] 🔔 notify chat order STATUS change bot=${bot._id} user=${bot.userId} order=${latestOrder._id} ${prevStatus} -> ${latestOrder.status}`);
+            await notifyOrderStatus(bot.userId, {
+              storeName: bot.name,
+              orderId: latestOrder._id,
+              status: latestOrder.status,
+              note: 'تحديث من الدردشة',
+            }, botId);
+          }
         } else {
           console.warn(`[${getTimestamp()}] ⚠️ chat order notify skipped: bot not found or missing owner (bot=${botId})`);
         }
