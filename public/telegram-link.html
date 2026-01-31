@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ربط تيليجرام - زاين AI</title>
+  <link rel="preload" href="/css/common.css" as="style">
+  <link rel="preload" href="/css/dashboard.css" as="style">
+  <link rel="stylesheet" href="/css/common.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+  <link rel="stylesheet" href="/css/telegram.css" />
+</head>
+<body class="dashboard-page telegram-page dark-mode">
+  <div class="dashboard-layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-logo">
+          <i class="fas fa-robot"></i>
+          <span>زين بوت</span>
+        </div>
+        <button class="sidebar-toggle" id="sidebar-toggle">
+          <i class="fas fa-bars"></i>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/dashboard_new.html#overview" class="nav-item" data-page="overview">
+          <i class="fas fa-chart-line"></i>
+          <span>لمحة عامة</span>
+        </a>
+        <a href="/dashboard_new.html#bots" class="nav-item" data-page="bots">
+          <i class="fas fa-robot"></i>
+          <span>إدارة البوتات</span>
+        </a>
+        <a href="/dashboard_new.html#rules" class="nav-item" data-page="rules">
+          <i class="fas fa-book"></i>
+          <span>القواعد</span>
+        </a>
+        <a href="/dashboard_new.html#chat-page" class="nav-item" data-page="chat-page">
+          <i class="fas fa-comment-alt"></i>
+          <span>واجهة الدردشة</span>
+        </a>
+        <a href="/dashboard_new.html#store-manager" class="nav-item" data-page="store-manager">
+          <i class="fas fa-store"></i>
+          <span>المتجر الذكي</span>
+        </a>
+        <a href="/dashboard_new.html#orders-center" class="nav-item" data-page="orders-center">
+          <i class="fas fa-clipboard-list"></i>
+          <span>متابعة الطلبات</span>
+        </a>
+        <a href="/dashboard_new.html#channels" class="nav-item" data-page="channels">
+          <i class="fas fa-share-alt"></i>
+          <span>قنوات البوت</span>
+        </a>
+        <a href="/telegram-link.html" class="nav-item active" data-page="telegram">
+          <i class="fas fa-paper-plane"></i>
+          <span>تيليجرام</span>
+        </a>
+        <a href="/dashboard_new.html#messages" class="nav-item" data-page="messages">
+          <i class="fas fa-envelope"></i>
+          <span>الرسائل</span>
+        </a>
+        <a href="/dashboard_new.html#feedback" class="nav-item" data-page="feedback">
+          <i class="fas fa-comments"></i>
+          <span>التقييمات</span>
+        </a>
+        <a href="/dashboard_new.html#wasenderpro" class="nav-item" data-page="wasenderpro">
+          <i class="fas fa-bolt"></i>
+          <span>Wasender Pro</span>
+        </a>
+        <a href="/dashboard_new.html#settings" class="nav-item" data-page="settings">
+          <i class="fas fa-cog"></i>
+          <span>الإعدادات</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="sidebar-action-btn logout-btn" title="تسجيل الخروج">
+          <i class="fas fa-sign-out-alt"></i>
+          <span>تسجيل الخروج</span>
+        </button>
+        <button id="assistantButton" class="sidebar-action-btn" title="المساعد الذكي">
+          <i class="fas fa-headset"></i>
+          <span>المساعد الذكي</span>
+        </button>
+        <button id="theme-toggle" class="sidebar-action-btn" title="تبديل الوضع">
+          <i class="fas fa-moon"></i>
+          <span>الوضع</span>
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content tg-main">
+      <header class="main-header">
+        <div class="header-left">
+          <button class="mobile-menu-btn" id="mobile-menu-btn">
+            <i class="fas fa-bars"></i>
+          </button>
+          <div class="form-group bot-selector">
+            <label for="botSelect">البوت:</label>
+            <select id="botSelect">
+              <option value="">جاري التحميل...</option>
+            </select>
+          </div>
+        </div>
+        <div class="header-right">
+          <button id="notifications-btn" class="header-icon-btn" title="الإشعارات">
+            <i class="fas fa-bell"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="page-content">
+        <section class="tg-hero">
+          <div>
+            <p class="eyebrow">قنوات الإشعارات</p>
+            <h1>اربط تيليجرام واستقبل كل تنبيه لحظياً</h1>
+            <p class="muted">اختر البوت، ولّد الكود، وأرسله للبوت على تيليجرام. كل إشعار طلب أو تحديث حالة سيصل لك في ثوانٍ.</p>
+            <div class="hero-actions">
+              <button id="hero-generate" class="btn primary">توليد كود الآن</button>
+              <a id="hero-open" class="btn ghost" href="#" target="_blank" rel="noreferrer">فتح البوت</a>
+            </div>
+            <div class="hero-badges">
+              <span class="pill" id="hero-status">جار التحميل...</span>
+              <span class="pill pill-muted">مشفّر وآمن</span>
+              <span class="pill pill-muted">تجربة مطابقة لتطبيق تيليجرام</span>
+            </div>
+          </div>
+          <div class="hero-card">
+            <div class="pill small">حالة الربط</div>
+            <h2 id="hero-link-status">—</h2>
+            <p class="muted" id="hero-link-subtext">سيتم تحديث الحالة بعد اختيار البوت.</p>
+            <div class="hero-code" id="link-code">—</div>
+            <div class="hero-meta" id="link-expiry">—</div>
+            <div class="muted" id="status-subtext">تأكد من تسجيل الدخول لتحميل الحالة.</div>
+            <div class="hero-actions">
+              <button id="generate-code" class="btn primary">توليد كود ربط جديد</button>
+              <button id="unlink" class="btn ghost">إلغاء الربط</button>
+              <span class="status-dot" id="status-dot"></span>
+            </div>
+            <div class="code-actions">
+              <button id="copy-code" class="btn secondary">نسخ الكود</button>
+              <a id="open-bot" class="btn ghost" href="#" target="_blank" rel="noreferrer">فتح البوت</a>
+            </div>
+          </div>
+        </section>
+
+        <section class="cards-grid tg-grid">
+    <section class="card">
+      <div class="card-head">
+        <div>
+          <p class="label">إشعارات الطلبات</p>
+          <h3>اختر ما تحب تستقبله</h3>
+        </div>
+        <button id="save-prefs" class="btn primary">حفظ الإعدادات</button>
+      </div>
+      <div class="prefs-grid">
+        <label class="toggle">
+          <input type="checkbox" id="pref-new-order" />
+          <span>طلب جديد</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="pref-order-status" />
+          <span>تغيير حالة الطلب</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="pref-chat-order" />
+          <span>طلب قادم من البوت</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="pref-daily-summary" />
+          <span>ملخص يومي (تجريبي)</span>
+        </label>
+      </div>
+    </section>
+
+    <section class="card instructions">
+      <div class="card-head">
+        <div>
+          <p class="label">طريقة الربط</p>
+          <h3>خطوات سريعة</h3>
+        </div>
+      </div>
+      <ol>
+        <li>اضغط «توليد كود ربط جديد» للحصول على كود صالح لفترة محدودة.</li>
+        <li>اضغط «فتح البوت» وافتح البوت على تيليجرام، أو ابحث بالاسم إن وُجد.</li>
+        <li>أرسل الكود كما هو للبوت ليتم ربط الحساب.</li>
+        <li>بعد نجاح الربط ستصل إليك إشعارات الطلبات مباشرة.</li>
+      </ol>
+      <p class="muted" id="bot-hint">سيتم عرض رابط البوت تلقائياً بعد تحميل الحالة.</p>
+    </section>
+
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/telegram.js"></script>
+</body>
+</html>
