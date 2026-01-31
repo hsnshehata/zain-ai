@@ -16,8 +16,9 @@
 
 .telegram-page .tg-hero {
   display: grid;
-  grid-template-columns: 1.1fr 0.9fr;
-  gap: 24px;
+  grid-template-columns: 1fr;
+  justify-items: stretch;
+  gap: 16px;
   padding: 20px;
   margin-bottom: 18px;
   background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(16, 185, 129, 0.12));
@@ -47,6 +48,10 @@
   width: 100%;
   max-width: 480px;
 }
+
+.info-card .card-head { align-items: flex-start; gap: 10px; flex-wrap: wrap; }
+.info-card .hero-actions { margin-top: 10px; }
+.info-card .hero-badges { justify-content: flex-start; }
 
 .hero-code {
   font-family: "JetBrains Mono", "Consolas", monospace;
@@ -132,12 +137,8 @@
 .helper { border: 1px solid rgba(59, 130, 246, 0.35); }
 
 @media (max-width: 960px) {
-  .tg-hero {
-    grid-template-columns: 1fr;
-    padding: 16px;
-    gap: 16px;
-  }
-  .tg-hero .hero-card { order: -1; justify-self: stretch; }
+  .tg-hero { padding: 16px; }
+  .tg-hero .hero-card { justify-self: stretch; max-width: 100%; }
 }
 
 @media (max-width: 720px) {
