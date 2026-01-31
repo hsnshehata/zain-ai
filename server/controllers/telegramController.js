@@ -37,6 +37,13 @@ const ORDER_STATUS_OPTIONS = [
   { key: 'cancelled', label: 'ملغي' },
 ];
 
+const STATUS_LABEL_MAP = ORDER_STATUS_OPTIONS.reduce((acc, cur) => {
+  acc[cur.key] = cur.label;
+  return acc;
+}, {});
+
+const statusLabel = (key) => STATUS_LABEL_MAP[key] || key;
+
 const parseOrderStatusInput = (text) => {
   const normalized = (text || '').trim().toLowerCase();
   if (!normalized) return null;
@@ -143,10 +150,19 @@ const listOrders = async (chatId, storeId, filter = {}, menuKeyboard) => {
     const total = formatMoney(o.totalPrice, o.currency);
     const created = o.createdAt ? new Date(o.createdAt).toLocaleString('ar-EG') : '';
     const items = Array.isArray(o.products)
-      ? o.products.slice(0, 3).map((p) => `${p.quantity || 1}x ${p.name || ''}`).join('، ')
+      ? o.products.map((p) => `${p.quantity || 1}x ${p.name || ''}`).slice(0, 6).join('، ')
       : '';
     const contact = [o.customerName, o.customerWhatsapp].filter(Boolean).join(' | ');
-    return `${idx + 1}. #${String(o._id).slice(-6)} | ${o.status} | ${total} | ${created}\n${contact}${items ? `\nالمطلوب: ${items}` : ''}${o.customerAddress ? `\nالعنوان: ${o.customerAddress}` : ''}`;
+    const address = o.customerAddress ? `العنوان: ${o.customerAddress}` : '';
+    return [
+      `${idx + 1}. رقم الطلب: ${o._id}`,
+      `الحالة: ${statusLabel(o.status)}`,
+      `الإجمالي: ${total}`,
+      created ? `التاريخ: ${created}` : null,
+      contact ? `العميل: ${contact}` : null,
+      address || null,
+      items ? `المطلوب: ${items}` : null,
+    ].filter(Boolean).join('\n');
   }).join('\n\n');
   await sendTelegramMessage(chatId, `${filter.status ? 'الطلبات المؤكدة' : 'أحدث الطلبات'}:\n${lines}`, { reply_markup: inlineBackHome() });
   return orders;
@@ -163,11 +179,19 @@ const listChatOrders = async (chatId, botId, filter = {}, menuKeyboard) => {
     const total = formatMoney(o.totalAmount, o.items?.[0]?.currency || 'EGP');
     const created = o.createdAt ? new Date(o.createdAt).toLocaleString('ar-EG') : '';
     const items = Array.isArray(o.items)
-      ? o.items.slice(0, 3).map((p) => `${p.quantity || 1}x ${p.title || ''}`).join('، ')
+      ? o.items.map((p) => `${p.quantity || 1}x ${p.title || ''}`).slice(0, 6).join('، ')
       : '';
     const contact = [o.customerName, o.customerPhone].filter(Boolean).join(' | ');
-    const address = o.customerAddress ? `\nالعنوان: ${o.customerAddress}` : '';
-    return `${idx + 1}. #${String(o._id).slice(-6)} | ${o.status} | ${total} | ${created}\n${contact}${items ? `\nالمطلوب: ${items}` : ''}${address}`;
+    const address = o.customerAddress ? `العنوان: ${o.customerAddress}` : '';
+    return [
+      `${idx + 1}. رقم الطلب: ${o._id}`,
+      `الحالة: ${statusLabel(o.status)}`,
+      `الإجمالي: ${total}`,
+      created ? `التاريخ: ${created}` : null,
+      contact ? `العميل: ${contact}` : null,
+      address || null,
+      items ? `المطلوب: ${items}` : null,
+    ].filter(Boolean).join('\n');
   }).join('\n\n');
   await sendTelegramMessage(chatId, `${filter.status ? 'طلبات الدردشة المؤكدة' : 'أحدث طلبات الدردشة'}:\n${lines}`, { reply_markup: inlineBackHome() });
   return orders;
@@ -231,7 +255,7 @@ const listAllOrdersCombined = async (chatId, { storeId, botId }, menuKeyboard) =
   const lines = limited.map((o, idx) => {
     const kind = o.type === 'store' ? 'متجر' : 'دردشة';
     const created = o.ts ? new Date(o.ts).toLocaleString('ar-EG') : '';
-    return `${idx + 1}. [${kind}] #${String(o.id).slice(-6)} | ${o.status} | ${o.total} | ${created}`;
+    return `${idx + 1}. [${kind}] رقم: ${o.id}\nالحالة: ${statusLabel(o.status)} | الإجمالي: ${o.total}${created ? `\nالتاريخ: ${created}` : ''}`;
   }).join('\n');
 
   await sendTelegramMessage(chatId, `أحدث الطلبات (متجر + دردشة):\n${lines}`, { reply_markup: inlineBackHome() });
