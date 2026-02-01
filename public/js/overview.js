@@ -440,140 +440,270 @@
   }
 
   async function loadOverviewPage(navSnapshot) {
-    console.log("renderOverview called...");
+    console.log("renderOverview (educational timeline) called...");
     const thisNav = navSnapshot ?? ctx.getNavToken?.() ?? 0;
-    const selectedBotId = localStorage.getItem("selectedBotId");
-
-    if (!selectedBotId) {
-      if (thisNav !== (ctx.getNavToken?.() ?? thisNav)) return;
-      const content = document.getElementById('content');
-      if (content) {
-        content.innerHTML = `<div class="placeholder"><h2><i class="fas fa-hand-pointer"></i> يرجى اختيار بوت</h2><p>اختر بوتًا من القائمة أعلاه لعرض الإحصائيات.</p></div>`;
-      }
-      return;
-    }
-
-    if (thisNav !== (ctx.getNavToken?.() ?? thisNav)) {
-      console.warn('Stale overview render skipped before layout inject');
-      return;
-    }
-
     const content = document.getElementById('content');
     if (!content) return;
 
-    const isSuperadmin = ctx.getRole?.() === 'superadmin';
+    const selectedBotId = localStorage.getItem("selectedBotId");
+    const token = ctx.getToken?.();
+
+    const ensureStyles = () => {
+      if (document.getElementById('overview-flow-styles')) return;
+      const style = document.createElement('style');
+      style.id = 'overview-flow-styles';
+      style.textContent = `
+        .overview-edu { display: grid; gap: 18px; }
+        .overview-hero { padding: 18px; border: 1px solid var(--card-border, rgba(255,255,255,0.08)); border-radius: 16px; background: linear-gradient(135deg, rgba(0,196,180,0.08), rgba(14,165,233,0.08)); box-shadow: 0 16px 40px rgba(0,0,0,0.18); }
+        .overview-hero h2 { margin: 0 0 8px; font-size: 1.6rem; display: flex; align-items: center; gap: 10px; }
+        .overview-hero p { margin: 0; opacity: 0.9; line-height: 1.6; }
+        .flow-grid { display: grid; gap: 14px; }
+        @media(min-width: 880px){ .flow-grid { grid-template-columns: repeat(2, 1fr); } }
+        .flow-card { border: 1px solid var(--card-border, rgba(255,255,255,0.08)); border-radius: 14px; padding: 16px; background: rgba(255,255,255,0.02); box-shadow: 0 8px 24px rgba(0,0,0,0.12); display: grid; gap: 10px; position: relative; overflow: hidden; }
+        .flow-card::before { content: attr(data-step); position: absolute; top: 10px; left: 12px; width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; background: rgba(0,196,180,0.35); color: #0d1b2a; font-weight: 800; box-shadow: 0 6px 14px rgba(0,196,180,0.25); }
+        body.light-mode .flow-card::before { background: rgba(0,196,180,0.22); color: #0d1b2a; }
+        body.light-mode .flow-card { background: rgba(0,0,0,0.02); }
+        .flow-title { margin: 0 0 4px; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
+        .flow-body { margin: 0; line-height: 1.6; opacity: 0.92; }
+        .flow-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+        .flow-btn { border: 1px solid rgba(0,196,180,0.35); background: rgba(0,196,180,0.12); color: inherit; padding: 8px 12px; border-radius: 10px; cursor: pointer; transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease; display: inline-flex; align-items: center; gap: 8px; }
+        .flow-btn:hover { transform: translateY(-1px); border-color: rgba(0,196,180,0.6); background: rgba(0,196,180,0.18); }
+        .flow-badges { display: flex; flex-wrap: wrap; gap: 8px; }
+        .flow-badge { padding: 4px 10px; border-radius: 999px; border: 1px solid var(--card-border, rgba(255,255,255,0.1)); background: rgba(255,255,255,0.04); font-size: 0.85rem; }
+        .note { font-size: 0.95rem; opacity: 0.85; display: flex; gap: 8px; align-items: flex-start; }
+        .flow-cta { display: grid; gap: 8px; border: 1px dashed rgba(0,196,180,0.45); padding: 12px; border-radius: 12px; background: rgba(0,196,180,0.05); }
+        .bot-stats { border: 1px solid var(--card-border, rgba(255,255,255,0.08)); border-radius: 14px; padding: 14px; background: rgba(255,255,255,0.02); box-shadow: 0 8px 24px rgba(0,0,0,0.12); display: grid; gap: 12px; }
+        .bot-stats-head h3 { margin: 0 0 4px; display: flex; align-items: center; gap: 8px; }
+        .bot-stats-head p { margin: 0; opacity: 0.85; }
+      `;
+      document.head.appendChild(style);
+    };
+
+    ensureStyles();
+
+    const steps = [
+      {
+        step: '01',
+        icon: 'fa-book',
+        title: 'ابدأ من القواعد (برومبت السيستم)',
+        body: 'عرّف البوت بكل سياساتك وأسعارك وسيناريوهات التوفر/عدم التوفر. استورد نماذجنا الجاهزة، عدّل الأقواس بمعلومات شركتك، وأضف أسئلة/أجوبة خاصة.',
+        actions: [
+          { label: 'فتح القواعد', page: 'rules', icon: 'fa-arrow-right' },
+          { label: 'نماذج جاهزة', page: 'rules', hash: '#templates', icon: 'fa-magic' }
+        ],
+        badges: ['نقطة الانطلاق', 'تدريب البوت']
+      },
+      {
+        step: '02',
+        icon: 'fa-comments',
+        title: 'خصص صفحة الدردشة وجرب الردود',
+        body: 'فعّل صفحة الدردشة، اختر الألوان، حمّل الشعار، فعّل رفع الصور والأسئلة المقترحة. جرّب الردود فورًا، ثم راجع رسائل الويب من تبويب الويب في صفحة الرسائل، وحوّل الردود الجيدة لقاعدة سؤال/جواب من صفحة التقييمات أو الرسائل.',
+        actions: [
+          { label: 'صفحة الدردشة', page: 'chat-page', icon: 'fa-comment-dots' },
+          { label: 'رسائل الويب', page: 'messages', icon: 'fa-envelope' },
+          { label: 'التقييمات', page: 'feedback', icon: 'fa-star' }
+        ],
+        badges: ['تخصيص', 'تجربة سريعة']
+      },
+      {
+        step: '03',
+        icon: 'fa-share-alt',
+        title: 'انشر وادمج صفحة الدردشة',
+        body: 'انسخ الأكواد الجاهزة للدمج في موقعك، أو شارك رابط صفحة الدردشة مباشرة مع عملائك للتحدث مع البوت.',
+        actions: [
+          { label: 'أكواد التضمين', page: 'chat-page', icon: 'fa-code' }
+        ],
+        badges: ['نشر سريع']
+      },
+      {
+        step: '04',
+        icon: 'fa-store',
+        title: 'المتجر الجاهز لمن لا يملك موقع',
+        body: 'لو ما عندكش موقع، فعّل المتجر الذكي: أضف المنتجات والأسعار، صمّم الواجهة، وتابع الطلبات والعملاء من نفس اللوحة.',
+        actions: [
+          { label: 'المتجر الذكي', page: 'store-manager', icon: 'fa-store' }
+        ],
+        badges: ['منتجات', 'طلبات', 'تصميم المتجر']
+      },
+      {
+        step: '05',
+        icon: 'fa-random',
+        title: 'ربط القنوات (فيسبوك / إنستجرام / واتساب)',
+        body: 'اربط القنوات ليعمل البوت بنفس المنطق على الكل. فعّل الرد على التعليقات من صفحة القنوات ليجاوب تلقائيًا بنفس السياسات والأسعار.',
+        actions: [
+          { label: 'إدارة القنوات', page: 'channels', icon: 'fa-share-alt' }
+        ],
+        badges: ['تعليقات الصفحات', 'رسائل خاصة']
+      },
+      {
+        step: '06',
+        icon: 'fa-shield-alt',
+        title: 'إعدادات الأمان وكلمة الإيقاف',
+        body: 'ضع كلمة إيقاف فورية من إعدادات فيسبوك داخل القنوات، عيّن كلمة مرور حسابك لاستخدام تطبيق سطح المكتب لربط واتساب، واضبط تفضيلات البوت.',
+        actions: [
+          { label: 'الإعدادات', page: 'settings', icon: 'fa-cog' },
+          { label: 'إعدادات فيسبوك', page: 'channels', icon: 'fa-facebook' }
+        ],
+        badges: ['كلمة إيقاف', 'تأمين الحساب']
+      },
+      {
+        step: '07',
+        icon: 'fa-paper-plane',
+        title: 'مساعد تيليجرام لاستقبال الإشعارات',
+        body: 'اربط بوت تيليجرام الخاص بك لإدارة الطلبات وتلقي إشعارات الجديد والمعدّل. استخدم لوحة أزرار الإنستجرام في مساعد تيليجرام لتسهيل التحكم.',
+        actions: [
+          { label: 'ربط تيليجرام', href: '/telegram-link.html', icon: 'fa-paper-plane' }
+        ],
+        badges: ['إشعارات فورية', 'أزرار سريعة']
+      },
+      {
+        step: '08',
+        icon: 'fa-clipboard-list',
+        title: 'متابعة الطلبات والرسائل باستمرار',
+        body: 'راقب الطلبات من مركز المتابعة، والرسائل والتقييمات من صفحة الرسائل. لو رد البوت طلع مش بالمستوى أو فيه قيمة سلبية، عدّل الرد فورًا واحفظه كقاعدة سؤال/جواب مباشرة من نفس الصفحة أو من التقييمات لضبط النبرة.',
+        actions: [
+          { label: 'مركز الطلبات', page: 'orders-center', icon: 'fa-clipboard-list' },
+          { label: 'الرسائل', page: 'messages', icon: 'fa-envelope' }
+        ],
+        badges: ['تحسين مستمر']
+      },
+      {
+        step: '09',
+        icon: 'fa-bolt',
+        title: 'جاهزية التشغيل وطاقم الخبرة',
+        body: 'اتّبع الخط الزمني ده بالترتيب: قواعد ← تجربة الدردشة ← نشر/ربط القنوات ← أمان ← إشعارات تيليجرام ← متابعة الطلبات. المنصة مبنية لتوحيد بيانات القنوات، ضبط الأمان، وتحويل كل تفاعل لفرصة بيع بدون مجهود إضافي منك.',
+        actions: [
+          { label: 'ابدأ بالقواعد الآن', page: 'rules', icon: 'fa-play' }
+        ],
+        badges: ['تسلسل موحّد', 'جاهز للإطلاق']
+      }
+    ];
+
+    const renderSteps = () => steps.map(s => `
+      <div class="flow-card" data-step="${s.step}">
+        <h3 class="flow-title"><i class="fas ${s.icon}"></i> ${s.title}</h3>
+        <p class="flow-body">${s.body}</p>
+        ${s.badges?.length ? `<div class="flow-badges">${s.badges.map(b => `<span class="flow-badge">${b}</span>`).join('')}</div>` : ''}
+        <div class="flow-actions">
+          ${s.actions.map(a => `<button class="flow-btn" data-page="${a.page || ''}" data-href="${a.href || ''}"><i class="fas ${a.icon}"></i>${a.label}</button>`).join('')}
+        </div>
+      </div>
+    `).join('');
 
     content.innerHTML = `
-      <div class="overview-container">
-        <h2 class="section-title"><i class="fas fa-chart-line"></i> لمحة عامة</h2>
-        
-        <div class="stats-grid">
-          <div class="stat-card" data-target-page="messages" style="cursor:pointer;">
-            <div class="stat-icon"><i class="fas fa-comments"></i></div>
-            <div class="stat-info">
-              <h3>المحادثات</h3>
-              <p class="stat-value" id="total-conversations">جاري التحميل...</p>
-              <small>إجمالي المحادثات</small>
-            </div>
-          </div>
-          
-          <div class="stat-card" data-target-page="orders-center" style="cursor:pointer;">
-            <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
-            <div class="stat-info">
-              <h3 id="orders-card-title">الطلبات</h3>
-              <p class="stat-value" id="total-orders">جاري التحميل...</p>
-              <small id="orders-card-sub">جاري التحميل...</small>
-            </div>
-          </div>
-          
-          <div class="stat-card" data-target-page="store-manager" style="cursor:pointer;">
-            <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
-            <div class="stat-info">
-              <h3>المبيعات</h3>
-              <p class="stat-value" id="total-revenue">جاري التحميل...</p>
-              <small>إجمالي المبيعات</small>
-            </div>
-          </div>
-          
-          <div class="stat-card" data-target-page="store-manager" style="cursor:pointer;">
-            <div class="stat-icon"><i class="fas fa-box"></i></div>
-            <div class="stat-info">
-              <h3>المنتجات</h3>
-              <p class="stat-value" id="total-products">جاري التحميل...</p>
-              <small>إجمالي المنتجات</small>
-            </div>
-          </div>
-
-          <div class="stat-card" data-target-page="feedback" style="cursor:pointer;">
-            <div class="stat-icon"><i class="fas fa-star"></i></div>
-            <div class="stat-info">
-              <h3>التقييمات</h3>
-              <p class="stat-value" id="total-feedback">جاري التحميل...</p>
-              <small>إجمالي التقييمات</small>
-            </div>
-          </div>
-
-          <div class="stat-card" ${isSuperadmin ? 'data-target-page="bots" style="cursor:pointer;"' : 'style="cursor:default;"'}>
-            <div class="stat-icon"><i class="fas fa-robot"></i></div>
-            <div class="stat-info">
-              <h3>حالة البوت</h3>
-              <p class="stat-value" id="bot-status">جاري التحميل...</p>
-              <small id="bot-expiry">جاري التحميل...</small>
-            </div>
+      <div class="overview-edu">
+        <div class="overview-hero">
+          <h2><i class="fas fa-route"></i> لمحة تعليمية سريعة</h2>
+          <p>اتّبع الخط الزمني لتجهيز بوت خدمة العملاء الخاص بك: من إعداد القواعد حتى ربط القنوات ومتابعة الطلبات، خطوة بخطوة وبأزرار تنقلك مباشرة لكل صفحة.</p>
+        </div>
+        <div class="flow-grid">${renderSteps()}</div>
+        <div class="flow-cta note">
+          <i class="fas fa-lightbulb"></i>
+          <div>
+            <strong>نصيحة:</strong> اختبر الردود بعد كل خطوة، وحوّل أفضل الردود إلى قواعد سؤال/جواب لضبط نبرة البوت باستمرار. نحن في تطوّر مستمر لتعظيم الاستفادة من الذكاء الاصطناعي لخدمة رواد الأعمال وأصحاب المتاجر بعمق أكبر.
           </div>
         </div>
-
-        <div class="charts-grid">
-          <div class="card chart-card">
-            <div class="card-header">
-              <h3><i class="fas fa-project-diagram"></i> توزيع المحادثات حسب القنوات</h3>
+        <div class="bot-stats">
+          <div class="bot-stats-head">
+            <h3><i class="fas fa-chart-line"></i> عدادات البوت</h3>
+            <p>أرقام سريعة من نشاط البوت المختار.</p>
+          </div>
+          ${selectedBotId ? `
+          <div class="stats-grid" id="botStatsGrid">
+            <div class="stat-card">
+              <div class="stat-label">إجمالي الرسائل</div>
+              <div class="stat-value" id="statMessagesCount">--</div>
             </div>
-            <div class="card-body">
-              <canvas id="channelsChart"></canvas>
+            <div class="stat-card">
+              <div class="stat-label">إجمالي المحادثات</div>
+              <div class="stat-value" id="statConversationsCount">--</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">طلبات صادرة من المحادثات</div>
+              <div class="stat-value" id="statChatOrdersCount">--</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">القواعد الفعالة</div>
+              <div class="stat-value" id="statActiveRules">--</div>
             </div>
           </div>
-
-          <div class="card chart-card">
-            <div class="card-header">
-              <h3><i class="fas fa-tasks"></i> حالة الطلبات</h3>
-            </div>
-            <div class="card-body">
-              <canvas id="ordersStatusChart"></canvas>
-            </div>
+          ` : `
+          <div class="placeholder">
+            <p>اختر بوتًا من القائمة العلوية لعرض العدادات.</p>
           </div>
-        </div>
-
-        <div class="card chart-card full-width">
-          <div class="card-header">
-            <h3><i class="fas fa-chart-line"></i> المحادثات اليومية (آخر 7 أيام)</h3>
-          </div>
-          <div class="card-body">
-            <canvas id="dailyMessagesChart"></canvas>
-          </div>
+          `}
         </div>
       </div>
     `;
 
-    content.querySelectorAll('.stat-card').forEach((card) => {
-      card.addEventListener('click', () => {
-        const target = card.getAttribute('data-target-page');
-        if (!target) return;
-        if (target === 'bots' && !isSuperadmin) return;
-        window.location.hash = `#${target}`;
+    content.querySelectorAll('.flow-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const page = btn.dataset.page;
+        const href = btn.dataset.href;
+        if (href) {
+          window.location.href = href;
+          return;
+        }
+        if (page) {
+          window.location.hash = `#${page}`;
+          if (page === 'rules' && btn.textContent.includes('نماذج')) {
+            // إشارة بسيطة لفتح النماذج داخل صفحة القواعد (يمكن استغلالها في JS الصفحة)
+            localStorage.setItem('rules_open_templates', '1');
+          }
+        }
       });
     });
 
-    const cachedSnapshot = readOverviewCache(selectedBotId);
-    if (cachedSnapshot && cachedSnapshot.botId === selectedBotId) {
-      if (thisNav !== (ctx.getNavToken?.() ?? thisNav)) {
-        console.warn('Stale overview render skipped before cache apply');
-        return;
+    // جلب عدادات البوت في صفحة اللمحة
+    const statsEls = {
+      messages: content.querySelector('#statMessagesCount'),
+      conversations: content.querySelector('#statConversationsCount'),
+      chatOrders: content.querySelector('#statChatOrdersCount'),
+      rules: content.querySelector('#statActiveRules'),
+    };
+
+    if (selectedBotId && token && statsEls.messages) {
+      const statsCacheKey = 'overviewBotStats';
+      const cachedStats = window.readPageCache ? window.readPageCache(statsCacheKey, selectedBotId, 2 * 60 * 1000) : null;
+      const fetchStats = () => handleApiRequest(`/api/analytics?botId=${selectedBotId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      }, null, 'فشل في جلب عدادات البوت');
+
+      const applyStats = (stats) => {
+        if (!stats) return;
+        statsEls.messages.textContent = stats.messagesCount != null ? stats.messagesCount : '--';
+        statsEls.conversations.textContent = stats.conversationsCount != null ? stats.conversationsCount : '--';
+        statsEls.chatOrders.textContent = stats.chatOrdersCount != null ? stats.chatOrdersCount : '--';
+        statsEls.rules.textContent = stats.activeRules != null ? stats.activeRules : '--';
+      };
+
+      if (cachedStats) {
+        applyStats(cachedStats);
+        fetchStats()
+          .then((fresh) => {
+            if (fresh && window.writePageCache) {
+              window.writePageCache(statsCacheKey, selectedBotId, fresh);
+            }
+            applyStats(fresh);
+          })
+          .catch((err) => {
+            console.warn('⚠️ فشل تحديث عدادات البوت، استخدام الكاش', err);
+          });
+      } else {
+        fetchStats()
+          .then((fresh) => {
+            applyStats(fresh);
+            if (fresh && window.writePageCache) {
+              window.writePageCache(statsCacheKey, selectedBotId, fresh);
+            }
+          })
+          .catch((err) => {
+            console.warn('⚠️ فشل جلب عدادات البوت', err);
+          });
       }
-      console.log('Applying overview cache for bot', selectedBotId);
-      applyOverviewData(cachedSnapshot, 'cache');
     }
 
-    await loadOverviewStats(thisNav);
+    // لا حاجة للإحصاءات هنا؛ الصفحة تعليمية فقط
   }
 
   window.loadOverviewPage = loadOverviewPage;

@@ -590,6 +590,12 @@ try {
     const sidebarToggle = document.getElementById('sidebar-toggle');
     const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 
+    const collapseMobileSidebar = () => {
+      if (window.innerWidth <= 768 && sidebar && sidebar.classList.contains('active')) {
+        sidebar.classList.remove('active');
+      }
+    };
+
     if (mobileMenuBtn) {
       mobileMenuBtn.addEventListener('click', () => {
         sidebar.classList.toggle('active');
@@ -607,14 +613,131 @@ try {
           sidebar && sidebar.classList.contains('active') &&
           !sidebar.contains(e.target) &&
           mobileMenuBtn && !mobileMenuBtn.contains(e.target)) {
-        sidebar.classList.remove('active');
+        collapseMobileSidebar();
       }
     });
 
+    if (sidebar) {
+      sidebar.addEventListener('click', (e) => {
+        const navLink = e.target.closest('a');
+        if (!navLink) return;
+        // أغلق القائمة مباشرة بعد الضغط على رابط أثناء العرض على الجوال
+        collapseMobileSidebar();
+      });
+    }
+
     // الإشعارات
     let showAllNotifications = false;
+    let notificationFilter = 'all';
+    let notificationsCache = [];
+    const seenNotificationIds = new Set(JSON.parse(localStorage.getItem('nc_seen_ids') || '[]'));
 
-    async function fetchNotifications() {
+    const notificationFilters = Array.from(document.querySelectorAll('.nc-filter'));
+    const markAllBtn = document.getElementById('nc-mark-all');
+
+    // حاوية التوست الحديث
+    const toastContainer = document.createElement('div');
+    toastContainer.className = 'nc-toast-container';
+    document.body.appendChild(toastContainer);
+
+    const classifyType = (notification) => {
+      const raw = (notification.type || '').toLowerCase();
+      if (raw) return raw;
+      const text = `${notification.title || ''} ${notification.message || ''}`.toLowerCase();
+      if (/طلب|اوردر|order|شحن|تسليم|دفع/.test(text)) return 'orders';
+      if (/تنبيه|تحذير|alert|مشكلة|خطأ|fail|error/.test(text)) return 'alerts';
+      if (/نظام|system|تحديث|صيانة|cron|server/.test(text)) return 'system';
+      return 'general';
+    };
+
+    const formatDateTime = (dateStr) => new Date(dateStr).toLocaleString('ar-EG', { hour: '2-digit', minute: '2-digit', year: 'numeric', month: 'short', day: 'numeric' });
+
+    const renderNotifications = (withToasts = false) => {
+      notificationsList.innerHTML = '';
+      const filtered = notificationsCache.filter((n) => {
+        if (notificationFilter === 'unread') return !n.isRead;
+        if (notificationFilter === 'system') return classifyType(n) === 'system';
+        if (notificationFilter === 'orders') return classifyType(n) === 'orders';
+        if (notificationFilter === 'alerts') return classifyType(n) === 'alerts';
+        return true;
+      });
+
+      const displayNotifications = showAllNotifications ? filtered : filtered.slice(0, 10);
+
+      if (displayNotifications.length === 0) {
+        notificationsList.innerHTML = '<div class="nc-empty">لا توجد إشعارات تطابق الفلتر الحالي.</div>';
+      } else {
+        displayNotifications.forEach((notification) => {
+          const type = classifyType(notification);
+          const item = document.createElement('div');
+          item.className = `nc-item ${notification.isRead ? '' : 'unread'}`;
+          item.innerHTML = `
+            <div class="nc-item-header">
+              <span class="pill pill-${type}">${type === 'orders' ? 'طلبات' : type === 'alerts' ? 'تنبيه' : type === 'system' ? 'نظام' : 'عام'}</span>
+              <span class="nc-time">${formatDateTime(notification.createdAt)}</span>
+            </div>
+            <div class="nc-item-body">
+              <p class="nc-title">${notification.title || 'بدون عنوان'}</p>
+              <p class="nc-message">${notification.message || ''}</p>
+            </div>
+            <div class="nc-item-actions">
+              ${notification.isRead ? '<span class="nc-status read">مقروء</span>' : '<span class="nc-status unread">غير مقروء</span>'}
+              <div class="nc-buttons">
+                <button class="btn-ghost" data-action="open">عرض التفاصيل</button>
+                ${notification.isRead ? '' : '<button class="btn-ghost" data-action="mark">تحديد كمقروء</button>'}
+              </div>
+            </div>
+          `;
+
+          item.querySelector('[data-action="open"]').addEventListener('click', (e) => {
+            e.stopPropagation();
+            showNotificationModal(notification);
+            if (!notification.isRead) {
+              markNotificationAsRead(notification._id, false);
+            }
+          });
+
+          const markBtn = item.querySelector('[data-action="mark"]');
+          if (markBtn) {
+            markBtn.addEventListener('click', async (e) => {
+              e.stopPropagation();
+              await markNotificationAsRead(notification._id, true);
+            });
+          }
+
+          item.addEventListener('click', () => {
+            showNotificationModal(notification);
+            if (!notification.isRead) {
+              markNotificationAsRead(notification._id, false);
+            }
+          });
+
+          notificationsList.appendChild(item);
+        });
+
+        if (!showAllNotifications && filtered.length > displayNotifications.length) {
+          const moreButton = document.createElement('button');
+          moreButton.classList.add('btn', 'btn-secondary', 'more-notifications');
+          moreButton.textContent = 'عرض المزيد';
+          moreButton.addEventListener('click', () => {
+            showAllNotifications = true;
+            renderNotifications();
+          });
+          notificationsList.appendChild(moreButton);
+        }
+      }
+
+      if (withToasts && notificationsModal.style.display === 'none') {
+        const newOnes = notificationsCache.filter((n) => !n.isRead && !seenNotificationIds.has(n._id)).slice(0, 3);
+        newOnes.forEach((n) => {
+          seenNotificationIds.add(n._id);
+          showToast(n);
+        });
+        localStorage.setItem('nc_seen_ids', JSON.stringify(Array.from(seenNotificationIds)));
+      }
+    };
+
+    async function fetchNotifications(withToasts = true) {
       console.log("fetchNotifications called...");
       try {
         const response = await fetch('/api/notifications', {
@@ -623,83 +746,66 @@ try {
         if (!response.ok) {
           throw new Error('فشل في جلب الإشعارات: ' + response.statusText);
         }
-        const notifications = await response.json();
-        const unreadCount = notifications.filter(n => !n.isRead).length;
+        notificationsCache = await response.json();
+        const unreadCount = notificationsCache.filter(n => !n.isRead).length;
         notificationsCount.textContent = unreadCount;
         if (unreadCount > 0) {
           notificationsBtn.classList.add('has-unread');
         } else {
           notificationsBtn.classList.remove('has-unread');
         }
-
-        notificationsList.innerHTML = '';
-        const displayNotifications = showAllNotifications ? notifications : notifications.slice(0, 5);
-
-        if (displayNotifications.length === 0) {
-          notificationsList.innerHTML = '<p class="no-notifications">لا توجد إشعارات</p>';
-        } else {
-          displayNotifications.forEach(notification => {
-            const notificationItem = document.createElement('div');
-            notificationItem.classList.add('notification-item');
-            if (!notification.isRead) {
-              notificationItem.classList.add('unread');
-            }
-            notificationItem.innerHTML = `
-              <p class="notification-title">${notification.title}</p>
-              <small>${new Date(notification.createdAt).toLocaleString('ar-EG')}</small>
-            `;
-            notificationItem.addEventListener('click', () => {
-              showNotificationModal(notification);
-              if (!notification.isRead) {
-                markNotificationAsRead(notification._id);
-              }
-            });
-            notificationsList.appendChild(notificationItem);
-          });
-
-          if (!showAllNotifications && notifications.length > 5) {
-            const moreButton = document.createElement('button');
-            moreButton.classList.add('btn', 'btn-secondary', 'more-notifications');
-            moreButton.textContent = 'عرض المزيد';
-            moreButton.addEventListener('click', () => {
-              showAllNotifications = true;
-              fetchNotifications();
-            });
-            notificationsList.appendChild(moreButton);
-          }
-        }
+        renderNotifications(withToasts);
       } catch (error) {
         console.error('Error fetching notifications:', error);
         notificationsList.innerHTML = '<p class="no-notifications">فشل في جلب الإشعارات</p>';
       }
     }
 
-    async function markNotificationAsRead(notificationId) {
+    async function markNotificationAsRead(notificationId, reRender = true) {
       console.log(`markNotificationAsRead called for notificationId: ${notificationId}`);
       try {
         await fetch(`/api/notifications/${notificationId}/read`, {
           method: 'PUT',
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        await fetchNotifications();
+        notificationsCache = notificationsCache.map((n) => n._id === notificationId ? { ...n, isRead: true } : n);
+        const unreadCount = notificationsCache.filter(n => !n.isRead).length;
+        notificationsCount.textContent = unreadCount;
+        if (unreadCount > 0) {
+          notificationsBtn.classList.add('has-unread');
+        } else {
+          notificationsBtn.classList.remove('has-unread');
+        }
+        if (reRender) renderNotifications(false);
       } catch (error) {
         console.error('Error marking notification as read:', error);
       }
     }
 
+    async function markAllAsRead() {
+      const unreadIds = notificationsCache.filter(n => !n.isRead).map(n => n._id);
+      if (!unreadIds.length) return;
+      await Promise.all(unreadIds.map((id) => markNotificationAsRead(id, false)));
+      renderNotifications(false);
+    }
+
     function showNotificationModal(notification) {
       console.log("showNotificationModal called...");
+      const type = classifyType(notification);
       const modal = document.createElement("div");
-      modal.classList.add("modal");
+      modal.classList.add("modal", "nc-detail-modal");
       modal.innerHTML = `
         <div class="modal-content">
           <div class="modal-header">
-            <h3>${notification.title}</h3>
+            <div>
+              <span class="pill pill-${type}">${type === 'orders' ? 'طلبات' : type === 'alerts' ? 'تنبيه' : type === 'system' ? 'نظام' : 'عام'}</span>
+              <h3>${notification.title}</h3>
+            </div>
             <button class="modal-close-btn"><i class="fas fa-times"></i></button>
           </div>
           <div class="notification-content">
             <p>${notification.message}</p>
-            <small>${new Date(notification.createdAt).toLocaleString('ar-EG')}</small>
+            <small>${formatDateTime(notification.createdAt)}</small>
           </div>
           <div class="form-actions">
             <button class="btn btn-secondary modal-close-btn">إغلاق</button>
@@ -713,18 +819,96 @@ try {
       });
     }
 
-    notificationsBtn.addEventListener("click", () => {
+    function showToast(notification) {
+      const type = classifyType(notification);
+      const toast = document.createElement('div');
+      toast.className = `nc-toast pill-${type}`;
+      toast.innerHTML = `
+        <div class="nc-toast-icon"><i class="fas fa-bell"></i></div>
+        <div class="nc-toast-body">
+          <p class="nc-toast-title">${notification.title || 'إشعار جديد'}</p>
+          <p class="nc-toast-message">${notification.message || ''}</p>
+        </div>
+        <button class="btn-icon nc-toast-close" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+      `;
+      toast.querySelector('.nc-toast-close').addEventListener('click', () => toast.remove());
+      toast.addEventListener('click', () => {
+        toast.remove();
+        showNotificationModal(notification);
+      });
+      toastContainer.appendChild(toast);
+      setTimeout(() => toast.remove(), 7000);
+    }
+
+    notificationFilters.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        notificationFilters.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        notificationFilter = btn.dataset.filter;
+        showAllNotifications = false;
+        renderNotifications(false);
+      });
+    });
+
+    if (markAllBtn) {
+      markAllBtn.addEventListener('click', () => {
+        markAllAsRead();
+      });
+    }
+
+    const positionNotificationPanel = () => {
+      const panel = notificationsModal?.querySelector('.nc-panel');
+      if (!panel || !notificationsBtn) return;
+      const rect = notificationsBtn.getBoundingClientRect();
+      const top = rect.bottom + 12; // ثابت بالنسبة للواجهة
+      const left = rect.left; // افتح من نفس جهة الزر
+      notificationsModal.style.setProperty('--nc-top', `${top}px`);
+      notificationsModal.style.setProperty('--nc-left', `${left}px`);
+    };
+
+    const openNotificationCenter = () => {
       console.log("notificationsBtn clicked...");
       loadNotificationsCss();
+      positionNotificationPanel();
       notificationsModal.style.display = 'block';
+      requestAnimationFrame(() => notificationsModal.classList.add('open'));
       showAllNotifications = false;
-      fetchNotifications();
+      fetchNotifications(false);
+    };
+
+    const closeNotificationCenter = () => {
+      notificationsModal.classList.remove('open');
+      setTimeout(() => {
+        notificationsModal.style.display = 'none';
+      }, 200);
+    };
+
+    notificationsBtn.addEventListener("click", () => {
+      if (notificationsModal.style.display === 'block') {
+        closeNotificationCenter();
+      } else {
+        openNotificationCenter();
+      }
     });
 
     closeNotificationsBtn.addEventListener("click", () => {
       console.log("closeNotificationsBtn clicked...");
-      notificationsModal.style.display = 'none';
+      closeNotificationCenter();
     });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && notificationsModal.style.display === 'block') {
+        closeNotificationCenter();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (notificationsModal.style.display === 'block') {
+        positionNotificationPanel();
+      }
+    });
+
+    // لا نعيد التموضع أثناء التمرير لتجنب انزلاق الدرج مع النافبار
 
     // Assistant Bot
     const assistantButton = document.getElementById("assistantButton");
