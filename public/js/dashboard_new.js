@@ -36,27 +36,41 @@ try {
     if (tokenFromUrl) {
       try {
         const decoded = jwtDecode(tokenFromUrl);
-        localStorage.setItem('token', tokenFromUrl);
-        localStorage.setItem('userId', decoded.userId);
-        localStorage.setItem('role', decoded.role);
-        localStorage.setItem('username', decoded.username);
-        console.log('✅ Token from URL stored in localStorage:', decoded);
+        const expiryMs = decoded?.exp ? decoded.exp * 1000 : null;
+        if (window.saveAuthSession) {
+          window.saveAuthSession({ token: tokenFromUrl, role: decoded.role, userId: decoded.userId, username: decoded.username, expiryMs });
+        } else {
+          localStorage.setItem('token', tokenFromUrl);
+          if (expiryMs) localStorage.setItem('tokenExpiry', `${expiryMs}`);
+          localStorage.setItem('userId', decoded.userId);
+          localStorage.setItem('role', decoded.role);
+          localStorage.setItem('username', decoded.username);
+        }
+        console.log('✅ Token from URL stored:', decoded);
         window.history.replaceState({}, document.title, '/dashboard_new.html');
       } catch (err) {
         console.error('❌ Error decoding token from URL:', err.message);
-        localStorage.clear();
+        if (window.clearAuthSession) {
+          window.clearAuthSession();
+        } else {
+          localStorage.clear();
+        }
         window.location.href = "/login.html";
         return;
       }
     }
 
     const role = localStorage.getItem("role");
-    const token = localStorage.getItem("token");
+    const token = window.getAuthToken ? window.getAuthToken() : localStorage.getItem("token");
     const userId = localStorage.getItem("userId");
 
     if (!token || !userId) {
-      console.warn('⚠️ No token or userId found in localStorage, redirecting to login');
-      localStorage.clear();
+      console.warn('⚠️ No token or userId found, redirecting to login');
+      if (window.clearAuthSession) {
+        window.clearAuthSession();
+      } else {
+        localStorage.clear();
+      }
       if (window.location.pathname !== "/login.html") {
         window.location.href = "/login.html";
       }
@@ -557,13 +571,18 @@ try {
     async function logoutUser() {
       console.log("logoutUser called...");
       const username = localStorage.getItem("username");
-      localStorage.removeItem("token");
-      localStorage.removeItem("role");
-      localStorage.removeItem("userId");
-      localStorage.removeItem("username");
-      localStorage.removeItem("selectedBotId");
-      localStorage.removeItem("theme");
-      console.log("Logout initiated, localStorage cleared");
+      if (window.clearAuthSession) {
+        window.clearAuthSession();
+      } else {
+        localStorage.removeItem("token");
+        localStorage.removeItem("tokenExpiry");
+        localStorage.removeItem("role");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("username");
+        localStorage.removeItem("selectedBotId");
+        localStorage.removeItem("theme");
+      }
+      console.log("Logout initiated, session cleared");
       window.location.href = "/login.html";
 
       try {

@@ -5,10 +5,36 @@ document.addEventListener('DOMContentLoaded', () => {
   const errorDiv = document.querySelector('#error');
   const successDiv = document.querySelector('#success');
 
-  // Check if token exists and redirect to dashboard if on login page
-  const token = localStorage.getItem("token");
-  if (token && window.location.pathname === "/login.html") {
-    window.location.href = "/dashboard_new.html";
+  const saveSession = (payload) => {
+    const expiryMs = getTokenExpiryFromJwt(payload.token) || undefined;
+    if (window.saveAuthSession) {
+      window.saveAuthSession({ ...payload, expiryMs });
+    } else {
+      localStorage.setItem('token', payload.token);
+      if (expiryMs) localStorage.setItem('tokenExpiry', `${expiryMs}`);
+      if (payload.role) localStorage.setItem('role', payload.role);
+      if (payload.userId) localStorage.setItem('userId', payload.userId);
+      if (payload.username) localStorage.setItem('username', payload.username);
+    }
+  };
+
+  const clearSession = () => {
+    if (window.clearAuthSession) {
+      window.clearAuthSession();
+    } else {
+      ['token', 'tokenExpiry', 'role', 'userId', 'username', 'selectedBotId', 'theme'].forEach((k) => localStorage.removeItem(k));
+    }
+  };
+
+  const token = window.getAuthToken ? window.getAuthToken() : null;
+  if (token && window.location.pathname === '/login.html') {
+    window.location.href = '/dashboard_new.html';
+    return;
+  }
+
+  if (!token && window.location.pathname !== '/login.html' && localStorage.getItem('token')) {
+    clearSession();
+    window.location.href = '/login.html';
     return;
   }
 
@@ -25,11 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }, errorDiv, 'فشل تسجيل الدخول بجوجل');
 
       if (data.success) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('role', data.role);
-        localStorage.setItem('userId', data.userId);
-        localStorage.setItem('username', data.username);
-        console.log(`✅ Google login successful for ${data.username}`);
+        saveSession({ token: data.token, role: data.role, userId: data.userId, username: data.username });
         window.location.href = '/dashboard_new.html';
       } else {
         errorDiv.style.display = 'block';
@@ -65,10 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }, errorDiv, 'فشل تسجيل الدخول');
 
         if (data.success) {
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('role', data.role);
-          localStorage.setItem('userId', data.userId);
-          localStorage.setItem('username', data.username);
+          saveSession({ token: data.token, role: data.role, userId: data.userId, username: data.username });
           window.location.href = '/dashboard_new.html';
         } else {
           errorDiv.style.display = 'block';
@@ -107,6 +126,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (password !== confirmPassword) {
         errorDiv.style.display = 'block';
         errorDiv.textContent = 'كلمات المرور غير متطابقة';
+        return;
+      }
+
+      if (!isStrongPassword(password)) {
+        errorDiv.style.display = 'block';
+        errorDiv.textContent = 'كلمة المرور يجب أن تكون 8 أحرف على الأقل وتحتوي على حرف كبير وصغير ورقم ورمز وبدون مسافات';
         return;
       }
 
@@ -160,11 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
           body: JSON.stringify({ username }),
         }, errorDiv, 'فشل تسجيل الخروج');
 
-        localStorage.removeItem('token');
-        localStorage.removeItem('role');
-        localStorage.removeItem('userId');
-        localStorage.removeItem('username');
-        console.log('✅ Logout successful, localStorage cleared');
+        clearSession();
         window.location.href = '/';
       } catch (err) {
         if (!errorDiv) {
@@ -177,3 +198,23 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 });
+
+function isStrongPassword(password) {
+  if (!password || password.length < 8) return false;
+  if (/\s/.test(password)) return false; // spaces not allowed
+  return /[a-z]/.test(password) && /[A-Z]/.test(password) && /\d/.test(password) && /[!@#$%^&*()_+\-={}\[\]|;:"'<>.,?/]/.test(password);
+}
+
+function getTokenExpiryFromJwt(token) {
+  try {
+    const payload = token.split('.')[1];
+    if (!payload) return null;
+    const decoded = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    if (decoded && decoded.exp) {
+      return decoded.exp * 1000;
+    }
+    return null;
+  } catch (err) {
+    return null;
+  }
+}

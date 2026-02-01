@@ -6,6 +6,7 @@ const botsState = {
 
 // مفتاح تخزين الكاش للصفحة لضمان إتاحته لكل الدوال
 const botsCacheKey = 'bots-page-cache';
+const BOTS_CACHE_TTL_MS = 3 * 60 * 1000; // 3 دقائق صلاحية للكاش
 
 function openPlatformModal(innerHtml) {
   const modal = document.createElement('div');
@@ -184,7 +185,7 @@ async function loadBotsPage() {
   window._botsPageApplyFilters = applyFilters;
 
   // Apply cached list instantly if available
-  const cached = window.readPageCache ? window.readPageCache(botsCacheKey, 'global', 3 * 60 * 1000) : null;
+  const cached = window.readPageCache ? window.readPageCache(botsCacheKey, 'global', BOTS_CACHE_TTL_MS) : null;
   if (cached?.users) {
     botsState.users = cached.users;
     applyFilters();
