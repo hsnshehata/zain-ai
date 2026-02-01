@@ -1465,6 +1465,10 @@ body.light-mode .chart-card-full h3 {
     box-shadow: -5px 0 15px rgba(0, 0, 0, 0.3);
   }
 
+  .sidebar-toggle {
+    display: none;
+  }
+
   .sidebar.active {
     transform: translateX(0);
   }
