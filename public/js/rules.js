@@ -3,6 +3,106 @@
 // مفتاح التخزين المؤقت موحّد لكل استدعاءات الصفحة
 const cacheKey = 'rules-page-cache';
 
+// نماذج جاهزة غير مفعّلة (يتم نسخها فقط عند الحفظ)
+const ruleTemplates = [
+  {
+    id: 'tmpl-support-agent',
+    title: 'موظف خدمة عملاء أساسي',
+    content: `أنت مساعد ذكي تعمل كموظف خدمة عملاء في شركة (اسم شركتك).
+- استخدم لهجة مصرية رسمية مختصرة ومهذبة.
+- (يمكنك / لا يمكنك) تأكيد طلبات المنتجات أو الخدمات مباشرةً. لو لا يمكنك التأكيد، وجّه العميل إلى (قناة التأكيد: واتساب/رقم تليفون/رابط).
+- رد بإيجاز مع توفير خطوات واضحة، وتجنب الإطالة.`
+  },
+  {
+    id: 'tmpl-contact-info',
+    title: 'بيانات التواصل',
+    content: `بيانات الاتصال الرسمية:
+- رقم الموبايل: (مثال: 0100xxxxxxx)
+- الرقم الأرضي: (مثال: 02xxxxxxxx)
+- الواتساب: (رابط أو رقم)
+- موقعنا الإلكتروني: (example.com)
+- رابط خريطة جوجل: (ضع رابط الخريطة)
+- صفحة فيسبوك: (ضع الرابط)
+- صفحة إنستجرام: (ضع الرابط)
+- تيك توك: (ضع الرابط)
+- رقم خاص للشكاوى: (ضع الرقم)
+- رقم خاص لمتابعة الطلبات: (ضع الرقم)
+- العنوان: (ضع العنوان التفصيلي)`
+  },
+  {
+    id: 'tmpl-order-flow',
+    title: 'تأكيد الطلبات واستلام البيانات',
+    content: `عند طلب منتج أو خدمة:
+1) اجمع البيانات بالترتيب: الاسم ثلاثي، رقم الموبايل المصري، العنوان بالتفاصيل، المنتج/الخدمة المطلوبة، العدد، ملاحظات إضافية.
+2) أكّد مع العميل: "هل تريد تأكيد الطلب بالبيانات دي؟".
+3) لو ناقص بيانات، اطلبها باختصار.
+4) لو (لا يمكنك) تأكيد الطلب، وجّه العميل إلى (القناة الرسمية للتأكيد: واتساب/موقع/كول سنتر).`
+  },
+  {
+    id: 'tmpl-working-hours',
+    title: 'مواعيد العمل والرد',
+    content: `مواعيد العمل الرسمية: (من يوم/وقت إلى يوم/وقت).
+سياسة الرد: نرد خلال (مدة متوقعة: 15 دقيقة/ساعة/يوم عمل).
+لو استفسار خارج المواعيد: أخبر العميل أن الطلب سيتابع أول يوم عمل تالي.`
+  },
+  {
+    id: 'tmpl-shipping',
+    title: 'الشحن والتسليم',
+    content: `سياسة الشحن:
+- مناطق التغطية: (داخل القاهرة/محافظات محددة).
+- مدة التسليم: (مثال: 1-3 أيام عمل داخل القاهرة، 3-5 باقي المحافظات).
+- مصاريف الشحن: (اكتب القيم حسب المنطقة).
+- تأكيد العنوان والموبايل قبل الشحن.
+لو العميل سأل عن حالة الشحنة: اطلب رقم الطلب أو الموبايل للتحقق.`
+  },
+  {
+    id: 'tmpl-returns',
+    title: 'الاسترجاع والاستبدال',
+    content: `سياسة الاسترجاع/الاستبدال:
+- المدة: (مثال: خلال 14 يوم من الاستلام).
+- الشروط: (حالة المنتج، الملصقات، الفاتورة، التغليف الأصلي).
+- الرسوم: (إن وجدت) ومن يتحمل الشحن في حالات العيب التصنيعي.
+- خطوات الطلب: اجمع رقم الطلب، الاسم، الموبايل، وصف السبب، صور عند الحاجة.`
+  },
+  {
+    id: 'tmpl-warranty',
+    title: 'الضمان والدعم الفني',
+    content: `سياسة الضمان:
+- مدة الضمان: (مثال: 12 شهر ضد عيوب الصناعة).
+- ما يغطيه الضمان: (قائمة مختصرة).
+- ما لا يغطيه الضمان: (سوء الاستخدام، كسر، سوائل...).
+- قناة الدعم الفني: (رقم/واتساب/بريد) مع أوقات العمل.
+- اطلب من العميل رقم الطلب/المنتج وصورة أو فيديو للمشكلة إن لزم.`
+  },
+  {
+    id: 'tmpl-tone-escalation',
+    title: 'نبرة الرد والتصعيد',
+    content: `نبرة الرد: رسمية، ودودة، مختصرة، بلا وعود غير مؤكدة.
+لو السؤال خارج السياسات أو غير معروف، اعتذر بلطف وقدّم أقرب معلومة مؤكدة فقط.
+في حال شكوى حادة:
+- قدّم اعتذار مختصر.
+- اطلب بيانات الطلب للتصعيد.
+- مرّر للرقم/القناة المخصصة للشكاوى: (ضع القناة).`
+  },
+  {
+    id: 'tmpl-promos',
+    title: 'العروض والخصومات',
+    content: `سياسة العروض:
+- العروض الحالية: (اذكر أهم عرض ونطاق التاريخ).
+- الشروط والاستثناءات: (حدود الكمية/المنتجات المستثناة).
+- طريقة الاستفادة: (كوبون/رابط/تأكيد عبر واتساب).
+لا تقدّم عرض غير مذكور صراحةً في هذه القاعدة.`
+  },
+  {
+    id: 'tmpl-payments',
+    title: 'الدفع والتحصيل',
+    content: `طرق الدفع المقبولة: (كاش عند الاستلام / فيزا / تحويل بنكي / محفظة).
+لو كاش عند الاستلام: نبّه العميل بتحضير المبلغ.
+لو دفع إلكتروني: قدّم بيانات الدفع الآمنة أو رابط الدفع.
+لا تطلب بيانات حساسة (أرقام بطاقات كاملة أو OTP).`
+  }
+];
+
 async function loadRulesPage() {
   const link = document.createElement("link");
   link.rel = "stylesheet";
@@ -37,6 +137,30 @@ async function loadRulesPage() {
       </div>
     </div>
 
+    <!-- Modal Structure for Templates -->
+    <div id="templatesModal" class="modal" style="display: none;">
+      <div class="modal-content">
+        <div class="form-card">
+          <h3><i class="fas fa-magic"></i> نماذج جاهزة للتعديل</h3>
+          <p class="hint">هذه نماذج توجيهية فقط ولا يستخدمها البوت تلقائيًا. عدّل النص بين الأقواس وأي فراغات ثم احفظها كقاعدة عامة للبوت الحالي.</p>
+          <div id="templatesList" class="grid-container rules-grid"></div>
+          <div id="templateEditor" class="template-editor" style="display: none;">
+            <h4 id="templateTitle"></h4>
+            <p class="hint">عدّل المحتوى لتضمين بيانات شركتك وقنواتك قبل الحفظ.</p>
+            <textarea id="templateContent" rows="10"></textarea>
+            <div class="form-actions">
+              <button id="saveTemplateAsRuleBtn" class="btn btn-primary">حفظ كقاعدة عامة للبوت الحالي</button>
+              <button id="cancelTemplateEditBtn" class="btn btn-secondary">إلغاء</button>
+            </div>
+            <p id="templateSaveError" class="error-message" style="display: none;"></p>
+          </div>
+          <div class="form-actions" style="margin-top: 12px;">
+            <button id="closeTemplatesModalBtn" class="btn btn-secondary">إغلاق</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Modal Structure for Delete Confirmation -->
     <div id="deleteModal" class="modal" style="display: none;">
       <div class="modal-content">
@@ -55,6 +179,7 @@ async function loadRulesPage() {
       <h2><i class="fas fa-book"></i> إدارة القواعد ${selectedBotId ? 'للبوت المحدد' : 'الموحدة'}</h2>
       <div class="header-actions">
         <button id="showAddRuleBtn" class="btn btn-primary"><i class="fas fa-plus-circle"></i> إضافة قاعدة جديدة</button>
+        <button id="showTemplatesBtn" class="btn btn-secondary"><i class="fas fa-magic"></i> نماذج جاهزة للتعديل</button>
       </div>
     </div>
 
@@ -93,12 +218,22 @@ async function loadRulesPage() {
   const ruleModal = document.getElementById("ruleModal");
   const ruleModalContent = document.getElementById("ruleModalContent");
   const deleteModal = document.getElementById("deleteModal");
+  const templatesModal = document.getElementById("templatesModal");
+  const templatesListEl = document.getElementById("templatesList");
+  const templateEditor = document.getElementById("templateEditor");
+  const templateTitle = document.getElementById("templateTitle");
+  const templateContent = document.getElementById("templateContent");
+  const saveTemplateAsRuleBtn = document.getElementById("saveTemplateAsRuleBtn");
+  const cancelTemplateEditBtn = document.getElementById("cancelTemplateEditBtn");
+  const templateSaveError = document.getElementById("templateSaveError");
+  const closeTemplatesModalBtn = document.getElementById("closeTemplatesModalBtn");
   const rulesList = document.getElementById("rulesList");
   const loadingSpinner = document.getElementById("loadingSpinner");
   const errorMessage = document.getElementById("errorMessage");
   const searchInput = document.getElementById("searchInput");
   const typeFilter = document.getElementById("typeFilter");
   const showAddRuleBtn = document.getElementById("showAddRuleBtn");
+  const showTemplatesBtn = document.getElementById("showTemplatesBtn");
   const exportRulesBtn = document.getElementById("exportRulesBtn");
   const importRulesBtn = document.getElementById("importRulesBtn");
   const importRulesInput = document.getElementById("importRulesInput");
@@ -121,6 +256,13 @@ async function loadRulesPage() {
     }
   });
 
+  // إغلاق مودال النماذج عند الضغط خارج المحتوى
+  templatesModal.addEventListener('click', (e) => {
+    if (e.target === templatesModal) {
+      closeTemplatesModal();
+    }
+  });
+
   // دالة Debounce لتقليل عدد الطلبات
   function debounce(func, wait) {
     let timeout;
@@ -131,11 +273,98 @@ async function loadRulesPage() {
   }
 
   showAddRuleBtn.addEventListener("click", () => showAddRuleForm(ruleModal, ruleModalContent, selectedBotId, role));
+  showTemplatesBtn.addEventListener("click", () => openTemplatesModal());
 
   const triggerLoadRules = () => {
     const botIdToSend = typeFilter.value === 'global' ? null : selectedBotId;
     loadRules(botIdToSend, rulesList, token, typeFilter.value, searchInput.value, currentPage, rulesPerPage, paginationContainer, loadingSpinner, errorMessage);
   };
+
+  function renderTemplatesList() {
+    templatesListEl.innerHTML = '';
+    ruleTemplates.forEach((tmpl) => {
+      const card = document.createElement('div');
+      card.className = 'card rule-card';
+      card.innerHTML = `
+        <div class="card-body">
+          <h4>${escapeHtml(tmpl.title)}</h4>
+          <pre class="template-preview" style="white-space: pre-wrap;">${escapeHtml(tmpl.content)}</pre>
+          <p class="hint">هذا نموذج ثابت غير مفعّل. عدّله قبل الحفظ.</p>
+        </div>
+        <div class="card-footer">
+          <button class="btn btn-primary btn-sm" data-template-id="${tmpl.id}"><i class="fas fa-edit"></i> تعديل وحفظ للبوت</button>
+        </div>
+      `;
+      card.querySelector('button').addEventListener('click', () => startEditingTemplate(tmpl));
+      templatesListEl.appendChild(card);
+    });
+  }
+
+  function openTemplatesModal() {
+    renderTemplatesList();
+    resetTemplateEditor();
+    openModal(templatesModal);
+  }
+
+  function closeTemplatesModal() {
+    resetTemplateEditor();
+    closeModal(templatesModal);
+  }
+
+  function resetTemplateEditor() {
+    templateEditor.style.display = 'none';
+    templateContent.value = '';
+    templateTitle.textContent = '';
+    templateSaveError.style.display = 'none';
+    templateSaveError.textContent = '';
+  }
+
+  function startEditingTemplate(template) {
+    templateTitle.textContent = template.title;
+    templateContent.value = template.content;
+    templateEditor.style.display = 'block';
+    templateSaveError.style.display = 'none';
+    templateSaveError.textContent = '';
+    templateContent.focus();
+  }
+
+  async function saveTemplateAsRule() {
+    const botId = localStorage.getItem('selectedBotId');
+    const token = localStorage.getItem('token');
+    templateSaveError.style.display = 'none';
+    templateSaveError.textContent = '';
+
+    if (!botId) {
+      templateSaveError.textContent = 'يرجى اختيار بوت أولاً قبل حفظ القاعدة.';
+      templateSaveError.style.display = 'block';
+      return;
+    }
+
+    const content = templateContent.value.trim();
+    if (!content) {
+      templateSaveError.textContent = 'لا يمكن حفظ قاعدة فارغة. عدّل النموذج أولاً.';
+      templateSaveError.style.display = 'block';
+      return;
+    }
+
+    try {
+      await handleApiRequest('/api/rules', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ botId, type: 'general', content }),
+      }, templateSaveError, 'فشل في حفظ القاعدة من النموذج');
+
+      alert('تم حفظ النموذج كقاعدة عامة للبوت الحالي.');
+      closeTemplatesModal();
+      currentPage = 1;
+      triggerLoadRules();
+    } catch (err) {
+      // تم التعامل مع الخطأ في handleApiRequest
+    }
+  }
 
   // استخدام Debounce مع البحث والفلترة
   const debouncedLoadRules = debounce(triggerLoadRules, 300);
@@ -225,6 +454,10 @@ async function loadRulesPage() {
     };
     reader.readAsText(file);
   });
+
+  saveTemplateAsRuleBtn.addEventListener('click', saveTemplateAsRule);
+  cancelTemplateEditBtn.addEventListener('click', resetTemplateEditor);
+  closeTemplatesModalBtn.addEventListener('click', closeTemplatesModal);
 
   // Initial load
   const cached = window.readPageCache ? window.readPageCache(cacheKey, selectedBotId || 'global', 3 * 60 * 1000) : null;
