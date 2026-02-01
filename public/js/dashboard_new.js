@@ -15,7 +15,7 @@ try {
 
     // كروت الداشبورد
     const pages = [
-      { id: 'bots', name: 'إدارة البوتات', icon: 'fas fa-robot', description: 'تحكم في إنشاء وتعديل البوتات الخاصة بك', role: 'superadmin' },
+      { id: 'bots', name: 'إدارة المنصة', icon: 'fas fa-sitemap', description: 'تحكم شامل في المستخدمين والبوتات والاشتراكات', role: 'superadmin' },
       { id: 'rules', name: 'القواعد', icon: 'fas fa-book', description: 'إضافة وتعديل قواعد الردود التلقائية' },
       { id: 'chat-page', name: 'واجهة الدردشة', icon: 'fas fa-comment-alt', description: 'تخصيص واجهة الدردشة' },
       { id: 'store-manager', name: 'المتجر الذكي', icon: 'fas fa-store', description: 'إدارة متجرك الذكي ومنتجاتك' },

@@ -1,5 +1,12 @@
 // public/js/feedback.js (Updated for new dashboard design and unified error handling)
 
+const FEEDBACK_PAGE_SIZE = 40;
+const feedbackState = {
+  positive: [],
+  negative: [],
+  rendered: { positive: 0, negative: 0 }
+};
+
 async function loadFeedbackPage() {
   const link = document.createElement("link");
   link.rel = "stylesheet";
@@ -50,6 +57,7 @@ async function loadFeedbackPage() {
           <div id="positiveFeedbackList" class="feedback-list"></div>
           <div id="positiveSpinner" class="spinner" style="display: none;"><div class="loader"></div></div>
           <div id="positiveError" class="error-message" style="display: none;"></div>
+          <button id="positiveLoadMore" class="btn btn-secondary btn-sm load-more" style="display:none;">تحميل المزيد</button>
         </div>
 
         <div class="feedback-column negative-column">
@@ -63,6 +71,7 @@ async function loadFeedbackPage() {
           <div id="negativeFeedbackList" class="feedback-list"></div>
           <div id="negativeSpinner" class="spinner" style="display: none;"><div class="loader"></div></div>
           <div id="negativeError" class="error-message" style="display: none;"></div>
+          <button id="negativeLoadMore" class="btn btn-secondary btn-sm load-more" style="display:none;">تحميل المزيد</button>
         </div>
     </div>
   `;
@@ -78,6 +87,8 @@ async function loadFeedback(botId, token) {
   const negativeSpinner = document.getElementById("negativeSpinner");
   const positiveError = document.getElementById("positiveError");
   const negativeError = document.getElementById("negativeError");
+  const positiveLoadMore = document.getElementById("positiveLoadMore");
+  const negativeLoadMore = document.getElementById("negativeLoadMore");
   const cacheKey = 'feedback-cache';
 
   if (!positiveList || !negativeList || !positiveSpinner || !negativeSpinner || !positiveError || !negativeError) {
@@ -87,19 +98,36 @@ async function loadFeedback(botId, token) {
   }
 
   const cached = window.readPageCache ? window.readPageCache(cacheKey, botId, 5 * 60 * 1000) : null;
+  const renderChunk = (type) => {
+    const list = type === 'positive' ? positiveList : negativeList;
+    const btn = type === 'positive' ? positiveLoadMore : negativeLoadMore;
+    const buffer = feedbackState[type];
+    const start = feedbackState.rendered[type];
+    const slice = buffer.slice(start, start + FEEDBACK_PAGE_SIZE);
+    slice.forEach(item => list.appendChild(createFeedbackCard(item, botId)));
+    feedbackState.rendered[type] += slice.length;
+    if (feedbackState.rendered[type] >= buffer.length) {
+      btn.style.display = 'none';
+    } else {
+      btn.style.display = 'inline-flex';
+    }
+    if (buffer.length === 0) {
+      list.innerHTML = `<div class="card placeholder-card"><p>لا توجد تقييمات ${type === 'positive' ? 'إيجابية' : 'سلبية'}.</p></div>`;
+      btn.style.display = 'none';
+    }
+  };
+
   if (cached) {
     try {
       const { positiveFeedback = [], negativeFeedback = [] } = cached;
-      if (positiveFeedback.length === 0) {
-        positiveList.innerHTML = `<div class="card placeholder-card"><p>لا توجد تقييمات إيجابية.</p></div>`;
-      } else {
-        positiveFeedback.forEach(item => positiveList.appendChild(createFeedbackCard(item, botId)));
-      }
-      if (negativeFeedback.length === 0) {
-        negativeList.innerHTML = `<div class="card placeholder-card"><p>لا توجد تقييمات سلبية.</p></div>`;
-      } else {
-        negativeFeedback.forEach(item => negativeList.appendChild(createFeedbackCard(item, botId)));
-      }
+      feedbackState.positive = positiveFeedback;
+      feedbackState.negative = negativeFeedback;
+      feedbackState.rendered.positive = 0;
+      feedbackState.rendered.negative = 0;
+      positiveList.innerHTML = "";
+      negativeList.innerHTML = "";
+      renderChunk('positive');
+      renderChunk('negative');
       positiveSpinner.style.display = "none";
       negativeSpinner.style.display = "none";
       positiveError.style.display = "none";
@@ -116,30 +144,24 @@ async function loadFeedback(botId, token) {
   negativeError.style.display = "none";
   positiveList.innerHTML = "";
   negativeList.innerHTML = "";
+  feedbackState.rendered.positive = 0;
+  feedbackState.rendered.negative = 0;
 
   try {
-    const feedbackData = await handleApiRequest(`/api/bots/${botId}/feedback`, {
+    const feedbackData = await handleApiRequest(`/api/bots/${botId}/feedback?limit=${FEEDBACK_PAGE_SIZE}&page=1`, {
       headers: { Authorization: `Bearer ${token}` },
     }, positiveError, "تعذر تحميل التقييمات");
 
     const positiveFeedback = feedbackData.filter(item => item.feedback === "positive");
     const negativeFeedback = feedbackData.filter(item => item.feedback === "negative");
 
-    // Populate Positive Feedback
-    if (positiveFeedback.length === 0) {
-      positiveList.innerHTML = 
-        `<div class="card placeholder-card"><p>لا توجد تقييمات إيجابية.</p></div>`;
-    } else {
-      positiveFeedback.forEach(item => positiveList.appendChild(createFeedbackCard(item, botId)));
-    }
+    feedbackState.positive = positiveFeedback;
+    feedbackState.negative = negativeFeedback;
+    feedbackState.rendered.positive = 0;
+    feedbackState.rendered.negative = 0;
 
-    // Populate Negative Feedback
-    if (negativeFeedback.length === 0) {
-      negativeList.innerHTML = 
-        `<div class="card placeholder-card"><p>لا توجد تقييمات سلبية.</p></div>`;
-    } else {
-      negativeFeedback.forEach(item => negativeList.appendChild(createFeedbackCard(item, botId)));
-    }
+    renderChunk('positive');
+    renderChunk('negative');
 
     // إضافة Event Listeners لأزرار التعديل
     document.querySelectorAll(".edit-rule-btn").forEach(button => {
@@ -165,6 +187,9 @@ async function loadFeedback(botId, token) {
     positiveSpinner.style.display = "none";
     negativeSpinner.style.display = "none";
   }
+
+  positiveLoadMore.addEventListener('click', () => renderChunk('positive'));
+  negativeLoadMore.addEventListener('click', () => renderChunk('negative'));
 }
 
 function createFeedbackCard(item, botId) {

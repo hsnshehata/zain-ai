@@ -1,5 +1,23 @@
 // public/js/bots.js (Updated for new dashboard design and unified error handling)
 
+const botsState = {
+  users: [],
+};
+
+// مفتاح تخزين الكاش للصفحة لضمان إتاحته لكل الدوال
+const botsCacheKey = 'bots-page-cache';
+
+function openPlatformModal(innerHtml) {
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.innerHTML = `<div class="modal-content">${innerHtml}</div>`;
+  document.body.appendChild(modal);
+  const closeModal = () => modal.remove();
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  modal.querySelectorAll('.modal-close-btn').forEach(btn => btn.addEventListener('click', closeModal));
+  return { modal, closeModal };
+}
+
 async function loadBotsPage() {
   const link = document.createElement("link");
   link.rel = "stylesheet";
@@ -22,23 +40,71 @@ async function loadBotsPage() {
 
   // Main structure for the bots page
   content.innerHTML = `
-    <div class="page-header">
-      <h2><i class="fas fa-robot"></i> إدارة البوتات والمستخدمين</h2>
-      <div class="header-actions">
-        <button id="showCreateUserBtn" class="btn btn-secondary"><i class="fas fa-user-plus"></i> إنشاء مستخدم</button>
-        <button id="showCreateBotBtn" class="btn btn-primary"><i class="fas fa-plus-circle"></i> إنشاء بوت</button>
-        <button id="showQuickControlBtn" class="btn btn-primary"><i class="fas fa-tachometer-alt"></i> لوحة التحكم السريع</button>
-        <button id="sendNotificationBtn" class="btn btn-primary"><i class="fas fa-bell"></i> إرسال إشعار / رسائل ترحيب</button>
+    <div class="page-hero platform-hero">
+      <div>
+        <p class="eyebrow">إدارة المنصة</p>
+        <h2><i class="fas fa-sitemap"></i> تحكم شامل في البوتات والمستخدمين</h2>
+        <p class="subhead">سيطر على كل البوتات والمستخدمين من مكان واحد: إنشاء، تشغيل/إيقاف، إرسال تنبيهات، ومراجعة الاشتراكات والربط.</p>
+        <div class="hero-actions">
+          <button id="showCreateUserBtn" class="btn btn-secondary"><i class="fas fa-user-plus"></i> إنشاء مستخدم</button>
+          <button id="showCreateBotBtn" class="btn btn-primary"><i class="fas fa-plus-circle"></i> إنشاء بوت</button>
+          <button id="showQuickControlBtn" class="btn btn-ghost"><i class="fas fa-tachometer-alt"></i> لوحة تحكم سريعة</button>
+          <button id="sendNotificationBtn" class="btn btn-ghost"><i class="fas fa-bell"></i> إشعارات وترحيب</button>
+        </div>
+      </div>
+      <div class="hero-kpi">
+        <div class="kpi-pill" id="kpiTotalBots">-- بوت</div>
+        <div class="kpi-pill success" id="kpiActiveBots">-- نشط</div>
+        <div class="kpi-pill warn" id="kpiPausedBots">-- متوقف</div>
+        <div class="kpi-pill muted" id="kpiUsers">-- مستخدم</div>
       </div>
     </div>
+
     <div id="formContainer" class="form-section" style="display: none;"></div>
-    <div class="bots-users-container">
-      <h3><i class="fas fa-users"></i> قائمة المستخدمين والبوتات</h3>
-      <div class="filters-bar">
-        <div class="form-group">
-          <label for="botSearchInput"><i class="fas fa-search"></i> بحث</label>
-          <input type="text" id="botSearchInput" placeholder="ابحث عن مستخدم أو بوت...">
+
+    <div class="platform-stats" id="platformStats"></div>
+
+    <div class="platform-filters">
+      <div class="form-group inline">
+        <label for="botSearchInput"><i class="fas fa-search"></i> بحث</label>
+        <input type="text" id="botSearchInput" placeholder="ابحث عن مستخدم، بوت، أو صفحة...">
+      </div>
+      <div class="filter-row">
+        <div class="form-group inline">
+          <label for="statusFilter">الحالة</label>
+          <select id="statusFilter">
+            <option value="all">الكل</option>
+            <option value="active">نشط</option>
+            <option value="inactive">متوقف</option>
+          </select>
         </div>
+        <div class="form-group inline">
+          <label for="subscriptionFilter">الاشتراك</label>
+          <select id="subscriptionFilter">
+            <option value="all">الكل</option>
+            <option value="free">مجاني</option>
+            <option value="monthly">شهري</option>
+            <option value="yearly">سنوي</option>
+          </select>
+        </div>
+        <div class="form-group inline">
+          <label for="ownerFilter">المستخدم</label>
+          <select id="ownerFilter">
+            <option value="all">جميع المستخدمين</option>
+            <option value="withBots">مع بوتات</option>
+            <option value="withoutBots">بدون بوتات</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="bots-users-container">
+      <div class="section-head">
+        <div>
+          <h3><i class="fas fa-layer-group"></i> قائمة المنصة</h3>
+          <p class="muted">عرض مجمّع للمستخدمين والبوتات بحسب الفلاتر الحالية.</p>
+        </div>
+        <div class="chip-group" id="filtersChips"></div>
       </div>
       <div id="usersGrid" class="grid-container"></div>
       <div id="loadingSpinner" class="spinner" style="display: none;"><div class="loader"></div></div>
@@ -55,9 +121,17 @@ async function loadBotsPage() {
   const showQuickControlBtn = document.getElementById("showQuickControlBtn");
   const sendNotificationBtn = document.getElementById("sendNotificationBtn");
   const botSearchInput = document.getElementById("botSearchInput");
+  const statusFilter = document.getElementById("statusFilter");
+  const subscriptionFilter = document.getElementById("subscriptionFilter");
+  const ownerFilter = document.getElementById("ownerFilter");
+  const filtersChips = document.getElementById("filtersChips");
+  const statsContainer = document.getElementById("platformStats");
+  const kpiTotalBots = document.getElementById("kpiTotalBots");
+  const kpiActiveBots = document.getElementById("kpiActiveBots");
+  const kpiPausedBots = document.getElementById("kpiPausedBots");
+  const kpiUsers = document.getElementById("kpiUsers");
 
-  let allUsers = []; // Store all fetched users for local filtering
-  const cacheKey = 'bots-page-cache';
+  const currentFilters = { status: 'all', subscription: 'all', owner: 'all' };
 
   showCreateUserBtn.addEventListener("click", () => showCreateUserForm(formContainer));
   showCreateBotBtn.addEventListener("click", () => showCreateBotForm(formContainer));
@@ -65,35 +139,69 @@ async function loadBotsPage() {
   sendNotificationBtn.addEventListener("click", () => showSendNotificationForm());
 
   // Search functionality
-  botSearchInput.addEventListener("input", () => {
+  const applyFilters = () => {
     const searchTerm = botSearchInput.value.toLowerCase().trim();
-    const filteredUsers = allUsers.filter(user => {
-      const usernameMatch = user.username.toLowerCase().includes(searchTerm);
-      const botMatch = user.bots && user.bots.some(bot => bot.name.toLowerCase().includes(searchTerm));
-      return usernameMatch || botMatch;
-    });
-    renderUsersGrid(filteredUsers, usersGrid);
-  });
+    currentFilters.status = statusFilter.value;
+    currentFilters.subscription = subscriptionFilter.value;
+    currentFilters.owner = ownerFilter.value;
+
+    const matchesBotFilters = (bot) => {
+      if (currentFilters.status === 'active' && !bot.isActive) return false;
+      if (currentFilters.status === 'inactive' && bot.isActive) return false;
+      if (currentFilters.subscription !== 'all' && (bot.subscriptionType || 'free') !== currentFilters.subscription) return false;
+      return true;
+    };
+
+    const filteredUsers = botsState.users.filter(user => {
+      const bots = Array.isArray(user.bots) ? user.bots : [];
+      const filteredBots = bots.filter(matchesBotFilters);
+
+      if (currentFilters.owner === 'withBots' && filteredBots.length === 0) return false;
+      if (currentFilters.owner === 'withoutBots' && bots.length > 0) return false;
+
+      const usernameMatch = (user.username || '').toLowerCase().includes(searchTerm);
+      const emailMatch = (user.email || '').toLowerCase().includes(searchTerm);
+      const whatsappMatch = (user.whatsapp || '').toLowerCase().includes(searchTerm);
+      const botMatch = filteredBots.some(bot => (bot.name || '').toLowerCase().includes(searchTerm) || (bot.facebookPageId || '').toLowerCase().includes(searchTerm));
+
+      const textMatch = !searchTerm || usernameMatch || emailMatch || whatsappMatch || botMatch;
+      if (!textMatch) return false;
+
+      // احتفظ بالمستخدم فقط لو لديه بوت مطابق للفلاتر الحالية أو لا توجد بوتات والفلاتر لا تشترط حالة معينة
+      if (filteredBots.length > 0) return true;
+      return currentFilters.status === 'all' && bots.length === 0;
+    }).map(user => ({ ...user }));
+
+    renderUsersGrid(filteredUsers, usersGrid, currentFilters);
+    renderPlatformStats(filteredUsers, statsContainer, { kpiTotalBots, kpiActiveBots, kpiPausedBots, kpiUsers });
+    renderFilterChips(currentFilters, filtersChips);
+  };
+
+  botSearchInput.addEventListener("input", applyFilters);
+  statusFilter.addEventListener("change", applyFilters);
+  subscriptionFilter.addEventListener("change", applyFilters);
+  ownerFilter.addEventListener("change", applyFilters);
+  window._botsPageApplyFilters = applyFilters;
 
   // Apply cached list instantly if available
-  const cached = window.readPageCache ? window.readPageCache(cacheKey, 'global', 3 * 60 * 1000) : null;
+  const cached = window.readPageCache ? window.readPageCache(botsCacheKey, 'global', 3 * 60 * 1000) : null;
   if (cached?.users) {
-    allUsers = cached.users;
-    renderUsersGrid(allUsers, usersGrid);
+    botsState.users = cached.users;
+    applyFilters();
   }
 
   try {
     loadingSpinner.style.display = "flex";
     errorMessage.style.display = "none";
     usersGrid.innerHTML = "";
-    await fetchUsersAndBots(usersGrid, loadingSpinner, errorMessage);
+    await fetchUsersAndBots(usersGrid, loadingSpinner, errorMessage, applyFilters);
   } catch (err) {
     // الخطأ تم التعامل معه في handleApiRequest
   }
 }
 
 // Function to render the user grid
-function renderUsersGrid(usersToRender, gridElement) {
+function renderUsersGrid(usersToRender, gridElement, filters = null) {
   gridElement.innerHTML = ""; // Clear grid before adding new cards
 
   if (usersToRender.length === 0) {
@@ -102,31 +210,63 @@ function renderUsersGrid(usersToRender, gridElement) {
     return;
   }
 
+  const matchesBotFilters = (bot) => {
+    if (!filters) return true;
+    if (filters.status === 'active' && !bot.isActive) return false;
+    if (filters.status === 'inactive' && bot.isActive) return false;
+    if (filters.subscription !== 'all' && (bot.subscriptionType || 'free') !== filters.subscription) return false;
+    return true;
+  };
+
   usersToRender.forEach((user) => {
-    const botsHtml = user.bots && user.bots.length > 0
-      ? user.bots.map(bot => `
+    const bots = Array.isArray(user.bots) ? user.bots : [];
+    const filteredBots = bots.filter(matchesBotFilters);
+
+    const activeCount = filteredBots.filter(b => b.isActive).length;
+    const pausedCount = filteredBots.length - activeCount;
+
+    const botsHtml = filteredBots.length > 0
+      ? filteredBots.map(bot => {
+          const subLabel = bot.subscriptionType === 'yearly' ? 'سنوي' : bot.subscriptionType === 'monthly' ? 'شهري' : 'مجاني';
+          const autoStop = bot.autoStopDate ? new Date(bot.autoStopDate).toLocaleDateString('ar-EG') : '—';
+          return `
           <div class="bot-entry">
-            <span><i class="fas fa-robot"></i> ${bot.name} ${bot.facebookPageId ? 
-              `<a href="https://facebook.com/${bot.facebookPageId}" target="_blank" title="صفحة فيسبوك"><i class="fab fa-facebook-square"></i></a>` : ''}</span>
-            <span class="bot-status">${bot.isActive ? 'يعمل' : 'متوقف'}</span>
+            <div class="bot-main">
+              <div class="bot-name"><i class="fas fa-robot"></i> ${bot.name}</div>
+              ${bot.facebookPageId ? `<a class="bot-link" href="https://facebook.com/${bot.facebookPageId}" target="_blank" title="صفحة فيسبوك"><i class="fab fa-facebook-square"></i></a>` : ''}
+            </div>
+            <div class="bot-meta">
+              <span class="chip ${bot.isActive ? 'chip-success' : 'chip-danger'}">${bot.isActive ? 'نشط' : 'متوقف'}</span>
+              <span class="chip chip-muted">${subLabel}</span>
+              <span class="chip chip-soft">إيقاف تلقائي: ${autoStop}</span>
+            </div>
             <div class="bot-actions">
               <button class="btn-icon btn-edit" onclick="showEditBotModal('${bot._id}', '${bot.name}', '${bot.facebookApiKey || ''}', '${bot.facebookPageId || ''}', '${user._id}', ${bot.isActive}, '${bot.autoStopDate || ''}', '${bot.subscriptionType}', '${bot.welcomeMessage || ''}')" title="تعديل البوت"><i class="fas fa-edit"></i></button>
               <button class="btn-icon btn-toggle" onclick="toggleBotStatus('${bot._id}', ${bot.isActive})" title="${bot.isActive ? 'إيقاف البوت' : 'تشغيل البوت'}"><i class="fas ${bot.isActive ? 'fa-pause' : 'fa-play'}"></i></button>
               <button class="btn-icon btn-delete" onclick="deleteBot('${bot._id}')" title="حذف البوت"><i class="fas fa-trash-alt"></i></button>
             </div>
           </div>
-        `).join("")
-      : '<p class="no-bots">لا توجد بوتات لهذا المستخدم.</p>';
+        `;}).join("")
+      : '<p class="no-bots">لا توجد بوتات تطابق الفلاتر الحالية لهذا المستخدم.</p>';
 
     const card = document.createElement("div");
     card.className = "card user-bot-card";
+    const userRoleLabel = user.role === 'superadmin' ? 'مدير عام' : 'مستخدم';
+    const subscriptionText = user.subscriptionType === 'yearly' ? 'اشتراك سنوي' : user.subscriptionType === 'monthly' ? 'اشتراك شهري' : 'باقة مجانية';
     card.innerHTML = `
       <div class="card-header">
-        <h4><i class="fas fa-user-circle"></i> ${user.username}</h4>
-        <span class="user-role ${user.role}">${user.role === 'superadmin' ? 'مدير عام' : 'مستخدم'}</span>
+        <div class="user-info">
+          <h4><i class="fas fa-user-circle"></i> ${user.username}</h4>
+          <p class="user-meta">${user.email || '—'} · ${user.whatsapp || 'بدون واتساب'} · ${subscriptionText}</p>
+        </div>
+        <div class="user-pills">
+          <span class="user-role ${user.role}">${userRoleLabel}</span>
+          <span class="chip chip-soft">${filteredBots.length} بوت</span>
+          <span class="chip chip-success">${activeCount} نشط</span>
+          <span class="chip chip-muted">${pausedCount} متوقف</span>
+        </div>
       </div>
       <div class="card-body">
-        <h5>البوتات:</h5>
         <div class="bots-list">${botsHtml}</div>
       </div>
       <div class="card-footer">
@@ -139,16 +279,87 @@ function renderUsersGrid(usersToRender, gridElement) {
   });
 }
 
-async function fetchUsersAndBots(gridElement, spinner, errorElement) {
+function computePlatformMetrics(users) {
+  const bots = [];
+  users.forEach((u) => {
+    const list = Array.isArray(u.bots) ? u.bots : [];
+    list.forEach((b) => bots.push(b));
+  });
+
+  const totalBots = bots.length;
+  const activeBots = bots.filter((b) => b.isActive).length;
+  const pausedBots = totalBots - activeBots;
+  const freeBots = bots.filter((b) => (b.subscriptionType || 'free') === 'free').length;
+  const monthlyBots = bots.filter((b) => b.subscriptionType === 'monthly').length;
+  const yearlyBots = bots.filter((b) => b.subscriptionType === 'yearly').length;
+  const usersCount = users.length;
+  const ownersWithBots = users.filter((u) => Array.isArray(u.bots) && u.bots.length > 0).length;
+
+  return { totalBots, activeBots, pausedBots, freeBots, monthlyBots, yearlyBots, usersCount, ownersWithBots };
+}
+
+function renderPlatformStats(users, container, kpisRefs = {}) {
+  if (!container) return;
+  const m = computePlatformMetrics(users);
+
+  const cards = [
+    { label: 'إجمالي البوتات', value: m.totalBots, icon: 'fa-robot' },
+    { label: 'البوتات النشطة', value: m.activeBots, icon: 'fa-bolt' },
+    { label: 'البوتات المتوقفة', value: m.pausedBots, icon: 'fa-pause' },
+    { label: 'المستخدمون', value: m.usersCount, icon: 'fa-users' },
+    { label: 'اشتراك مجاني', value: m.freeBots, icon: 'fa-leaf' },
+    { label: 'اشتراك شهري', value: m.monthlyBots, icon: 'fa-calendar-alt' },
+    { label: 'اشتراك سنوي', value: m.yearlyBots, icon: 'fa-infinity' },
+    { label: 'مستخدمون لديهم بوتات', value: m.ownersWithBots, icon: 'fa-user-check' },
+  ];
+
+  container.innerHTML = `
+    <div class="stats-grid compact">
+      ${cards.map(c => `
+        <div class="stat-card">
+          <div class="stat-label"><i class="fas ${c.icon}"></i> ${c.label}</div>
+          <div class="stat-value">${c.value}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+
+  const { kpiTotalBots, kpiActiveBots, kpiPausedBots, kpiUsers } = kpisRefs;
+  if (kpiTotalBots) kpiTotalBots.textContent = `${m.totalBots} بوت`;
+  if (kpiActiveBots) kpiActiveBots.textContent = `${m.activeBots} نشط`;
+  if (kpiPausedBots) kpiPausedBots.textContent = `${m.pausedBots} متوقف`;
+  if (kpiUsers) kpiUsers.textContent = `${m.usersCount} مستخدم`;
+}
+
+function renderFilterChips(filters, container) {
+  if (!container) return;
+  const chips = [];
+  if (filters.status !== 'all') chips.push(filters.status === 'active' ? 'فقط النشطة' : 'فقط المتوقفة');
+  if (filters.subscription !== 'all') chips.push(`اشتراك: ${filters.subscription === 'monthly' ? 'شهري' : filters.subscription === 'yearly' ? 'سنوي' : 'مجاني'}`);
+  if (filters.owner === 'withBots') chips.push('مستخدمون لديهم بوتات');
+  if (filters.owner === 'withoutBots') chips.push('مستخدمون بدون بوتات');
+
+  container.innerHTML = chips.length
+    ? chips.map(c => `<span class="chip chip-soft">${c}</span>`).join('')
+    : '<span class="muted">لا توجد فلاتر مفعّلة</span>';
+}
+
+async function fetchUsersAndBots(gridElement, spinner, errorElement, onData) {
   const token = localStorage.getItem("token");
   try {
     spinner.style.display = "flex";
     errorElement.style.display = "none";
-    allUsers = await handleApiRequest("/api/users?populate=bots", {
+    const fetchedUsers = await handleApiRequest("/api/users?populate=bots", {
       headers: { Authorization: `Bearer ${token}` },
     }, errorElement, "فشل في جلب المستخدمين");
-    renderUsersGrid(allUsers, gridElement);
-    window.writePageCache && window.writePageCache(cacheKey, 'global', { users: allUsers });
+    botsState.users = fetchedUsers || [];
+    window.writePageCache && window.writePageCache(botsCacheKey, 'global', { users: botsState.users });
+    const renderCb = onData || window._botsPageApplyFilters;
+    if (renderCb) {
+      renderCb();
+    } else if (gridElement) {
+      renderUsersGrid(botsState.users, gridElement);
+    }
     spinner.style.display = "none";
   } catch (err) {
     spinner.style.display = "none";
@@ -157,22 +368,24 @@ async function fetchUsersAndBots(gridElement, spinner, errorElement) {
 }
 
 // Function to show quick control panel
-async function showQuickControlPanel(container) {
+async function showQuickControlPanel() {
   const token = localStorage.getItem("token");
-  container.innerHTML = `
+  const { modal, closeModal } = openPlatformModal(`
     <div class="form-card">
-      <h3><i class="fas fa-tachometer-alt"></i> لوحة التحكم السريع</h3>
+      <div class="modal-header">
+        <h3><i class="fas fa-tachometer-alt"></i> لوحة التحكم السريع</h3>
+        <button class="modal-close-btn" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+      </div>
       <div id="botsTable" class="table-container"></div>
       <div id="quickControlError" class="error-message" style="display: none;"></div>
       <div class="form-actions">
-        <button type="button" class="btn btn-secondary" onclick="hideForm(document.getElementById('formContainer'))">إغلاق</button>
+        <button type="button" class="btn btn-secondary modal-close-btn">إغلاق</button>
       </div>
     </div>
-  `;
-  container.style.display = "block";
+  `);
 
-  const botsTable = document.getElementById("botsTable");
-  const errorEl = document.getElementById("quickControlError");
+  const botsTable = modal.querySelector("#botsTable");
+  const errorEl = modal.querySelector("#quickControlError");
 
   try {
     const bots = await handleApiRequest("/api/bots", {
@@ -352,10 +565,13 @@ function showSendNotificationForm() {
 
 // --- Form Functions (Create/Edit User/Bot) ---
 
-function showCreateUserForm(container) {
-  container.innerHTML = `
+function showCreateUserForm() {
+  const { modal, closeModal } = openPlatformModal(`
     <div class="form-card">
-      <h3><i class="fas fa-user-plus"></i> إنشاء مستخدم جديد</h3>
+      <div class="modal-header">
+        <h3><i class="fas fa-user-plus"></i> إنشاء مستخدم جديد</h3>
+        <button class="modal-close-btn" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+      </div>
       <form id="createUserForm">
         <div class="form-group">
           <label for="newUsername">اسم المستخدم</label>
@@ -399,25 +615,24 @@ function showCreateUserForm(container) {
         </div>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">إنشاء</button>
-          <button type="button" class="btn btn-secondary" onclick="hideForm(document.getElementById('formContainer'))">إلغاء</button>
+          <button type="button" class="btn btn-secondary modal-close-btn">إلغاء</button>
         </div>
         <p id="userFormError" class="error-message" style="display: none;"></p>
       </form>
     </div>
-  `;
-  container.style.display = "block";
+  `);
 
-  document.getElementById("createUserForm").addEventListener("submit", async (e) => {
+  modal.querySelector("#createUserForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    let username = document.getElementById("newUsername").value.trim();
-    const email = document.getElementById("newEmail").value.trim();
-    const whatsapp = document.getElementById("newWhatsapp").value.trim();
-    const password = document.getElementById("newPassword").value;
-    const confirmPassword = document.getElementById("confirmPassword").value;
-    const role = document.getElementById("newUserRole").value;
-    const subscriptionType = document.getElementById("newSubscriptionType").value;
-    const subscriptionEndDate = document.getElementById("newSubscriptionEndDate").value || null;
-    const errorEl = document.getElementById("userFormError");
+    let username = modal.querySelector("#newUsername").value.trim();
+    const email = modal.querySelector("#newEmail").value.trim();
+    const whatsapp = modal.querySelector("#newWhatsapp").value.trim();
+    const password = modal.querySelector("#newPassword").value;
+    const confirmPassword = modal.querySelector("#confirmPassword").value;
+    const role = modal.querySelector("#newUserRole").value;
+    const subscriptionType = modal.querySelector("#newSubscriptionType").value;
+    const subscriptionEndDate = modal.querySelector("#newSubscriptionEndDate").value || null;
+    const errorEl = modal.querySelector("#userFormError");
     errorEl.style.display = "none";
 
     // تحويل الـ username للحروف الصغيرة في الـ frontend
@@ -440,7 +655,7 @@ function showCreateUserForm(container) {
         body: JSON.stringify({ username, email, whatsapp, password, confirmPassword, role, subscriptionType, subscriptionEndDate }),
       }, errorEl, "فشل في إنشاء المستخدم");
       alert("تم إنشاء المستخدم بنجاح!");
-      hideForm(container);
+      closeModal();
       await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
     } catch (err) {
       // الخطأ تم التعامل معه في handleApiRequest
@@ -554,10 +769,13 @@ async function deleteUser(userId) {
   }
 }
 
-function showCreateBotForm(container) {
-  container.innerHTML = `
+function showCreateBotForm() {
+  const { modal, closeModal } = openPlatformModal(`
     <div class="form-card">
-      <h3><i class="fas fa-plus-circle"></i> إنشاء بوت جديد</h3>
+      <div class="modal-header">
+        <h3><i class="fas fa-plus-circle"></i> إنشاء بوت جديد</h3>
+        <button class="modal-close-btn" aria-label="إغلاق"><i class="fas fa-times"></i></button>
+      </div>
       <form id="createBotForm">
         <div class="form-group">
           <label for="botName">اسم البوت</label>
@@ -591,17 +809,16 @@ function showCreateBotForm(container) {
         </div>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">إنشاء البوت</button>
-          <button type="button" class="btn btn-secondary" onclick="hideForm(document.getElementById('formContainer'))">إلغاء</button>
+          <button type="button" class="btn btn-secondary modal-close-btn">إلغاء</button>
         </div>
         <p id="botFormError" class="error-message" style="display: none;"></p>
       </form>
     </div>
-  `;
-  container.style.display = "block";
+  `);
 
-  const facebookApiKeyInput = document.getElementById("facebookApiKey");
-  const facebookPageIdContainer = document.getElementById("facebookPageIdContainer");
-  const facebookPageIdInput = document.getElementById("facebookPageId");
+  const facebookApiKeyInput = modal.querySelector("#facebookApiKey");
+  const facebookPageIdContainer = modal.querySelector("#facebookPageIdContainer");
+  const facebookPageIdInput = modal.querySelector("#facebookPageId");
 
   facebookApiKeyInput.addEventListener("input", () => {
     const hasApiKey = facebookApiKeyInput.value.trim() !== "";
@@ -610,11 +827,11 @@ function showCreateBotForm(container) {
   });
 
   // Populate user select
-  const userSelect = document.getElementById("botUserId");
+  const userSelect = modal.querySelector("#botUserId");
   try {
     handleApiRequest("/api/users", {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    }, document.getElementById("botFormError"), "فشل في جلب المستخدمين").then(users => {
+    }, modal.querySelector("#botFormError"), "فشل في جلب المستخدمين").then(users => {
       userSelect.innerHTML = "<option value=\"\">اختر مستخدم</option>";
       users.forEach((user) => {
         userSelect.innerHTML += `<option value="${user._id}">${user.username}</option>`;
@@ -626,15 +843,15 @@ function showCreateBotForm(container) {
     // الخطأ تم التعامل معه في handleApiRequest
   }
 
-  document.getElementById("createBotForm").addEventListener("submit", async (e) => {
+  modal.querySelector("#createBotForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const name = document.getElementById("botName").value;
-    const userId = document.getElementById("botUserId").value;
-    const facebookApiKey = document.getElementById("facebookApiKey").value.trim();
-    const facebookPageId = document.getElementById("facebookPageId").value.trim();
-    const subscriptionType = document.getElementById("subscriptionType").value;
-    const welcomeMessage = document.getElementById("welcomeMessage").value.trim();
-    const errorEl = document.getElementById("botFormError");
+    const name = modal.querySelector("#botName").value;
+    const userId = modal.querySelector("#botUserId").value;
+    const facebookApiKey = modal.querySelector("#facebookApiKey").value.trim();
+    const facebookPageId = modal.querySelector("#facebookPageId").value.trim();
+    const subscriptionType = modal.querySelector("#subscriptionType").value;
+    const welcomeMessage = modal.querySelector("#welcomeMessage").value.trim();
+    const errorEl = modal.querySelector("#botFormError");
     errorEl.style.display = "none";
 
     if (!userId) {
@@ -658,7 +875,7 @@ function showCreateBotForm(container) {
         body: JSON.stringify({ name, userId, facebookApiKey, facebookPageId, subscriptionType, welcomeMessage }),
       }, errorEl, "فشل في إنشاء البوت");
       alert("تم إنشاء البوت بنجاح!");
-      hideForm(container);
+      closeModal();
       await fetchUsersAndBots(document.getElementById("usersGrid"), document.getElementById("loadingSpinner"), document.getElementById("errorMessage"));
     } catch (err) {
       // الخطأ تم التعامل معه في handleApiRequest
