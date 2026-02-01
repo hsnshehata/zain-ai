@@ -1,6 +1,7 @@
 const axios = require('axios');
 const User = require('../models/User');
 const Bot = require('../models/Bot');
+const logger = require('../logger');
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const BOT_USERNAME = process.env.TELEGRAM_BOT_USERNAME || '';
@@ -61,7 +62,7 @@ async function sendTelegramMessage(chatId, text, extra = {}) {
     return { ok: true, data: res.data };
   } catch (err) {
     const reason = err.response?.data?.description || err.message;
-    console.error(`[${now().toISOString()}] Telegram send error:`, reason);
+    logger.error('Telegram send error', { reason });
     return { ok: false, reason };
   }
 }
@@ -226,21 +227,33 @@ async function notifyNewOrder(userId, payload, botId = null) {
 async function notifyOrderStatus(userId, payload, botId = null) {
   const destination = await getDestination({ botId, userId });
   if (!destination || destination.prefs?.orderStatus === false) return { skipped: true };
-  console.info(`[${now().toISOString()}] 📬 notifyOrderStatus -> chatId=${destination.chatId} owner=${destination.ownerId} botId=${botId || 'none'} userId=${userId || 'none'} status=${payload?.status}`);
+  logger.info('📬 notifyOrderStatus', {
+    chatId: destination.chatId,
+    ownerId: destination.ownerId,
+    botId: botId || 'none',
+    userId: userId || 'none',
+    status: payload?.status,
+  });
   return sendTelegramMessage(destination.chatId, buildOrderStatusMessage(payload));
 }
 
 async function notifyChatOrder(userId, payload, botId = null) {
   const destination = await getDestination({ botId, userId });
   if (!destination) {
-    console.warn(`[${now().toISOString()}] Telegram notifyChatOrder skipped: no destination (botId=${botId || 'none'}, userId=${userId || 'none'})`);
+    logger.warn('Telegram notifyChatOrder skipped: no destination', { botId: botId || 'none', userId: userId || 'none' });
     return { skipped: true, reason: 'no_destination' };
   }
   if (destination.prefs?.chatOrder === false) {
-    console.warn(`[${now().toISOString()}] Telegram notifyChatOrder skipped: chatOrder disabled (botId=${botId || 'none'}, userId=${userId || 'none'})`);
+    logger.warn('Telegram notifyChatOrder skipped: chatOrder disabled', { botId: botId || 'none', userId: userId || 'none' });
     return { skipped: true, reason: 'disabled' };
   }
-  console.info(`[${now().toISOString()}] 📬 notifyChatOrder -> chatId=${destination.chatId} owner=${destination.ownerId} botId=${botId || 'none'} userId=${userId || 'none'} status=${payload?.status}`);
+  logger.info('📬 notifyChatOrder', {
+    chatId: destination.chatId,
+    ownerId: destination.ownerId,
+    botId: botId || 'none',
+    userId: userId || 'none',
+    status: payload?.status,
+  });
   return sendTelegramMessage(destination.chatId, buildChatOrderMessage(payload));
 }
 

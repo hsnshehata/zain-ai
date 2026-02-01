@@ -6,9 +6,7 @@ const Notification = require('../models/Notification');
 const Bot = require('../models/Bot');
 const { notifyNewOrder, notifyOrderStatus } = require('../services/telegramService');
 const { upsertFromOrder } = require('./customersController');
-
-// دالة مساعدة لإضافة timestamp للـ logs
-const getTimestamp = () => new Date().toISOString();
+const logger = require('../logger');
 
 // إنشاء طلب جديد
 exports.createOrder = async (req, res) => {
@@ -35,16 +33,23 @@ exports.createOrder = async (req, res) => {
   };
 
   try {
+    logger.info('order_create_attempt', {
+      storeId,
+      userId,
+      productsCount: Array.isArray(products) ? products.length : 0,
+      paymentMethod
+    });
+
     // التحقق من وجود المتجر
     const store = await Store.findById(storeId);
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Create order failed: Store ${storeId} not found`);
+      logger.warn('order_create_store_not_found', { storeId });
       return res.status(404).json({ message: 'المتجر غير موجود' });
     }
 
     // التحقق من المنتجات
     if (!products || !Array.isArray(products) || products.length === 0) {
-      console.log(`[${getTimestamp()}] ❌ Create order failed: No valid products provided`);
+      logger.warn('order_create_no_products', { storeId });
       return res.status(400).json({ message: 'يجب إرسال قائمة منتجات صالحة' });
     }
 
@@ -56,11 +61,11 @@ exports.createOrder = async (req, res) => {
     const safePaymentMethod = paymentMethod === 'cash_on_delivery' ? 'cash_on_delivery' : 'whatsapp_confirmation';
 
     if (!safeCustomerName || sanitizedWhatsapp.length < 6) {
-      console.log(`[${getTimestamp()}] ❌ Create order failed: Missing customer details for store ${storeId}`);
+      logger.warn('order_create_missing_customer_details', { storeId });
       return res.status(400).json({ message: 'يرجى إدخال اسمك ورقم واتساب صالح للتواصل.' });
     }
     if (!safeAddress || safeAddress.length < 8) {
-      console.log(`[${getTimestamp()}] ❌ Create order failed: Missing detailed address for store ${storeId}`);
+      logger.warn('order_create_missing_address', { storeId });
       return res.status(400).json({ message: 'يرجى كتابة العنوان بالتفصيل (المدينة/المنطقة/الشارع/معلم قريب) لإتمام الطلب.' });
     }
 
@@ -72,18 +77,24 @@ exports.createOrder = async (req, res) => {
       const productId = item.productId;
       const requestedQuantity = Number(item.quantity);
       if (!productId || !Number.isFinite(requestedQuantity) || requestedQuantity <= 0) {
-        console.log(`[${getTimestamp()}] ❌ Create order failed: Invalid quantity for item ${JSON.stringify(item)} in store ${storeId}`);
+        logger.warn('order_create_invalid_quantity', { storeId, item });
         return res.status(400).json({ message: 'تم إرسال كمية غير صالحة لأحد المنتجات.' });
       }
 
       const product = await Product.findOne({ _id: productId, storeId });
       if (!product) {
-        console.log(`[${getTimestamp()}] ❌ Create order failed: Product ${productId} not found in store ${storeId}`);
+        logger.warn('order_create_product_not_found', { storeId, productId });
         return res.status(404).json({ message: `المنتج ${productId} غير موجود` });
       }
       const availableStock = typeof product.stock === 'number' ? product.stock : 0;
       if (availableStock < requestedQuantity) {
-        console.log(`[${getTimestamp()}] ❌ Create order failed: Insufficient stock for product ${product.productName}`);
+        logger.warn('order_create_insufficient_stock', {
+          storeId,
+          productId,
+          productName: product.productName,
+          availableStock,
+          requestedQuantity
+        });
         return res.status(400).json({ message: `المخزون غير كافٍ للمنتج ${product.productName}` });
       }
       const unitPrice = product.hasOffer && product.discountedPrice ? product.discountedPrice : product.price;
@@ -94,7 +105,12 @@ exports.createOrder = async (req, res) => {
         ? item.selectedOptions.filter(o => o && typeof o.name === 'string' && typeof o.value === 'string')
         : [];
       if (selectedOptions.length){
-        console.log(`[${getTimestamp()}] 🧩 Order item options for product ${product.productName}:`, selectedOptions.map(o=>`${o.name}:${o.value}`).join(' | '));
+        logger.info('order_create_item_options', {
+          storeId,
+          productId: product._id,
+          productName: product.productName,
+          options: selectedOptions.map(o => `${o.name}:${o.value}`).join(' | ')
+        });
       }
 
       orderProducts.push({
@@ -134,7 +150,14 @@ exports.createOrder = async (req, res) => {
     });
 
   await newOrder.save();
-  console.log(`[${getTimestamp()}] ✅ Order created: ${newOrder._id} for store ${storeId} (customer: ${safeCustomerName})`);
+  logger.info('order_created', {
+    storeId,
+    orderId: newOrder._id,
+    customerName: safeCustomerName,
+    status: newOrder.status,
+    totalPrice,
+    currency: orderCurrency
+  });
 
     // تحديث ملف العميل
     try {
@@ -148,7 +171,7 @@ exports.createOrder = async (req, res) => {
         currency: orderCurrency,
       });
     } catch (e) {
-      console.warn(`[${getTimestamp()}] ⚠️ Failed to upsert customer for order ${newOrder._id}:`, e.message);
+      logger.warn('order_customer_upsert_failed', { storeId, orderId: newOrder._id, err: e.message });
     }
 
     // تحديث المخزون إذا الطلب مؤكد
@@ -157,7 +180,7 @@ exports.createOrder = async (req, res) => {
         const product = await Product.findById(item.productId);
         product.stock -= item.quantity;
         await product.save();
-        console.log(`[${getTimestamp()}] ✅ Updated stock for product ${product.productName}: ${product.stock}`);
+        logger.info('order_stock_updated', { storeId, productId: product._id, productName: product.productName, stock: product.stock });
       }
     }
 
@@ -166,7 +189,7 @@ exports.createOrder = async (req, res) => {
     try {
       formattedTotal = new Intl.NumberFormat('ar-EG', { style: 'currency', currency: orderCurrency }).format(totalPrice);
     } catch (formatErr) {
-      console.warn(`[${getTimestamp()}] ⚠️ Unable to format order total`, formatErr.message);
+      logger.warn('order_total_format_failed', { storeId, orderId: newOrder._id, currency: orderCurrency, err: formatErr.message });
     }
 
     const notification = new Notification({
@@ -176,7 +199,7 @@ exports.createOrder = async (req, res) => {
       isRead: false
     });
     await notification.save();
-    console.log(`[${getTimestamp()}] ✅ Notification sent to user ${store.userId} for order ${newOrder._id}`);
+    logger.info('order_notification_created', { storeId, orderId: newOrder._id, userId: store.userId });
 
     // حدد البوت المرتبط بالمتجر (لو لم يُخزَّن botId في المتجر نبحث عنه)
     let botIdForNotify = store.botId || null;
@@ -198,12 +221,12 @@ exports.createOrder = async (req, res) => {
         items: orderProducts,
       }, botIdForNotify);
     } catch (notifyErr) {
-      console.warn(`[${getTimestamp()}] ⚠️ Telegram notifyNewOrder failed for order ${newOrder._id}:`, notifyErr.message);
+      logger.warn('order_notify_new_order_failed', { storeId, orderId: newOrder._id, err: notifyErr.message });
     }
 
     res.status(201).json(newOrder);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error creating order:`, err.message, err.stack);
+    logger.error('order_create_error', { storeId, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في إنشاء الطلب' });
   }
 };
@@ -218,14 +241,14 @@ exports.updateOrder = async (req, res) => {
     // التحقق من وجود المتجر
     const store = await Store.findOne({ _id: storeId, userId });
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Update order failed: Store ${storeId} not found for user ${userId}`);
+      logger.warn('order_update_store_not_found', { storeId, userId });
       return res.status(404).json({ message: 'المتجر غير موجود' });
     }
 
     // التحقق من وجود الطلب
     const order = await Order.findOne({ _id: orderId, storeId });
     if (!order) {
-      console.log(`[${getTimestamp()}] ❌ Update order failed: Order ${orderId} not found in store ${storeId}`);
+      logger.warn('order_update_not_found', { storeId, orderId });
       return res.status(404).json({ message: 'الطلب غير موجود' });
     }
 
@@ -248,11 +271,11 @@ exports.updateOrder = async (req, res) => {
           const product = await Product.findById(item.productId);
           product.stock -= item.quantity;
           await product.save();
-          console.log(`[${getTimestamp()}] ✅ Updated stock for product ${product.productName}: ${product.stock}`);
+          logger.info('order_update_stock', { storeId, orderId, productId: product._id, productName: product.productName, stock: product.stock });
         }
       }
       await order.save();
-      console.log(`[${getTimestamp()}] ✅ Order updated: ${order._id} to status ${status}`);
+      logger.info('order_updated', { storeId, orderId: order._id, status });
 
       // إشعار لصاحب المتجر
       const notification = new Notification({
@@ -262,7 +285,7 @@ exports.updateOrder = async (req, res) => {
         isRead: false
       });
       await notification.save();
-      console.log(`[${getTimestamp()}] ✅ Notification sent to user ${store.userId} for order ${order._id}`);
+      logger.info('order_status_notification_created', { storeId, orderId: order._id, userId: store.userId, status });
 
       try {
         let botIdForNotify = store.botId || null;
@@ -276,7 +299,7 @@ exports.updateOrder = async (req, res) => {
           status: order.status,
         }, botIdForNotify);
       } catch (notifyErr) {
-        console.warn(`[${getTimestamp()}] ⚠️ Telegram notifyOrderStatus failed for order ${order._id}:`, notifyErr.message);
+        logger.warn('order_notify_status_failed', { storeId, orderId: order._id, err: notifyErr.message });
       }
     } else {
       // لو نفس الحالة أو مافي status جديد نرجع الطلب كما هو
@@ -285,7 +308,7 @@ exports.updateOrder = async (req, res) => {
 
     res.status(200).json(order);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error updating order:`, err.message, err.stack);
+    logger.error('order_update_error', { storeId, orderId, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في تحديث الطلب' });
   }
 };
@@ -299,20 +322,20 @@ exports.getOrders = async (req, res) => {
     // التحقق من وجود المتجر (لا تمنع العرض إذا كان المستخدم مختلفاً — نكتفي بالتحقق من وجود المتجر)
     const store = await Store.findById(storeId);
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Get orders failed: Store ${storeId} not found`);
+      logger.warn('orders_fetch_store_not_found', { storeId });
       return res.status(404).json({ message: 'المتجر غير موجود' });
     }
 
     if (String(store.userId) !== String(userId)) {
-      console.warn(`[${getTimestamp()}] ⚠️ Get orders: user ${userId} is not the owner of store ${storeId}, returning orders read-only.`);
+      logger.warn('orders_fetch_readonly', { storeId, requestedBy: userId, ownerId: store.userId });
     }
 
     const orders = await Order.find({ storeId }).sort({ createdAt: -1 });
-    console.log(`[${getTimestamp()}] ✅ Fetched ${orders.length} orders for store ${storeId}`);
+    logger.info('orders_fetch_success', { storeId, count: orders.length });
     // orders الآن تحتوي على حقل history
     res.status(200).json(orders);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error fetching orders:`, err.message, err.stack);
+    logger.error('orders_fetch_error', { storeId, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في جلب الطلبات' });
   }
 };

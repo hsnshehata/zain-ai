@@ -3,8 +3,7 @@ const Customer = require('../models/Customer');
 const Store = require('../models/Store');
 const Order = require('../models/Order');
 const Bot = require('../models/Bot');
-
-const getTimestamp = () => new Date().toISOString();
+const logger = require('../logger');
 
 async function authorizeStoreAccess(storeId, userId, userRole) {
   const store = await Store.findById(storeId);
@@ -40,7 +39,7 @@ exports.getCustomers = async (req, res) => {
     ]);
     res.status(200).json({ customers: items, total });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error getCustomers:`, err.message);
+    logger.error('customers_fetch_error', { storeId, err: err.message, stack: err.stack });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في جلب العملاء' });
   }
 };
@@ -56,7 +55,7 @@ exports.getCustomerDetails = async (req, res) => {
     const orders = await Order.find({ storeId, customerWhatsapp: customer.phone }).sort({ createdAt: -1 });
     res.status(200).json({ customer, orders });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error getCustomerDetails:`, err.message);
+    logger.error('customer_details_error', { storeId, customerId, err: err.message, stack: err.stack });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في جلب ملف العميل' });
   }
 };
@@ -70,7 +69,7 @@ exports.lookupByPhone = async (req, res) => {
     if (!customer) return res.status(404).json({ message: 'لا يوجد عميل لهذا الرقم' });
     res.status(200).json(customer);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error lookupByPhone:`, err.message);
+    logger.error('customer_lookup_phone_error', { storeId, phone, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في البحث عن العميل' });
   }
 };
@@ -89,9 +88,9 @@ exports.upsertFromOrder = async ({ storeId, name, phone, email, address, orderTo
       updatedAt: now,
     };
     await Customer.updateOne({ storeId, phone }, update, { upsert: true });
-    console.log(`[${getTimestamp()}] ✅ Customer upserted for ${phone} in store ${storeId}`);
+    logger.info('customer_upsert_from_order', { storeId, phone });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error upsertFromOrder:`, err.message);
+    logger.error('customer_upsert_from_order_error', { storeId, phone, err: err.message, stack: err.stack });
   }
 };
 
@@ -111,7 +110,7 @@ exports.publicLookup = async (req, res) => {
     if (!customer) return res.status(404).json({ message: 'لا يوجد عميل لهذا الرقم' });
     return res.status(200).json(customer);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error publicLookup:`, err.message);
+    logger.error('customer_public_lookup_error', { storeId, phone, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في البحث عن العميل' });
   }
 };
@@ -130,7 +129,7 @@ exports.createCustomer = async (req, res) => {
     await c.save();
     res.status(201).json({ customer: c });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error createCustomer:`, err.message);
+    logger.error('customer_create_error', { storeId, err: err.message, stack: err.stack });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في إنشاء العميل' });
   }
 };
@@ -152,7 +151,7 @@ exports.updateCustomer = async (req, res) => {
     await c.save();
     res.status(200).json({ customer: c });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error updateCustomer:`, err.message);
+    logger.error('customer_update_error', { storeId, customerId, err: err.message, stack: err.stack });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في تحديث العميل' });
   }
 };
@@ -167,7 +166,7 @@ exports.deleteCustomer = async (req, res) => {
     if (!c) return res.status(404).json({ message: 'العميل غير موجود' });
     res.status(200).json({ message: 'تم حذف العميل' });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error deleteCustomer:`, err.message);
+    logger.error('customer_delete_error', { storeId, customerId, err: err.message, stack: err.stack });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في حذف العميل' });
   }
 };
@@ -183,7 +182,7 @@ exports.getCustomerTransactions = async (req, res) => {
     const tx = await CustomerTransaction.find({ storeId, customerId }).sort({ createdAt: -1 });
     res.status(200).json({ transactions: tx });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error getCustomerTransactions:`, err.message);
+    logger.error('customer_transactions_fetch_error', { storeId, customerId, err: err.message, stack: err.stack });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في جلب معاملات العميل' });
   }
 };
@@ -206,7 +205,7 @@ exports.addCustomerTransaction = async (req, res) => {
     await customer.save();
     res.status(201).json({ transaction: tx, balance: customer.balance });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error addCustomerTransaction:`, err.message);
+    logger.error('customer_transaction_add_error', { storeId, customerId, err: err.message, stack: err.stack });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في إضافة المعاملة' });
   }
 };
@@ -222,7 +221,7 @@ exports.getCustomerStatement = async (req, res) => {
     const tx = await CustomerTransaction.find({ storeId, customerId }).sort({ createdAt: -1 });
     res.status(200).json({ customer, transactions: tx });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error getCustomerStatement:`, err.message);
+    logger.error('customer_statement_error', { storeId, customerId, err: err.message, stack: err.stack });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في جلب كشف الحساب' });
   }
 };

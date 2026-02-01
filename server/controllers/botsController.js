@@ -4,9 +4,7 @@ const User = require('../models/User');
 const Feedback = require('../models/Feedback');
 const Notification = require('../models/Notification');
 const axios = require('axios');
-
-// دالة مساعدة لإضافة timestamp للـ logs
-const getTimestamp = () => new Date().toISOString();
+const logger = require('../logger');
 
 // جلب كل البوتات
 exports.getBots = async (req, res) => {
@@ -29,13 +27,13 @@ exports.getBots = async (req, res) => {
         });
         await notification.save();
 
-        console.log(`[${getTimestamp()}] ✅ Bot ${bot.name} stopped due to expired subscription and notification sent to user ${bot.userId}`);
+        logger.info('bot_auto_stopped', { botId: bot._id, botName: bot.name, userId: bot.userId, autoStopDate: bot.autoStopDate });
       }
     }
 
     res.status(200).json(bots);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في جلب البوتات:`, err.message, err.stack);
+    logger.error('bots_fetch_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
@@ -60,12 +58,33 @@ exports.getFeedback = async (req, res) => {
 
     const feedback = await Feedback.find(query).sort({ timestamp: -1 });
 
+    // تجنب تكرار طلبات الاسم لنفس المستخدم والحد من الضجيج في اللوجز
+    const usernameCache = new Map();
+
     const feedbackWithUsernames = await Promise.all(
       feedback.map(async (item) => {
         let username = item.userId;
+        if (usernameCache.has(item.userId)) {
+          return {
+            ...item._doc,
+            username: usernameCache.get(item.userId),
+            feedback: item.type === 'like' ? 'positive' : 'negative',
+            userMessage: item.userMessage,
+          };
+        }
+
         try {
           if (!item.userId.startsWith('web_')) {
             const apiKey = bot.instagramPageId ? bot.instagramApiKey : bot.facebookApiKey;
+            if (!apiKey) {
+              usernameCache.set(item.userId, username);
+              return {
+                ...item._doc,
+                username,
+                feedback: item.type === 'like' ? 'positive' : 'negative',
+                userMessage: item.userMessage,
+              };
+            }
             const response = await axios.get(
               `https://graph.facebook.com/${item.userId}?fields=name&access_token=${apiKey}`
             );
@@ -74,8 +93,12 @@ exports.getFeedback = async (req, res) => {
             }
           }
         } catch (err) {
-          console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم ${item.userId} من فيسبوك/إنستجرام:`, err.message);
+          if (!usernameCache.has(item.userId)) {
+            logger.warn('feedback_username_fetch_error', { botId, userId: item.userId, err: err.message });
+          }
         }
+
+        usernameCache.set(item.userId, username);
 
         // تحويل type إلى feedback للتوافق مع الفرونت
         return {
@@ -89,7 +112,7 @@ exports.getFeedback = async (req, res) => {
 
     res.status(200).json(feedbackWithUsernames);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في جلب التقييمات:`, err.message, err.stack);
+    logger.error('feedback_fetch_error', { botId: req.params.id, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
@@ -130,7 +153,7 @@ exports.getTopNegativeReplies = async (req, res) => {
 
     res.status(200).json(result);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في جلب الردود السلبية:`, err.message, err.stack);
+    logger.error('feedback_negative_fetch_error', { botId: req.params.botId, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
@@ -151,7 +174,7 @@ exports.hideFeedback = async (req, res) => {
 
     res.status(200).json({ message: 'تم إخفاء التقييم بنجاح' });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في إخفاء التقييم:`, err.message, err.stack);
+    logger.error('feedback_hide_error', { feedbackId: req.params.feedbackId, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
@@ -176,7 +199,7 @@ exports.clearFeedbackByType = async (req, res) => {
 
     res.status(200).json({ message: 'تم إخفاء التقييمات بنجاح' });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في إخفاء التقييمات:`, err.message, err.stack);
+    logger.error('feedback_clear_error', { botId: req.params.id, type: req.params.type, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
@@ -218,7 +241,7 @@ exports.createBot = async (req, res) => {
 
     res.status(201).json(bot);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في إنشاء البوت:`, err.message, err.stack);
+    logger.error('bot_create_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
@@ -228,17 +251,17 @@ exports.updateBot = async (req, res) => {
   const { name, userId, facebookApiKey, facebookPageId, instagramApiKey, instagramPageId, isActive, autoStopDate, subscriptionType, welcomeMessage } = req.body;
 
   try {
-    console.log(`[${getTimestamp()}] 📝 محاولة تعديل البوت | Bot ID: ${req.params.id} | User ID: ${req.user.userId} | Data:`, req.body);
+    logger.info('bot_update_attempt', { botId: req.params.id, userId: req.user.userId, payloadKeys: Object.keys(req.body || {}) });
 
     const bot = await Bot.findById(req.params.id);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${req.params.id}`);
+      logger.warn('bot_update_not_found', { botId: req.params.id });
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
     // التحقق من الصلاحيات: السوبر أدمن يقدر يعدل أي بوت، غير كده لازم يكون صاحب البوت
     if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
-      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      logger.warn('bot_update_unauthorized', { botId: bot._id, ownerId: bot.userId, requester: req.user.userId });
       return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
@@ -255,51 +278,51 @@ exports.updateBot = async (req, res) => {
     bot.welcomeMessage = welcomeMessage !== undefined ? welcomeMessage : bot.welcomeMessage;
 
     if (facebookApiKey && !facebookPageId) {
-      console.log(`[${getTimestamp()}] ⚠️ معرف صفحة الفيسبوك مفقود | facebookApiKey provided without facebookPageId`);
+      logger.warn('bot_update_missing_facebook_page', { botId: bot._id });
       return res.status(400).json({ message: 'معرف صفحة الفيسبوك مطلوب عند إدخال رقم API' });
     }
 
     if (instagramApiKey && !instagramPageId) {
-      console.log(`[${getTimestamp()}] ⚠️ معرف صفحة الإنستجرام مفقود | instagramApiKey provided without instagramPageId`);
+      logger.warn('bot_update_missing_instagram_page', { botId: bot._id });
       return res.status(400).json({ message: 'معرف صفحة الإنستجرام مطلوب عند إدخال رقم API' });
     }
 
     if (subscriptionType && !['free', 'monthly', 'yearly'].includes(subscriptionType)) {
-      console.log(`[${getTimestamp()}] ⚠️ نوع الاشتراك غير صالح | Subscription Type: ${subscriptionType}`);
+      logger.warn('bot_update_invalid_subscription', { botId: bot._id, subscriptionType });
       return res.status(400).json({ message: 'نوع الاشتراك غير صالح' });
     }
 
     // إذا كان هناك مستخدم جديد، تحديث قائمة البوتات في المستخدمين
     if (userId && userId !== bot.userId.toString()) {
-      console.log(`[${getTimestamp()}] 🔄 تحديث userId | Old User ID: ${bot.userId} | New User ID: ${userId}`);
+      logger.info('bot_update_change_owner', { botId: bot._id, oldUserId: bot.userId, newUserId: userId });
       try {
         const oldUser = await User.findById(bot.userId);
         if (oldUser) {
           await User.findByIdAndUpdate(bot.userId, { $pull: { bots: bot._id } });
         } else {
-          console.warn(`[${getTimestamp()}] ⚠️ المستخدم القديم غير موجود | Old User ID: ${bot.userId}`);
+          logger.warn('bot_update_old_user_missing', { botId: bot._id, oldUserId: bot.userId });
         }
 
         const newUser = await User.findById(userId);
         if (newUser) {
           await User.findByIdAndUpdate(userId, { $push: { bots: bot._id } });
         } else {
-          console.error(`[${getTimestamp()}] ❌ المستخدم الجديد غير موجود | New User ID: ${userId}`);
+          logger.error('bot_update_new_user_missing', { botId: bot._id, newUserId: userId });
           return res.status(400).json({ message: 'المستخدم الجديد غير موجود' });
         }
       } catch (err) {
-        console.error(`[${getTimestamp()}] ❌ خطأ في تحديث قائمة البوتات في المستخدمين:`, err.message, err.stack);
+        logger.error('bot_update_user_list_error', { botId: bot._id, err: err.message, stack: err.stack });
         throw err;
       }
     }
 
-    console.log(`[${getTimestamp()}] 💾 محاولة حفظ البوت | Bot ID: ${bot._id} | Updated Data:`, bot);
+    logger.info('bot_save_attempt', { botId: bot._id });
     await bot.save();
-    console.log(`[${getTimestamp()}] ✅ تم حفظ البوت بنجاح | Bot ID: ${bot._id}`);
+    logger.info('bot_save_success', { botId: bot._id });
 
     res.status(200).json(bot);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في تعديل البوت | Bot ID: ${req.params.id} | Error:`, err.message, err.stack);
+    logger.error('bot_update_error', { botId: req.params.id, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر', error: err.message });
   }
 };
@@ -309,23 +332,23 @@ exports.deleteBot = async (req, res) => {
   try {
     const bot = await Bot.findById(req.params.id);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${req.params.id}`);
+      logger.warn('bot_delete_not_found', { botId: req.params.id });
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
     // التحقق من الصلاحيات: السوبر أدمن يقدر يحذف أي بوت، غير كده لازم يكون صاحب البوت
     if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
-      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      logger.warn('bot_delete_unauthorized', { botId: bot._id, ownerId: bot.userId, requester: req.user.userId });
       return res.status(403).json({ message: 'غير مصرح لك بحذف هذا البوت' });
     }
 
     await User.findByIdAndUpdate(bot.userId, { $pull: { bots: bot._id } });
 
     await Bot.deleteOne({ _id: req.params.id });
-    console.log(`[${getTimestamp()}] ✅ تم حذف البوت بنجاح | Bot ID: ${req.params.id}`);
+    logger.info('bot_deleted', { botId: req.params.id });
     res.status(200).json({ message: 'تم حذف البوت بنجاح' });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في حذف البوت:`, err.message, err.stack);
+    logger.error('bot_delete_error', { botId: req.params.id, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
@@ -336,13 +359,13 @@ exports.unlinkFacebookPage = async (req, res) => {
     const botId = req.params.id;
     const bot = await Bot.findById(botId);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      logger.warn('bot_unlink_fb_not_found', { botId });
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
     // التحقق من الصلاحيات: السوبر أدمن يقدر يعدل أي بوت، غير كده لازم يكون صاحب البوت
     if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
-      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      logger.warn('bot_unlink_fb_unauthorized', { botId, ownerId: bot.userId, requester: req.user.userId });
       return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
@@ -351,10 +374,10 @@ exports.unlinkFacebookPage = async (req, res) => {
     bot.facebookPageId = '';
     await bot.save();
 
-    console.log(`[${getTimestamp()}] ✅ تم إلغاء ربط صفحة فيسبوك بنجاح | Bot ID: ${botId}`);
+    logger.info('bot_unlink_fb_success', { botId });
     res.status(200).json({ message: 'تم إلغاء ربط الصفحة بنجاح' });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في إلغاء ربط صفحة فيسبوك:`, err.message, err.stack);
+    logger.error('bot_unlink_fb_error', { botId: req.params.id, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
   }
 };
@@ -365,13 +388,13 @@ exports.unlinkInstagramAccount = async (req, res) => {
     const botId = req.params.id;
     const bot = await Bot.findById(botId);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      logger.warn('bot_unlink_ig_not_found', { botId });
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
     // التحقق من الصلاحيات: السوبر أدمن يقدر يعدل أي بوت، غير كده لازم يكون صاحب البوت
     if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
-      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      logger.warn('bot_unlink_ig_unauthorized', { botId, ownerId: bot.userId, requester: req.user.userId });
       return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
@@ -381,10 +404,10 @@ exports.unlinkInstagramAccount = async (req, res) => {
     bot.lastInstagramTokenRefresh = null; // إزالة تاريخ التجديد
     await bot.save();
 
-    console.log(`[${getTimestamp()}] ✅ تم إلغاء ربط حساب إنستجرام بنجاح | Bot ID: ${botId}`);
+    logger.info('bot_unlink_ig_success', { botId });
     res.status(200).json({ message: 'تم إلغاء ربط حساب الإنستجرام بنجاح' });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في إلغاء ربط حساب إنستجرام:`, err.message, err.stack);
+    logger.error('bot_unlink_ig_error', { botId: req.params.id, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
   }
 };
@@ -396,19 +419,19 @@ exports.linkSocialPage = async (req, res) => {
     const { facebookApiKey, facebookPageId, instagramApiKey, instagramPageId } = req.body;
 
     if ((!facebookApiKey || !facebookPageId) && (!instagramApiKey || !instagramPageId)) {
-      console.log(`[${getTimestamp()}] ⚠️ مفتاح API أو معرف الصفحة مفقود | Bot ID: ${botId}`);
+      logger.warn('bot_link_social_missing_fields', { botId });
       return res.status(400).json({ message: 'مفتاح API ومعرف الصفحة مطلوبان لفيسبوك أو إنستجرام' });
     }
 
     const bot = await Bot.findById(botId);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      logger.warn('bot_link_social_not_found', { botId });
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
 
     // التحقق من الصلاحيات: السوبر أدمن يقدر يربط أي بوت، غير كده لازم يكون صاحب البوت
     if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
-      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      logger.warn('bot_link_social_unauthorized', { botId, ownerId: bot.userId, requester: req.user.userId });
       return res.status(403).json({ message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
@@ -426,7 +449,7 @@ exports.linkSocialPage = async (req, res) => {
       );
 
       if (!response.data.access_token) {
-        console.log(`[${getTimestamp()}] ❌ فشل في جلب توكن طويل الأمد لفيسبوك | Bot ID: ${botId}`);
+        logger.warn('facebook_exchange_missing_token', { botId, response: response.data });
         return res.status(400).json({ message: 'فشل في جلب توكن طويل الأمد: ' + (response.data.error?.message || 'غير معروف') });
       }
 
@@ -455,7 +478,7 @@ exports.linkSocialPage = async (req, res) => {
 
       // الاشتراك في الـ Webhook Events لفيسبوك
       try {
-        console.log(`[${getTimestamp()}] 🔄 Attempting to subscribe to Webhook Events for bot ${botId} | Page ID: ${pageId}`);
+        logger.info('bot_link_fb_subscribe_attempt', { botId, pageId, fields: subscribedFields });
         const subscriptionResponse = await axios.post(
           `https://graph.facebook.com/v20.0/${pageId}/subscribed_apps`,
           {
@@ -465,13 +488,13 @@ exports.linkSocialPage = async (req, res) => {
         );
 
         if (subscriptionResponse.data.success) {
-          console.log(`[${getTimestamp()}] ✅ تم الاشتراك في Webhook Events بنجاح | Bot ID: ${botId} | Fields: ${subscribedFields}`);
+          logger.info('bot_link_fb_subscribe_success', { botId, pageId });
         } else {
-          console.error(`[${getTimestamp()}] ❌ فشل في الاشتراك في Webhook Events | Bot ID: ${botId} | Response:`, subscriptionResponse.data);
+          logger.error('bot_link_fb_subscribe_failed', { botId, pageId, response: subscriptionResponse.data });
           return res.status(400).json({ message: 'فشل في الاشتراك في Webhook Events: ' + (subscriptionResponse.data.error?.message || 'غير معروف') });
         }
       } catch (err) {
-        console.error(`[${getTimestamp()}] ❌ خطأ أثناء الاشتراك في Webhook Events | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
+        logger.error('bot_link_fb_subscribe_error', { botId, pageId, err: err.message, response: err.response?.data });
         return res.status(500).json({ message: 'خطأ أثناء الاشتراك في Webhook Events: ' + (err.response?.data?.error?.message || err.message) });
       }
     } else if (instagramApiKey && instagramPageId) {
@@ -486,11 +509,11 @@ exports.linkSocialPage = async (req, res) => {
 
     await bot.save();
 
-    console.log(`[${getTimestamp()}] ✅ تم ربط صفحة ${platform} بنجاح | Bot ID: ${botId} | Page ID: ${pageId}`);
+    logger.info('bot_link_social_success', { botId, platform, pageId });
 
     res.status(200).json({ message: `تم ربط صفحة ${platform} بنجاح` });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في ربط صفحة فيسبوك/إنستجرام:`, err.message, err.stack);
+    logger.error('bot_link_social_error', { botId: req.params.id, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر: ' + err.message });
   }
 };
@@ -502,31 +525,31 @@ exports.exchangeInstagramCode = async (req, res) => {
     const { code } = req.body;
 
     if (!code) {
-      console.log(`[${getTimestamp()}] ⚠️ OAuth code مفقود | Bot ID: ${botId}`);
+      logger.warn('bot_exchange_code_missing', { botId });
       return res.status(400).json({ success: false, message: 'OAuth code مطلوب' });
     }
 
     const bot = await Bot.findById(botId);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      logger.warn('bot_exchange_code_not_found', { botId });
       return res.status(404).json({ success: false, message: 'البوت غير موجود' });
     }
 
     // التحقق من الصلاحيات
     if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
-      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      logger.warn('bot_exchange_code_unauthorized', { botId, ownerId: bot.userId, requester: req.user.userId });
       return res.status(403).json({ success: false, message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
     // استخدام redirect_uri ثابت
     const redirectUri = 'https://zain-ai-a06a.onrender.com/dashboard_new.html';
-    console.log(`[${getTimestamp()}] 📌 الـ redirect_uri المستخدم: ${redirectUri}`);
-    console.log(`[${getTimestamp()}] 📌 الـ code المستخدم: ${code}`);
+    logger.info('instagram_exchange_redirect', { botId, redirectUri });
+    logger.info('instagram_exchange_code', { botId });
 
     // تبادل الـ code بـ short-lived access token
     let tokenResponse;
     try {
-      console.log(`[${getTimestamp()}] 🔄 Sending OAuth token exchange request for bot ${botId}`);
+      logger.info('instagram_exchange_request', { botId });
       tokenResponse = await axios.post('https://api.instagram.com/oauth/access_token', new URLSearchParams({
         client_id: '2288330081539329',
         client_secret: process.env.INSTAGRAM_APP_SECRET,
@@ -539,24 +562,24 @@ exports.exchangeInstagramCode = async (req, res) => {
         },
       });
     } catch (err) {
-      console.error(`[${getTimestamp()}] ❌ خطأ في تبادل OAuth code | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
+      logger.error('instagram_exchange_error', { botId, err: err.message, response: err.response?.data });
       throw err;
     }
 
     if (!tokenResponse.data.access_token || !tokenResponse.data.user_id) {
-      console.log(`[${getTimestamp()}] ❌ فشل في تبادل OAuth code | Bot ID: ${botId} | Response:`, tokenResponse.data);
+      logger.warn('instagram_exchange_missing_token', { botId, response: tokenResponse.data });
       return res.status(400).json({ success: false, message: 'فشل في جلب التوكن: ' + (tokenResponse.data.error_message || 'غير معروف') });
     }
 
     let shortLivedToken = tokenResponse.data.access_token;
     let userId = tokenResponse.data.user_id;
 
-    console.log(`[${getTimestamp()}] ✅ تم تبادل OAuth code بنجاح | Bot ID: ${botId} | User ID: ${userId} | Short-Lived Token: ${shortLivedToken.slice(0, 10)}...`);
+    logger.info('instagram_exchange_success', { botId, userId });
 
     // تحويل الـ short-lived token إلى long-lived token
     let longLivedTokenResponse;
     try {
-      console.log(`[${getTimestamp()}] 🔄 Sending request to exchange short-lived token for long-lived token for bot ${botId}`);
+      logger.info('instagram_exchange_long_request', { botId });
       longLivedTokenResponse = await axios.get('https://graph.instagram.com/access_token', {
         params: {
           grant_type: 'ig_exchange_token',
@@ -565,19 +588,19 @@ exports.exchangeInstagramCode = async (req, res) => {
         },
       });
     } catch (err) {
-      console.error(`[${getTimestamp()}] ❌ خطأ في تبادل Short-Lived Token بـ Long-Lived Token | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
+      logger.error('instagram_exchange_long_error', { botId, err: err.message, response: err.response?.data });
       return res.status(500).json({ success: false, message: 'خطأ في جلب توكن طويل الأمد: ' + (err.response?.data?.error?.message || err.message) });
     }
 
     if (!longLivedTokenResponse.data.access_token) {
-      console.log(`[${getTimestamp()}] ❌ فشل في جلب Long-Lived Token | Bot ID: ${botId} | Response:`, longLivedTokenResponse.data);
+      logger.warn('instagram_exchange_long_missing_token', { botId, response: longLivedTokenResponse.data });
       return res.status(400).json({ success: false, message: 'فشل في جلب توكن طويل الأمد: ' + (longLivedTokenResponse.data.error?.message || 'غير معروف') });
     }
 
     const longLivedToken = longLivedTokenResponse.data.access_token;
     const expiresIn = longLivedTokenResponse.data.expires_in;
 
-    console.log(`[${getTimestamp()}] ✅ تم جلب Long-Lived Token بنجاح | Bot ID: ${botId} | Token: ${longLivedToken.slice(0, 10)}... | Expires In: ${expiresIn} seconds`);
+    logger.info('instagram_exchange_long_success', { botId, expiresIn });
 
     // جلب الـ user_id الصحيح باستخدام /me endpoint
     let instagramPageId;
@@ -586,9 +609,9 @@ exports.exchangeInstagramCode = async (req, res) => {
         `https://graph.instagram.com/v22.0/me?fields=user_id,username&access_token=${longLivedToken}`
       );
       instagramPageId = userResponse.data.user_id;
-      console.log(`[${getTimestamp()}] ✅ تم جلب Instagram Page ID بنجاح | Bot ID: ${botId} | Page ID: ${instagramPageId}`);
+      logger.info('instagram_page_fetch_success', { botId, instagramPageId });
     } catch (err) {
-      console.error(`[${getTimestamp()}] ❌ خطأ في جلب Instagram Page ID | Bot ID: ${botId} | Error:`, err.message, err.response?.data);
+      logger.error('instagram_page_fetch_error', { botId, err: err.message, response: err.response?.data });
       return res.status(500).json({ success: false, message: 'خطأ في جلب معرف الصفحة: ' + (err.response?.data?.error?.message || err.message) });
     }
 
@@ -600,7 +623,7 @@ exports.exchangeInstagramCode = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'تم ربط حساب الإنستجرام بنجاح' });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في تبادل OAuth code:`, err.message, err.stack);
+    logger.error('instagram_exchange_final_error', { botId: req.params.id, err: err.message, stack: err.stack });
     res.status(500).json({ success: false, message: 'خطأ في السيرفر: ' + err.message });
   }
 };
@@ -609,11 +632,11 @@ exports.exchangeInstagramCode = async (req, res) => {
 exports.getSettings = async (req, res) => {
   try {
     const botId = req.params.id;
-    console.log(`[${getTimestamp()}] جاري جلب إعدادات البوت | Bot ID: ${botId}`);
+    logger.info('bot_settings_fetch_start', { botId });
 
     const bot = await Bot.findById(botId);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      logger.warn('bot_settings_not_found', { botId });
       return res.status(404).json({ success: false, message: 'البوت غير موجود' });
     }
 
@@ -626,10 +649,10 @@ exports.getSettings = async (req, res) => {
       commentsRepliesEnabled: bot.commentsRepliesEnabled,
     };
 
-    console.log(`[${getTimestamp()}] ✅ تم جلب إعدادات البوت بنجاح:`, settings);
+    logger.info('bot_settings_fetch_success', { botId });
     res.status(200).json({ success: true, data: settings });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في جلب إعدادات البوت:`, err.message, err.stack);
+    logger.error('bot_settings_fetch_error', { botId, err: err.message, stack: err.stack });
     res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
   }
 };
@@ -640,16 +663,16 @@ exports.updateSettings = async (req, res) => {
     const botId = req.params.id;
     const { messagingOptinsEnabled, messageReactionsEnabled, messagingReferralsEnabled, messageEditsEnabled, inboxLabelsEnabled, commentsRepliesEnabled } = req.body;
 
-    console.log(`[${getTimestamp()}] 📝 محاولة تحديث إعدادات البوت | Bot ID: ${botId} | Data:`, req.body);
+    logger.info('bot_settings_update_start', { botId, data: req.body });
 
     const bot = await Bot.findById(botId);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      logger.warn('bot_settings_update_not_found', { botId });
       return res.status(404).json({ success: false, message: 'البوت غير موجود' });
     }
 
     if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
-      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      logger.warn('bot_settings_update_unauthorized', { botId, ownerId: bot.userId, requester: req.user.userId });
       return res.status(403).json({ success: false, message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
@@ -667,7 +690,7 @@ exports.updateSettings = async (req, res) => {
     for (const [key, value] of Object.entries(booleanFields)) {
       if (value !== undefined) {
         if (typeof value !== 'boolean') {
-          console.log(`[${getTimestamp()}] ⚠️ القيمة غير صحيحة | Bot ID: ${botId} | Field: ${key} | Value: ${value}`);
+          logger.warn('bot_settings_invalid_value', { botId, field: key, value });
           return res.status(400).json({ success: false, message: `القيمة ${key} يجب أن تكون true أو false` });
         }
         if (bot[key] !== value) {
@@ -680,9 +703,9 @@ exports.updateSettings = async (req, res) => {
     // حفظ التغييرات فقط لو فيه تغييرات فعلية
     if (hasChanges) {
       await bot.save();
-      console.log(`[${getTimestamp()}] ✅ تم تحديث إعدادات البوت بنجاح | Bot ID: ${botId}`);
+      logger.info('bot_settings_update_success', { botId });
     } else {
-      console.log(`[${getTimestamp()}] ⚠️ لا توجد تغييرات لتحديثها | Bot ID: ${botId}`);
+      logger.info('bot_settings_no_changes', { botId });
     }
 
     const updatedSettings = {
@@ -696,7 +719,7 @@ exports.updateSettings = async (req, res) => {
 
     res.status(200).json({ success: true, data: updatedSettings });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في تحديث إعدادات البوت:`, err.message, err.stack);
+    logger.error('bot_settings_update_error', { botId, err: err.message, stack: err.stack });
     res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
   }
 };
@@ -705,11 +728,11 @@ exports.updateSettings = async (req, res) => {
 exports.getInstagramSettings = async (req, res) => {
   try {
     const botId = req.params.id;
-    console.log(`[${getTimestamp()}] جاري جلب إعدادات الإنستجرام | Bot ID: ${botId}`);
+    logger.info('bot_instagram_settings_fetch_start', { botId });
 
     const bot = await Bot.findById(botId);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      logger.warn('bot_instagram_settings_not_found', { botId });
       return res.status(404).json({ success: false, message: 'البوت غير موجود' });
     }
 
@@ -722,10 +745,10 @@ exports.getInstagramSettings = async (req, res) => {
       instagramCommentsRepliesEnabled: bot.instagramCommentsRepliesEnabled,
     };
 
-    console.log(`[${getTimestamp()}] ✅ تم جلب إعدادات الإنستجرام بنجاح | Bot ID: ${botId} | Settings:`, instagramSettings);
+    logger.info('bot_instagram_settings_fetch_success', { botId });
     res.status(200).json({ success: true, data: instagramSettings });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في جلب إعدادات الإنستجرام:`, err.message, err.stack);
+    logger.error('bot_instagram_settings_fetch_error', { botId: req.params.id, err: err.message, stack: err.stack });
     res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
   }
 };
@@ -736,16 +759,16 @@ exports.updateInstagramSettings = async (req, res) => {
     const botId = req.params.id;
     const { instagramMessagingOptinsEnabled, instagramMessageReactionsEnabled, instagramMessagingReferralsEnabled, instagramMessageEditsEnabled, instagramInboxLabelsEnabled, instagramCommentsRepliesEnabled } = req.body;
 
-    console.log(`[${getTimestamp()}] 📝 محاولة تحديث إعدادات الإنستجرام | Bot ID: ${botId} | Data:`, req.body);
+    logger.info('bot_instagram_settings_update_start', { botId, data: req.body });
 
     const bot = await Bot.findById(botId);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      logger.warn('bot_instagram_settings_update_not_found', { botId });
       return res.status(404).json({ success: false, message: 'البوت غير موجود' });
     }
 
     if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
-      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      logger.warn('bot_instagram_settings_update_unauthorized', { botId, ownerId: bot.userId, requester: req.user.userId });
       return res.status(403).json({ success: false, message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
@@ -763,7 +786,7 @@ exports.updateInstagramSettings = async (req, res) => {
     for (const [key, value] of Object.entries(booleanFields)) {
       if (value !== undefined) {
         if (typeof value !== 'boolean') {
-          console.log(`[${getTimestamp()}] ⚠️ القيمة غير صحيحة | Bot ID: ${botId} | Field: ${key} | Value: ${value}`);
+          logger.warn('bot_instagram_settings_invalid_value', { botId, field: key, value });
           return res.status(400).json({ success: false, message: `القيمة ${key} يجب أن تكون true أو false` });
         }
         if (bot[key] !== value) {
@@ -776,9 +799,9 @@ exports.updateInstagramSettings = async (req, res) => {
     // حفظ التغييرات فقط لو فيه تغييرات فعلية
     if (hasChanges) {
       await bot.save();
-      console.log(`[${getTimestamp()}] ✅ تم تحديث إعدادات الإنستجرام بنجاح | Bot ID: ${botId}`);
+      logger.info('bot_instagram_settings_update_success', { botId });
     } else {
-      console.log(`[${getTimestamp()}] ⚠️ لا توجد تغييرات لتحديثها | Bot ID: ${botId}`);
+      logger.info('bot_instagram_settings_no_changes', { botId });
     }
 
     const updatedInstagramSettings = {
@@ -792,12 +815,8 @@ exports.updateInstagramSettings = async (req, res) => {
 
     res.status(200).json({ success: true, data: updatedInstagramSettings });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في تحديث إعدادات الإنستجرام:`, err.message, err.stack);
+    logger.error('bot_instagram_settings_update_error', { botId, err: err.message, stack: err.stack });
     res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
   }
 };
-
-// تصدير getTimestamp بشكل صريح
-exports.getTimestamp = getTimestamp;
-
 module.exports = exports;

@@ -6,9 +6,63 @@ const botController = require('../controllers/botController');
 const authenticate = require('../middleware/authenticate');
 const Bot = require('../models/Bot');
 const axios = require('axios');
+const { validateBody, Joi } = require('../middleware/validate');
+const logger = require('../logger');
 
 // Log عشان نتأكد إن الـ router شغال
-console.log('✅ Initializing bots routes');
+logger.info('✅ Initializing bots routes');
+
+// مخططات التحقق
+const createBotSchema = Joi.object({
+  name: Joi.string().min(2).max(80).required(),
+  userId: Joi.string().length(24).required(),
+  facebookApiKey: Joi.string().allow('', null),
+  facebookPageId: Joi.string().allow('', null),
+  instagramApiKey: Joi.string().allow('', null),
+  instagramPageId: Joi.string().allow('', null),
+  subscriptionType: Joi.string().valid('free', 'monthly', 'yearly').default('free'),
+  welcomeMessage: Joi.string().max(500).allow('', null)
+});
+
+const updateBotSchema = Joi.object({
+  name: Joi.string().min(2).max(80).optional(),
+  userId: Joi.string().length(24).optional(),
+  facebookApiKey: Joi.string().allow('', null),
+  facebookPageId: Joi.string().allow('', null),
+  instagramApiKey: Joi.string().allow('', null),
+  instagramPageId: Joi.string().allow('', null),
+  subscriptionType: Joi.string().valid('free', 'monthly', 'yearly').optional(),
+  welcomeMessage: Joi.string().max(500).allow('', null),
+  isActive: Joi.boolean().optional(),
+  autoStopDate: Joi.date().optional()
+});
+
+const linkSocialSchema = Joi.object({
+  facebookApiKey: Joi.string().allow('', null),
+  facebookPageId: Joi.string().allow('', null),
+  instagramApiKey: Joi.string().allow('', null),
+  instagramPageId: Joi.string().allow('', null),
+  whatsappApiKey: Joi.string().allow('', null),
+  whatsappBusinessAccountId: Joi.string().allow('', null),
+  convertToLongLived: Joi.boolean().optional()
+}).custom((value, helpers) => {
+  const hasFacebook = value.facebookApiKey || value.facebookPageId;
+  const hasInstagram = value.instagramApiKey || value.instagramPageId;
+  const hasWhatsapp = value.whatsappApiKey || value.whatsappBusinessAccountId;
+  if (!hasFacebook && !hasInstagram && !hasWhatsapp) {
+    return helpers.error('any.custom', { message: 'يجب إرسال بيانات ربط واحدة على الأقل' });
+  }
+  if (value.facebookApiKey && !value.facebookPageId) {
+    return helpers.error('any.custom', { message: 'معرف صفحة الفيسبوك مطلوب عند إدخال مفتاح الفيسبوك' });
+  }
+  if (value.instagramApiKey && !value.instagramPageId) {
+    return helpers.error('any.custom', { message: 'معرف صفحة الإنستجرام مطلوب عند إدخال مفتاح الإنستجرام' });
+  }
+  if (value.whatsappApiKey && !value.whatsappBusinessAccountId) {
+    return helpers.error('any.custom', { message: 'whatsappBusinessAccountId مطلوب عند إدخال مفتاح واتساب' });
+  }
+  return value;
+}, 'Link social validation');
 
 // دالة لتحويل توكن قصير المدى لتوكن طويل المدى
 const convertToLongLivedToken = async (shortLivedToken) => {
@@ -19,12 +73,12 @@ const convertToLongLivedToken = async (shortLivedToken) => {
   try {
     const response = await axios.get(url);
     if (response.data.access_token) {
-      console.log(`[${new Date().toISOString()}] ✅ Successfully converted short-lived token to long-lived token: ${response.data.access_token.slice(0, 10)}...`);
+      logger.info('✅ Successfully converted short-lived token to long-lived token', { tokenPreview: `${response.data.access_token.slice(0, 10)}...` });
       return response.data.access_token;
     }
     throw new Error('Failed to convert token: No access_token in response');
   } catch (err) {
-    console.error(`[${new Date().toISOString()}] ❌ Error converting to long-lived token:`, err.response?.data || err.message);
+    logger.error('❌ Error converting to long-lived token', { error: err.response?.data || err.message });
     throw err;
   }
 };
@@ -35,16 +89,16 @@ router.get('/', authenticate, botsController.getBots);
 // جلب بوت معين بناءً على الـ ID
 router.get('/:id', authenticate, async (req, res) => {
   try {
-    console.log(`[GET /api/bots/${req.params.id}] جاري جلب البوت | Bot ID: ${req.params.id} | User ID: ${req.user.userId}`);
+    logger.info('جاري جلب البوت', { path: `/api/bots/${req.params.id}`, botId: req.params.id, userId: req.user.userId });
     const bot = await Bot.findById(req.params.id);
     if (!bot) {
-      console.log(`[GET /api/bots/${req.params.id}] البوت غير موجود`);
+      logger.warn('البوت غير موجود', { botId: req.params.id });
       return res.status(404).json({ message: 'البوت غير موجود' });
     }
-    console.log(`[GET /api/bots/${req.params.id}] تم جلب البوت بنجاح:`, bot);
+    logger.info('تم جلب البوت بنجاح', { botId: req.params.id });
     res.status(200).json(bot);
   } catch (err) {
-    console.error(`[GET /api/bots/${req.params.id}] ❌ خطأ في جلب البوت:`, err.message, err.stack);
+    logger.error('❌ خطأ في جلب البوت', { botId: req.params.id, err });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 });
@@ -68,19 +122,19 @@ router.delete('/:id/feedback/:feedbackId', authenticate, botsController.hideFeed
 router.delete('/:id/feedback/:type/clear', authenticate, botsController.clearFeedbackByType);
 
 // إنشاء بوت جديد
-router.post('/', authenticate, botsController.createBot);
+router.post('/', authenticate, validateBody(createBotSchema), botsController.createBot);
 
 // تعديل بوت
-router.put('/:id', authenticate, botsController.updateBot);
+router.put('/:id', authenticate, validateBody(updateBotSchema), botsController.updateBot);
 
 // ربط صفحة فيسبوك أو إنستجرام أو واتساب بالبوت
-router.post('/:id/link-social', authenticate, async (req, res) => {
+router.post('/:id/link-social', authenticate, validateBody(linkSocialSchema), async (req, res) => {
   const { id: botId } = req.params;
   const { facebookApiKey, facebookPageId, instagramApiKey, instagramPageId, whatsappApiKey, whatsappBusinessAccountId, convertToLongLived } = req.body;
 
   try {
     // Log the user role and userId for debugging
-    console.log(`[POST /api/bots/${botId}/link-social] User Role: ${req.user.role} | User ID: ${req.user.userId}`);
+    logger.info('Request to link social', { path: `/api/bots/${botId}/link-social`, role: req.user.role, userId: req.user.userId });
 
     // البحث عن البوت بناءً على الـ ID
     let bot;
@@ -91,12 +145,12 @@ router.post('/:id/link-social', authenticate, async (req, res) => {
     }
 
     if (!bot) {
-      console.log(`[POST /api/bots/${botId}/link-social] البوت غير موجود أو لا يخص المستخدم | Bot User ID: ${bot ? bot.userId : 'Not Found'}`);
+      logger.warn('البوت غير موجود أو لا يخص المستخدم', { botId, botUserId: bot ? bot.userId : 'Not Found', requestUserId: req.user.userId });
       return res.status(404).json({ success: false, message: 'البوت غير موجود أو لا يخصك' });
     }
 
     // Log the bot's userId for debugging
-    console.log(`[POST /api/bots/${botId}/link-social] Bot User ID: ${bot.userId}`);
+    logger.info('Bot owner fetched', { botId, botUserId: bot.userId });
 
     // التحقق من البيانات بناءً على نوع الربط
     let updateData = {};
@@ -136,7 +190,7 @@ router.post('/:id/link-social', authenticate, async (req, res) => {
     }
 
     // لوج قبل التحديث
-    console.log(`[POST /api/bots/${botId}/link-social] Updating bot with data:`, updateData);
+    logger.info('Updating bot social links', { botId, updateData });
 
     // تحديث البوت
     const updatedBot = await Bot.findByIdAndUpdate(
@@ -146,12 +200,13 @@ router.post('/:id/link-social', authenticate, async (req, res) => {
     );
 
     if (!updatedBot) {
-      console.error(`[POST /api/bots/${botId}/link-social] Failed to update bot: Bot not found`);
+      logger.error('Failed to update bot during link-social', { botId });
       return res.status(500).json({ success: false, message: 'فشل في تحديث البوت' });
     }
 
     // لوج بعد التحديث
-    console.log(`[POST /api/bots/${botId}/link-social] Bot updated successfully:`, {
+    logger.info('Bot updated successfully after link-social', {
+      botId,
       facebookApiKey: updatedBot.facebookApiKey?.slice(0, 10) + '...',
       facebookPageId: updatedBot.facebookPageId,
       lastFacebookTokenRefresh: updatedBot.lastFacebookTokenRefresh
@@ -159,7 +214,7 @@ router.post('/:id/link-social', authenticate, async (req, res) => {
 
     res.status(200).json({ success: true, message: 'تم ربط الحساب بنجاح', data: updatedBot });
   } catch (error) {
-    console.error(`[POST /api/bots/${botId}/link-social] Error linking social account:`, error.message, error.stack);
+    logger.error('Error linking social account', { botId, err: error });
     res.status(500).json({ success: false, message: 'خطأ في السيرفر: ' + error.message });
   }
 });
@@ -172,7 +227,7 @@ router.post('/:id/unlink-instagram', authenticate, botsController.unlinkInstagra
 
 // تبادل Instagram OAuth code بـ access token
 router.post('/:id/exchange-instagram-code', authenticate, (req, res) => {
-  console.log(`[${new Date().toISOString()}] 📌 Received request for /api/bots/${req.params.id}/exchange-instagram-code`);
+  logger.info('Received request for exchange-instagram-code', { botId: req.params.id });
   botsController.exchangeInstagramCode(req, res);
 });
 

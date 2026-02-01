@@ -1,6 +1,7 @@
 const Conversation = require('../models/Conversation');
 const Rule = require('../models/Rule');
 const ChatOrder = require('../models/ChatOrder');
+const logger = require('../logger');
 
 // Get analytics for a specific bot
 exports.getAnalytics = async (req, res) => {
@@ -37,7 +38,7 @@ exports.getAnalytics = async (req, res) => {
       activeRules
     });
   } catch (err) {
-    console.error('Error fetching analytics:', err);
+    logger.error('Error fetching analytics', { err });
     res.status(500).json({ message: 'Server error while fetching analytics' });
   }
 };

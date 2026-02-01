@@ -1,29 +1,30 @@
 const axios = require('axios');
 const FormData = require('form-data');
+const logger = require('../logger');
 
 async function uploadToImgbb(file, options = {}) {
   try {
     // التحقق من وجود مفتاح API
     if (!process.env.IMGBB_API_KEY) {
-      console.error('❌ IMGBB_API_KEY is not defined in environment variables');
+      logger.error('imgbb_missing_api_key');
       throw new Error('مفتاح API لـ imgbb غير موجود. تأكد من إعدادات البيئة.');
     }
 
     // التحقق من حجم الصورة
     const maxSizeInBytes = 32 * 1024 * 1024; // 32MB
     if (!file.buffer || file.size === 0) {
-      console.error('❌ Invalid file: File is empty or buffer is missing');
+      logger.warn('imgbb_invalid_file_empty');
       throw new Error('الصورة غير صالحة أو فاضية');
     }
     if (file.size > maxSizeInBytes) {
-      console.error(`❌ File size exceeds limit: ${file.size} bytes`);
+      logger.warn('imgbb_file_too_large', { size: file.size });
       throw new Error('حجم الصورة أكبر من الحد الأقصى المسموح (32 ميجابايت)');
     }
 
     // التحقق من نوع الصورة
     const allowedTypes = ['image/png', 'image/jpeg', 'image/gif'];
     if (!allowedTypes.includes(file.mimetype)) {
-      console.error(`❌ Invalid file type: ${file.mimetype}`);
+      logger.warn('imgbb_invalid_type', { mimetype: file.mimetype });
       throw new Error('نوع الصورة غير مدعوم، يرجى رفع صورة بصيغة PNG، JPEG، أو GIF');
     }
 
@@ -37,11 +38,7 @@ async function uploadToImgbb(file, options = {}) {
       formData.append('expiration', options.expiration);
     }
 
-    console.log('📤 Uploading image to imgbb with file:', {
-      originalname: file.originalname,
-      mimetype: file.mimetype,
-      size: file.size,
-    });
+    logger.info('imgbb_upload_start', { originalname: file.originalname, mimetype: file.mimetype, size: file.size });
 
     // محاولة رفع الصورة مع retry mechanism
     let attempts = 3;
@@ -55,12 +52,12 @@ async function uploadToImgbb(file, options = {}) {
           timeout: 20000, // زيادة الـ timeout لـ 20 ثانية
         });
 
-        console.log('📥 imgbb response:', response.data);
+        logger.info('imgbb_upload_response', { response: response.data });
 
         // التحقق من نجاح الطلب
         if (response.status !== 200 || !response.data.success) {
           const errorMessage = response.data.error?.message || 'خطأ غير معروف';
-          console.error(`❌ imgbb upload failed: ${errorMessage}`);
+          logger.error('imgbb_upload_failed', { errorMessage });
           throw new Error(`فشل في رفع الصورة إلى imgbb: ${errorMessage}`);
         }
 
@@ -75,9 +72,9 @@ async function uploadToImgbb(file, options = {}) {
         };
       } catch (err) {
         lastError = err;
-        console.error(`❌ Attempt ${i + 1} failed:`, err.message);
+        logger.warn('imgbb_attempt_failed', { attempt: i + 1, err: err.message });
         if (err.code === 'ECONNABORTED') {
-          console.log(`[${new Date().toISOString()}] ⚠️ Retrying upload due to timeout...`);
+          logger.warn('imgbb_retry_timeout');
           continue; // إعادة المحاولة لو الخطأ timeout
         }
         throw err; // رمي الخطأ لو مش timeout
@@ -85,10 +82,10 @@ async function uploadToImgbb(file, options = {}) {
     }
 
     // لو فشلت كل المحاولات
-    console.error('❌ All upload attempts failed');
+    logger.error('imgbb_all_attempts_failed');
     throw new Error(`فشل في رفع الصورة بعد ${attempts} محاولات: ${lastError.message}`);
   } catch (err) {
-    console.error('❌ Error uploading to imgbb:', err.message, err.stack);
+    logger.error('imgbb_upload_error', { err: err.message, stack: err.stack });
     throw new Error(`خطأ في رفع الصورة: ${err.message}`);
   }
 }

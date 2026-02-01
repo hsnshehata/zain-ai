@@ -6,9 +6,7 @@ const Order = require('../models/Order');
 const { uploadToImgbb } = require('./uploadController');
 const mongoose = require('mongoose');
 const Bot = require('../models/Bot');
-
-// دالة مساعدة لإضافة timestamp للـ logs
-const getTimestamp = () => new Date().toISOString();
+const logger = require('../logger');
 
 // authorize store access (reuse similar logic)
 async function authorizeStoreAccess(storeId, userId, userRole) {
@@ -50,7 +48,9 @@ exports.createProduct = async (req, res) => {
   const file = req.file;
 
   try {
-    console.log(`[${getTimestamp()}] 📡 Creating product for store ${storeId} with data:`, {
+    logger.info('product_create_attempt', {
+      storeId,
+      userId,
       productName,
       description,
       price,
@@ -71,25 +71,20 @@ exports.createProduct = async (req, res) => {
     try {
       store = await authorizeStoreAccess(storeId, userId, req.user.role);
     } catch (e) {
-      console.log(`[${getTimestamp()}] ❌ Create product auth failed:`, e.message);
+      logger.warn('product_create_auth_failed', { storeId, userId, err: e.message });
       return res.status(e.status || 403).json({ message: e.message });
     }
 
     // التحقق من الحقول المطلوبة
     if (!productName || !price || !currency || stock === undefined) {
-      console.log(`[${getTimestamp()}] ❌ Create product failed: Missing required fields`, {
-        productName,
-        price,
-        currency,
-        stock
-      });
+      logger.warn('product_create_missing_fields', { storeId, productName, price, currency, stock });
       return res.status(400).json({ message: 'اسم المنتج، السعر، العملة، والمخزون مطلوبة' });
     }
 
     // التحقق من حقول العرض
     const offerEnabled = hasOffer === "yes" || hasOffer === true;
     if (offerEnabled && (!originalPrice || !discountedPrice)) {
-      console.log(`[${getTimestamp()}] ❌ Create product failed: Missing offer fields`);
+      logger.warn('product_create_missing_offer_fields', { storeId });
       return res.status(400).json({ message: 'السعر الأصلي والسعر بعد الخصم مطلوبان عند تفعيل العرض' });
     }
 
@@ -98,7 +93,7 @@ exports.createProduct = async (req, res) => {
     if (category && category !== 'null' && mongoose.isValidObjectId(category)) {
       const categoryExists = await Category.findOne({ _id: category, storeId });
       if (!categoryExists) {
-        console.log(`[${getTimestamp()}] ❌ Create product failed: Category ${category} not found in store ${storeId}`);
+        logger.warn('product_create_category_missing', { category, storeId });
         return res.status(404).json({ message: 'القسم غير موجود' });
       }
       categoryId = category;
@@ -111,9 +106,9 @@ exports.createProduct = async (req, res) => {
         const uploadResult = await uploadToImgbb(file);
         // استخدم رابط العرض المباشر للصورة لضمان الظهور الصحيح في الواجهة
         imageUrl = uploadResult.displayUrl || uploadResult.url;
-        console.log(`[${getTimestamp()}] ✅ Image uploaded successfully: ${imageUrl}`);
+        logger.info('product_image_uploaded', { storeId, imageUrl });
       } catch (uploadErr) {
-        console.error(`[${getTimestamp()}] ❌ Error uploading image:`, uploadErr.message);
+        logger.error('product_image_upload_error', { storeId, err: uploadErr.message });
         if (uploadErr.message.includes('timeout')) {
           return res.status(408).json({ message: 'تأخر في رفع الصورة، جرب صورة بحجم أصغر أو تحقق من الاتصال بالإنترنت' });
         }
@@ -137,7 +132,7 @@ exports.createProduct = async (req, res) => {
           }
         }
       } catch (e) {
-        console.log(`[${getTimestamp()}] ⚠️ Failed to parse images array:`, e.message);
+        logger.warn('product_images_parse_failed', { storeId, err: e.message });
       }
     }
 
@@ -161,7 +156,7 @@ exports.createProduct = async (req, res) => {
         else if (Array.isArray(optionGroups)) optionGroupsArr = optionGroups;
         if (!Array.isArray(optionGroupsArr)) optionGroupsArr = [];
       } catch (e) {
-        console.log(`[${getTimestamp()}] ⚠️ Failed to parse optionGroups:`, e.message);
+        logger.warn('product_option_groups_parse_failed', { storeId, err: e.message });
         optionGroupsArr = [];
       }
     }
@@ -215,14 +210,14 @@ exports.createProduct = async (req, res) => {
         newProduct.barcode = genCodes[0];
       }
     } catch (e) {
-      console.warn('Failed to generate or set product codes:', e.message);
+      logger.warn('product_codes_generate_failed', { storeId, err: e.message });
     }
 
     await newProduct.save();
-    console.log(`[${getTimestamp()}] ✅ Product created: ${productName} for store ${storeId}, imageUrl: ${imageUrl}`);
+    logger.info('product_created', { storeId, productName, imageUrl });
     res.status(201).json(newProduct);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error creating product:`, err.message, err.stack);
+    logger.error('product_create_error', { storeId, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في إنشاء المنتج: ' + (err.message || 'غير معروف') });
   }
 };
@@ -235,7 +230,10 @@ exports.updateProduct = async (req, res) => {
   const file = req.file;
 
   try {
-    console.log(`[${getTimestamp()}] 📡 Updating product ${productId} for store ${storeId} with data:`, {
+    logger.info('product_update_attempt', {
+      storeId,
+      productId,
+      userId,
       productName,
       description,
       price,
@@ -256,14 +254,14 @@ exports.updateProduct = async (req, res) => {
     try {
       store = await authorizeStoreAccess(storeId, userId, req.user.role);
     } catch (e) {
-      console.log(`[${getTimestamp()}] ❌ Update product auth failed:`, e.message);
+      logger.warn('product_update_auth_failed', { storeId, productId, userId, err: e.message });
       return res.status(e.status || 403).json({ message: e.message });
     }
 
     // التحقق من وجود المنتج
     const product = await Product.findOne({ _id: productId, storeId }).populate('category');
     if (!product) {
-      console.log(`[${getTimestamp()}] ❌ Update product failed: Product ${productId} not found in store ${storeId}`);
+      logger.warn('product_update_not_found', { storeId, productId });
       return res.status(404).json({ message: 'المنتج غير موجود' });
     }
 
@@ -272,7 +270,7 @@ exports.updateProduct = async (req, res) => {
     if (category && category !== 'null' && mongoose.isValidObjectId(category)) {
       const categoryExists = await Category.findOne({ _id: category, storeId });
       if (!categoryExists) {
-        console.log(`[${getTimestamp()}] ❌ Update product failed: Category ${category} not found in store ${storeId}`);
+        logger.warn('product_update_category_missing', { category, storeId });
         return res.status(404).json({ message: 'القسم غير موجود' });
       }
       categoryId = category;
@@ -284,9 +282,9 @@ exports.updateProduct = async (req, res) => {
         const uploadResult = await uploadToImgbb(file);
         // استخدم رابط العرض المباشر للصورة لضمان الظهور الصحيح في الواجهة
         product.imageUrl = uploadResult.displayUrl || uploadResult.url;
-        console.log(`[${getTimestamp()}] ✅ Image updated successfully: ${product.imageUrl}`);
+        logger.info('product_image_updated', { storeId, productId, imageUrl: product.imageUrl });
       } catch (uploadErr) {
-        console.error(`[${getTimestamp()}] ❌ Error uploading image:`, uploadErr.message);
+        logger.error('product_update_image_error', { storeId, productId, err: uploadErr.message });
         if (uploadErr.message.includes('timeout')) {
           return res.status(408).json({ message: 'تأخر في رفع الصورة، جرب صورة بحجم أصغر أو تحقق من الاتصال بالإنترنت' });
         }
@@ -321,7 +319,7 @@ exports.updateProduct = async (req, res) => {
           }
         }
       } catch (e) {
-        console.log(`[${getTimestamp()}] ⚠️ Failed to parse images array on update:`, e.message);
+        logger.warn('product_update_images_parse_failed', { storeId, productId, err: e.message });
       }
     }
 
@@ -337,17 +335,17 @@ exports.updateProduct = async (req, res) => {
         if (!Array.isArray(parsed)) parsed = [];
         product.optionGroups = parsed;
       } catch (e) {
-        console.log(`[${getTimestamp()}] ⚠️ Failed to parse optionGroups on update:`, e.message);
+        logger.warn('product_update_option_groups_parse_failed', { storeId, productId, err: e.message });
       }
     }
     product.isActive = true;
     product.salesCount = product.salesCount || 0;
 
     await product.save();
-    console.log(`[${getTimestamp()}] ✅ Product updated: ${product.productName} for store ${storeId}, imageUrl: ${product.imageUrl}`);
+    logger.info('product_updated', { storeId, productId: product._id, productName: product.productName, imageUrl: product.imageUrl });
     res.status(200).json(product);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error updating product:`, err.message, err.stack);
+    logger.error('product_update_error', { storeId, productId, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في تعديل المنتج: ' + (err.message || 'غير معروف') });
   }
 };
@@ -358,29 +356,29 @@ exports.deleteProduct = async (req, res) => {
   const userId = req.user.userId;
 
   try {
-    console.log(`[${getTimestamp()}] 📡 Deleting product ${productId} from store ${storeId}, user ${userId}`);
+    logger.info('product_delete_attempt', { storeId, productId, userId });
     // التحقق من وجود المتجر
     // authorize
     let store;
     try {
       store = await authorizeStoreAccess(storeId, userId, req.user.role);
     } catch (e) {
-      console.log(`[${getTimestamp()}] ❌ Delete product auth failed:`, e.message);
+      logger.warn('product_delete_auth_failed', { storeId, productId, userId, err: e.message });
       return res.status(e.status || 403).json({ message: e.message });
     }
 
     // التحقق من وجود المنتج
     const product = await Product.findOne({ _id: productId, storeId });
     if (!product) {
-      console.log(`[${getTimestamp()}] ❌ Delete product failed: Product ${productId} not found in store ${storeId}`);
+      logger.warn('product_delete_not_found', { storeId, productId });
       return res.status(404).json({ message: 'المنتج غير موجود' });
     }
 
     await product.deleteOne();
-    console.log(`[${getTimestamp()}] ✅ Product deleted: ${product.productName} from store ${storeId}`);
+    logger.info('product_deleted', { storeId, productId, productName: product.productName });
     res.status(200).json({ message: 'تم حذف المنتج بنجاح' });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error deleting product:`, err.message, err.stack);
+    logger.error('product_delete_error', { storeId, productId, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في حذف المنتج: ' + (err.message || 'غير معروف') });
   }
 };
@@ -391,7 +389,8 @@ exports.getProducts = async (req, res) => {
   const { category, random, limit, sort, filter, search, page } = req.query;
 
   try {
-    console.log(`[${getTimestamp()}] 📡 Fetching products for store ${storeId} with query:`, {
+    logger.info('products_fetch_attempt', {
+      storeId,
       category,
       random,
       limit,
@@ -404,7 +403,7 @@ exports.getProducts = async (req, res) => {
     // التحقق من وجود المتجر
     const store = await Store.findById(storeId);
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Get products failed: Store ${storeId} not found`);
+      logger.warn('products_fetch_store_not_found', { storeId });
       return res.status(404).json({ message: 'المتجر غير موجود' });
     }
 
@@ -501,10 +500,20 @@ exports.getProducts = async (req, res) => {
       }));
     }
 
-    console.log(`[${getTimestamp()}] ✅ Fetched ${products.length} products for store ${storeId}, total: ${total}`);
+    logger.info('products_fetch_success', {
+      storeId,
+      count: products.length,
+      total,
+      random: random === 'true',
+      page: pageNum,
+      limit: limitNum,
+      category,
+      sort,
+      filter
+    });
     res.status(200).json({ products, total });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error fetching products for store ${storeId}:`, err.message, err.stack);
+    logger.error('products_fetch_error', { storeId, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في جلب المنتجات: ' + (err.message || 'غير معروف') });
   }
 };
@@ -515,10 +524,10 @@ exports.getBestsellers = async (req, res) => {
   const { limit = 4 } = req.query;
 
   try {
-    console.log(`[${getTimestamp()}] 📡 Fetching bestsellers for store ${storeId} with limit: ${limit}`);
+    logger.info('bestsellers_fetch_attempt', { storeId, limit });
 
     if (!mongoose.isValidObjectId(storeId)) {
-      console.log(`[${getTimestamp()}] ❌ Get bestsellers failed: Invalid storeId ${storeId}`);
+      logger.warn('bestsellers_invalid_store_id', { storeId });
       return res.status(400).json({ message: 'معرف المتجر غير صالح' });
     }
 
@@ -526,7 +535,7 @@ exports.getBestsellers = async (req, res) => {
 
     const store = await Store.findById(storeIdObj);
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Get bestsellers failed: Store ${storeId} not found`);
+      logger.warn('bestsellers_store_not_found', { storeId });
       return res.status(404).json({ message: 'المتجر غير موجود' });
     }
 
@@ -583,7 +592,7 @@ exports.getBestsellers = async (req, res) => {
 
     // إذا لم يكن هناك طلبات، جلب أحدث المنتجات
     if (bestsellers.length === 0) {
-      console.log(`[${getTimestamp()}] ⚠️ No orders found, fetching recent products instead for store ${storeId}`);
+      logger.info('bestsellers_no_orders_fallback', { storeId });
       bestsellers = await Product.find({ storeId, isActive: true })
         .sort({ createdAt: -1 })
         .limit(parseInt(limit))
@@ -594,10 +603,10 @@ exports.getBestsellers = async (req, res) => {
         });
     }
 
-    console.log(`[${getTimestamp()}] ✅ Fetched ${bestsellers.length} bestsellers for store ${storeId}`);
+    logger.info('bestsellers_fetch_success', { storeId, count: bestsellers.length });
     res.status(200).json(bestsellers);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error fetching bestsellers for store ${storeId}:`, err.message, err.stack);
+    logger.error('bestsellers_fetch_error', { storeId, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في جلب المنتجات الأكثر مبيعاً: ' + (err.message || 'غير معروف') });
   }
 };
@@ -608,11 +617,11 @@ exports.getProduct = async (req, res) => {
   const userId = req.user ? req.user.userId : null;
 
   try {
-    console.log(`[${getTimestamp()}] 📡 Fetching product ${productId} for store ${storeId}, user ${userId || 'public'}`);
+    logger.info('product_fetch_attempt', { storeId, productId, userId: userId || 'public' });
     // التحقق من وجود المتجر
     const store = await Store.findById(storeId);
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Get product failed: Store ${storeId} not found`);
+      logger.warn('product_fetch_store_not_found', { storeId, productId });
       return res.status(404).json({ message: 'المتجر غير موجود' });
     }
 
@@ -623,14 +632,14 @@ exports.getProduct = async (req, res) => {
       options: { lean: true }
     });
     if (!product) {
-      console.log(`[${getTimestamp()}] ❌ Get product failed: Product ${productId} not found in store ${storeId}`);
+      logger.warn('product_fetch_not_found', { storeId, productId });
       return res.status(404).json({ message: 'المنتج غير موجود' });
     }
 
-    console.log(`[${getTimestamp()}] ✅ Fetched product: ${product.productName} for store ${storeId}, imageUrl: ${product.imageUrl}`);
+    logger.info('product_fetch_success', { storeId, productId, productName: product.productName, imageUrl: product.imageUrl });
     res.status(200).json(product);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error fetching product:`, err.message, err.stack);
+    logger.error('product_fetch_error', { storeId, productId, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في جلب المنتج: ' + (err.message || 'غير معروف') });
   }
 };

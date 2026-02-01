@@ -3,8 +3,7 @@ const Store = require('../models/Store');
 const Bot = require('../models/Bot');
 const Customer = require('../models/Customer');
 const CustomerTransaction = require('../models/CustomerTransaction');
-
-const getTimestamp = () => new Date().toISOString();
+const logger = require('../logger');
 
 async function authorizeStoreAccess(storeId, userId, userRole) {
   const store = await Store.findById(storeId);
@@ -67,7 +66,7 @@ exports.createSale = async (req, res) => {
 
     res.status(201).json({ sale });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error createSale:`, err.message, err.stack);
+    logger.error('sales_create_error', { err: err.message, stack: err.stack, storeId });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في إنشاء عملية البيع' });
   }
 };
@@ -83,7 +82,7 @@ exports.getSales = async (req, res) => {
     ]);
     res.status(200).json({ sales: items, total });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error getSales:`, err.message, err.stack);
+    logger.error('sales_list_error', { err: err.message, stack: err.stack, storeId });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في جلب المبيعات' });
   }
 };
@@ -96,7 +95,7 @@ exports.getSale = async (req, res) => {
     if (!sale) return res.status(404).json({ message: 'عملية البيع غير موجودة' });
     res.status(200).json({ sale });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error getSale:`, err.message, err.stack);
+    logger.error('sales_get_error', { err: err.message, stack: err.stack, storeId, saleId });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في جلب عملية البيع' });
   }
 };

@@ -5,16 +5,45 @@ const User = require('../models/User');
 const Bot = require('../models/Bot');
 const authenticate = require('../middleware/authenticate');
 const bcrypt = require('bcryptjs');
+const { validateBody, Joi } = require('../middleware/validate');
+const logger = require('../logger');
+
+const usernameRule = Joi.string().pattern(/^[a-z0-9_-]+$/).min(3).max(20);
+
+const createUserSchema = Joi.object({
+  username: usernameRule.required(),
+  password: Joi.string().pattern(/^(?=.*[A-Za-z])(?=.*\d).{8,}$/).required()
+    .messages({ 'string.pattern.base': 'كلمة المرور يجب أن تحتوي على حروف وأرقام وألا تقل عن 8 أحرف' }),
+  confirmPassword: Joi.any().valid(Joi.ref('password')).required()
+    .messages({ 'any.only': 'كلمات المرور غير متطابقة' }),
+  role: Joi.string().valid('user', 'superadmin').required(),
+  email: Joi.string().email({ tlds: { allow: false } }).required(),
+  whatsapp: Joi.string().allow('', null)
+});
+
+const updateUserSchema = Joi.object({
+  username: usernameRule.optional(),
+  password: Joi.string().pattern(/^(?=.*[A-Za-z])(?=.*\d).{8,}$/).optional()
+    .messages({ 'string.pattern.base': 'كلمة المرور يجب أن تحتوي على حروف وأرقام وألا تقل عن 8 أحرف' }),
+  confirmPassword: Joi.any().valid(Joi.ref('password')).when('password', {
+    is: Joi.exist(),
+    then: Joi.required(),
+    otherwise: Joi.forbidden()
+  }).messages({ 'any.only': 'كلمات المرور غير متطابقة' }),
+  role: Joi.string().valid('user', 'superadmin').optional(),
+  email: Joi.string().email({ tlds: { allow: false } }).optional(),
+  whatsapp: Joi.string().allow('', null).optional()
+});
 
 // Get current user data
 router.get('/me', authenticate, async (req, res) => {
   try {
     const user = await User.findById(req.user.userId);
     if (!user) {
-      console.log(`❌ User not found for userId: ${req.user.userId}`);
+      logger.warn('❌ User not found', { userId: req.user.userId });
       return res.status(404).json({ message: 'المستخدم غير موجود' });
     }
-    console.log(`✅ User data fetched for userId: ${req.user.userId}`);
+    logger.info('✅ User data fetched', { userId: req.user.userId });
     res.status(200).json({
       email: user.email,
       username: user.username,
@@ -22,7 +51,7 @@ router.get('/me', authenticate, async (req, res) => {
       role: user.role
     });
   } catch (err) {
-    console.error('❌ Error fetching user data:', err.message, err.stack);
+    logger.error('❌ Error fetching user data', { err });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 });
@@ -37,23 +66,17 @@ router.get('/', authenticate, async (req, res) => {
     const users = await (populateBots ? User.find().populate('bots') : User.find());
     res.status(200).json(users);
   } catch (err) {
-    console.error('Error fetching users:', err);
+    logger.error('Error fetching users', { err });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 });
 
 // Create a new user (Superadmin only)
-router.post('/', authenticate, async (req, res) => {
+router.post('/', authenticate, validateBody(createUserSchema), async (req, res) => {
   if (req.user.role !== 'superadmin') {
     return res.status(403).json({ message: 'غير مصرح لك' });
   }
-  const { username, password, confirmPassword, role, email } = req.body;
-  if (!username || !password || !confirmPassword || !role || !email) {
-    return res.status(400).json({ message: 'جميع الحقول مطلوبة' });
-  }
-  if (password !== confirmPassword) {
-    return res.status(400).json({ message: 'كلمات المرور غير متطابقة' });
-  }
+  const { username, password, role, email, whatsapp } = req.body;
   try {
     const normalizedUsername = username.toLowerCase(); // تحويل الـ username للحروف الصغيرة
     const existingUser = await User.findOne({ $or: [{ username: normalizedUsername }, { email }] });
@@ -61,17 +84,17 @@ router.post('/', authenticate, async (req, res) => {
       return res.status(400).json({ message: 'اسم المستخدم أو البريد الإلكتروني موجود بالفعل' });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username: normalizedUsername, password: hashedPassword, role, email });
+    const user = new User({ username: normalizedUsername, password: hashedPassword, role, email, whatsapp });
     await user.save();
     res.status(201).json({ message: 'تم إنشاء المستخدم بنجاح' });
   } catch (err) {
-    console.error('Error creating user:', err);
+    logger.error('Error creating user', { err });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 });
 
 // Update a user (Superadmin can update any user, regular user can update themselves)
-router.put('/:id', authenticate, async (req, res) => {
+router.put('/:id', authenticate, validateBody(updateUserSchema), async (req, res) => {
   const { id } = req.params;
   const { username, password, role, email, whatsapp } = req.body;
 
@@ -109,7 +132,7 @@ router.put('/:id', authenticate, async (req, res) => {
     await user.save();
     res.status(200).json({ message: 'تم تحديث المستخدم بنجاح' });
   } catch (err) {
-    console.error('Error updating user:', err);
+    logger.error('Error updating user', { err });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 });
@@ -132,7 +155,7 @@ router.delete('/:id', authenticate, async (req, res) => {
     await user.deleteOne();
     res.status(200).json({ message: 'تم حذف المستخدم بنجاح' });
   } catch (err) {
-    console.error('Error deleting user:', err);
+    logger.error('Error deleting user', { err });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 });

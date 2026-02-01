@@ -2,9 +2,7 @@
 const Store = require('../models/Store');
 const Bot = require('../models/Bot');
 const sanitizeHtml = require('sanitize-html');
-
-// دالة مساعدة لإضافة timestamp للـ logs
-const getTimestamp = () => new Date().toISOString();
+const logger = require('../logger');
 
 const normalizeStoreLink = (value = '') => {
   return value
@@ -38,7 +36,8 @@ exports.createStore = async (req, res) => {
   const userId = req.user.userId; // ممكن يبقى موجود لكن الربط هيتم عبر البوت لو اتبعته
 
   try {
-    console.log(`[${getTimestamp()}] 📡 Creating store for user ${userId} with data:`, {
+    logger.info('store_create_attempt', {
+      userId,
       storeName,
       templateId,
       primaryColor,
@@ -61,7 +60,7 @@ exports.createStore = async (req, res) => {
     // التحقق من عدم وجود متجر بنفس الاسم
     const existingStore = await Store.findOne({ storeName });
     if (existingStore) {
-      console.log(`[${getTimestamp()}] ❌ Create store failed: Store name ${storeName} already exists`);
+      logger.warn('store_create_name_exists', { storeName });
       return res.status(400).json({ message: 'اسم المتجر موجود بالفعل' });
     }
 
@@ -93,7 +92,7 @@ exports.createStore = async (req, res) => {
     if (selectedBotId) {
       const bot = await Bot.findById(selectedBotId);
       if (!bot) {
-        console.log(`[${getTimestamp()}] ❌ Create store failed: Bot ${selectedBotId} not found`);
+        logger.warn('store_create_bot_not_found', { selectedBotId });
         return res.status(400).json({ message: 'البوت المحدد غير موجود' });
       }
       botIdToUse = bot._id;
@@ -148,10 +147,10 @@ exports.createStore = async (req, res) => {
       await Bot.findByIdAndUpdate(selectedBotId, { storeId: newStore._id });
     }
 
-    console.log(`[${getTimestamp()}] ✅ Store created: ${newStore.storeName} for user ${userId}, link: ${storeLink}`);
+    logger.info('store_created', { storeId: newStore._id, storeName: newStore.storeName, userId, storeLink });
     res.status(201).json(newStore);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error creating store:`, err.message, err.stack);
+    logger.error('store_create_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في إنشاء المتجر: ' + (err.message || 'غير معروف') });
   }
 };
@@ -163,11 +162,11 @@ exports.updateStore = async (req, res) => {
   const userRole = req.user.role;
 
   try {
-    console.log(`[${getTimestamp()}] 📡 Updating store ${storeId} for user ${userId} with data:`, req.body);
+    logger.info('store_update_attempt', { storeId, userId, body: req.body });
 
     const store = await Store.findById(storeId);
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Update store failed: Store ${storeId} not found`);
+      logger.warn('store_update_not_found', { storeId });
       return res.status(404).json({ message: 'المتجر غير موجود' });
     }
 
@@ -314,11 +313,11 @@ exports.updateStore = async (req, res) => {
       { new: true, runValidators: true }
     );
 
-    console.log(`[${getTimestamp()}] ✅ Store updated:`, updatedStore.storeName);
+    logger.info('store_updated', { storeId: updatedStore?._id, storeName: updatedStore?.storeName });
     res.status(200).json(updatedStore);
 
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error updating store:`, err);
+    logger.error('store_update_error', { err: err.message, stack: err.stack, storeId });
     res.status(500).json({ message: 'خطأ في تحديث المتجر: ' + err.message });
   }
 };
@@ -330,10 +329,10 @@ exports.getStore = async (req, res) => {
   const userRole = req.user.role;
 
   try {
-    console.log(`[${getTimestamp()}] 📡 Fetching store ${storeId} for user ${userId}`);
+    logger.info('store_fetch_attempt', { storeId, userId });
     const store = await Store.findById(storeId);
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Get store failed: Store ${storeId} not found`);
+      logger.warn('store_fetch_not_found', { storeId });
       return res.status(404).json({ message: 'المتجر غير موجود' });
     }
     // Authorization: allow superadmin OR store owner OR bot owner
@@ -350,10 +349,10 @@ exports.getStore = async (req, res) => {
       }
     }
 
-    console.log(`[${getTimestamp()}] ✅ Fetched store: ${store.storeName} for user ${userId}`);
+    logger.info('store_fetch_success', { storeId: store._id, storeName: store.storeName, userId });
     res.status(200).json(store);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error fetching store:`, err.message, err.stack);
+    logger.error('store_fetch_error', { err: err.message, stack: err.stack, storeId });
     res.status(500).json({ message: 'خطأ في جلب المتجر: ' + (err.message || 'غير معروف') });
   }
 };
@@ -363,17 +362,17 @@ exports.getStoreByLink = async (req, res) => {
   const { storeLink } = req.params;
 
   try {
-    console.log(`[${getTimestamp()}] 📡 Fetching store by link: ${storeLink}`);
+    logger.info('store_fetch_by_link_attempt', { storeLink });
     const store = await Store.findOne({ storeLink, isActive: true }).select('-userId');
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Get store by link failed: Store link ${storeLink} not found or not active`);
+      logger.warn('store_fetch_by_link_not_found', { storeLink });
       return res.status(404).json({ message: 'المتجر غير موجود أو غير مفعل' });
     }
 
-    console.log(`[${getTimestamp()}] ✅ Fetched store by link: ${store.storeName}`);
+    logger.info('store_fetch_by_link_success', { storeName: store.storeName, storeLink });
     res.status(200).json(store);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error fetching store by link:`, err.message, err.stack);
+    logger.error('store_fetch_by_link_error', { err: err.message, stack: err.stack, storeLink });
     res.status(500).json({ message: 'خطأ في جلب المتجر: ' + (err.message || 'غير معروف') });
   }
 };

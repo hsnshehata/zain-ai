@@ -10,17 +10,20 @@ exports.createUser = async (req, res) => {
   const { username, email, whatsapp, password, confirmPassword, role, subscriptionType, subscriptionEndDate, botName } = req.body;
 
   if (!username || !email || !whatsapp || !password || !confirmPassword || !botName) {
-    console.log('❌ Create user failed: All fields are required');
+    const logger = require('../logger');
+    logger.warn('create_user_failed_required');
     return res.status(400).json({ message: 'جميع الحقول مطلوبة، بما في ذلك اسم البوت' });
   }
 
   if (password !== confirmPassword) {
-    console.log('❌ Create user failed: Passwords do not match');
+    const logger = require('../logger');
+    logger.warn('create_user_failed_password_mismatch');
     return res.status(400).json({ message: 'كلمات المرور غير متطابقة' });
   }
 
   if (subscriptionType && !['free', 'monthly', 'yearly'].includes(subscriptionType)) {
-    console.log('❌ Create user failed: Invalid subscription type');
+    const logger = require('../logger');
+    logger.warn('create_user_failed_invalid_subscription');
     return res.status(400).json({ message: 'نوع الاشتراك غير صالح' });
   }
 
@@ -28,7 +31,8 @@ exports.createUser = async (req, res) => {
     const normalizedUsername = username.toLowerCase(); // تحويل الـ username للحروف الصغيرة
     const existingUser = await User.findOne({ $or: [{ username: normalizedUsername }, { email }] });
     if (existingUser) {
-      console.log(`❌ Create user failed: User ${normalizedUsername} or email ${email} already exists`);
+      const logger = require('../logger');
+      logger.warn('create_user_failed_exists', { username: normalizedUsername, email });
       return res.status(400).json({ message: 'اسم المستخدم أو البريد الإلكتروني موجود بالفعل' });
     }
 
@@ -62,10 +66,12 @@ exports.createUser = async (req, res) => {
     user.bots.push(bot._id);
     await user.save();
 
-    console.log(`✅ User ${normalizedUsername} created successfully with bot ${botName}`);
+    const logger = require('../logger');
+    logger.info('create_user_success', { username: normalizedUsername, botName });
     res.status(201).json({ user, bot });
   } catch (err) {
-    console.error('❌ خطأ في إنشاء المستخدم:', err.message, err.stack);
+    const logger = require('../logger');
+    logger.error('create_user_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
@@ -80,10 +86,12 @@ exports.getAllUsers = async (req, res) => {
     } else {
       users = await User.find();
     }
-    console.log(`✅ Fetched ${users.length} users`);
+    const logger = require('../logger');
+    logger.info('get_users_success', { count: users.length });
     res.status(200).json(users);
   } catch (err) {
-    console.error('❌ خطأ في جلب المستخدمين:', err.message, err.stack);
+    const logger = require('../logger');
+    logger.error('get_users_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
@@ -93,13 +101,16 @@ exports.getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id).populate('bots');
     if (!user) {
-      console.log(`❌ User not found for ID: ${req.params.id}`);
+      const logger = require('../logger');
+      logger.warn('get_user_not_found', { userId: req.params.id });
       return res.status(404).json({ message: 'المستخدم غير موجود' });
     }
-    console.log(`✅ User fetched successfully for ID: ${req.params.id}`, user);
+    const logger = require('../logger');
+    logger.info('get_user_success', { userId: req.params.id });
     res.status(200).json(user);
   } catch (err) {
-    console.error('❌ خطأ في جلب المستخدم:', err.message, err.stack);
+    const logger = require('../logger');
+    logger.error('get_user_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر', error: err.message });
   }
 };
@@ -109,14 +120,16 @@ exports.updateUser = async (req, res) => {
   const { username, email, whatsapp, password, role, subscriptionType, subscriptionEndDate } = req.body;
 
   if (subscriptionType && !['free', 'monthly', 'yearly'].includes(subscriptionType)) {
-    console.log('❌ Update user failed: Invalid subscription type');
+    const logger = require('../logger');
+    logger.warn('update_user_failed_invalid_subscription');
     return res.status(400).json({ message: 'نوع الاشتراك غير صالح' });
   }
 
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
-      console.log(`❌ Update user failed: User ${req.params.id} not found`);
+      const logger = require('../logger');
+      logger.warn('update_user_not_found', { userId: req.params.id });
       return res.status(404).json({ message: 'المستخدم غير موجود' });
     }
 
@@ -128,7 +141,8 @@ exports.updateUser = async (req, res) => {
       ]
     });
     if (existingUser) {
-      console.log(`❌ Update user failed: Username ${normalizedUsername} or email ${email} already exists`);
+      const logger = require('../logger');
+      logger.warn('update_user_exists', { username: normalizedUsername, email });
       return res.status(400).json({ message: 'اسم المستخدم أو البريد الإلكتروني موجود بالفعل' });
     }
 
@@ -144,10 +158,12 @@ exports.updateUser = async (req, res) => {
     }
 
     await user.save();
-    console.log(`✅ User ${user.username} updated successfully`);
+    const logger = require('../logger');
+    logger.info('update_user_success', { userId: user._id });
     res.status(200).json(user);
   } catch (err) {
-    console.error('❌ خطأ في تعديل المستخدم:', err.message, err.stack);
+    const logger = require('../logger');
+    logger.error('update_user_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };
@@ -157,7 +173,8 @@ exports.deleteUser = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (!user) {
-      console.log(`❌ Delete user failed: User ${req.params.id} not found`);
+      const logger = require('../logger');
+      logger.warn('delete_user_not_found', { userId: req.params.id });
       return res.status(404).json({ message: 'المستخدم غير موجود' });
     }
 
@@ -167,10 +184,12 @@ exports.deleteUser = async (req, res) => {
     await Notification.deleteMany({ user: user._id });
 
     await User.deleteOne({ _id: req.params.id });
-    console.log(`✅ User ${user.username} deleted successfully`);
+    const logger = require('../logger');
+    logger.info('delete_user_success', { userId: user._id });
     res.status(200).json({ message: 'تم حذف المستخدم بنجاح' });
   } catch (err) {
-    console.error('❌ خطأ في حذف المستخدم:', err.message, err.stack);
+    const logger = require('../logger');
+    logger.error('delete_user_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };

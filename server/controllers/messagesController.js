@@ -1,4 +1,5 @@
 const Conversation = require("../models/Conversation");
+const logger = require('../logger');
 
 // Get daily messages for a bot
 exports.getDailyMessages = async (req, res) => {
@@ -37,7 +38,7 @@ exports.getDailyMessages = async (req, res) => {
 
     res.status(200).json(result);
   } catch (err) {
-    console.error("Error fetching daily messages:", err.message);
+    logger.error('daily_messages_fetch_error', { botId: req.params.botId, err: err.message, stack: err.stack });
     res.status(500).json({ message: "خطأ في السيرفر" });
   }
 };
@@ -86,7 +87,7 @@ exports.getMessages = async (req, res) => {
       totalPages: Math.ceil(totalConversations / limit),
     });
   } catch (err) {
-    console.error("Error fetching messages:", err.message);
+    logger.error('messages_fetch_error', { botId, channelType, err: err.message, stack: err.stack });
     res.status(500).json({ message: "خطأ في جلب المحادثات." });
   }
 };
@@ -105,7 +106,7 @@ exports.deleteUserMessages = async (req, res) => {
     await Conversation.deleteMany({ botId, userId, channel: channelType });
     res.status(200).json({ message: "تم حذف محادثات المستخدم بنجاح." });
   } catch (error) {
-    console.error("Error in deleteUserMessages:", error.message);
+    logger.error('messages_delete_user_error', { botId, userId, channelType, err: error.message, stack: error.stack });
     res.status(500).json({ message: "خطأ في حذف المحادثات." });
   }
 };
@@ -123,7 +124,7 @@ exports.deleteAllMessages = async (req, res) => {
     await Conversation.deleteMany({ botId, channel: channelType });
     res.status(200).json({ message: "تم حذف جميع المحادثات بنجاح." });
   } catch (error) {
-    console.error("Error in deleteAllMessages:", error.message);
+    logger.error('messages_delete_all_error', { botId, channelType, err: error.message, stack: error.stack });
     res.status(500).json({ message: "خطأ في السيرفر" });
   }
 };

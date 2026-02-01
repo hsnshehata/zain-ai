@@ -5,6 +5,7 @@ const Bot = require("../models/Bot");
 const authenticate = require("../middleware/authenticate");
 const axios = require("axios");
 const messagesController = require("../controllers/messagesController");
+const logger = require("../logger");
 
 // دالة لجلب اسم المستخدم من فيسبوك، إنستجرام، أو واتساب
 async function getSocialUsername(userId, bot, platform) {
@@ -28,26 +29,22 @@ async function getSocialUsername(userId, bot, platform) {
         ? "إنستجرام"
         : "واتساب";
 
-    console.log(
-      `📋 جلب التوكن لـ ${attempt} | Bot ID: ${bot._id} | Token: ${
-        accessToken ? accessToken.slice(0, 10) + "..." : "غير موجود"
-      }`
-    );
+    logger.info("📋 جلب التوكن", {
+      attempt,
+      botId: bot._id,
+      tokenPreview: accessToken ? `${accessToken.slice(0, 10)}...` : "غير موجود",
+    });
 
     if (!accessToken) {
-      console.error(
-        `❌ لم يتم العثور على access token لـ ${attempt} لهذا البوت ${bot._id}`
-      );
+      logger.error("❌ لم يتم العثور على access token", { attempt, botId: bot._id });
       if (platform === "facebook") {
         // جرب إنستجرام كمحاولة ثانية
-        console.log(`📋 محاولة جلب الاسم باستخدام توكن إنستجرام كبديل...`);
+        logger.info("📋 محاولة جلب الاسم باستخدام توكن إنستجرام كبديل...");
         accessToken = bot.instagramApiKey;
         apiUrl = "https://graph.instagram.com/v22.0";
         attempt = "إنستجرام (المحاولة الثانية)";
         if (!accessToken) {
-          console.error(
-            `❌ لم يتم العثور على توكن إنستجرام أيضاً لهذا البوت ${bot._id}`
-          );
+          logger.error("❌ لم يتم العثور على توكن إنستجرام أيضاً لهذا البوت", { botId: bot._id });
           return platform === "whatsapp"
             ? userId.replace("whatsapp_", "")
             : "مستخدم فيسبوك";
@@ -65,9 +62,7 @@ async function getSocialUsername(userId, bot, platform) {
       ""
     );
     cleanUserId = cleanUserId.replace(/^comment_/, "");
-    console.log(
-      `📋 جلب اسم المستخدم لـ ${userId}, بعد التنظيف: ${cleanUserId}, المحاولة: ${attempt}`
-    );
+    logger.info("📋 جلب اسم المستخدم", { userId, cleanUserId, attempt });
 
     // طلب جلب الاسم
     const requestUrl =
@@ -85,29 +80,25 @@ async function getSocialUsername(userId, bot, platform) {
       const res = await axios.get(requestUrl, { params: requestParams });
       response = res.data;
     } catch (err) {
-      console.error(
-        `❌ خطأ في طلب API لجلب الاسم لـ ${cleanUserId} في ${attempt}:`,
-        err.message
-      );
+      logger.error("❌ خطأ في طلب API لجلب الاسم", { cleanUserId, attempt, err: err.message });
       throw err;
     }
 
     if (response.error) {
-      console.error(
-        `❌ خطأ في استجابة API لجلب الاسم لـ ${cleanUserId} في ${attempt}:`,
-        response.error.message,
-        response.error
-      );
+      logger.error("❌ خطأ في استجابة API لجلب الاسم", {
+        cleanUserId,
+        attempt,
+        error: response.error?.message,
+        raw: response.error,
+      });
       if (platform === "facebook" && attempt === "فيسبوك (المحاولة الأولى)") {
         // جرب إنستجرام كمحاولة ثانية
-        console.log(`📋 محاولة جلب الاسم باستخدام توكن إنستجرام كبديل...`);
+        logger.info("📋 محاولة جلب الاسم باستخدام توكن إنستجرام كبديل...");
         accessToken = bot.instagramApiKey;
         apiUrl = "https://graph.instagram.com/v22.0";
         attempt = "إنستجرام (المحاولة الثانية)";
         if (!accessToken) {
-          console.error(
-            `❌ لم يتم العثور على توكن إنستجرام لهذا البوت ${bot._id}`
-          );
+          logger.error("❌ لم يتم العثور على توكن إنستجرام لهذا البوت", { botId: bot._id });
           return "مستخدم فيسبوك";
         }
 
@@ -116,44 +107,35 @@ async function getSocialUsername(userId, bot, platform) {
           const res = await axios.get(`${apiUrl}/${cleanUserId}`, { params: { access_token: accessToken, fields: 'name' } });
           retryResponse = res.data;
         } catch (err) {
-          console.error(
-            `❌ خطأ في طلب API لجلب الاسم لـ ${cleanUserId} في ${attempt}:`,
-            err.message
-          );
+          logger.error("❌ خطأ في طلب API لجلب الاسم (محاولة ثانية)", { cleanUserId, attempt, err: err.message });
           return "مستخدم فيسبوك";
         }
 
         if (retryResponse.error) {
-          console.error(
-            `❌ خطأ في استجابة API لجلب الاسم لـ ${cleanUserId} في ${attempt}:`,
-            retryResponse.error.message,
-            retryResponse.error
-          );
+          logger.error("❌ خطأ في استجابة API لجلب الاسم (محاولة ثانية)", {
+            cleanUserId,
+            attempt,
+            error: retryResponse.error?.message,
+            raw: retryResponse.error,
+          });
           return "مستخدم فيسبوك";
         }
-
-        console.log(
-          `✅ تم جلب الاسم بنجاح لـ ${cleanUserId} في ${attempt}: ${retryResponse.name}`
-        );
+        logger.info("✅ تم جلب الاسم بنجاح (محاولة ثانية)", { cleanUserId, attempt, name: retryResponse.name });
         return retryResponse.name || "مستخدم فيسبوك";
       }
       return platform === "whatsapp" ? cleanUserId : "مستخدم فيسبوك";
     }
 
-    console.log(
-      `✅ تم جلب الاسم بنجاح لـ ${cleanUserId} في ${attempt}: ${
-        platform === "whatsapp" ? response.data[0]?.phone_number : response.name
-      }`
-    );
+    logger.info("✅ تم جلب الاسم بنجاح", {
+      cleanUserId,
+      attempt,
+      name: platform === "whatsapp" ? response.data?.[0]?.phone_number : response.name,
+    });
     return platform === "whatsapp"
       ? response.data[0]?.phone_number || cleanUserId
       : response.name || "مستخدم فيسبوك";
   } catch (err) {
-    console.error(
-      `❌ خطأ في جلب اسم المستخدم ${userId} من ${platform}:`,
-      err.message,
-      err.stack
-    );
+    logger.error("❌ خطأ في جلب اسم المستخدم", { userId, platform, err });
     return platform === "whatsapp"
       ? userId.replace("whatsapp_", "")
       : "مستخدم فيسبوك";
@@ -191,17 +173,13 @@ router.get("/:botId", authenticate, async (req, res) => {
           // لو الـ username مش موجود أو قيمته مش كويسة، نجيب الاسم من الـ API
           if (!conv.username || conv.username === "مستخدم فيسبوك" || conv.username === "مستخدم إنستجرام") {
             if (type === "facebook" && bot.facebookApiKey) {
-              console.log(`📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من فيسبوك`);
+              logger.info("📋 محاولة جلب اسم المستخدم من فيسبوك", { userId: conv.userId });
               username = await getSocialUsername(conv.userId, bot, "facebook");
             } else if (type === "instagram" && bot.instagramApiKey) {
-              console.log(
-                `📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من إنستجرام`
-              );
+              logger.info("📋 محاولة جلب اسم المستخدم من إنستجرام", { userId: conv.userId });
               username = await getSocialUsername(conv.userId, bot, "instagram");
             } else if (type === "whatsapp" && bot.whatsappApiKey) {
-              console.log(
-                `📋 محاولة جلب اسم المستخدم لـ ${conv.userId} من واتساب`
-              );
+              logger.info("📋 محاولة جلب اسم المستخدم من واتساب", { userId: conv.userId });
               username = await getSocialUsername(conv.userId, bot, "whatsapp");
             }
             // تحديث الـ username في المحادثة لو اتغير
@@ -223,7 +201,7 @@ router.get("/:botId", authenticate, async (req, res) => {
       });
     }
   } catch (err) {
-    console.error("Error fetching conversations:", err.message);
+    logger.error("Error fetching conversations", { err });
     res.status(500).json({ message: "خطأ في السيرفر" });
   }
 });
@@ -253,7 +231,7 @@ router.get("/social-user/:userId", authenticate, async (req, res) => {
     const username = await getSocialUsername(userId, bot, platform);
     res.status(200).json({ name: username });
   } catch (err) {
-    console.error("Error fetching social user:", err);
+    logger.error("Error fetching social user", { err });
     res.status(500).json({ message: "خطأ في جلب اسم المستخدم" });
   }
 });
@@ -290,7 +268,7 @@ router.delete(
 
       res.status(200).json({ message: "تم حذف الرسالة بنجاح" });
     } catch (err) {
-      console.error("Error deleting message:", err.message);
+      logger.error("Error deleting message", { err });
       res.status(500).json({ message: "خطأ في السيرفر" });
     }
   }
@@ -311,7 +289,7 @@ router.delete(
 
       res.status(200).json({ message: "تم حذف المحادثة بنجاح" });
     } catch (err) {
-      console.error("Error deleting conversation:", err.message);
+      logger.error("Error deleting conversation", { err });
       res.status(500).json({ message: "خطأ في السيرفر" });
     }
   }
@@ -356,7 +334,7 @@ router.get("/download/:botId", authenticate, async (req, res) => {
     res.set("Content-Type", "text/plain");
     res.send(textContent);
   } catch (err) {
-    console.error("Error downloading messages:", err.message);
+    logger.error("Error downloading messages", { err });
     res.status(500).json({ message: "خطأ في السيرفر" });
   }
 });

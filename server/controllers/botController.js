@@ -2,9 +2,7 @@
 const Bot = require('../models/Bot');
 const express = require('express');
 const axios = require('axios');
-
-// دالة مساعدة لإضافة timestamp للـ logs
-const getTimestamp = () => new Date().toISOString();
+const logger = require('../logger');
 
 // دالة مساعدة للتحقق من صيغة الوقت (HH:mm)
 const isValidTimeFormat = (time) => {
@@ -16,11 +14,11 @@ const isValidTimeFormat = (time) => {
 exports.getSettings = async (req, res) => {
   try {
     const botId = req.params.id;
-    console.log(`[${getTimestamp()}] جاري جلب إعدادات البوت | Bot ID: ${botId}`);
+    logger.info('جاري جلب إعدادات البوت', { botId });
 
     const bot = await Bot.findById(botId);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      logger.warn('البوت غير موجود', { botId });
       return res.status(404).json({ success: false, message: 'البوت غير موجود' });
     }
 
@@ -36,10 +34,10 @@ exports.getSettings = async (req, res) => {
       ownerPauseDurationMinutes: bot.ownerPauseDurationMinutes ?? 30,
     };
 
-    console.log(`[${getTimestamp()}] ✅ تم جلب إعدادات البوت بنجاح:`, settings);
+    logger.info('✅ تم جلب إعدادات البوت بنجاح', { botId });
     res.status(200).json({ success: true, data: settings });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في جلب إعدادات البوت:`, err.message, err.stack);
+    logger.error('❌ خطأ في جلب إعدادات البوت', { botId: req.params.id, err });
     res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
   }
 };
@@ -49,23 +47,22 @@ exports.updateSettings = async (req, res) => {
   try {
     const botId = req.params.id;
     const { workingHours, messagingOptinsEnabled, messageReactionsEnabled, messagingReferralsEnabled, messageEditsEnabled, inboxLabelsEnabled, commentsRepliesEnabled, ownerPauseKeyword, ownerPauseDurationMinutes } = req.body;
-
-    console.log(`[${getTimestamp()}] 📝 محاولة تحديث إعدادات البوت | Bot ID: ${botId} | Data:`, req.body);
+    logger.info('📝 محاولة تحديث إعدادات البوت', { botId, bodyKeys: Object.keys(req.body || {}) });
 
     const bot = await Bot.findById(botId);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      logger.warn('⚠️ البوت غير موجود', { botId });
       return res.status(404).json({ success: false, message: 'البوت غير موجود' });
     }
 
     if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
-      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      logger.warn('⚠️ غير مصرح للمستخدم لتحديث البوت', { botUserId: bot.userId, requestUserId: req.user.userId });
       return res.status(403).json({ success: false, message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
     if (workingHours) {
       if (!workingHours.start || !workingHours.end || !isValidTimeFormat(workingHours.start) || !isValidTimeFormat(workingHours.end)) {
-        console.log(`[${getTimestamp()}] ⚠️ صيغة أوقات العمل غير صحيحة | Bot ID: ${botId} | Working Hours:`, workingHours);
+        logger.warn('⚠️ صيغة أوقات العمل غير صحيحة', { botId, workingHours });
         return res.status(400).json({ success: false, message: 'صيغة أوقات العمل غير صحيحة، يجب أن تكون HH:mm' });
       }
       bot.workingHours = workingHours;
@@ -84,7 +81,7 @@ exports.updateSettings = async (req, res) => {
     for (const [key, value] of Object.entries(booleanFields)) {
       if (value !== undefined) {
         if (typeof value !== 'boolean') {
-          console.log(`[${getTimestamp()}] ⚠️ القيمة غير صحيحة | Bot ID: ${botId} | Field: ${key} | Value: ${value}`);
+          logger.warn('⚠️ القيمة غير صحيحة', { botId, field: key, value });
           return res.status(400).json({ success: false, message: `القيمة ${key} يجب أن تكون true أو false` });
         }
         if (bot[key] !== value) {
@@ -96,7 +93,7 @@ exports.updateSettings = async (req, res) => {
 
     if (ownerPauseKeyword !== undefined) {
       if (ownerPauseKeyword !== null && typeof ownerPauseKeyword !== 'string') {
-        console.log(`[${getTimestamp()}] ⚠️ صيغة الكلمة غير صحيحة | Bot ID: ${botId} | ownerPauseKeyword:`, ownerPauseKeyword);
+        logger.warn('⚠️ صيغة الكلمة غير صحيحة', { botId, ownerPauseKeyword });
         return res.status(400).json({ success: false, message: 'كلمة الإيقاف يجب أن تكون نصًا' });
       }
       bot.ownerPauseKeyword = ownerPauseKeyword ? ownerPauseKeyword.trim() : '';
@@ -106,7 +103,7 @@ exports.updateSettings = async (req, res) => {
     if (ownerPauseDurationMinutes !== undefined) {
       const durationNumber = Number(ownerPauseDurationMinutes);
       if (Number.isNaN(durationNumber) || durationNumber < 0 || durationNumber > 10080) {
-        console.log(`[${getTimestamp()}] ⚠️ مدة الإيقاف غير صحيحة | Bot ID: ${botId} | ownerPauseDurationMinutes:`, ownerPauseDurationMinutes);
+        logger.warn('⚠️ مدة الإيقاف غير صحيحة', { botId, ownerPauseDurationMinutes });
         return res.status(400).json({ success: false, message: 'مدة الإيقاف يجب أن تكون بين 0 و 10080 دقيقة' });
       }
       bot.ownerPauseDurationMinutes = durationNumber;
@@ -115,9 +112,9 @@ exports.updateSettings = async (req, res) => {
 
     if (hasChanges || (workingHours && (workingHours.start !== bot.workingHours?.start || workingHours.end !== bot.workingHours?.end))) {
       await bot.save();
-      console.log(`[${getTimestamp()}] ✅ تم تحديث إعدادات البوت بنجاح | Bot ID: ${botId}`);
+      logger.info('✅ تم تحديث إعدادات البوت بنجاح', { botId });
     } else {
-      console.log(`[${getTimestamp()}] ⚠️ لا توجد تغييرات لتحديثها | Bot ID: ${botId}`);
+      logger.info('⚠️ لا توجد تغييرات لتحديثها', { botId });
     }
 
     const updatedSettings = {
@@ -134,7 +131,7 @@ exports.updateSettings = async (req, res) => {
 
     res.status(200).json({ success: true, data: updatedSettings });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في تحديث إعدادات البوت:`, err.message, err.stack);
+    logger.error('❌ خطأ في تحديث إعدادات البوت', { botId: req.params.id, err });
     res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
   }
 };
@@ -143,11 +140,11 @@ exports.updateSettings = async (req, res) => {
 exports.getInstagramSettings = async (req, res) => {
   try {
     const botId = req.params.id;
-    console.log(`[${getTimestamp()}] جاري جلب إعدادات الإنستجرام | Bot ID: ${botId}`);
+    logger.info('جاري جلب إعدادات الإنستجرام', { botId });
 
     const bot = await Bot.findById(botId);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      logger.warn('البوت غير موجود', { botId });
       return res.status(404).json({ success: false, message: 'البوت غير موجود' });
     }
 
@@ -160,10 +157,10 @@ exports.getInstagramSettings = async (req, res) => {
       instagramCommentsRepliesEnabled: bot.instagramCommentsRepliesEnabled,
     };
 
-    console.log(`[${getTimestamp()}] ✅ تم جلب إعدادات الإنستجرام بنجاح | Bot ID: ${botId} | Settings:`, instagramSettings);
+    logger.info('✅ تم جلب إعدادات الإنستجرام بنجاح', { botId });
     res.status(200).json({ success: true, data: instagramSettings });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في جلب إعدادات الإنستجرام:`, err.message, err.stack);
+    logger.error('❌ خطأ في جلب إعدادات الإنستجرام', { botId: req.params.id, err });
     res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
   }
 };
@@ -173,17 +170,16 @@ exports.updateInstagramSettings = async (req, res) => {
   try {
     const botId = req.params.id;
     const { instagramMessagingOptinsEnabled, instagramMessageReactionsEnabled, instagramMessagingReferralsEnabled, instagramMessageEditsEnabled, instagramInboxLabelsEnabled, instagramCommentsRepliesEnabled } = req.body;
-
-    console.log(`[${getTimestamp()}] 📝 محاولة تحديث إعدادات الإنستجرام | Bot ID: ${botId} | Data:`, req.body);
+    logger.info('📝 محاولة تحديث إعدادات الإنستجرام', { botId, bodyKeys: Object.keys(req.body || {}) });
 
     const bot = await Bot.findById(botId);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      logger.warn('⚠️ البوت غير موجود', { botId });
       return res.status(404).json({ success: false, message: 'البوت غير موجود' });
     }
 
     if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
-      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      logger.warn('⚠️ غير مصرح للمستخدم', { botUserId: bot.userId, requestUserId: req.user.userId });
       return res.status(403).json({ success: false, message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
@@ -200,7 +196,7 @@ exports.updateInstagramSettings = async (req, res) => {
     for (const [key, value] of Object.entries(booleanFields)) {
       if (value !== undefined) {
         if (typeof value !== 'boolean') {
-          console.log(`[${getTimestamp()}] ⚠️ القيمة غير صحيحة | Bot ID: ${botId} | Field: ${key} | Value: ${value}`);
+          logger.warn('⚠️ القيمة غير صحيحة', { botId, field: key, value });
           return res.status(400).json({ success: false, message: `القيمة ${key} يجب أن تكون true أو false` });
         }
         if (bot[key] !== value) {
@@ -212,9 +208,9 @@ exports.updateInstagramSettings = async (req, res) => {
 
     if (hasChanges) {
       await bot.save();
-      console.log(`[${getTimestamp()}] ✅ تم تحديث إعدادات الإنستجرام بنجاح | Bot ID: ${botId}`);
+      logger.info('✅ تم تحديث إعدادات الإنستجرام بنجاح', { botId });
     } else {
-      console.log(`[${getTimestamp()}] ⚠️ لا توجد تغييرات لتحديثها | Bot ID: ${botId}`);
+      logger.info('⚠️ لا توجد تغييرات لتحديثها', { botId });
     }
 
     const updatedInstagramSettings = {
@@ -228,7 +224,7 @@ exports.updateInstagramSettings = async (req, res) => {
 
     res.status(200).json({ success: true, data: updatedInstagramSettings });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في تحديث إعدادات الإنستجرام:`, err.message, err.stack);
+    logger.error('❌ خطأ في تحديث إعدادات الإنستجرام', { botId: req.params.id, err });
     res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
   }
 };
@@ -237,11 +233,11 @@ exports.updateInstagramSettings = async (req, res) => {
 exports.getWhatsAppSettings = async (req, res) => {
   try {
     const botId = req.params.botId;
-    console.log(`[${getTimestamp()}] جاري جلب إعدادات واتساب | Bot ID: ${botId}`);
+    logger.info('جاري جلب إعدادات واتساب', { botId });
 
     const bot = await Bot.findById(botId);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      logger.warn('⚠️ البوت غير موجود', { botId });
       return res.status(404).json({ success: false, message: 'البوت غير موجود' });
     }
 
@@ -252,10 +248,10 @@ exports.getWhatsAppSettings = async (req, res) => {
       whatsappMessageEditsEnabled: bot.whatsappMessageEditsEnabled,
     };
 
-    console.log(`[${getTimestamp()}] ✅ تم جلب إعدادات واتساب بنجاح | Bot ID: ${botId} | Settings:`, whatsappSettings);
+    logger.info('✅ تم جلب إعدادات واتساب بنجاح', { botId });
     res.status(200).json({ success: true, data: whatsappSettings });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في جلب إعدادات واتساب:`, err.message, err.stack);
+    logger.error('❌ خطأ في جلب إعدادات واتساب', { botId: req.params.botId, err });
     res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
   }
 };
@@ -265,17 +261,16 @@ exports.updateWhatsAppSettings = async (req, res) => {
   try {
     const botId = req.params.botId;
     const { whatsappMessagingOptinsEnabled, whatsappMessageReactionsEnabled, whatsappMessagingReferralsEnabled, whatsappMessageEditsEnabled } = req.body;
-
-    console.log(`[${getTimestamp()}] 📝 محاولة تحديث إعدادات واتساب | Bot ID: ${botId} | Data:`, req.body);
+    logger.info('📝 محاولة تحديث إعدادات واتساب', { botId, bodyKeys: Object.keys(req.body || {}) });
 
     const bot = await Bot.findById(botId);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      logger.warn('⚠️ البوت غير موجود', { botId });
       return res.status(404).json({ success: false, message: 'البوت غير موجود' });
     }
 
     if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
-      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      logger.warn('⚠️ غير مصرح للمستخدم', { botUserId: bot.userId, requestUserId: req.user.userId });
       return res.status(403).json({ success: false, message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
@@ -290,7 +285,7 @@ exports.updateWhatsAppSettings = async (req, res) => {
     for (const [key, value] of Object.entries(booleanFields)) {
       if (value !== undefined) {
         if (typeof value !== 'boolean') {
-          console.log(`[${getTimestamp()}] ⚠️ القيمة غير صحيحة | Bot ID: ${botId} | Field: ${key} | Value: ${value}`);
+          logger.warn('⚠️ القيمة غير صحيحة', { botId, field: key, value });
           return res.status(400).json({ success: false, message: `القيمة ${key} يجب أن تكون true أو false` });
         }
         if (bot[key] !== value) {
@@ -302,9 +297,9 @@ exports.updateWhatsAppSettings = async (req, res) => {
 
     if (hasChanges) {
       await bot.save();
-      console.log(`[${getTimestamp()}] ✅ تم تحديث إعدادات واتساب بنجاح | Bot ID: ${botId}`);
+      logger.info('✅ تم تحديث إعدادات واتساب بنجاح', { botId });
     } else {
-      console.log(`[${getTimestamp()}] ⚠️ لا توجد تغييرات لتحديثها | Bot ID: ${botId}`);
+      logger.info('⚠️ لا توجد تغييرات لتحديثها', { botId });
     }
 
     const updatedWhatsAppSettings = {
@@ -316,7 +311,7 @@ exports.updateWhatsAppSettings = async (req, res) => {
 
     res.status(200).json({ success: true, data: updatedWhatsAppSettings });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في تحديث إعدادات واتساب:`, err.message, err.stack);
+    logger.error('❌ خطأ في تحديث إعدادات واتساب', { botId: req.params.botId, err });
     res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
   }
 };
@@ -325,16 +320,16 @@ exports.updateWhatsAppSettings = async (req, res) => {
 exports.unlinkWhatsApp = async (req, res) => {
   try {
     const botId = req.params.id;
-    console.log(`[${getTimestamp()}] 📝 محاولة إلغاء ربط حساب واتساب | Bot ID: ${botId}`);
+    logger.info('📝 محاولة إلغاء ربط حساب واتساب', { botId });
 
     const bot = await Bot.findById(botId);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      logger.warn('⚠️ البوت غير موجود', { botId });
       return res.status(404).json({ success: false, message: 'البوت غير موجود' });
     }
 
     if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
-      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      logger.warn('⚠️ غير مصرح للمستخدم', { botUserId: bot.userId, requestUserId: req.user.userId });
       return res.status(403).json({ success: false, message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
@@ -343,10 +338,10 @@ exports.unlinkWhatsApp = async (req, res) => {
     bot.lastWhatsappTokenRefresh = null;
     await bot.save();
 
-    console.log(`[${getTimestamp()}] ✅ تم إلغاء ربط حساب واتساب بنجاح | Bot ID: ${botId}`);
+    logger.info('✅ تم إلغاء ربط حساب واتساب بنجاح', { botId });
     res.status(200).json({ success: true, message: 'تم إلغاء ربط حساب واتساب بنجاح' });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في إلغاء ربط حساب واتساب:`, err.message, err.stack);
+    logger.error('❌ خطأ في إلغاء ربط حساب واتساب', { botId: req.params.id, err });
     res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
   }
 };
@@ -356,22 +351,21 @@ exports.linkSocial = async (req, res) => {
   try {
     const botId = req.params.id;
     const { facebookApiKey, facebookPageId, instagramApiKey, instagramPageId, whatsappApiKey, whatsappBusinessAccountId } = req.body;
-
-    console.log(`[${getTimestamp()}] 📝 محاولة ربط حساب اجتماعي | Bot ID: ${botId} | Data:`, req.body);
+    logger.info('📝 محاولة ربط حساب اجتماعي', { botId, bodyKeys: Object.keys(req.body || {}) });
 
     if (!facebookApiKey && !facebookPageId && !instagramApiKey && !instagramPageId && !whatsappApiKey && !whatsappBusinessAccountId) {
-      console.log(`[${getTimestamp()}] ⚠️ لا توجد بيانات للربط | Bot ID: ${botId}`);
+      logger.warn('⚠️ لا توجد بيانات للربط', { botId });
       return res.status(400).json({ success: false, message: 'يجب توفير مفتاح API ومعرف الحساب لفيسبوك، إنستجرام، أو واتساب' });
     }
 
     const bot = await Bot.findById(botId);
     if (!bot) {
-      console.log(`[${getTimestamp()}] ⚠️ البوت غير موجود | Bot ID: ${botId}`);
+      logger.warn('⚠️ البوت غير موجود', { botId });
       return res.status(404).json({ success: false, message: 'البوت غير موجود' });
     }
 
     if (req.user.role !== 'superadmin' && bot.userId.toString() !== req.user.userId.toString()) {
-      console.log(`[${getTimestamp()}] ⚠️ غير مصرح للمستخدم | Bot User ID: ${bot.userId} | Request User ID: ${req.user.userId}`);
+      logger.warn('⚠️ غير مصرح للمستخدم', { botUserId: bot.userId, requestUserId: req.user.userId });
       return res.status(403).json({ success: false, message: 'غير مصرح لك بتعديل هذا البوت' });
     }
 
@@ -404,11 +398,11 @@ exports.linkSocial = async (req, res) => {
           { subscribed_fields: subscribedFields, access_token: facebookApiKey }
         );
         if (!subscriptionResponse.data.success) {
-          console.log(`[${getTimestamp()}] ❌ فشل في الاشتراك في Webhook Events لفيسبوك | Bot ID: ${botId}`);
+          logger.error('❌ فشل في الاشتراك في Webhook Events لفيسبوك', { botId });
           return res.status(400).json({ success: false, message: 'فشل في الاشتراك في Webhook Events' });
         }
       } catch (err) {
-        console.error(`[${getTimestamp()}] ❌ خطأ في الاشتراك في Webhook Events لفيسبوك:`, err.message);
+        logger.error('❌ خطأ في الاشتراك في Webhook Events لفيسبوك', { botId, err: err.message });
         return res.status(500).json({ success: false, message: 'خطأ في الاشتراك في Webhook Events' });
       }
     }
@@ -426,15 +420,11 @@ exports.linkSocial = async (req, res) => {
     }
 
     await bot.save();
-    console.log(`[${getTimestamp()}] ✅ تم ربط حساب ${platform} بنجاح | Bot ID: ${botId}`);
+    logger.info('✅ تم ربط حساب اجتماعي بنجاح', { botId, platform });
     res.status(200).json({ success: true, message: `تم ربط حساب ${platform} بنجاح` });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في ربط حساب اجتماعي:`, err.message, err.stack);
+    logger.error('❌ خطأ في ربط حساب اجتماعي', { botId: req.params.id, err });
     res.status(500).json({ success: false, message: 'خطأ في السيرفر' });
   }
 };
-
-// تصدير getTimestamp بشكل صريح
-exports.getTimestamp = getTimestamp;
-
 module.exports = exports;

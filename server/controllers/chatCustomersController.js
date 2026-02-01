@@ -1,5 +1,6 @@
 const ChatCustomer = require('../models/ChatCustomer');
 const Bot = require('../models/Bot');
+const logger = require('../logger');
 
 const MAX_LIMIT = 300;
 
@@ -72,7 +73,7 @@ async function listCustomers(req, res) {
 
     return res.json({ customers });
   } catch (err) {
-    console.error('listCustomers error:', err.message, err.stack);
+    logger.error('chat_customers_list_error', { botId: req.query.botId, err: err.message, stack: err.stack });
     return res.status(500).json({ message: 'خطأ في جلب بيانات العملاء' });
   }
 }

@@ -29,6 +29,8 @@ const expensesRoutes = require('./routes/expenses');
 const chatOrdersRoutes = require('./routes/chatOrders');
 const chatCustomersRoutes = require('./routes/chatCustomers');
 const telegramRoutes = require('./routes/telegram');
+const AppError = require('./utils/appError');
+const errorHandler = require('./middleware/errorHandler');
 // removed waRoutes (local WA app)
 const connectDB = require('./db');
 const Conversation = require('./models/Conversation');
@@ -40,11 +42,10 @@ const Category = require('./models/Category'); // إضافة موديل Category
 const NodeCache = require('node-cache');
 const bcrypt = require('bcryptjs');
 const axios = require('axios');
+const logger = require('./logger');
+const promClient = require('prom-client');
 const { checkAutoStopBots, refreshInstagramTokens } = require('./cronJobs');
 const authenticate = require('./middleware/authenticate');
-
-// دالة مساعدة لإضافة timestamp للـ logs
-const getTimestamp = () => new Date().toISOString();
 
 // إعداد cache لتخزين طلبات الـ API مؤقتاً (5 دقايق)
 const apiCache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
@@ -60,10 +61,57 @@ const limiter = rateLimit({
   }
 });
 
+// معدل تشديد لمسارات المصادقة الحساسة
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 7,
+  message: {
+    message: 'تم تجاوز عدد محاولات الدخول، حاول لاحقاً',
+    error: 'AuthRateLimit',
+    retryAfter: 15 * 60
+  }
+});
+
+// معدل مخصص للويب هوكس لتفادي التدفق الزائد
+const webhookLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: 'تم تجاوز الحد المسموح لطلبات الويب هوك مؤقتاً',
+    error: 'WebhookRateLimit',
+    retryAfter: 60
+  }
+});
+
 const app = express();
+
+// إعداد المتركات Prometheus
+const register = new promClient.Registry();
+if (process.env.NODE_ENV !== 'test') {
+  promClient.collectDefaultMetrics({ register });
+}
+const httpRequestDuration = new promClient.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'HTTP request duration in seconds',
+  labelNames: ['method', 'route', 'status'],
+  buckets: [0.05, 0.1, 0.2, 0.5, 1, 2, 5]
+});
+register.registerMetric(httpRequestDuration);
 
 // تفعيل trust proxy للتعامل مع X-Forwarded-For من Render
 app.set('trust proxy', 1);
+
+// إضافة معرّف بسيط لكل طلب لتتبعه في اللوجز
+app.use((req, res, next) => {
+  req.requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const end = httpRequestDuration.startTimer();
+  res.on('finish', () => {
+    end({ method: req.method, route: req.route?.path || req.originalUrl || 'unknown', status: res.statusCode });
+  });
+  next();
+});
 
 // إضافة Cross-Origin-Opener-Policy Header
 app.use((req, res, next) => {
@@ -87,7 +135,7 @@ app.use((req, res, next) => {
   else if (req.path.match(/\.(png|jpg|jpeg|gif|ico|json)$/i)) {
     res.setHeader('Cache-Control', 'public, max-age=300');
   }
-  console.log(`[${getTimestamp()}] 📡 Request: ${req.method} ${req.url}`);
+  logger.info('request', { method: req.method, url: req.url, ip: req.ip, ua: req.headers['user-agent'] });
   next();
 });
 
@@ -103,6 +151,12 @@ app.use(express.static(path.join(__dirname, '../public')));
 // تطبيق Rate Limiting للجميع
 app.use(limiter);
 
+// تطبيق Rate Limiting مخصص لمسارات اللوجين والتسجيل وتسجيل الدخول بجوجل
+app.use('/api/auth/login', authLimiter);
+app.use('/api/auth/register', authLimiter);
+app.use('/api/auth/google', authLimiter);
+app.use('/api/auth/verify', authLimiter);
+
 // Route لجلب GOOGLE_CLIENT_ID
 app.get('/api/config', (req, res) => {
   res.json({
@@ -111,7 +165,7 @@ app.get('/api/config', (req, res) => {
 });
 
 // Routes
-app.use('/api/webhook', webhookRoutes);
+app.use('/api/webhook', webhookLimiter, webhookRoutes);
 app.use('/api/bots', facebookRoutes);
 app.use('/api/bots', botsRoutes);
 app.use('/api/auth', authRoutes);
@@ -136,25 +190,48 @@ app.use('/api/chat-customers', chatCustomersRoutes);
 app.use('/api/telegram', telegramRoutes);
 app.use('/', indexRoutes);
 
+// مسار المتركات (حماية اختيارية عبر METRICS_TOKEN)
+app.get('/metrics', async (req, res, next) => {
+  try {
+    const token = process.env.METRICS_TOKEN;
+    if (token && req.header('x-metrics-key') !== token) {
+      return res.status(401).send('unauthorized');
+    }
+    res.set('Content-Type', register.contentType);
+    const metrics = await register.metrics();
+    return res.send(metrics);
+  } catch (err) {
+    return next(err);
+  }
+});
+
+// مسار غير موجود
+app.use((req, res, next) => {
+  next(new AppError('المسار غير موجود', 404, 'NotFound'));
+});
+
+// معالج أخطاء مركزي
+app.use(errorHandler);
+
 // Route لصفحة المتجر
 app.get('/store/:storeLink', async (req, res) => {
   try {
     const { storeLink } = req.params;
     const store = await Store.findOne({ storeLink });
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Store not found for link: ${storeLink}`);
+      logger.warn('store_not_found', { storeLink });
       return res.status(404).json({ message: 'المتجر غير موجود' });
     }
     const filePath = path.join(__dirname, '../public/store.html');
-    console.log(`[${getTimestamp()}] Serving store.html from: ${filePath}`);
+    logger.info('serve_store_page', { storeLink, filePath });
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error(`[${getTimestamp()}] Error serving store.html:`, err);
+        logger.error('serve_store_error', { err: err.message, stack: err.stack });
         res.status(500).json({ message: 'Failed to load store page' });
       }
     });
   } catch (err) {
-    console.error(`[${getTimestamp()}] Error in store route:`, err);
+    logger.error('store_route_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
@@ -165,19 +242,19 @@ app.get('/store/:storeLink/landing', async (req, res) => {
     const { storeLink } = req.params;
     const store = await Store.findOne({ storeLink });
     if (!store) {
-      console.log(`[${getTimestamp()}] ❌ Store not found for link: ${storeLink}`);
+      logger.warn('store_landing_not_found', { storeLink });
       return res.status(404).json({ message: 'المتجر غير موجود' });
     }
     const filePath = path.join(__dirname, '../public/landing.html');
-    console.log(`[${getTimestamp()}] Serving landing.html from: ${filePath}`);
+    logger.info('serve_landing_page', { storeLink, filePath });
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error(`[${getTimestamp()}] Error serving landing.html:`, err);
+        logger.error('serve_landing_error', { err: err.message, stack: err.stack });
         res.status(500).json({ message: 'Failed to load landing page' });
       }
     });
   } catch (err) {
-    console.error(`[${getTimestamp()}] Error in landing route:`, err);
+    logger.error('landing_route_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
@@ -197,7 +274,7 @@ app.get('/api/auth/check', authenticate, async (req, res) => {
       username: user.username,
     });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error in /api/auth/check:`, err.message, err.stack);
+    logger.error('auth_check_error', { err: err.message, stack: err.stack });
     res.status(500).json({ success: false, message: 'خطأ في السيرفر', error: err.message });
   }
 });
@@ -219,10 +296,10 @@ app.post('/api/feedback', async (req, res) => {
       { upsert: true, new: true }
     );
 
-    console.log(`[${getTimestamp()}] ✅ Feedback saved: ${type} for bot: ${botId}, user: ${userId}, message: ${messageId}`);
+    logger.info('feedback_saved', { botId, userId, messageId, type });
     res.status(200).json(feedback);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error saving feedback:`, err.message, err.stack);
+    logger.error('feedback_save_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 });
@@ -237,10 +314,10 @@ app.get('/api/feedback/:botId', authenticate, async (req, res) => {
       feedback: item.type === 'like' ? 'positive' : 'negative'
     }));
 
-    console.log(`[${getTimestamp()}] ✅ Feedback retrieved for bot: ${botId}`);
+    logger.info('feedback_fetch_success', { botId });
     res.status(200).json(feedbackWithCompat);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error fetching feedback:`, err.message, err.stack);
+    logger.error('feedback_fetch_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 });
@@ -252,7 +329,7 @@ app.get('/api/conversations/:botId/:userId', async (req, res) => {
     const conversations = await Conversation.find({ botId, userId }).sort({ 'messages.timestamp': -1 });
     res.status(200).json(conversations);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error fetching conversations | Bot: ${req.params.botId} | User: ${req.params.userId}`, err.message, err.stack);
+    logger.error('conversations_fetch_error', { botId: req.params.botId, userId: req.params.userId, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'Failed to fetch conversations' });
   }
 });
@@ -327,7 +404,7 @@ app.get('/api/test', async (req, res) => {
 
     res.status(200).json({ message: 'اختبارات النظام اكتملت', results: testResults });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في اختبار النظام:`, err.message, err.stack);
+    logger.error('system_test_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في اختبار النظام', error: err.message });
   }
 });
@@ -336,15 +413,15 @@ app.get('/api/test', async (req, res) => {
 app.get('/dashboard', (req, res) => {
   try {
     const filePath = path.join(__dirname, '../public/dashboard.html');
-    console.log(`[${getTimestamp()}] Serving dashboard.html from: ${filePath}`);
+    logger.info('serve_dashboard_page', { filePath });
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error(`[${getTimestamp()}] Error serving dashboard.html:`, err);
+        logger.error('serve_dashboard_error', { err: err.message, stack: err.stack });
         res.status(500).json({ message: 'Failed to load dashboard page' });
       }
     });
   } catch (err) {
-    console.error(`[${getTimestamp()}] Error in dashboard route:`, err);
+    logger.error('dashboard_route_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
@@ -352,15 +429,15 @@ app.get('/dashboard', (req, res) => {
 app.get('/dashboard_new', (req, res) => {
   try {
     const filePath = path.join(__dirname, '../public/dashboard_new.html');
-    console.log(`[${getTimestamp()}] Serving dashboard_new.html from: ${filePath}`);
+    logger.info('serve_dashboard_new_page', { filePath });
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error(`[${getTimestamp()}] Error serving dashboard_new.html:`, err);
+        logger.error('serve_dashboard_new_error', { err: err.message, stack: err.stack });
         res.status(500).json({ message: 'Failed to load dashboard page' });
       }
     });
   } catch (err) {
-    console.error(`[${getTimestamp()}] Error in dashboard_new route:`, err);
+    logger.error('dashboard_new_route_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
@@ -368,15 +445,15 @@ app.get('/dashboard_new', (req, res) => {
 app.get('/login', (req, res) => {
   try {
     const filePath = path.join(__dirname, '../public/login.html');
-    console.log(`[${getTimestamp()}] Serving login.html from: ${filePath}`);
+    logger.info('serve_login_page', { filePath });
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error(`[${getTimestamp()}] Error serving login.html:`, err);
+        logger.error('serve_login_error', { err: err.message, stack: err.stack });
         res.status(500).json({ message: 'Failed to load login page' });
       }
     });
   } catch (err) {
-    console.error(`[${getTimestamp()}] Error in login route:`, err);
+    logger.error('login_route_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
@@ -384,15 +461,15 @@ app.get('/login', (req, res) => {
 app.get('/register', (req, res) => {
   try {
     const filePath = path.join(__dirname, '../public/register.html');
-    console.log(`[${getTimestamp()}] Serving register.html from: ${filePath}`);
+    logger.info('serve_register_page', { filePath });
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error(`[${getTimestamp()}] Error serving register.html:`, err);
+        logger.error('serve_register_error', { err: err.message, stack: err.stack });
         res.status(500).json({ message: 'Failed to load register page' });
       }
     });
   } catch (err) {
-    console.error(`[${getTimestamp()}] Error in register route:`, err);
+    logger.error('register_route_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
@@ -400,15 +477,15 @@ app.get('/register', (req, res) => {
 app.get('/set-whatsapp', (req, res) => {
   try {
     const filePath = path.join(__dirname, '../public/set-whatsapp.html');
-    console.log(`[${getTimestamp()}] Serving set-whatsapp.html from: ${filePath}`);
+    logger.info('serve_set_whatsapp_page', { filePath });
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error(`[${getTimestamp()}] Error serving set-whatsapp.html:`, err);
+        logger.error('serve_set_whatsapp_error', { err: err.message, stack: err.stack });
         res.status(500).json({ message: 'Failed to load set-whatsapp page' });
       }
     });
   } catch (err) {
-    console.error(`[${getTimestamp()}] Error in set-whatsapp route:`, err);
+    logger.error('set_whatsapp_route_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
@@ -416,67 +493,42 @@ app.get('/set-whatsapp', (req, res) => {
 app.get('/chat/:linkId', (req, res) => {
   try {
     const filePath = path.join(__dirname, '../public/chat.html');
-    console.log(`[${getTimestamp()}] Serving chat.html from: ${filePath}`);
+    logger.info('serve_chat_page', { filePath });
     res.sendFile(filePath, (err) => {
       if (err) {
-        console.error(`[${getTimestamp()}] Error serving chat.html:`, err);
+        logger.error('serve_chat_error', { err: err.message, stack: err.stack });
         res.status(500).json({ message: 'Failed to load chat page' });
       }
     });
   } catch (err) {
-    console.error(`[${getTimestamp()}] Error in chat route:`, err);
+    logger.error('chat_route_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
 
-// Middleware لمعالجة 404: صفحات المنصة ترجع صفحة 404، و الـ API يحتفظ برد JSON
-app.use((req, res) => {
-  console.log(`[${getTimestamp()}] ❌ 404 Not Found: ${req.method} ${req.url}`);
-
-  if (req.path.startsWith('/api')) {
-    return res.status(404).json({
-      message: 'الطلب غير موجود',
-      error: 'NotFound',
-    });
-  }
-
-  const filePath = path.join(__dirname, '../public/404.html');
-  return res.status(404).sendFile(filePath, (err) => {
-    if (err) {
-      console.error(`[${getTimestamp()}] Error serving 404.html:`, err);
-      res.status(404).send('الصفحة غير موجودة');
-    }
-  });
-});
-
-// Global Error Handler
-app.use((err, req, res, next) => {
-  const userId = req.user ? req.user.userId : 'N/A';
-  console.error(`[${getTimestamp()}] ❌ Server error | Method: ${req.method} | URL: ${req.url} | User: ${userId}`, err.message, err.stack);
-  res.status(500).json({ 
-    message: err.message || 'Something went wrong!',
-    error: err.name || 'ServerError',
-    details: err.message
-  });
-});
-
 process.on('uncaughtException', (err) => {
-  console.error(`[${getTimestamp()}] ❌ Uncaught Exception:`, err.message, err.stack);
+  logger.error('uncaught_exception', { err: err.message, stack: err.stack });
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error(`[${getTimestamp()}] ❌ Unhandled Rejection at:`, promise, 'reason:', reason);
+  logger.error('unhandled_rejection', { reason, promise });
 });
 
 // Connect to MongoDB
 connectDB()
-  .catch((err) => console.error('[bootstrap] Mongo connect failed', err.message));
+  .catch((err) => logger.error('mongo_connect_failed', { err: err.message, stack: err.stack }));
 
-// تشغيل وظايف التحقق الدورية
-checkAutoStopBots();
-refreshInstagramTokens();
+// تشغيل وظايف التحقق الدورية (تخطيها في الاختبارات لتقليل المقابض المفتوحة)
+if (process.env.NODE_ENV !== 'test') {
+  checkAutoStopBots();
+  refreshInstagramTokens();
+}
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`[${getTimestamp()}] ✅ Server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, '0.0.0.0', () => {
+    logger.info('server_started', { port: PORT });
+  });
+}
+
+module.exports = app;

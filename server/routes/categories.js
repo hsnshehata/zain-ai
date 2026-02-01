@@ -3,10 +3,11 @@ const express = require('express');
 const router = express.Router();
 const authenticate = require('../middleware/authenticate');
 const categoryController = require('../controllers/categoryController');
+const logger = require('../logger');
 
 // Middleware لتسجيل الطلبات
 router.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] 📡 Category Route: ${req.method} ${req.url}`);
+  logger.info('📡 Category Route', { method: req.method, url: req.url });
   next();
 });
 

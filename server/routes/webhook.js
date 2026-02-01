@@ -12,15 +12,17 @@ router.get('/facebook', (req, res) => {
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
 
+  const logger = require('../logger');
   if (mode && token) {
     if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-      console.log('✅ Facebook Webhook verified');
+      logger.info('facebook_webhook_verified');
       res.status(200).send(challenge);
     } else {
-      console.log('❌ Facebook Webhook verification failed');
+      logger.warn('facebook_webhook_verify_failed');
       res.sendStatus(403);
     }
   } else {
+    logger.warn('facebook_webhook_missing_params');
     res.sendStatus(403);
   }
 });
@@ -40,15 +42,17 @@ router.get('/whatsapp', (req, res) => {
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
 
+  const logger = require('../logger');
   if (mode && token) {
     if (mode === 'subscribe' && token === VERIFY_TOKEN) {
-      console.log('✅ WhatsApp Webhook verified');
+      logger.info('whatsapp_webhook_verified');
       res.status(200).send(challenge);
     } else {
-      console.log('❌ WhatsApp Webhook verification failed');
+      logger.warn('whatsapp_webhook_verify_failed');
       res.sendStatus(403);
     }
   } else {
+    logger.warn('whatsapp_webhook_missing_params');
     res.sendStatus(403);
   }
 });

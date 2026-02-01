@@ -4,9 +4,7 @@ const mongoose = require('mongoose');
 const Rule = require('../models/Rule');
 const Conversation = require('../models/Conversation');
 const Bot = require('../models/Bot');
-
-// دالة مساعدة لإضافة timestamp للـ logs
-const getTimestamp = () => new Date().toISOString();
+const logger = require('../logger');
 
 // جلب كل القواعد مع دعم الفلترة والبحث والـ pagination
 exports.getRules = async (req, res) => {
@@ -77,14 +75,14 @@ exports.getRules = async (req, res) => {
       .skip((page - 1) * limit)
       .limit(limit);
 
-    console.log(`[${getTimestamp()}] ✅ تم جلب القواعد بنجاح | User: ${req.user.userId} | Bot: ${botId || 'N/A'} | Rules Count: ${rules.length}`, rules);
+    logger.info('rules_fetch_success', { userId: req.user.userId, botId: botId || 'N/A', count: rules.length });
     res.status(200).json({
       rules,
       totalPages: Math.ceil(totalRules / limit),
       currentPage: page,
     });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في جلب القواعد | User: ${req.user?.userId || 'N/A'} | Bot: ${req.query.botId || 'N/A'}`, err.message, err.stack);
+    logger.error('rules_fetch_error', { userId: req.user?.userId || 'N/A', botId: req.query.botId || 'N/A', err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر أثناء جلب القواعد', error: err.message });
   }
 };
@@ -146,13 +144,13 @@ exports.createRule = async (req, res) => {
   }
 
   try {
-    console.log(`[${getTimestamp()}] 📥 البيانات المرسلة إلى MongoDB | User: ${req.user.userId} | Bot: ${botId || 'N/A'}`, { botId, type, content });
+    logger.info('rules_create_attempt', { userId: req.user.userId, botId: botId || 'N/A', type });
     const rule = new Rule({ botId: type !== 'global' ? botId : undefined, type, content });
     await rule.save();
-    console.log(`[${getTimestamp()}] ✅ تم حفظ القاعدة بنجاح | User: ${req.user.userId} | Bot: ${botId || 'N/A'} | Rule ID: ${rule._id}`, rule);
+    logger.info('rules_create_success', { userId: req.user.userId, botId: botId || 'N/A', ruleId: rule._id });
     res.status(201).json(rule);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في إنشاء القاعدة | User: ${req.user.userId} | Bot: ${botId || 'N/A'}`, err.message, err.stack);
+    logger.error('rules_create_error', { userId: req.user.userId, botId: botId || 'N/A', err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر أثناء إنشاء القاعدة', error: err.message });
   }
 };
@@ -212,10 +210,10 @@ exports.updateRule = async (req, res) => {
     rule.content = content || rule.content;
 
     await rule.save();
-    console.log(`[${getTimestamp()}] ✅ تم تعديل القاعدة بنجاح | User: ${req.user.userId} | Rule ID: ${rule._id} | Bot: ${rule.botId || 'N/A'}`, rule);
+    logger.info('rules_update_success', { userId: req.user.userId, ruleId: rule._id, botId: rule.botId || 'N/A' });
     res.status(200).json(rule);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في تعديل القاعدة | User: ${req.user?.userId || 'N/A'} | Rule ID: ${req.params.id}`, err.message, err.stack);
+    logger.error('rules_update_error', { userId: req.user?.userId || 'N/A', ruleId: req.params.id, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر أثناء تعديل القاعدة', error: err.message });
   }
 };
@@ -229,10 +227,10 @@ exports.deleteRule = async (req, res) => {
     }
 
     await Rule.deleteOne({ _id: req.params.id });
-    console.log(`[${getTimestamp()}] ✅ تم حذف القاعدة بنجاح | User: ${req.user.userId} | Rule ID: ${req.params.id} | Bot: ${rule.botId || 'N/A'}`);
+    logger.info('rules_delete_success', { userId: req.user.userId, ruleId: req.params.id, botId: rule.botId || 'N/A' });
     res.status(200).json({ message: 'تم حذف القاعدة بنجاح' });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في حذف القاعدة | User: ${req.user?.userId || 'N/A'} | Rule ID: ${req.params.id}`, err.message, err.stack);
+    logger.error('rules_delete_error', { userId: req.user?.userId || 'N/A', ruleId: req.params.id, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر أثناء حذف القاعدة', error: err.message });
   }
 };
@@ -282,12 +280,12 @@ exports.exportRules = async (req, res) => {
     }
 
     const rules = await Rule.find(query);
-    console.log(`[${getTimestamp()}] ✅ تم تصدير القواعد بنجاح | User: ${req.user.userId} | Bot: ${botId || 'N/A'} | Rules Exported: ${rules.length}`);
+    logger.info('rules_export_success', { userId: req.user.userId, botId: botId || 'N/A', count: rules.length });
     res.setHeader('Content-Disposition', `attachment; filename=rules_${botId || 'global'}.json`);
     res.setHeader('Content-Type', 'application/json');
     res.status(200).json(rules);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في تصدير القواعد | User: ${req.user?.userId || 'N/A'} | Bot: ${req.query.botId || 'N/A'}`, err.message, err.stack);
+    logger.error('rules_export_error', { userId: req.user?.userId || 'N/A', botId: req.query.botId || 'N/A', err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر أثناء تصدير القواعد', error: err.message });
   }
 };
@@ -320,10 +318,10 @@ exports.importRules = async (req, res) => {
     }
 
     await Rule.insertMany(rules);
-    console.log(`[${getTimestamp()}] ✅ تم استيراد القواعد بنجاح | User: ${req.user.userId} | Bot: ${botId || 'N/A'} | Rules Imported: ${rules.length}`);
+    logger.info('rules_import_success', { userId: req.user.userId, botId: botId || 'N/A', count: rules.length });
     res.status(201).json({ message: `تم استيراد ${rules.length} قاعدة بنجاح` });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في استيراد القواعد | User: ${req.user?.userId || 'N/A'} | Bot: ${req.body.botId || 'N/A'}`, err.message, err.stack);
+    logger.error('rules_import_error', { userId: req.user?.userId || 'N/A', botId: req.body.botId || 'N/A', err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر أثناء استيراد القواعد', error: err.message });
   }
 };

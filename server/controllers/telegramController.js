@@ -4,6 +4,7 @@ const Rule = require('../models/Rule');
 const Order = require('../models/Order');
 const ChatOrder = require('../models/ChatOrder');
 const Conversation = require('../models/Conversation');
+const logger = require('../logger');
 const {
   BOT_USERNAME,
   generateLinkCode,
@@ -13,8 +14,6 @@ const {
   sendTelegramMessage,
   getDestination,
 } = require('../services/telegramService');
-
-const getTimestamp = () => new Date().toISOString();
 
 // حالة محادثات تيليجرام (ذاكرة مؤقتة)
 const chatStates = new Map(); // chatId -> { step, rules: [], selectedRuleId }
@@ -406,7 +405,7 @@ exports.getStatus = async (req, res) => {
       botName: bot.name,
     });
   } catch (err) {
-    console.error(`[${getTimestamp()}] telegram getStatus error:`, err.message);
+    logger.error('telegram_get_status_error', { err: err.message, botId: req.query?.botId });
     res.status(500).json({ message: 'خطأ في جلب حالة تيليجرام' });
   }
 };
@@ -420,7 +419,7 @@ exports.generateLinkCode = async (req, res) => {
     const { code, expiresAt } = await generateLinkCode({ botId });
     res.json({ code, expiresAt, botUsername: BOT_USERNAME, botName: bot.name });
   } catch (err) {
-    console.error(`[${getTimestamp()}] telegram generateLinkCode error:`, err.message);
+    logger.error('telegram_generate_link_error', { err: err.message, botId: req.body?.botId });
     res.status(500).json({ message: 'خطأ في توليد كود الربط' });
   }
 };
@@ -443,7 +442,7 @@ exports.updatePreferences = async (req, res) => {
       language: updated?.telegramLanguage || 'ar',
     });
   } catch (err) {
-    console.error(`[${getTimestamp()}] telegram updatePreferences error:`, err.message);
+    logger.error('telegram_update_preferences_error', { err: err.message, botId: req.body?.botId });
     res.status(500).json({ message: 'خطأ في تحديث الإعدادات' });
   }
 };
@@ -456,7 +455,7 @@ exports.unlink = async (req, res) => {
     await unlinkBot(botId);
     res.json({ success: true });
   } catch (err) {
-    console.error(`[${getTimestamp()}] telegram unlink error:`, err.message);
+    logger.error('telegram_unlink_error', { err: err.message, botId: req.body?.botId });
     res.status(500).json({ message: 'خطأ في إلغاء الربط' });
   }
 };
@@ -670,7 +669,7 @@ exports.handleWebhook = async (req, res) => {
           const refreshedFields = await sendChannelSettings(chatId, botFull, channelKey);
           chatStates.set(chatId, { ...state, fields: refreshedFields });
         } catch (err) {
-          console.error(`[${getTimestamp()}] telegram update channel setting error:`, err.message);
+          logger.error('telegram_update_channel_setting_error', { err: err.message, botId: botFull?._id, field: field?.prop });
           await sendTelegramMessage(chatId, 'تعذر حفظ الإعداد. حاول مرة أخرى.', { reply_markup: inlineBackHome() });
         }
         return res.status(200).json({ ok: true });
@@ -690,7 +689,7 @@ exports.handleWebhook = async (req, res) => {
           chatStates.delete(chatId);
           await sendTelegramMessage(chatId, `✅ تم إضافة القاعدة بنجاح. (ID: ${rule._id})`, { reply_markup: inlineBackHome() });
         } catch (err) {
-          console.error(`[${getTimestamp()}] telegram add rule error:`, err.message);
+          logger.error('telegram_add_rule_error', { err: err.message, botId: linkedBot._id });
           await sendTelegramMessage(chatId, 'تعذر حفظ القاعدة. حاول مرة أخرى.', { reply_markup: inlineBackHome() });
         }
         return res.status(200).json({ ok: true });
@@ -729,7 +728,7 @@ exports.handleWebhook = async (req, res) => {
           await rule.save();
           await sendTelegramMessage(chatId, '✅ تم تحديث القاعدة بنجاح.', { reply_markup: inlineBackHome() });
         } catch (err) {
-          console.error(`[${getTimestamp()}] telegram update rule error:`, err.message);
+          logger.error('telegram_update_rule_error', { err: err.message, botId: linkedBot._id, ruleId });
           await sendTelegramMessage(chatId, 'تعذر تحديث القاعدة. حاول مرة أخرى.', { reply_markup: inlineBackHome() });
         }
         chatStates.delete(chatId);
@@ -754,7 +753,7 @@ exports.handleWebhook = async (req, res) => {
           await Rule.deleteOne({ _id: selectedRule._id, botId: linkedBot._id });
           await sendTelegramMessage(chatId, '✅ تم حذف القاعدة.', { reply_markup: inlineBackHome() });
         } catch (err) {
-          console.error(`[${getTimestamp()}] telegram delete rule error:`, err.message);
+          logger.error('telegram_delete_rule_error', { err: err.message, botId: linkedBot._id, ruleId: selectedRule?._id });
           await sendTelegramMessage(chatId, 'تعذر حذف القاعدة. حاول مرة أخرى.', { reply_markup: inlineBackHome() });
         }
         chatStates.delete(chatId);
@@ -827,7 +826,7 @@ exports.handleWebhook = async (req, res) => {
           const human = ORDER_STATUS_OPTIONS.find((o) => o.key === parsedStatus)?.label || parsedStatus;
           await sendTelegramMessage(chatId, `✅ تم تحديث حالة الطلب إلى ${human}.`, { reply_markup: inlineBackHome() });
         } catch (err) {
-          console.error(`[${getTimestamp()}] telegram update order status error:`, err.message);
+          logger.error('telegram_update_order_status_error', { err: err.message, orderId, botId: linkedBot._id });
           await sendTelegramMessage(chatId, 'تعذر تحديث حالة الطلب.', { reply_markup: inlineBackHome() });
         }
         chatStates.delete(chatId);
@@ -898,7 +897,7 @@ exports.handleWebhook = async (req, res) => {
 
           // إشعار تيليجرام لصاحب البوت
           try {
-            console.info(`[${getTimestamp()}] 🔔 notify chat order status (bot flow) bot=${linkedBot._id} user=${linkedBot.userId} order=${order._id} status=${order.status}`);
+            logger.info('telegram_notify_chat_order_status', { botId: linkedBot._id, userId: linkedBot.userId, orderId: order._id, status: order.status });
             await notifyOrderStatus(linkedBot.userId, {
               storeName: linkedBot.name,
               orderId: order._id,
@@ -906,10 +905,10 @@ exports.handleWebhook = async (req, res) => {
               note: '',
             }, linkedBot._id);
           } catch (notifyErr) {
-            console.warn(`[${getTimestamp()}] ⚠️ Telegram notifyOrderStatus (chat, bot flow) failed for order ${order._id}:`, notifyErr.message);
+            logger.warn('telegram_notify_chat_order_failed', { orderId: order._id, err: notifyErr.message });
           }
         } catch (err) {
-          console.error(`[${getTimestamp()}] telegram update chat order status error:`, err.message);
+          logger.error('telegram_update_chat_order_status_error', { err: err.message, orderId, botId: linkedBot._id });
           await sendTelegramMessage(chatId, 'تعذر تحديث حالة طلب الدردشة.', { reply_markup: inlineBackHome() });
         }
         chatStates.delete(chatId);
@@ -939,7 +938,7 @@ exports.handleWebhook = async (req, res) => {
     }
     return res.status(200).json({ ok: true });
   } catch (err) {
-    console.error(`[${getTimestamp()}] telegram webhook error:`, err.message);
+    logger.error('telegram_webhook_error', { err: err.message });
     return res.status(200).json({ ok: false });
   }
 };

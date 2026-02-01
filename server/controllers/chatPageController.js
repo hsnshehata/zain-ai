@@ -5,6 +5,7 @@ const ChatPage = require('../models/ChatPage');
 const Feedback = require('../models/Feedback');
 const axios = require('axios');
 const FormData = require('form-data');
+const logger = require('../logger');
 
 // Load environment variables
 require('dotenv').config();
@@ -27,14 +28,14 @@ async function uploadToImgbb(file) {
     formData.append('image', file.buffer, file.originalname);
     formData.append('key', IMGBB_API_KEY);
 
-    console.log('📤 Uploading image to imgbb...');
+    logger.info('imgbb_upload_start');
     const response = await axios.post('https://api.imgbb.com/1/upload', formData, {
       headers: {
         ...formData.getHeaders(),
       },
     });
 
-    console.log('📥 imgbb response:', response.data);
+    logger.info('imgbb_upload_response', { success: response.data?.success, status: response.status });
 
     if (response.status !== 200 || !response.data.success) {
       throw new Error(`فشل في رفع الصورة إلى imgbb: ${response.data.error?.message || 'خطأ غير معروف'}`);
@@ -46,7 +47,7 @@ async function uploadToImgbb(file) {
       deleteUrl: response.data.data.delete_url,
     };
   } catch (err) {
-    console.error('❌ Error uploading to imgbb:', err.message);
+    logger.error('imgbb_upload_error', { err: err.message, stack: err.stack });
     throw err;
   }
 }
@@ -58,12 +59,12 @@ async function deleteFromImgbb(deleteUrl) {
   try {
     const response = await axios.delete(deleteUrl);
     if (response.status !== 200) {
-      console.error(`فشل في حذف الصورة من imgbb: ${response.status} ${response.statusText}`);
+      logger.warn('imgbb_delete_failed', { status: response.status, statusText: response.statusText });
     } else {
-      console.log('تم حذف الصورة القديمة بنجاح من imgbb');
+      logger.info('imgbb_delete_success');
     }
   } catch (err) {
-    console.error('خطأ أثناء حذف الصورة من imgbb:', err);
+    logger.error('imgbb_delete_error', { err: err.message, stack: err.stack });
   }
 }
 
@@ -108,7 +109,7 @@ exports.createChatPage = async (req, res) => {
 
     res.status(201).json({ link: chatLink, chatPageId: chatPage._id, exists: false });
   } catch (err) {
-    console.error('Error creating chat page:', err);
+    logger.error('chat_page_create_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في إنشاء صفحة الدردشة' });
   }
 };
@@ -129,7 +130,7 @@ exports.updateChatPage = async (req, res) => {
       try {
         colors = JSON.parse(req.body.colors);
       } catch (e) {
-        console.error('Error parsing colors:', e);
+        logger.warn('chat_page_parse_colors_error', { err: e.message });
         return res.status(400).json({ message: 'Invalid colors format' });
       }
     }
@@ -139,7 +140,7 @@ exports.updateChatPage = async (req, res) => {
       try {
         suggestedQuestions = JSON.parse(req.body.suggestedQuestions);
       } catch (e) {
-        console.error('Error parsing suggestedQuestions:', e);
+        logger.warn('chat_page_parse_suggested_questions_error', { err: e.message });
         return res.status(400).json({ message: 'Invalid suggestedQuestions format' });
       }
     }
@@ -198,7 +199,7 @@ exports.updateChatPage = async (req, res) => {
       link: updatedChatLink,
     });
   } catch (err) {
-    console.error('Error updating chat page:', err);
+    logger.error('chat_page_update_error', { chatPageId: req.params.id, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في تحديث إعدادات صفحة الدردشة' });
   }
 };
@@ -223,7 +224,7 @@ exports.getChatPageByLinkId = async (req, res) => {
       botId: chatPage.botId._id,
     });
   } catch (err) {
-    console.error('Error fetching chat page:', err);
+    logger.error('chat_page_fetch_error', { linkId: req.params.linkId, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في جلب إعدادات صفحة الدردشة' });
   }
 };
@@ -250,7 +251,7 @@ exports.getChatPageByBotId = async (req, res) => {
       headerHidden: chatPage.headerHidden,
     });
   } catch (err) {
-    console.error('Error fetching chat page by botId:', err);
+    logger.error('chat_page_fetch_by_bot_error', { botId: req.params.botId, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في جلب إعدادات صفحة الدردشة' });
   }
 };
@@ -275,7 +276,7 @@ exports.submitFeedback = async (req, res) => {
     await feedbackEntry.save();
     res.status(201).json({ message: 'تم تسجيل التقييم بنجاح' });
   } catch (err) {
-    console.error('❌ خطأ في تسجيل التقييم:', err.message, err.stack);
+    logger.error('chat_feedback_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 };

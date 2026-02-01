@@ -16,6 +16,7 @@ const ChatOrder = require('./models/ChatOrder');
 const ChatCustomer = require('./models/ChatCustomer');
 const { createOrUpdateFromExtraction } = require('./controllers/chatOrdersController');
 const { upsertChatCustomerProfile } = require('./controllers/chatCustomersController');
+const logger = require('./logger');
 
 // معرف المساعد الداخلي لتخطي هوكات الطلبات
 const ASSISTANT_BOT_ID = process.env.ASSISTANT_BOT_ID || '688ebdc24f6bd5cf70cb071d';
@@ -52,10 +53,10 @@ async function fetchImageAsBase64(imageUrl, channel = 'web') {
 
     const imageBuffer = Buffer.from(response.data);
     const base64Image = imageBuffer.toString('base64');
-    console.log('✅ تم تحميل الصورة وتحويلها إلى base64');
+    logger.info('✅ تم تحميل الصورة وتحويلها إلى base64');
     return `data:image/jpeg;base64,${base64Image}`;
   } catch (err) {
-    console.error('❌ خطأ أثناء تحميل الصورة:', err.message);
+    logger.error('❌ خطأ أثناء تحميل الصورة:', { err });
     throw new Error('عذرًا، لم أتمكن من تحميل الصورة. حاول مرة أخرى أو أرسل صورة أخرى.');
   }
 }
@@ -67,7 +68,7 @@ async function downloadImageToBase64(imageUrl, channel = 'web') {
 
 async function transcribeAudio(audioUrl, channel = 'web') {
   try {
-    console.log('🎙️ Starting audio transcription with LemonFox, audioUrl:', audioUrl);
+    logger.info('🎙️ Starting audio transcription with LemonFox', { audioUrl });
     let audioBuffer;
     let filename = 'audio.mp4';
     let contentType = 'audio/mp4';
@@ -76,7 +77,7 @@ async function transcribeAudio(audioUrl, channel = 'web') {
       const trimmed = audioUrl.trim();
       const commaIndex = trimmed.indexOf(',');
       if (commaIndex === -1) {
-        console.error('❌ Invalid data URL for audio (no comma found)');
+        logger.error('❌ Invalid data URL for audio (no comma found)');
         throw new Error('Invalid audio URL');
       }
 
@@ -90,7 +91,7 @@ async function transcribeAudio(audioUrl, channel = 'web') {
       const mime = metaParts[0] || 'audio/mp4';
       const hasBase64 = metaParts.some((p) => p.toLowerCase() === 'base64');
       if (!hasBase64) {
-        console.error('❌ Invalid data URL for audio (missing base64 flag)');
+        logger.error('❌ Invalid data URL for audio (missing base64 flag)');
         throw new Error('Invalid audio URL');
       }
 
@@ -99,7 +100,7 @@ async function transcribeAudio(audioUrl, channel = 'web') {
       filename = `audio.${ext}`;
       contentType = mime;
     } else if (audioUrl && audioUrl.startsWith('http')) {
-      console.log('📥 Fetching audio file from:', audioUrl);
+      logger.info('📥 Fetching audio file', { audioUrl });
       const audioResponse = await axios.get(audioUrl, { responseType: 'arraybuffer', headers: getMediaAuthHeader(channel) });
       audioBuffer = Buffer.from(audioResponse.data);
       const respMime = audioResponse.headers?.['content-type'];
@@ -109,7 +110,7 @@ async function transcribeAudio(audioUrl, channel = 'web') {
         if (ext) filename = `audio.${ext}`;
       }
     } else {
-      console.error('❌ Invalid or missing audioUrl:', audioUrl);
+      logger.error('❌ Invalid or missing audioUrl', { audioUrl });
       throw new Error('Invalid audio URL');
     }
 
@@ -118,10 +119,7 @@ async function transcribeAudio(audioUrl, channel = 'web') {
     body.append('language', 'arabic');
     body.append('response_format', 'json');
 
-    console.log(
-      'LemonFox API Key: ' +
-        (process.env.LEMONFOX_API_KEY ? 'تم جلب المفتاح' : 'المفتاح فاضي!')
-    );
+    logger.info('LemonFox API Key', { present: Boolean(process.env.LEMONFOX_API_KEY) });
     const response = await axios.post(
       'https://api.lemonfox.ai/v1/audio/transcriptions',
       body,
@@ -133,10 +131,10 @@ async function transcribeAudio(audioUrl, channel = 'web') {
       }
     );
 
-    console.log('✅ Audio transcribed with LemonFox:', response.data.text);
+    logger.info('✅ Audio transcribed with LemonFox', { text: response.data.text });
     return response.data.text;
   } catch (err) {
-    console.error('❌ Error transcribing audio with LemonFox:', err.message, err.stack);
+    logger.error('❌ Error transcribing audio with LemonFox', { err });
     throw new Error('عذرًا، لم أتمكن من تحليل الصوت. ممكن تبعتلي نص بدل الصوت؟');
   }
 }
@@ -379,13 +377,13 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
     if (existingOpenOrder && !['shipped', 'delivered', 'cancelled'].includes(existingOpenOrder.status)) {
       // إذا طلب العميل صراحة إنشاء طلب جديد، لا نلمس الطلب المفتوح ونبدأ طلبًا جديدًا
       if (newOrderIntent && !modifyIntent) {
-        console.log('🆕 Starting a new chat order per explicit user request, keeping the previous open order untouched');
+        logger.info('🆕 Starting a new chat order per explicit user request, keeping the previous open order untouched');
         existingOpenOrder = null;
       }
 
       if (existingOpenOrder) {
         // تحديث الطلب الحالي في حالة التأكيد/التعديل
-        console.log('ℹ️ Updating existing open order instead of creating new one');
+        logger.info('ℹ️ Updating existing open order instead of creating new one');
         if (effectiveItems.length) existingOpenOrder.items = effectiveItems;
         if (effectiveName) existingOpenOrder.customerName = effectiveName;
         if (effectiveAddress) existingOpenOrder.customerAddress = effectiveAddress;
@@ -408,7 +406,7 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       }
     }
 
-    console.log('📦 Parsed order payload:', {
+    logger.info('📦 Parsed order payload', {
       customerName: effectiveName,
       customerPhone: effectivePhone,
       customerAddress: effectiveAddress,
@@ -418,7 +416,7 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
 
     // لو العميل طلب إلغاء ومافيش طلب مفتوح، ما تنشئش جديد
     if (cancelIntent && !existingOpenOrder) {
-      console.log('⚠️ Cancel intent with no existing order; skipping creation');
+      logger.warn('⚠️ Cancel intent with no existing order; skipping creation');
       return { chatOrder: null, cancelled: false };
     }
 
@@ -449,9 +447,9 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       messageId
     });
 
-    console.log('🧾 Chat order extracted/updated:', chatOrder?._id || 'none');
+    logger.info('🧾 Chat order extracted/updated', { orderId: chatOrder?._id || 'none' });
     if (!chatOrder) {
-      console.log('⚠️ Chat order not saved (missing required data after controller validation)', {
+      logger.warn('⚠️ Chat order not saved (missing required data after controller validation)', {
         hasRequiredData: hasRequiredData(),
         effectiveName,
         effectivePhone,
@@ -479,7 +477,7 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
         });
       }
     } catch (e) {
-      console.warn('⚠️ تعذر تحديث بيانات العميل:', e.message);
+      logger.warn('⚠️ تعذر تحديث بيانات العميل:', { err: e });
     }
 
     return {
@@ -488,14 +486,14 @@ async function extractChatOrderIntent({ bot, channel, userMessageContent, conver
       pendingDraftAt: chatOrder ? null : undefined,
     };
   } catch (err) {
-    console.error('❌ فشل في استخراج طلب المحادثة:', err.message);
+    logger.error('❌ فشل في استخراج طلب المحادثة:', { err });
     return null;
   }
 }
 
 async function processMessage(botId, userId, message, isImage = false, isVoice = false, messageId = null, channel = 'web', mediaUrl = null) {
   try {
-    console.log(`📢 Raw userId received: ${userId} (type: ${typeof userId})`);
+    logger.info('📢 Raw userId received', { userId, type: typeof userId });
 
     let finalUserId = userId;
     let finalUsername = undefined;
@@ -504,36 +502,36 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       if (channel === 'whatsapp' && userId && userId.includes('@c.us')) {
         finalUserId = userId;
         finalUsername = userId.split('@c.us')[0];
-        console.log(`📋 Using WhatsApp userId: ${finalUserId}, username: ${finalUsername}`);
+        logger.info('📋 Using WhatsApp userId', { userId: finalUserId, username: finalUsername });
       } else {
         finalUserId = `web_${uuidv4()}`;
-        console.log(`📋 Generated new userId for channel ${channel}: ${finalUserId}`);
+        logger.info('📋 Generated new userId for channel', { channel, userId: finalUserId });
       }
     } else {
       if (channel === 'whatsapp' && userId.includes('@c.us')) {
         finalUserId = userId;
         finalUsername = userId.split('@c.us')[0];
-        console.log(`📋 Using WhatsApp userId: ${finalUserId}, username: ${finalUsername}`);
+        logger.info('📋 Using WhatsApp userId', { userId: finalUserId, username: finalUsername });
       } else {
-        console.log(`📋 Using provided userId: ${finalUserId}`);
+        logger.info('📋 Using provided userId', { userId: finalUserId });
       }
     }
 
     let finalChannel = channel || 'web';
     if (finalUserId.includes('@c.us')) {
       finalChannel = 'whatsapp';
-      console.log(`📋 Overriding channel to 'whatsapp' because userId contains @c.us`);
+      logger.info(`📋 Overriding channel to 'whatsapp' because userId contains @c.us`);
     }
-    console.log('🤖 Processing message for bot:', botId, 'user:', finalUserId, 'message:', message, 'channel:', finalChannel, 'isImage:', isImage, 'isVoice:', isVoice, 'mediaUrl:', mediaUrl);
+    logger.info('🤖 Processing message', { botId, userId: finalUserId, message, channel: finalChannel, isImage, isVoice, mediaUrl });
 
     if (!botId || !finalUserId || (!message && !isImage && !isVoice && !mediaUrl)) {
-      console.log(`❌ Missing required fields: botId=${botId}, userId=${finalUserId}, message=${message}, mediaUrl=${mediaUrl}`);
+      logger.error('❌ Missing required fields', { botId, userId: finalUserId, message, mediaUrl });
       return 'عذرًا، حدث خطأ في معالجة الطلب. حاول مرة أخرى.';
     }
 
     let conversation = await Conversation.findOne({ botId, userId: finalUserId, channel: finalChannel });
     if (!conversation) {
-      console.log('📋 Creating new conversation for bot:', botId, 'user:', finalUserId, 'channel:', finalChannel);
+      logger.info('📋 Creating new conversation', { botId, userId: finalUserId, channel: finalChannel });
       conversation = await Conversation.create({ 
         botId, 
         userId: finalUserId, 
@@ -542,7 +540,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         username: finalUsername || (finalChannel === 'web' ? `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}` : undefined) 
       });
     } else {
-      console.log('📋 Found existing conversation for user:', finalUserId, 'conversationId:', conversation._id);
+      logger.info('📋 Found existing conversation', { userId: finalUserId, conversationId: conversation._id });
       if (finalChannel === 'web' && !conversation.username) {
         conversation.username = `زائر ويب ${finalUserId.replace('web_', '').slice(0, 8)}`;
         await conversation.save();
@@ -562,7 +560,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       message = ctxMatch[2];
     }
     const rules = await Rule.find({ $or: [{ botId: rulesBotId }, { type: 'global' }] });
-    console.log('📜 Rules found:', rules.length);
+    logger.info('📜 Rules found', { count: rules.length });
 
     let systemPrompt = `أنت بوت ذكي يساعد المستخدمين بناءً على القواعد التالية. الوقت الحالي هو: ${getCurrentTime()}.\n`;
     if (rules.length === 0) {
@@ -604,7 +602,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       }
     }
 
-    console.log('📝 System prompt:', systemPrompt);
+    logger.info('📝 System prompt prepared');
 
     let userMessageContent = message;
 
@@ -617,21 +615,21 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       try {
         const voiceSource = mediaUrl || message;
         if (voiceSource && (voiceSource.startsWith('http') || isDataUrl(voiceSource))) {
-          console.log('🎙️ Voice message, transcribing from source:', voiceSource.slice(0, 80));
+          logger.info('🎙️ Voice message, transcribing from source', { source: voiceSource.slice(0, 80) });
           userMessageContent = await transcribeAudio(voiceSource, finalChannel);
-          console.log('💬 Transcribed audio message:', userMessageContent);
+          logger.info('💬 Transcribed audio message', { content: userMessageContent });
         } else {
-          console.log('⚠️ No valid mediaUrl or audio payload for voice:', mediaUrl, message);
+          logger.warn('⚠️ No valid mediaUrl or audio payload for voice', { mediaUrl, message });
           return 'عذرًا، لم أتمكن من تحليل الصوت بسبب رابط غير صالح. أرسل المقطع الصوتي من جديد أو اكتب النص.';
         }
       } catch (err) {
-        console.error('❌ Failed to transcribe audio:', err.message);
+        logger.error('❌ Failed to transcribe audio', { err });
         return err.message;
       }
     } else if (isImage) {
       userMessageContent = message || mediaUrl || '[صورة]';
       if (isDataUrl(userMessageContent)) userMessageContent = placeholderForMedia(true, false);
-      console.log('🖼️ Image message, content:', userMessageContent);
+      logger.info('🖼️ Image message', { content: userMessageContent });
     }
 
     conversation.messages.push({ 
@@ -642,11 +640,11 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     });
 
     await conversation.save();
-    console.log('💬 User message added to conversation:', userMessageContent);
+  logger.info('💬 User message added to conversation', { userMessageContent });
 
     const muteUntil = conversation.mutedUntil ? new Date(conversation.mutedUntil) : null;
     if (muteUntil && muteUntil > new Date()) {
-      console.log(`🔇 Conversation ${conversation._id} muted until ${muteUntil.toISOString()}, skipping bot reply.`);
+      logger.info('🔇 Conversation muted, skipping bot reply', { conversationId: conversation._id, muteUntil: muteUntil.toISOString() });
       return null;
     }
 
@@ -666,7 +664,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
           conversation,
         });
       } catch (e) {
-        console.warn('⚠️ تعذر استخراج طلب المحادثة:', e.message);
+        logger.warn('⚠️ تعذر استخراج طلب المحادثة:', { err: e });
       }
     }
 
@@ -697,7 +695,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       role: msg.role,
       content: msg.content.length > 2000 ? `${msg.content.slice(0, 2000)}...` : msg.content,
     }));
-    console.log('🧠 Conversation context:', context.length, 'messages');
+    logger.info('🧠 Conversation context prepared', { count: context.length });
 
     let reply = '';
 
@@ -815,7 +813,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     if (!reply) {
       if (isImage) {
         if (!mediaUrl) {
-          console.error('❌ Missing mediaUrl for image');
+          logger.error('❌ Missing mediaUrl for image');
           return 'عذرًا، لم أتمكن من تحليل الصورة بسبب رابط غير صالح.';
         }
 
@@ -823,17 +821,17 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
         if (isDataUrl(mediaUrl)) {
           // إذا وصلتنا الصورة كـ data URL نستخدمها مباشرة بدون تنزيل
           imageDataUrl = mediaUrl;
-          console.log('🖼️ Image provided as data URL, skipping download');
+          logger.info('🖼️ Image provided as data URL, skipping download');
         } else if (mediaUrl.startsWith('http')) {
-          console.log('🖼️ Processing image with mediaUrl:', mediaUrl);
+          logger.info('🖼️ Processing image with mediaUrl', { mediaUrl });
           try {
             imageDataUrl = await downloadImageToBase64(mediaUrl, finalChannel);
           } catch (err) {
-            console.error('❌ Failed to download image:', err.message);
+            logger.error('❌ Failed to download image', { err });
             return err.message;
           }
         } else {
-          console.error('❌ Invalid or unsupported mediaUrl for image:', mediaUrl);
+          logger.error('❌ Invalid or unsupported mediaUrl for image', { mediaUrl });
           return 'عذرًا، رابط الصورة غير مدعوم. أرسل صورة جديدة من فضلك.';
         }
 
@@ -854,9 +852,9 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
             max_tokens: 1000,
           });
           reply = response.choices[0].message.content || 'عذرًا، لم أتمكن من تحليل الصورة.';
-          console.log('🖼️ Image processed:', reply);
+          logger.info('🖼️ Image processed', { reply });
         } catch (err) {
-          console.error('❌ Error processing image with OpenAI:', err.message);
+          logger.error('❌ Error processing image with OpenAI', { err });
           return 'عذرًا، لم أتمكن من تحليل الصورة. حاول مرة أخرى أو أرسل صورة أخرى.';
         }
       } else {
@@ -865,14 +863,14 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
           ...context,
           { role: 'user', content: userMessageContent },
         ];
-        console.log('📤 Sending to OpenAI for processing:', userMessageContent);
+        logger.info('📤 Sending to OpenAI for processing', { userMessageContent });
         const response = await openai.chat.completions.create({
           model: 'gpt-4o-mini',
           messages,
           max_tokens: 2000,
         });
         reply = response.choices[0].message.content;
-        console.log('💬 Assistant reply:', reply);
+        logger.info('💬 Assistant reply', { reply });
       }
     }
 
@@ -885,18 +883,18 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     });
 
     await conversation.save();
-    console.log('💬 Assistant reply added to conversation:', reply);
+    logger.info('💬 Assistant reply added to conversation', { reply });
 
     return reply;
   } catch (err) {
-    console.error('❌ Error processing message:', err.message, err.stack);
+    logger.error('❌ Error processing message:', { err });
     return 'عذرًا، حدث خطأ أثناء معالجة طلبك. حاول مرة أخرى.';
   }
 }
 
 async function processFeedback(botId, userId, messageId, feedback) {
   try {
-    console.log(`📊 Processing feedback for bot: ${botId}, user: ${userId}, messageId: ${messageId}, feedback: ${feedback}`);
+    logger.info('📊 Processing feedback', { botId, userId, messageId, feedback });
 
     let type = '';
     if (feedback === 'Good response') {
@@ -904,7 +902,7 @@ async function processFeedback(botId, userId, messageId, feedback) {
     } else if (feedback === 'Bad response') {
       type = 'dislike';
     } else {
-      console.log(`⚠️ Unknown feedback type: ${feedback}, skipping...`);
+      logger.warn('⚠️ Unknown feedback type, skipping', { feedback });
       return;
     }
 
@@ -930,13 +928,13 @@ async function processFeedback(botId, userId, messageId, feedback) {
         if (userMessageIndex >= 0) {
           userMessage = conversation.messages[userMessageIndex].content;
         } else {
-          console.log(`⚠️ No user message found before bot message for userId: ${userId}`);
+          logger.warn('⚠️ No user message found before bot message', { userId });
         }
       } else {
-        console.log(`⚠️ No bot message found for userId: ${userId} before timestamp: ${feedbackTimestamp}`);
+        logger.warn('⚠️ No bot message found before timestamp', { userId, feedbackTimestamp });
       }
     } else {
-      console.log(`⚠️ No conversation found for bot: ${botId}, user: ${userId}`);
+      logger.warn('⚠️ No conversation found for feedback', { botId, userId });
     }
 
     const feedbackEntry = await Feedback.findOneAndUpdate(
@@ -954,9 +952,9 @@ async function processFeedback(botId, userId, messageId, feedback) {
       { upsert: true, new: true }
     );
 
-    console.log(`✅ Feedback saved: ${type} for message ID: ${messageId} with content: ${messageContent}, user message: ${userMessage}`);
+    logger.info('✅ Feedback saved', { type, messageId, messageContent, userMessage, feedbackId: feedbackEntry?._id });
   } catch (err) {
-    console.error('❌ Error processing feedback:', err.message, err.stack);
+    logger.error('❌ Error processing feedback:', { err });
   }
 }
 

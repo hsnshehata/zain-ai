@@ -1,16 +1,14 @@
 // /server/middleware/authenticate.js
 
 const jwt = require('jsonwebtoken');
-
-// دالة مساعدة لإضافة timestamp للـ logs
-const getTimestamp = () => new Date().toISOString();
+const logger = require('../logger');
 
 module.exports = (req, res, next) => {
   const token = req.header('Authorization')?.replace('Bearer ', '');
 
   if (!token) {
-    console.error(`[${getTimestamp()}] ❌ التوكن غير موجود في الطلب | Headers:`, req.headers);
-    return res.status(401).json({ 
+    logger.warn('auth_token_missing', { headers: req.headers });
+    return res.status(401).json({
       message: 'التوكن غير موجود، يرجى تسجيل الدخول مرة أخرى',
       error: 'NoTokenError',
       details: 'No Authorization header or Bearer token provided'
@@ -20,7 +18,7 @@ module.exports = (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret');
     req.user = decoded;
-    console.log(`[${getTimestamp()}] ✅ التوكن صحيح | User: ${decoded.userId} | Token: ${token.slice(0, 10)}...`, decoded);
+    logger.info('auth_token_valid', { userId: decoded.userId, role: decoded.role, tokenPrefix: token.slice(0, 10) });
     next();
   } catch (err) {
     let errorMessage = 'التوكن غير صالح';
@@ -32,8 +30,8 @@ module.exports = (req, res, next) => {
       errorMessage = 'التوكن غير صالح أو توقيع غير صحيح';
       errorDetails = err.message;
     }
-    console.error(`[${getTimestamp()}] ❌ خطأ في التحقق من التوكن | Error: ${err.name} | Token: ${token.slice(0, 10)}...`, errorMessage, err.message, err.stack);
-    res.status(401).json({ 
+    logger.error('auth_token_invalid', { error: err.name, tokenPrefix: token.slice(0, 10), message: errorMessage, details: err.message, stack: err.stack });
+    res.status(401).json({
       message: errorMessage,
       error: err.name,
       details: errorDetails

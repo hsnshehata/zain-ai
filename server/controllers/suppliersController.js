@@ -4,8 +4,7 @@ const PurchaseInvoice = require('../models/PurchaseInvoice');
 const Product = require('../models/Product');
 const Store = require('../models/Store');
 const Bot = require('../models/Bot');
-
-const getTimestamp = () => new Date().toISOString();
+const logger = require('../logger');
 
 async function authorizeStoreAccess(storeId, userId, userRole) {
   const store = await Store.findById(storeId);
@@ -36,7 +35,7 @@ exports.getSuppliers = async (req, res) => {
     ]);
     res.status(200).json({ suppliers: items, total });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error getSuppliers:`, err.message);
+    logger.error('suppliers_get_suppliers_error', { err: err.message, storeId });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في جلب الموردين' });
   }
 };
@@ -49,7 +48,7 @@ exports.getSupplier = async (req, res) => {
     if (!supplier) return res.status(404).json({ message: 'المورد غير موجود' });
     res.status(200).json({ supplier });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error getSupplier:`, err.message);
+    logger.error('suppliers_get_supplier_error', { err: err.message, storeId, supplierId });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في جلب المورد' });
   }
 };
@@ -63,7 +62,7 @@ exports.createSupplier = async (req, res) => {
     await s.save();
     res.status(201).json({ supplier: s });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error createSupplier:`, err.message);
+    logger.error('suppliers_create_error', { err: err.message, storeId });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في إنشاء المورد' });
   }
 };
@@ -82,7 +81,7 @@ exports.updateSupplier = async (req, res) => {
     await s.save();
     res.status(200).json({ supplier: s });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error updateSupplier:`, err.message);
+    logger.error('suppliers_update_error', { err: err.message, storeId, supplierId });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في تحديث المورد' });
   }
 };
@@ -95,7 +94,7 @@ exports.deleteSupplier = async (req, res) => {
     if (!s) return res.status(404).json({ message: 'المورد غير موجود' });
     res.status(200).json({ message: 'تم حذف المورد' });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error deleteSupplier:`, err.message);
+    logger.error('suppliers_delete_error', { err: err.message, storeId, supplierId });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في حذف المورد' });
   }
 };
@@ -107,7 +106,7 @@ exports.getSupplierTransactions = async (req, res) => {
     const tx = await SupplierTransaction.find({ storeId, supplierId }).sort({ createdAt: -1 });
     res.status(200).json({ transactions: tx });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error getSupplierTransactions:`, err.message);
+    logger.error('suppliers_transactions_error', { err: err.message, storeId, supplierId });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في جلب معاملات المورد' });
   }
 };
@@ -128,7 +127,7 @@ exports.addSupplierTransaction = async (req, res) => {
     await supplier.save();
     res.status(201).json({ transaction: tx, balance: supplier.balance });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error addSupplierTransaction:`, err.message);
+    logger.error('suppliers_add_transaction_error', { err: err.message, storeId, supplierId });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في إضافة المعاملة' });
   }
 };
@@ -169,7 +168,7 @@ exports.createPurchaseInvoice = async (req, res) => {
           }
         }
       } catch (e) {
-        console.error(`[${getTimestamp()}] ⚠️ Failed updating product stock for item in invoice ${invoice._id}:`, e.message);
+        logger.warn('suppliers_invoice_stock_update_failed', { err: e.message, invoiceId: invoice._id });
       }
     }
 
@@ -180,7 +179,7 @@ exports.createPurchaseInvoice = async (req, res) => {
     await supplier.save();
     res.status(201).json({ invoice, balance: supplier.balance });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error createPurchaseInvoice:`, err.message);
+    logger.error('suppliers_create_invoice_error', { err: err.message, storeId, supplierId });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في إنشاء فاتورة مشتريات' });
   }
 };
@@ -192,7 +191,7 @@ exports.getPurchaseInvoices = async (req, res) => {
     const invoices = await PurchaseInvoice.find({ storeId, supplierId }).sort({ createdAt: -1 });
     res.status(200).json({ invoices });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error getPurchaseInvoices:`, err.message);
+    logger.error('suppliers_get_invoices_error', { err: err.message, storeId, supplierId });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في جلب فواتير المشتريات' });
   }
 };
@@ -207,7 +206,7 @@ exports.getSupplierStatement = async (req, res) => {
     const invoices = await PurchaseInvoice.find({ storeId, supplierId }).sort({ createdAt: -1 });
     res.status(200).json({ supplier, transactions, invoices });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error getSupplierStatement:`, err.message);
+    logger.error('suppliers_statement_error', { err: err.message, storeId, supplierId });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في جلب كشف المورد' });
   }
 };

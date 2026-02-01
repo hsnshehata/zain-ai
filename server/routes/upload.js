@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const { uploadToImgbb } = require('../controllers/uploadController');
+const logger = require('../logger');
 
 // إعداد Multer لاستقبال الصور في الذاكرة (مش هنخزّنها محليًا)
 const upload = multer({
@@ -29,7 +30,7 @@ router.post('/', upload.single('image'), async (req, res) => {
       thumbUrl: uploadResult.thumbUrl,
     });
   } catch (err) {
-    console.error('خطأ في رفع الصورة:', err);
+    logger.error('خطأ في رفع الصورة:', { err });
     res.status(500).json({ message: `فشل في رفع الصورة: ${err.message}` });
   }
 });

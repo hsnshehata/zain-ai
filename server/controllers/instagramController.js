@@ -2,26 +2,24 @@ const Conversation = require('../models/Conversation');
 const Bot = require('../models/Bot');
 const axios = require('axios');
 const { processMessage } = require('../botEngine');
-
-// دالة مساعدة لإضافة timestamp للـ logs
-const getTimestamp = () => new Date().toISOString();
+const logger = require('../logger');
 
 // دالة لجلب اسم المستخدم من إنستجرام
 const getInstagramUsername = async (userId, accessToken) => {
   try {
     const cleanUserId = userId.replace(/^(instagram_|instagram_comment_)/, '');
-    console.log(`[${getTimestamp()}] 📋 محاولة جلب اسم المستخدم لـ ${cleanUserId} من إنستجرام باستخدام التوكن: ${accessToken.slice(0, 10)}...`);
+    logger.info('ig_get_username_attempt', { userId: cleanUserId });
     const response = await axios.get(
       `https://graph.instagram.com/v22.0/${cleanUserId}?fields=name&access_token=${accessToken}`
     );
     if (response.data.name) {
-      console.log(`[${getTimestamp()}] ✅ تم جلب اسم المستخدم من إنستجرام: ${response.data.name}`);
+      logger.info('ig_get_username_success', { userId: cleanUserId });
       return response.data.name;
     }
-    console.log(`[${getTimestamp()}] ⚠️ لم يتم العثور على الاسم في الاستجابة:`, response.data);
+    logger.warn('ig_get_username_no_name', { userId: cleanUserId });
     return cleanUserId;
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ خطأ في جلب اسم المستخدم من إنستجرام لـ ${userId}:`, err.message, err.response?.data);
+    logger.error('ig_get_username_error', { userId, err: err.message, data: err.response?.data });
     return userId.replace(/^(instagram_|instagram_comment_)/, '');
   }
 };
@@ -33,12 +31,12 @@ const validateAccessToken = async (accessToken) => {
       `https://graph.instagram.com/v20.0/me?fields=id&access_token=${accessToken}`
     );
     if (response.data.id) {
-      console.log(`[${getTimestamp()}] ✅ Access token is valid`);
+      logger.info('ig_token_valid');
       return true;
     }
     return false;
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Access token validation failed:`, err.response?.data || err.message);
+    logger.error('ig_token_invalid', { err: err.response?.data || err.message });
     return false;
   }
 };
@@ -51,20 +49,20 @@ const sendMessage = async (recipientId, messageText, accessToken) => {
     const res = await axios.post(url, payload);
     if (res.status < 200 || res.status >= 300) {
       const body = res.data;
-      console.error(`[${getTimestamp()}] ❌ Failed to send message to Instagram:`, body?.error || res.status);
+      logger.error('ig_send_message_failed', { error: body?.error || res.status });
       if (body?.error?.error_subcode === 2534014) {
-        console.error(`[${getTimestamp()}] ⚠️ User ${recipientId} cannot be found or is not available to receive messages. Skipping message sending.`);
+        logger.warn('ig_send_message_user_unavailable', { recipientId });
         return;
       }
       throw new Error('Failed to send message to Instagram');
     }
-    console.log(`[${getTimestamp()}] ✅ Message sent to ${recipientId}: ${messageText}`);
+    logger.info('ig_send_message_success', { recipientId });
     return res.data;
   } catch (error) {
     const body = error.response?.data || null;
-    console.error(`[${getTimestamp()}] ❌ Failed to send message to Instagram:`, body?.error || error.message);
+    logger.error('ig_send_message_error', { error: body?.error || error.message });
     if (body?.error?.error_subcode === 2534014) {
-      console.error(`[${getTimestamp()}] ⚠️ User ${recipientId} cannot be found or is not available to receive messages. Skipping message sending.`);
+      logger.warn('ig_send_message_user_unavailable', { recipientId });
       return;
     }
     throw error;
@@ -78,20 +76,20 @@ const replyToComment = async (commentId, messageText, accessToken) => {
     const res = await axios.post(url, { message: messageText });
     if (res.status < 200 || res.status >= 300) {
       const body = res.data;
-      console.error(`[${getTimestamp()}] ❌ Failed to reply to comment ${commentId}:`, body?.error || res.status);
+      logger.error('ig_reply_comment_failed', { commentId, error: body?.error || res.status });
       if (body?.error?.error_subcode === 2534014) {
-        console.error(`[${getTimestamp()}] ⚠️ Comment ${commentId} cannot be replied to. Skipping comment reply.`);
+        logger.warn('ig_reply_comment_unavailable', { commentId });
         return;
       }
       throw new Error('Failed to reply to comment');
     }
-    console.log(`[${getTimestamp()}] ✅ Replied to comment ${commentId}: ${messageText}`);
+    logger.info('ig_reply_comment_success', { commentId });
     return res.data;
   } catch (error) {
     const body = error.response?.data || null;
-    console.error(`[${getTimestamp()}] ❌ Failed to reply to comment ${commentId}:`, body?.error || error.message);
+    logger.error('ig_reply_comment_error', { commentId, error: body?.error || error.message });
     if (body?.error?.error_subcode === 2534014) {
-      console.error(`[${getTimestamp()}] ⚠️ Comment ${commentId} cannot be replied to. Skipping comment reply.`);
+      logger.warn('ig_reply_comment_unavailable', { commentId });
       return;
     }
     throw error;
@@ -104,17 +102,17 @@ const verifyWebhook = (req, res) => {
   const token = req.query['hub.verify_token'];
   const challenge = req.query['hub.challenge'];
 
-  if (mode && token) {
-    if (mode === 'subscribe' && token === process.env.INSTAGRAM_VERIFY_TOKEN) {
-      console.log(`[${getTimestamp()}] ✅ Webhook verified successfully`);
-      return res.status(200).send(challenge);
-    } else {
-      console.log(`[${getTimestamp()}] ⚠️ Webhook verification failed: Invalid token`);
-      return res.sendStatus(403);
+    if (mode && token) {
+      if (mode === 'subscribe' && token === process.env.INSTAGRAM_VERIFY_TOKEN) {
+        logger.info('ig_webhook_verified');
+        return res.status(200).send(challenge);
+      } else {
+        logger.warn('ig_webhook_verify_failed');
+        return res.sendStatus(403);
+      }
     }
-  }
-  console.log(`[${getTimestamp()}] ⚠️ Webhook verification failed: Missing parameters`);
-  res.sendStatus(400);
+    logger.warn('ig_webhook_missing_params');
+    res.sendStatus(400);
 };
 
 // معالجة الرسائل والكومنتات القادمة من Instagram
@@ -123,24 +121,24 @@ const handleMessage = async (req, res) => {
     const body = req.body;
 
     if (body.object !== 'instagram') {
-      console.log(`[${getTimestamp()}] ⚠️ Ignored non-Instagram webhook event:`, body.object);
+      logger.warn('ig_ignored_non_instagram', { object: body.object });
       return res.sendStatus(400);
     }
 
-    console.log(`[${getTimestamp()}] 📩 Instagram Webhook POST request received:`, JSON.stringify(body, null, 2));
+    logger.info('ig_webhook_received', { body });
 
     for (const entry of body.entry) {
       const pageId = entry.id;
 
       const bot = await Bot.findOne({ instagramPageId: pageId });
       if (!bot) {
-        console.log(`[${getTimestamp()}] ❌ No bot found for Instagram page ID: ${pageId}`);
+        logger.warn('ig_bot_not_found', { pageId });
         continue;
       }
 
       const isTokenValid = await validateAccessToken(bot.instagramApiKey);
       if (!isTokenValid) {
-        console.error(`[${getTimestamp()}] ❌ Access token for bot ${bot._id} is invalid. Please refresh the token.`);
+        logger.error('ig_bot_token_invalid', { botId: bot._id });
         continue;
       }
 
@@ -156,7 +154,7 @@ const handleMessage = async (req, res) => {
           const pauseDurationMinutes = Number(bot.ownerPauseDurationMinutes) || 0;
 
           if (senderId === recipientId) {
-            console.log(`[${getTimestamp()}] ⚠️ Ignoring message sent by the page itself: ${senderId}`);
+            logger.warn('ig_self_message', { senderId });
             continue;
           }
 
@@ -186,10 +184,10 @@ const handleMessage = async (req, res) => {
                 targetConversation.mutedUntil = new Date(Date.now() + durationMs);
                 targetConversation.mutedBy = 'owner_keyword';
                 await targetConversation.save();
-                console.log(`[${getTimestamp()}] 🔇 Applied mute for ${prefixedTargetUserId} until ${targetConversation.mutedUntil.toISOString()} using keyword "${bot.ownerPauseKeyword}"`);
+                logger.info('ig_owner_mute_applied', { userId: prefixedTargetUserId, until: targetConversation.mutedUntil, keyword: bot.ownerPauseKeyword });
               }
             }
-            console.log(`[${getTimestamp()}] ⚠️ Ignoring echo message from bot: ${senderId}`);
+            logger.info('ig_echo_ignored', { senderId });
             continue;
           }
 
@@ -215,7 +213,7 @@ const handleMessage = async (req, res) => {
             await conversation.save();
           }
 
-          console.log(`[${getTimestamp()}] 🏷️ Adding label to conversation for user ${prefixedSenderId}`);
+          logger.info('ig_add_label', { userId: prefixedSenderId });
           conversation.labels = conversation.labels || [];
           if (!conversation.labels.includes('new_message')) {
             conversation.labels.push('new_message');
@@ -223,48 +221,48 @@ const handleMessage = async (req, res) => {
           }
 
           if (event.optin && bot.instagramMessagingOptinsEnabled) {
-            console.log(`📩 Processing opt-in event from ${prefixedSenderId}`);
+            logger.info('ig_optin', { userId: prefixedSenderId });
             const welcomeMessage = bot.welcomeMessage || 'مرحبًا! كيف يمكنني مساعدتك اليوم؟';
             await sendMessage(senderId, welcomeMessage, bot.instagramApiKey);
             continue;
           } else if (event.optin && !bot.instagramMessagingOptinsEnabled) {
-            console.log(`⚠️ Opt-in messages disabled for bot ${bot.name} (ID: ${bot._id}), skipping opt-in processing.`);
+            logger.warn('ig_optin_disabled', { botId: bot._id });
             continue;
           }
 
           if (event.reaction && bot.instagramMessageReactionsEnabled) {
-            console.log(`📩 Processing reaction event from ${prefixedSenderId}: ${event.reaction.reaction}`);
+            logger.info('ig_reaction', { userId: prefixedSenderId, reaction: event.reaction.reaction });
             const responseText = `شكرًا على تفاعلك (${event.reaction.reaction})!`;
             await sendMessage(senderId, responseText, bot.instagramApiKey);
             continue;
           } else if (event.reaction && !bot.instagramMessageReactionsEnabled) {
-            console.log(`⚠️ Message reactions disabled for bot ${bot.name} (ID: ${bot._id}), skipping reaction processing.`);
+            logger.warn('ig_reaction_disabled', { botId: bot._id });
             continue;
           }
 
           if (event.referral && bot.instagramMessagingReferralsEnabled) {
-            console.log(`📩 Processing referral event from ${prefixedSenderId}: ${event.referral.ref}`);
+            logger.info('ig_referral', { userId: prefixedSenderId, referral: event.referral.ref });
             const responseText = `مرحبًا! وصلتني من ${event.referral.source}، كيف يمكنني مساعدتك؟`;
             await sendMessage(senderId, responseText, bot.instagramApiKey);
             continue;
           } else if (event.referral && !bot.instagramMessagingReferralsEnabled) {
-            console.log(`⚠️ Messaging referrals disabled for bot ${bot.name} (ID: ${bot._id}), skipping referral processing.`);
+            logger.warn('ig_referral_disabled', { botId: bot._id });
             continue;
           }
 
           if (event.message_edit && bot.instagramMessageEditsEnabled) {
             const editedMessage = event.message_edit.message;
             const mid = editedMessage.mid || `temp_${Date.now()}`;
-            console.log(`📩 Processing message edit event from ${prefixedSenderId}: ${editedMessage.text}`);
+            logger.info('ig_message_edit', { userId: prefixedSenderId });
             const responseText = await processMessage(bot._id, prefixedSenderId, editedMessage.text, false, false, mid, 'instagram');
             if (responseText === null) {
-              console.log(`[${getTimestamp()}] 🔇 Conversation for ${prefixedSenderId} muted, skipping reply to edited message.`);
+              logger.info('ig_muted_edit', { userId: prefixedSenderId });
               continue;
             }
             await sendMessage(senderId, responseText, bot.instagramApiKey);
             continue;
           } else if (event.message_edit && !bot.instagramMessageEditsEnabled) {
-            console.log(`⚠️ Message edits disabled for bot ${bot.name} (ID: ${bot._id}), skipping message edit processing.`);
+            logger.warn('ig_message_edit_disabled', { botId: bot._id });
             continue;
           }
 
@@ -277,47 +275,47 @@ const handleMessage = async (req, res) => {
 
             if (event.message.text) {
               text = event.message.text;
-              console.log(`[${getTimestamp()}] 📝 Text message received from ${prefixedSenderId}: ${text}`);
+              logger.info('ig_text_message', { userId: prefixedSenderId });
             } else if (event.message.attachments) {
               const attachment = event.message.attachments[0];
               if (attachment.type === 'image') {
                 isImage = true;
                 mediaUrl = attachment.payload.url;
                 text = '[صورة]';
-                console.log(`[${getTimestamp()}] 🖼️ Image received from ${prefixedSenderId}: ${mediaUrl}`);
+                logger.info('ig_image_message', { userId: prefixedSenderId });
               } else if (attachment.type === 'audio') {
                 isVoice = true;
                 mediaUrl = attachment.payload.url;
                 text = '';
-                console.log(`[${getTimestamp()}] 🎙️ Audio received from ${prefixedSenderId}: ${mediaUrl}`);
+                logger.info('ig_audio_message', { userId: prefixedSenderId });
               } else {
-                console.log(`[${getTimestamp()}] 📎 Unsupported attachment type from ${prefixedSenderId}: ${attachment.type}`);
+                logger.warn('ig_attachment_unsupported', { userId: prefixedSenderId, type: attachment.type });
                 text = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
               }
             } else {
-              console.log(`[${getTimestamp()}] ⚠️ No text or attachments in message from ${prefixedSenderId}`);
+              logger.warn('ig_message_no_content', { userId: prefixedSenderId });
               continue;
             }
 
-            console.log(`[${getTimestamp()}] 📤 Sending to botEngine: botId=${bot._id}, userId=${prefixedSenderId}, message=${text}, isImage=${isImage}, isVoice=${isVoice}, mediaUrl=${mediaUrl}`);
+            logger.info('ig_send_to_botengine', { botId: bot._id, userId: prefixedSenderId, isImage, isVoice });
             const reply = await processMessage(bot._id, prefixedSenderId, text, isImage, isVoice, messageId, 'instagram', mediaUrl);
 
             if (reply === null) {
-              console.log(`[${getTimestamp()}] 🔇 Conversation for ${prefixedSenderId} muted, skipping reply.`);
+              logger.info('ig_muted', { userId: prefixedSenderId });
               continue;
             }
 
-            console.log(`[${getTimestamp()}] 📤 Attempting to send message to ${senderId} with token: ${bot.instagramApiKey.slice(0, 10)}...`);
+            logger.info('ig_send_message_attempt', { senderId });
             await sendMessage(senderId, reply, bot.instagramApiKey);
           } else {
-            console.log(`[${getTimestamp()}] ⚠️ Unhandled event type from ${prefixedSenderId}`);
+            logger.warn('ig_unhandled_event', { userId: prefixedSenderId });
           }
         }
       }
 
       if (entry.changes) {
         if (!bot.instagramCommentsRepliesEnabled) {
-          console.log(`[${getTimestamp()}] ⚠️ Comment replies disabled for bot ${bot.name} (ID: ${bot._id}), skipping comment processing.`);
+            logger.warn('ig_comments_disabled', { botId: bot._id });
           continue;
         }
 
@@ -331,13 +329,13 @@ const handleMessage = async (req, res) => {
             const prefixedCommenterId = `instagram_comment_${commenterId}`;
 
             if (commenterId === pageId) {
-              console.log(`[${getTimestamp()}] ⚠️ Ignoring comment sent by the page itself: ${commenterId}`);
+                logger.warn('ig_comment_page_self', { commenterId });
               continue;
             }
 
             const username = await getInstagramUsername(prefixedCommenterId, bot.instagramApiKey);
 
-            console.log(`[${getTimestamp()}] 💬 Comment received from ${prefixedCommenterId}: ${commentText}`);
+              logger.info('ig_comment_received', { userId: prefixedCommenterId });
 
             let conversation = await Conversation.findOne({
               botId: bot._id,
@@ -359,22 +357,22 @@ const handleMessage = async (req, res) => {
               await conversation.save();
             }
 
-            console.log(`[${getTimestamp()}] 🏷️ Adding label to conversation for user ${prefixedCommenterId}`);
+              logger.info('ig_comment_add_label', { userId: prefixedCommenterId });
             conversation.labels = conversation.labels || [];
             if (!conversation.labels.includes('new_comment')) {
               conversation.labels.push('new_comment');
               await conversation.save();
             }
 
-            console.log(`[${getTimestamp()}] 🤖 Processing comment for bot: ${bot._id} user: ${prefixedCommenterId} comment: ${commentText}`);
+              logger.info('ig_comment_processing', { botId: bot._id, userId: prefixedCommenterId });
             const reply = await processMessage(bot._id, prefixedCommenterId, commentText, false, false, commentId, 'instagram');
 
             if (reply === null) {
-              console.log(`[${getTimestamp()}] 🔇 Conversation for ${prefixedCommenterId} muted, skipping comment reply.`);
+                logger.info('ig_comment_muted', { userId: prefixedCommenterId });
               continue;
             }
 
-            console.log(`[${getTimestamp()}] 📤 Attempting to reply to comment ${commentId} with token: ${bot.instagramApiKey.slice(0, 10)}...`);
+              logger.info('ig_reply_comment_attempt', { commentId });
             await replyToComment(commentId, reply, bot.instagramApiKey);
           }
         }
@@ -383,7 +381,7 @@ const handleMessage = async (req, res) => {
 
     res.sendStatus(200);
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error in handleMessage:`, err.message, err.stack);
+      logger.error('ig_handle_error', { err: err.message, stack: err.stack });
     res.sendStatus(500);
   }
 };

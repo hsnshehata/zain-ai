@@ -4,18 +4,16 @@ const Notification = require('./models/Notification');
 const Product = require('./models/Product');
 const Store = require('./models/Store');
 const axios = require('axios');
-
-// دالة مساعدة لإضافة timestamp للـ logs
-const getTimestamp = () => new Date().toISOString();
+const logger = require('./logger');
 
 // دالة للتحقق من صلاحية التوكين
 const isTokenValid = async (accessToken, pageId) => {
   try {
     await axios.get(`https://graph.facebook.com/v20.0/${pageId}?fields=id&access_token=${accessToken}`);
-    console.log(`[${getTimestamp()}] ✅ Token is valid for page ${pageId}`);
+    logger.info('✅ Token is valid', { pageId });
     return true;
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Token validation failed for page ${pageId}:`, err.response?.data || err.message);
+    logger.error('❌ Token validation failed', { pageId, error: err.response?.data || err.message });
     return false;
   }
 };
@@ -29,12 +27,12 @@ const convertToLongLivedToken = async (shortLivedToken) => {
   try {
     const response = await axios.get(url);
     if (response.data.access_token) {
-      console.log(`[${getTimestamp()}] ✅ Successfully converted/renewed Facebook token: ${response.data.access_token.slice(0, 10)}...`);
+      logger.info('✅ Successfully converted/renewed Facebook token', { tokenPreview: `${response.data.access_token.slice(0, 10)}...` });
       return response.data.access_token;
     }
     throw new Error('Failed to convert/renew token: No access_token in response');
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error converting/renewing Facebook token:`, err.response?.data || err.message);
+    logger.error('❌ Error converting/renewing Facebook token', { error: err.response?.data || err.message });
     throw err;
   }
 };
@@ -43,7 +41,7 @@ const convertToLongLivedToken = async (shortLivedToken) => {
 const checkAutoStopBots = () => {
   cron.schedule('0 0 * * *', async () => {
     try {
-      console.log(`[${getTimestamp()}] ⏰ Starting auto-stop bot check...`);
+      logger.info('⏰ Starting auto-stop bot check...');
       const currentDate = new Date();
 
       const expiredBots = await Bot.find({
@@ -52,7 +50,7 @@ const checkAutoStopBots = () => {
       });
 
       if (expiredBots.length === 0) {
-        console.log(`[${getTimestamp()}] ✅ No bots found with expired subscriptions.`);
+        logger.info('✅ No bots found with expired subscriptions.');
         return;
       }
 
@@ -64,7 +62,7 @@ const checkAutoStopBots = () => {
         { $set: { isActive: false } }
       );
 
-      console.log(`[${getTimestamp()}] ✅ Updated ${updateResult.modifiedCount} bots to inactive due to expired subscriptions.`);
+      logger.info('✅ Updated bots to inactive due to expired subscriptions.', { modifiedCount: updateResult.modifiedCount });
 
       for (const bot of expiredBots) {
         const notification = new Notification({
@@ -74,12 +72,12 @@ const checkAutoStopBots = () => {
           isRead: false
         });
         await notification.save();
-        console.log(`[${getTimestamp()}] ✅ Notification sent to user ${bot.userId} for bot ${bot.name}.`);
+        logger.info('✅ Notification sent for expired bot', { userId: bot.userId, botName: bot.name });
       }
 
-      console.log(`[${getTimestamp()}] ⏰ Auto-stop bot check completed successfully.`);
+      logger.info('⏰ Auto-stop bot check completed successfully.');
     } catch (err) {
-      console.error(`[${getTimestamp()}] ❌ Error in auto-stop bot check:`, err.message, err.stack);
+      logger.error('❌ Error in auto-stop bot check', { err });
     }
   }, {
     timezone: 'Africa/Cairo'
@@ -90,7 +88,7 @@ const checkAutoStopBots = () => {
 const refreshInstagramTokens = () => {
   cron.schedule('0 0 * * *', async () => {
     try {
-      console.log(`[${getTimestamp()}] ⏰ Starting Instagram token refresh check...`);
+      logger.info('⏰ Starting Instagram token refresh check...');
 
       const botsWithInstagram = await Bot.find({
         instagramApiKey: { $ne: null },
@@ -98,11 +96,11 @@ const refreshInstagramTokens = () => {
       });
 
       if (botsWithInstagram.length === 0) {
-        console.log(`[${getTimestamp()}] ✅ No bots found with Instagram tokens to refresh.`);
+        logger.info('✅ No bots found with Instagram tokens to refresh.');
         return;
       }
 
-      console.log(`[${getTimestamp()}] 🔄 Found ${botsWithInstagram.length} bots with Instagram tokens to refresh.`);
+      logger.info('🔄 Bots with Instagram tokens to refresh', { count: botsWithInstagram.length });
 
       const fiftyDaysInMs = 50 * 24 * 60 * 60 * 1000;
       const currentDate = new Date();
@@ -113,19 +111,19 @@ const refreshInstagramTokens = () => {
           const shouldRefresh = !lastRefresh || (currentDate - lastRefresh) >= fiftyDaysInMs;
 
           if (!shouldRefresh) {
-            console.log(`[${getTimestamp()}] ⏳ Skipping token refresh for bot ${bot._id} | Last refreshed: ${lastRefresh.toISOString()}`);
+            logger.info('⏳ Skipping Instagram token refresh', { botId: bot._id, lastRefreshed: lastRefresh?.toISOString() });
             continue;
           }
 
           const currentToken = bot.instagramApiKey;
-          console.log(`[${getTimestamp()}] 🔄 Attempting to refresh Instagram token for bot ${bot._id}...`);
+          logger.info('🔄 Attempting to refresh Instagram token', { botId: bot._id });
 
           const refreshResponse = await axios.get(
             `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${currentToken}`
           );
 
           if (!refreshResponse.data.access_token) {
-            console.error(`[${getTimestamp()}] ❌ Failed to refresh Instagram token for bot ${bot._id}:`, refreshResponse.data);
+            logger.error('❌ Failed to refresh Instagram token', { botId: bot._id, error: refreshResponse.data });
             const notification = new Notification({
               user: bot.userId,
               title: `فشل تجديد توكن إنستجرام للبوت ${bot.name}`,
@@ -133,7 +131,7 @@ const refreshInstagramTokens = () => {
               isRead: false
             });
             await notification.save();
-            console.log(`[${getTimestamp()}] ✅ Notification sent to user ${bot.userId} for failed token refresh.`);
+            logger.info('✅ Notification sent for failed Instagram token refresh', { userId: bot.userId, botId: bot._id });
             continue;
           }
 
@@ -144,9 +142,9 @@ const refreshInstagramTokens = () => {
           bot.lastInstagramTokenRefresh = new Date();
           await bot.save();
 
-          console.log(`[${getTimestamp()}] ✅ Successfully refreshed Instagram token for bot ${bot._id} | New Token: ${newToken.slice(0, 10)}... | Expires In: ${expiresIn} seconds`);
+          logger.info('✅ Successfully refreshed Instagram token', { botId: bot._id, tokenPreview: `${newToken.slice(0, 10)}...`, expiresIn });
         } catch (err) {
-          console.error(`[${getTimestamp()}] ❌ Error refreshing Instagram token for bot ${bot._id}:`, err.message, err.response?.data);
+          logger.error('❌ Error refreshing Instagram token', { botId: bot._id, error: err.message, data: err.response?.data });
           const notification = new Notification({
             user: bot.userId,
             title: `فشل تجديد توكن إنستجرام للبوت ${bot.name}`,
@@ -154,13 +152,13 @@ const refreshInstagramTokens = () => {
             isRead: false
           });
           await notification.save();
-          console.log(`[${getTimestamp()}] ✅ Notification sent to user ${bot.userId} for failed token refresh.`);
+          logger.info('✅ Notification sent for failed Instagram token refresh', { userId: bot.userId, botId: bot._id });
         }
       }
 
-      console.log(`[${getTimestamp()}] ⏰ Instagram token refresh check completed successfully.`);
+      logger.info('⏰ Instagram token refresh check completed successfully.');
     } catch (err) {
-      console.error(`[${getTimestamp()}] ❌ Error in Instagram token refresh check:`, err.message, err.stack);
+      logger.error('❌ Error in Instagram token refresh check', { err });
     }
   }, {
     timezone: 'Africa/Cairo'
@@ -171,7 +169,7 @@ const refreshInstagramTokens = () => {
 const refreshFacebookTokens = () => {
   cron.schedule('0 0 * * 0', async () => {
     try {
-      console.log(`[${getTimestamp()}] ⏰ Starting Facebook token refresh check...`);
+      logger.info('⏰ Starting Facebook token refresh check...');
 
       const botsWithFacebook = await Bot.find({
         facebookApiKey: { $ne: null },
@@ -179,11 +177,11 @@ const refreshFacebookTokens = () => {
       });
 
       if (botsWithFacebook.length === 0) {
-        console.log(`[${getTimestamp()}] ✅ No bots found with Facebook tokens to refresh.`);
+        logger.info('✅ No bots found with Facebook tokens to refresh.');
         return;
       }
 
-      console.log(`[${getTimestamp()}] 🔄 Found ${botsWithFacebook.length} bots with Facebook tokens to refresh.`);
+      logger.info('🔄 Bots with Facebook tokens to refresh', { count: botsWithFacebook.length });
 
       const fiftyDaysInMs = 50 * 24 * 60 * 60 * 1000;
       const currentDate = new Date();
@@ -194,30 +192,30 @@ const refreshFacebookTokens = () => {
           const shouldRefresh = !lastRefresh || (currentDate - lastRefresh) >= fiftyDaysInMs;
 
           if (!shouldRefresh) {
-            console.log(`[${getTimestamp()}] ⏳ Skipping token refresh for bot ${bot._id} | Last refreshed: ${lastRefresh.toISOString()}`);
+            logger.info('⏳ Skipping Facebook token refresh', { botId: bot._id, lastRefreshed: lastRefresh?.toISOString() });
             continue;
           }
 
           const currentToken = bot.facebookApiKey;
-          console.log(`[${getTimestamp()}] 🔄 Attempting to validate Facebook token for bot ${bot._id}...`);
+          logger.info('🔄 Attempting to validate Facebook token', { botId: bot._id });
 
           // التحقق من صلاحية التوكين
           const isValid = await isTokenValid(currentToken, bot.facebookPageId);
           if (isValid) {
-            console.log(`[${getTimestamp()}] ✅ Token for bot ${bot._id} is still valid, no refresh needed`);
+            logger.info('✅ Facebook token still valid', { botId: bot._id });
             continue;
           }
 
-          console.log(`[${getTimestamp()}] ⚠️ Token for bot ${bot._id} is invalid, attempting to refresh...`);
+          logger.warn('⚠️ Facebook token invalid, attempting to refresh', { botId: bot._id });
           const newToken = await convertToLongLivedToken(currentToken);
 
           bot.facebookApiKey = newToken;
           bot.lastFacebookTokenRefresh = new Date();
           await bot.save();
 
-          console.log(`[${getTimestamp()}] ✅ Successfully refreshed Facebook token for bot ${bot._id} | New Token: ${newToken.slice(0, 10)}...`);
+          logger.info('✅ Successfully refreshed Facebook token', { botId: bot._id, tokenPreview: `${newToken.slice(0, 10)}...` });
         } catch (err) {
-          console.error(`[${getTimestamp()}] ❌ Error refreshing Facebook token for bot ${bot._id}:`, err.message, err.response?.data);
+          logger.error('❌ Error refreshing Facebook token', { botId: bot._id, error: err.message, data: err.response?.data });
           const notification = new Notification({
             user: bot.userId,
             title: `فشل تجديد توكن فيسبوك للبوت ${bot.name}`,
@@ -225,13 +223,13 @@ const refreshFacebookTokens = () => {
             isRead: false
           });
           await notification.save();
-          console.log(`[${getTimestamp()}] ✅ Notification sent to user ${bot.userId} for failed token refresh.`);
+          logger.info('✅ Notification sent for failed Facebook token refresh', { userId: bot.userId, botId: bot._id });
         }
       }
 
-      console.log(`[${getTimestamp()}] ⏰ Facebook token refresh check completed successfully.`);
+      logger.info('⏰ Facebook token refresh check completed successfully.');
     } catch (err) {
-      console.error(`[${getTimestamp()}] ❌ Error in Facebook token refresh check:`, err.message, err.stack);
+      logger.error('❌ Error in Facebook token refresh check', { err });
     }
   }, {
     timezone: 'Africa/Cairo'
@@ -242,7 +240,7 @@ const refreshFacebookTokens = () => {
 const checkLowStock = () => {
   cron.schedule('0 0 * * *', async () => {
     try {
-      console.log(`[${getTimestamp()}] ⏰ Starting low stock check...`);
+      logger.info('⏰ Starting low stock check...');
 
       const lowStockProducts = await Product.find({
         stock: { $lte: mongoose.Types.Long.fromString('lowStockThreshold') },
@@ -250,16 +248,16 @@ const checkLowStock = () => {
       });
 
       if (lowStockProducts.length === 0) {
-        console.log(`[${getTimestamp()}] ✅ No products found with low stock.`);
+        logger.info('✅ No products found with low stock.');
         return;
       }
 
-      console.log(`[${getTimestamp()}] 🔄 Found ${lowStockProducts.length} products with low stock.`);
+      logger.info('🔄 Found products with low stock', { count: lowStockProducts.length });
 
       for (const product of lowStockProducts) {
         const store = await Store.findById(product.storeId);
         if (!store) {
-          console.log(`[${getTimestamp()}] ⚠️ Store ${product.storeId} not found for product ${product._id}`);
+          logger.warn('⚠️ Store not found for product', { storeId: product.storeId, productId: product._id });
           continue;
         }
 
@@ -270,12 +268,12 @@ const checkLowStock = () => {
           isRead: false
         });
         await notification.save();
-        console.log(`[${getTimestamp()}] ✅ Notification sent to user ${store.userId} for low stock of product ${product._id}`);
+        logger.info('✅ Notification sent for low stock', { userId: store.userId, productId: product._id });
       }
 
-      console.log(`[${getTimestamp()}] ⏰ Low stock check completed successfully.`);
+      logger.info('⏰ Low stock check completed successfully.');
     } catch (err) {
-      console.error(`[${getTimestamp()}] ❌ Error in low stock check:`, err.message, err.stack);
+      logger.error('❌ Error in low stock check', { err });
     }
   }, {
     timezone: 'Africa/Cairo'

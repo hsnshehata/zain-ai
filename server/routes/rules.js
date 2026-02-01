@@ -5,6 +5,7 @@ const router = express.Router();
 const Rule = require('../models/Rule');
 const authenticate = require('../middleware/authenticate');
 const rulesController = require('../controllers/rulesController');
+const logger = require('../logger');
 
 // Middleware للتحقق من صلاحيات السوبر أدمن
 const restrictToSuperAdmin = (req, res, next) => {
@@ -36,7 +37,7 @@ router.get('/:id', authenticate, async (req, res) => {
     }
     res.status(200).json(rule);
   } catch (err) {
-    console.error(`[${new Date().toISOString()}] ❌ خطأ في جلب القاعدة | User: ${req.user?.userId || 'N/A'} | Rule ID: ${req.params.id}`, err.message, err.stack);
+    logger.error('❌ خطأ في جلب القاعدة', { userId: req.user?.userId || 'N/A', ruleId: req.params.id, err });
     res.status(500).json({ message: 'خطأ في السيرفر أثناء جلب القاعدة', error: err.message });
   }
 });

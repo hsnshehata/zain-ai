@@ -2,8 +2,7 @@ const Expense = require('../models/Expense');
 const Store = require('../models/Store');
 const Employee = require('../models/Employee');
 const Bot = require('../models/Bot');
-
-const getTimestamp = () => new Date().toISOString();
+const logger = require('../logger');
 
 async function authorizeStoreAccess(storeId, userId, userRole) {
   const store = await Store.findById(storeId);
@@ -30,7 +29,7 @@ exports.getExpenses = async (req, res) => {
     ]);
     res.status(200).json({ expenses: items, total });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error getExpenses:`, err.message);
+    logger.error('expenses_fetch_error', { storeId, err: err.message, stack: err.stack });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في جلب المصروفات' });
   }
 };
@@ -52,7 +51,7 @@ exports.createExpense = async (req, res) => {
     }
     res.status(201).json({ expense: e });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error createExpense:`, err.message);
+    logger.error('expense_create_error', { storeId, userId, err: err.message, stack: err.stack });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في إنشاء المصروف' });
   }
 };
@@ -95,7 +94,7 @@ exports.updateExpense = async (req, res) => {
 
     res.status(200).json({ expense: e });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error updateExpense:`, err.message);
+    logger.error('expense_update_error', { storeId, expenseId: id, userId, err: err.message, stack: err.stack });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في تعديل المعاملة' });
   }
 };
@@ -121,7 +120,7 @@ exports.deleteExpense = async (req, res) => {
     await Expense.deleteOne({ _id: id, storeId });
     res.status(200).json({ message: 'تم حذف المعاملة' });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error deleteExpense:`, err.message);
+    logger.error('expense_delete_error', { storeId, expenseId: id, userId, err: err.message, stack: err.stack });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في حذف المعاملة' });
   }
 };

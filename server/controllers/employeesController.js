@@ -3,8 +3,7 @@ const Employee = require('../models/Employee');
 const Store = require('../models/Store');
 const Bot = require('../models/Bot');
 const bcrypt = require('bcryptjs');
-
-const getTimestamp = () => new Date().toISOString();
+const logger = require('../logger');
 
 async function authorizeStoreAccess(storeId, userId, userRole) {
   const store = await Store.findById(storeId);
@@ -28,7 +27,7 @@ exports.getEmployees = async (req, res) => {
     const [items, total] = await Promise.all([ Employee.find(q).sort({ name: 1 }).skip(skip).limit(limitNum), Employee.countDocuments(q) ]);
     res.status(200).json({ users: items, total });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error getEmployees:`, err.message);
+    logger.error('employees_fetch_error', { storeId, err: err.message, stack: err.stack });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في جلب الموظفين' });
   }
 };
@@ -41,7 +40,7 @@ exports.getEmployee = async (req, res) => {
     if (!emp) return res.status(404).json({ message: 'الموظف غير موجود' });
     res.status(200).json({ user: emp });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error getEmployee:`, err.message);
+    logger.error('employee_fetch_error', { storeId, employeeId: id, err: err.message, stack: err.stack });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في جلب الموظف' });
   }
 };
@@ -65,7 +64,7 @@ exports.createEmployee = async (req, res) => {
     await emp.save();
     res.status(201).json({ user: emp });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error createEmployee:`, err.message, err.stack);
+    logger.error('employee_create_error', { storeId, userId, err: err.message, stack: err.stack });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في إنشاء الموظف' });
   }
 };
@@ -85,7 +84,7 @@ exports.updateEmployee = async (req, res) => {
     await emp.save();
     res.status(200).json({ user: emp });
   } catch (err) {
-    console.error(`[${getTimestamp()}] ❌ Error updateEmployee:`, err.message);
+    logger.error('employee_update_error', { storeId, employeeId: id, err: err.message, stack: err.stack });
     res.status(err.status || 500).json({ message: err.message || 'خطأ في تحديث الموظف' });
   }
 };

@@ -8,17 +8,18 @@ const verifyWebhook = async (req, res) => {
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
+  const logger = require('../logger');
 
   if (mode && token) {
     if (mode === "subscribe" && token === process.env.WHATSAPP_VERIFY_TOKEN) {
-      console.log("✅ WhatsApp Webhook verified");
+      logger.info('whatsapp_webhook_verified');
       res.status(200).send(challenge);
     } else {
-      console.log("❌ WhatsApp Webhook verification failed");
+      logger.warn('whatsapp_webhook_verify_failed');
       res.sendStatus(403);
     }
   } else {
-    console.log("❌ Missing verification parameters");
+    logger.warn('whatsapp_webhook_missing_params');
     res.sendStatus(400);
   }
 };
@@ -39,7 +40,8 @@ const processWebhook = async (req, res) => {
         body.entry[0].changes[0].value.messages[0]
       ) {
         const messageData = body.entry[0].changes[0].value.messages[0];
-        console.log("📩 WhatsApp message data:", JSON.stringify(messageData, null, 2));
+        const logger = require('../logger');
+        logger.info('whatsapp_message_data', { data: messageData });
 
         const userId = messageData.from; // WhatsApp user ID
         const messageId = messageData.id; // Unique message ID
@@ -49,27 +51,27 @@ const processWebhook = async (req, res) => {
         let mediaUrl = null;
 
         // Check message type and extract content
-        console.log(`📩 Message type: ${messageData.type}`);
+        logger.info('whatsapp_message_type', { type: messageData.type });
         if (messageData.type === "text") {
           message = messageData.text.body;
-          console.log(`📩 Text message content: ${message}`);
+          logger.info('whatsapp_text_message', { message });
         } else if (messageData.type === "image") {
           isImage = true;
           mediaUrl = messageData.image.id; // Get the media ID
-          console.log(`📩 Image message detected, media ID: ${mediaUrl}`);
+          logger.info('whatsapp_image_message', { mediaUrl });
         } else if (messageData.type === "audio") {
           isVoice = true;
           mediaUrl = messageData.audio.id; // Get the media ID
-          console.log(`📩 Audio message detected, media ID: ${mediaUrl}`);
+          logger.info('whatsapp_audio_message', { mediaUrl });
         } else {
-          console.log(`⚠️ Unsupported message type: ${messageData.type}`);
+          logger.warn('whatsapp_message_unsupported', { type: messageData.type });
           return res.sendStatus(200); // Acknowledge but don't process
         }
 
         // If it's a media message, fetch the media URL
         if (isImage || isVoice) {
           try {
-            console.log(`📩 Fetching media URL for ID: ${mediaUrl}`);
+            logger.info('whatsapp_fetch_media_url', { mediaUrl });
             const response = await fetch(
               `https://graph.facebook.com/v20.0/${mediaUrl}`,
               {
@@ -79,16 +81,16 @@ const processWebhook = async (req, res) => {
               }
             );
             const mediaData = await response.json();
-            console.log(`📩 Media fetch response:`, JSON.stringify(mediaData, null, 2));
+            logger.info('whatsapp_media_fetch_response', { mediaData });
             if (mediaData.url) {
               mediaUrl = mediaData.url; // Update mediaUrl with the actual URL
-              console.log(`📥 Media URL fetched: ${mediaUrl}`);
+              logger.info('whatsapp_media_url_fetched', { mediaUrl });
             } else {
-              console.log(`❌ Failed to fetch media URL for ID: ${mediaUrl}`);
+              logger.warn('whatsapp_media_url_fetch_failed', { mediaUrl });
               return res.sendStatus(200);
             }
           } catch (err) {
-            console.error(`❌ Error fetching media URL: ${err.message}`, err.stack);
+            logger.error('whatsapp_media_url_error', { err: err.message, stack: err.stack });
             return res.sendStatus(200);
           }
         }
@@ -99,17 +101,11 @@ const processWebhook = async (req, res) => {
         });
 
         if (!bot) {
-          console.log(
-            `❌ No bot found for WhatsApp Business Account ID: ${body.entry[0].changes[0].value.metadata.phone_number_id}`
-          );
+          logger.warn('whatsapp_bot_not_found', { phoneNumberId: body.entry[0].changes[0].value.metadata.phone_number_id });
           return res.sendStatus(200);
         }
 
-        console.log(
-          `📬 Processing WhatsApp message: user=${userId}, message=${
-            message || "[Media]"
-          }, botId=${bot._id}, messageId=${messageId}, isImage=${isImage}, isVoice=${isVoice}`
-        );
+        logger.info('whatsapp_processing', { userId, botId: bot._id, messageId, isImage, isVoice });
 
         // Process the message using botEngine
         const reply = await processMessage(
@@ -124,7 +120,7 @@ const processWebhook = async (req, res) => {
         );
 
         if (reply === null) {
-          console.log(`🔇 Conversation for ${userId} muted, skipping WhatsApp reply.`);
+          logger.info('whatsapp_muted', { userId });
           return res.sendStatus(200);
         }
 
@@ -146,15 +142,15 @@ const processWebhook = async (req, res) => {
           }
         );
 
-        console.log(`✅ Sent reply to WhatsApp: ${reply}`);
+        logger.info('whatsapp_reply_sent', { userId, botId, reply });
       }
       res.sendStatus(200);
     } else {
-      console.log("❌ Invalid WhatsApp webhook payload");
+      logger.warn('whatsapp_invalid_payload');
       res.sendStatus(404);
     }
   } catch (err) {
-    console.error("❌ Error processing WhatsApp webhook:", err.message, err.stack);
+    logger.error('whatsapp_webhook_error', { err: err.message, stack: err.stack });
     res.sendStatus(500);
   }
 };

@@ -2,18 +2,16 @@ const axios = require('axios');
 const Bot = require('../models/Bot');
 const Conversation = require('../models/Conversation');
 const { processMessage, processFeedback } = require('../botEngine');
-
-// دالة مساعدة لإضافة timestamp للـ logs
-const getTimestamp = () => new Date().toISOString();
+const logger = require('../logger');
 
 const handleMessage = async (req, res) => {
   try {
-    console.log('📩 Webhook POST request received:', JSON.stringify(req.body, null, 2));
+    logger.info('fb_webhook_received', { body: req.body });
 
     const body = req.body;
 
     if (body.object !== 'page') {
-      console.log('⚠️ Ignored non-page webhook event:', body.object);
+      logger.warn('fb_ignored_non_page', { object: body.object });
       return res.status(200).send('EVENT_RECEIVED');
     }
 
@@ -22,12 +20,12 @@ const handleMessage = async (req, res) => {
 
       const bot = await Bot.findOne({ facebookPageId: pageId });
       if (!bot) {
-        console.log(`❌ No bot found for page ID: ${pageId}`);
+        logger.warn('fb_bot_not_found', { pageId });
         continue;
       }
 
       if (!bot.isActive) {
-        console.log(`⚠️ Bot ${bot.name} (ID: ${bot._id}) is inactive, skipping message processing.`);
+        logger.warn('fb_bot_inactive', { botId: bot._id, name: bot.name });
         continue;
       }
 
@@ -37,7 +35,7 @@ const handleMessage = async (req, res) => {
           const recipientId = webhookEvent.recipient?.id;
 
           if (!senderPsid) {
-            console.log('❌ Sender PSID not found in webhook event:', webhookEvent);
+            logger.warn('fb_sender_missing', { event: webhookEvent });
             continue;
           }
 
@@ -47,7 +45,7 @@ const handleMessage = async (req, res) => {
           const pauseDurationMinutes = Number(bot.ownerPauseDurationMinutes) || 0;
 
           if (!isOwnerMessage && recipientId !== bot.facebookPageId) {
-            console.log(`⚠️ Skipping message because recipientId (${recipientId}) does not match pageId (${bot.facebookPageId})`);
+            logger.warn('fb_recipient_mismatch', { recipientId, pageId: bot.facebookPageId });
             continue;
           }
 
@@ -77,15 +75,15 @@ const handleMessage = async (req, res) => {
               targetConversation.mutedUntil = new Date(Date.now() + durationMs);
               targetConversation.mutedBy = 'owner_keyword';
               await targetConversation.save();
-              console.log(`🔇 Applied mute (owner message) for ${prefixedTargetUserId} until ${targetConversation.mutedUntil.toISOString()} using keyword "${bot.ownerPauseKeyword}"`);
+              logger.info('fb_owner_mute_applied', { userId: prefixedTargetUserId, until: targetConversation.mutedUntil, keyword: bot.ownerPauseKeyword });
             } else {
-              console.log('⚠️ Owner pause keyword detected but recipient userId missing.');
+              logger.warn('fb_owner_keyword_no_recipient');
             }
           }
 
           if (webhookEvent.message && webhookEvent.message.is_echo) {
             const echoText = webhookEvent.message.text || '';
-            console.log(`ℹ️ Echo message detected. sender=${senderPsid}, recipient=${recipientId}, text=${echoText}`);
+            logger.info('fb_echo_detected', { senderPsid, recipientId, echoText });
             if (pauseKeyword && echoText.toLowerCase().includes(pauseKeyword) && isOwnerMessage) {
               const targetUserId = webhookEvent.recipient?.id;
               if (targetUserId) {
@@ -110,12 +108,12 @@ const handleMessage = async (req, res) => {
                 targetConversation.mutedUntil = new Date(Date.now() + durationMs);
                 targetConversation.mutedBy = 'owner_keyword';
                 await targetConversation.save();
-                console.log(`🔇 Applied mute for ${prefixedTargetUserId} until ${targetConversation.mutedUntil.toISOString()} using keyword "${bot.ownerPauseKeyword}"`);
+                logger.info('fb_echo_mute_applied', { userId: prefixedTargetUserId, until: targetConversation.mutedUntil, keyword: bot.ownerPauseKeyword });
               } else {
-                console.log('⚠️ Echo pause keyword received but no recipient userId found.');
+                logger.warn('fb_echo_keyword_no_recipient');
               }
             }
-            console.log(`⚠️ Ignoring echo message from bot: ${webhookEvent.message.text}`);
+            logger.info('fb_echo_ignored', { text: webhookEvent.message.text });
             continue;
           }
 
@@ -143,32 +141,32 @@ const handleMessage = async (req, res) => {
           }
 
           if (webhookEvent.optin && bot.messagingOptinsEnabled) {
-            console.log(`📩 Processing opt-in event from ${prefixedSenderId}`);
+            logger.info('fb_optin', { userId: prefixedSenderId });
             const welcomeMessage = bot.welcomeMessage || 'مرحبًا! كيف يمكنني مساعدتك اليوم؟';
             await sendMessage(senderPsid, welcomeMessage, bot.facebookApiKey);
             continue;
           } else if (webhookEvent.optin && !bot.messagingOptinsEnabled) {
-            console.log(`⚠️ Opt-in messages disabled for bot ${bot.name} (ID: ${bot._id}), skipping opt-in processing.`);
+            logger.warn('fb_optin_disabled', { botId: bot._id });
             continue;
           }
 
           if (webhookEvent.reaction && bot.messageReactionsEnabled) {
-            console.log(`📩 Processing reaction event from ${prefixedSenderId}: ${webhookEvent.reaction.reaction}`);
+            logger.info('fb_reaction', { userId: prefixedSenderId, reaction: webhookEvent.reaction.reaction });
             const responseText = `شكرًا على تفاعلك (${webhookEvent.reaction.reaction})!`;
             await sendMessage(senderPsid, responseText, bot.facebookApiKey);
             continue;
           } else if (webhookEvent.reaction && !bot.messageReactionsEnabled) {
-            console.log(`⚠️ Message reactions disabled for bot ${bot.name} (ID: ${bot._id}), skipping reaction processing.`);
+            logger.warn('fb_reaction_disabled', { botId: bot._id });
             continue;
           }
 
           if (webhookEvent.referral && bot.messagingReferralsEnabled) {
-            console.log(`📩 Processing referral event from ${prefixedSenderId}: ${webhookEvent.referral.ref}`);
+            logger.info('fb_referral', { userId: prefixedSenderId, referral: webhookEvent.referral.ref });
             const responseText = `مرحبًا! وصلتني من ${webhookEvent.referral.source}، كيف يمكنني مساعدتك؟`;
             await sendMessage(senderPsid, responseText, bot.facebookApiKey);
             continue;
           } else if (webhookEvent.referral && !bot.messagingReferralsEnabled) {
-            console.log(`⚠️ Messaging referrals disabled for bot ${bot.name} (ID: ${bot._id}), skipping referral processing.`);
+            logger.warn('fb_referral_disabled', { botId: bot._id });
             continue;
           }
 
@@ -176,16 +174,16 @@ const handleMessage = async (req, res) => {
             const editedMessage = webhookEvent.message_edit.message || webhookEvent.message_edit;
             const mid = editedMessage?.mid || webhookEvent.message_edit.mid || `temp_${Date.now()}`;
             const editedText = editedMessage?.text || webhookEvent.message_edit.text || '';
-            console.log(`📩 Processing message edit event from ${prefixedSenderId}: ${editedText}`);
+            logger.info('fb_message_edit', { userId: prefixedSenderId, editedText });
             const responseText = await processMessage(bot._id, prefixedSenderId, editedText, false, false, mid, 'facebook');
             if (responseText === null) {
-              console.log(`🔇 Conversation for ${prefixedSenderId} muted, skipping reply to edited message.`);
+              logger.info('fb_muted_edit', { userId: prefixedSenderId });
               continue;
             }
             await sendMessage(senderPsid, responseText, bot.facebookApiKey);
             continue;
           } else if (webhookEvent.message_edit && !bot.messageEditsEnabled) {
-            console.log(`⚠️ Message edits disabled for bot ${bot.name} (ID: ${bot._id}), skipping message edit processing.`);
+            logger.warn('fb_message_edit_disabled', { botId: bot._id });
             continue;
           }
 
@@ -198,32 +196,32 @@ const handleMessage = async (req, res) => {
             let mediaUrl = null;
 
             if (message.text) {
-              console.log(`📝 Text message received from ${prefixedSenderId}: ${text}`);
+              logger.info('fb_text_message', { userId: prefixedSenderId });
             } else if (message.attachments) {
               const attachment = message.attachments[0];
               if (attachment.type === 'image') {
                 isImage = true;
                 mediaUrl = attachment.payload.url;
                 text = '[صورة]';
-                console.log(`🖼️ Image received from ${prefixedSenderId}: ${mediaUrl}`);
+                logger.info('fb_image_message', { userId: prefixedSenderId });
               } else if (attachment.type === 'audio') {
                 isVoice = true;
                 mediaUrl = attachment.payload.url;
                 text = '';
-                console.log(`🎙️ Audio received from ${prefixedSenderId}: ${mediaUrl}`);
+                logger.info('fb_audio_message', { userId: prefixedSenderId });
               } else {
-                console.log(`📎 Unsupported attachment type from ${prefixedSenderId}: ${attachment.type}`);
+                logger.warn('fb_attachment_unsupported', { userId: prefixedSenderId, type: attachment.type });
                 text = 'عذرًا، لا أستطيع معالجة هذا النوع من المرفقات حاليًا.';
               }
             } else {
-              console.log(`❓ Unknown message type from ${prefixedSenderId}`);
+              logger.warn('fb_message_unknown', { userId: prefixedSenderId });
               text = 'عذرًا، لا أستطيع فهم هذه الرسالة.';
             }
 
-            console.log(`📤 Sending to botEngine: botId=${bot._id}, userId=${prefixedSenderId}, message=${text}, isImage=${isImage}, isVoice=${isVoice}, mediaUrl=${mediaUrl}`);
+            logger.info('fb_send_to_botengine', { botId: bot._id, userId: prefixedSenderId, isImage, isVoice });
             const responseText = await processMessage(bot._id, prefixedSenderId, text, isImage, isVoice, mid, 'facebook', mediaUrl);
             if (responseText === null) {
-              console.log(`🔇 Conversation for ${prefixedSenderId} muted, skipping reply.`);
+              logger.info('fb_muted', { userId: prefixedSenderId });
               continue;
             }
             await sendMessage(senderPsid, responseText, bot.facebookApiKey);
@@ -233,21 +231,21 @@ const handleMessage = async (req, res) => {
             const feedback = feedbackData.feedback;
 
             if (!mid || !feedback) {
-              console.log(`❌ Invalid feedback data: mid=${mid}, feedback=${feedback}`);
+              logger.warn('fb_feedback_invalid', { mid, feedback });
               continue;
             }
 
-            console.log(`📊 Feedback received from ${prefixedSenderId}: ${feedback} for message ID: ${mid}`);
+            logger.info('fb_feedback_received', { userId: prefixedSenderId, feedback, mid });
             await processFeedback(bot._id, prefixedSenderId, mid, feedback);
           } else {
-            console.log('❌ No message or feedback found in webhook event:', webhookEvent);
+            logger.warn('fb_no_message_or_feedback', { event: webhookEvent });
           }
         }
       }
 
       if (entry.changes && entry.changes.length > 0) {
         if (!bot.commentsRepliesEnabled) {
-          console.log(`⚠️ Comment replies disabled for bot ${bot.name} (ID: ${bot._id}), skipping comment processing.`);
+          logger.warn('fb_comments_disabled', { botId: bot._id });
           continue;
         }
 
@@ -261,21 +259,21 @@ const handleMessage = async (req, res) => {
             const commenterName = commentEvent.from?.name;
 
             if (!commenterId || !message) {
-              console.log('❌ Commenter ID or message not found in feed event:', commentEvent);
+              logger.warn('fb_comment_missing_data', { commentEvent });
               continue;
             }
 
             const prefixedCommenterId = `facebook_comment_${commenterId}`;
 
             if (commenterId === bot.facebookPageId) {
-              console.log(`⚠️ Skipping comment because commenterId (${commenterId}) is the page itself`);
+              logger.warn('fb_comment_page_self', { commenterId });
               continue;
             }
 
             // حذف جلب اسم المعلق من فيسبوك واستخدام اسم افتراضي
             const username = 'مستخدم فيسبوك';
 
-            console.log(`💬 Comment received on post ${postId} from ${commenterName} (${prefixedCommenterId}): ${message}`);
+            logger.info('fb_comment_received', { postId, commenterId: prefixedCommenterId });
 
             let conversation = await Conversation.findOne({
               botId: bot._id,
@@ -299,12 +297,12 @@ const handleMessage = async (req, res) => {
 
             const responseText = await processMessage(bot._id, prefixedCommenterId, message, false, false, `comment_${commentId}`, 'facebook');
             if (responseText === null) {
-              console.log(`🔇 Conversation for ${prefixedCommenterId} muted, skipping comment reply.`);
+              logger.info('fb_comment_muted', { userId: prefixedCommenterId });
               continue;
             }
             await replyToComment(commentId, responseText, bot.facebookApiKey);
           } else {
-            console.log('❌ Not a comment event or not an "add" verb:', change);
+            logger.warn('fb_comment_not_add', { change });
           }
         }
       }
@@ -312,14 +310,14 @@ const handleMessage = async (req, res) => {
 
     res.status(200).send('EVENT_RECEIVED');
   } catch (err) {
-    console.error('❌ Error in webhook:', err.message, err.stack);
+    logger.error('fb_webhook_error_outer', { err: err.message, stack: err.stack });
     res.sendStatus(500);
   }
 };
 
 const sendMessage = (senderPsid, responseText, facebookApiKey) => {
   return new Promise((resolve, reject) => {
-    console.log(`📤 Attempting to send message to ${senderPsid} with token: ${facebookApiKey.slice(0, 10)}...`);
+    logger.info('fb_send_message_attempt', { senderPsid });
     const requestBody = {
       recipient: { id: senderPsid },
       message: { text: responseText },
@@ -332,10 +330,10 @@ const sendMessage = (senderPsid, responseText, facebookApiKey) => {
         params: { access_token: facebookApiKey },
       }
     ).then(response => {
-      console.log(`✅ Message sent to ${senderPsid}: ${responseText}`);
+      logger.info('fb_send_message_success', { senderPsid });
       resolve(response.data);
     }).catch(err => {
-      console.error('❌ Error sending message to Facebook:', err.response?.data || err.message);
+      logger.error('fb_send_message_error', { err: err.response?.data || err.message });
       reject(err);
     });
   });
@@ -343,7 +341,7 @@ const sendMessage = (senderPsid, responseText, facebookApiKey) => {
 
 const replyToComment = (commentId, responseText, facebookApiKey) => {
   return new Promise((resolve, reject) => {
-    console.log(`📤 Attempting to reply to comment ${commentId} with token: ${facebookApiKey.slice(0, 10)}...`);
+    logger.info('fb_reply_comment_attempt', { commentId });
     const requestBody = {
       message: responseText,
     };
@@ -355,10 +353,10 @@ const replyToComment = (commentId, responseText, facebookApiKey) => {
         params: { access_token: facebookApiKey },
       }
     ).then(response => {
-      console.log(`✅ Replied to comment ${commentId}: ${responseText}`);
+      logger.info('fb_reply_comment_success', { commentId });
       resolve(response.data);
     }).catch(err => {
-      console.error('❌ Error replying to comment on Facebook:', err.response?.data || err.message);
+      logger.error('fb_reply_comment_error', { err: err.response?.data || err.message });
       reject(err);
     });
   });

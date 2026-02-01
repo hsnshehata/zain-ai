@@ -1,11 +1,10 @@
-const ChatOrder = require('../models/ChatOrder');
+﻿const ChatOrder = require('../models/ChatOrder');
 const Bot = require('../models/Bot');
 const { notifyChatOrder, notifyOrderStatus } = require('../services/telegramService');
+const logger = require('../logger');
 
 const STATUS_ENUM = ['pending', 'processing', 'confirmed', 'shipped', 'delivered', 'cancelled'];
 const PENDING_SET = new Set(['pending', 'processing']);
-
-const getTimestamp = () => new Date().toISOString();
 
 const normalizeItems = (items) =>
   Array.isArray(items)
@@ -80,7 +79,7 @@ async function listOrders(req, res) {
 
     return res.json({ orders, counts });
   } catch (err) {
-    console.error(`[${getTimestamp()}]  listOrders error:`, err.message, err.stack);
+    logger.error('chat_orders_list_error', { userId: req.user.userId, err: err.message, stack: err.stack });
     return res.status(500).json({ message: 'خطأ في جلب طلبات المحادثة' });
   }
 }
@@ -140,7 +139,7 @@ async function updateOrder(req, res) {
       await order.save();
       try {
         if (order.status !== prevStatus && bot?.userId) {
-          console.info(`[${getTimestamp()}] 🔔 notify chat order status (dashboard) bot=${bot._id} user=${bot.userId} order=${order._id} status=${order.status}`);
+          logger.info('chat_order_status_notify', { botId: bot._id, userId: bot.userId, orderId: order._id, status: order.status });
           await notifyOrderStatus(bot.userId, {
             storeName: bot.name,
             orderId: order._id,
@@ -149,13 +148,13 @@ async function updateOrder(req, res) {
           }, bot._id);
         }
       } catch (notifyErr) {
-        console.warn(`[${getTimestamp()}] ⚠️ Telegram notifyOrderStatus (chat) failed for order ${order._id}:`, notifyErr.message);
+        logger.warn('chat_order_status_notify_failed', { orderId: order._id, err: notifyErr.message });
       }
     }
 
     return res.json(order);
   } catch (err) {
-    console.error(`[${getTimestamp()}]  updateOrder error:`, err.message, err.stack);
+    logger.error('chat_order_update_error', { orderId: req.params.id, err: err.message, stack: err.stack });
     return res.status(500).json({ message: 'خطأ في تحديث طلب المحادثة' });
   }
 }
@@ -175,7 +174,7 @@ async function deleteOrder(req, res) {
     await order.deleteOne();
     return res.json({ message: 'تم حذف الطلب' });
   } catch (err) {
-    console.error(`[${getTimestamp()}]  deleteOrder error:`, err.message, err.stack);
+    logger.error('chat_order_delete_error', { orderId: req.params.id, err: err.message, stack: err.stack });
     return res.status(500).json({ message: 'خطأ في حذف طلب المحادثة' });
   }
 }
@@ -204,7 +203,7 @@ async function createOrUpdateFromExtraction({
   const fee = Math.max(Number(deliveryFee) || 0, 0);
   const totals = calcTotals(normalizedItems, fee);
 
-  console.info(`[${getTimestamp()}] ✏️ chat order upsert start bot=${botId} channel=${channel} conv=${conversationId} status=${safeStatus} items=${normalizedItems.length} msg=${messageId || 'none'}`);
+  logger.info('chat_order_upsert_start', { botId, channel, conversationId, status: safeStatus, itemsCount: normalizedItems.length, messageId: messageId || 'none' });
 
   // تحقق البيانات المطلوبة بعد التطبيع فقط (لا تسعير تلقائي)
   const hasRequiredOrderData = () => {
@@ -221,7 +220,7 @@ async function createOrUpdateFromExtraction({
   const latestOrder = await ChatOrder.findOne({ botId, channel, conversationId }).sort({ createdAt: -1 });
 
   if (latestOrder && messageId && latestOrder.lastMessageId && latestOrder.lastMessageId === messageId) {
-    console.info(`[${getTimestamp()}] ↩️ chat order deduped by messageId bot=${botId} conv=${conversationId} order=${latestOrder._id}`);
+    logger.info('chat_order_deduped', { botId, conversationId, orderId: latestOrder._id, messageId });
     return latestOrder;
   }
 
@@ -261,17 +260,17 @@ async function createOrUpdateFromExtraction({
       latestOrder.totalAmount = totalAmount && totalAmount > 0 ? totalAmount : totals.grand;
       // لا نقوم بالحفظ إذا لم تكتمل البيانات المطلوبة
       if (!hasRequiredOrderData()) {
-        console.warn(`[${getTimestamp()}] ⚠️ chat order skipped save/notify (missing data) bot=${botId} channel=${channel} conv=${conversationId}`);
+        logger.warn('chat_order_skipped_missing_data', { botId, channel, conversationId });
         return latestOrder;
       }
       await latestOrder.save();
-      console.info(`[${getTimestamp()}] 💾 chat order updated bot=${botId} order=${latestOrder._id} status=${latestOrder.status}`);
+      logger.info('chat_order_updated', { botId, orderId: latestOrder._id, status: latestOrder.status });
 
       // أرسل إشعاراً بتحديث/طلب دردشة مكتمل بعد الحفظ
       try {
         const bot = await Bot.findById(botId).select('userId name');
         if (bot?.userId) {
-          console.info(`[${getTimestamp()}] 🔔 notify chat order (update) bot=${bot._id} user=${bot.userId} order=${latestOrder._id} status=${latestOrder.status}`);
+          logger.info('chat_order_notify_update', { botId: bot._id, userId: bot.userId, orderId: latestOrder._id, status: latestOrder.status });
           await notifyChatOrder(bot.userId, {
             botName: bot.name,
             orderId: latestOrder._id,
@@ -285,7 +284,7 @@ async function createOrUpdateFromExtraction({
           }, botId);
 
           if (prevStatus !== latestOrder.status) {
-            console.info(`[${getTimestamp()}] 🔔 notify chat order STATUS change bot=${bot._id} user=${bot.userId} order=${latestOrder._id} ${prevStatus} -> ${latestOrder.status}`);
+            logger.info('chat_order_status_changed', { botId: bot._id, userId: bot.userId, orderId: latestOrder._id, from: prevStatus, to: latestOrder.status });
             await notifyOrderStatus(bot.userId, {
               storeName: bot.name,
               orderId: latestOrder._id,
@@ -294,10 +293,10 @@ async function createOrUpdateFromExtraction({
             }, botId);
           }
         } else {
-          console.warn(`[${getTimestamp()}] ⚠️ chat order notify skipped: bot not found or missing owner (bot=${botId})`);
+          logger.warn('chat_order_notify_skipped_missing_bot', { botId });
         }
       } catch (notifyErr) {
-        console.warn(`[${getTimestamp()}] ⚠️ Telegram notifyChatOrder (update) failed for order ${latestOrder?._id || 'unknown'}:`, notifyErr.message);
+        logger.warn('chat_order_notify_update_failed', { orderId: latestOrder?._id || 'unknown', err: notifyErr.message });
       }
 
       return latestOrder;
@@ -308,7 +307,7 @@ async function createOrUpdateFromExtraction({
 
   // منع إنشاء طلب ببيانات ناقصة (اسم، هاتف، عنوان، بنود مسعّرة)
   if (!hasRequiredOrderData()) {
-    console.warn(`[${getTimestamp()}] ⚠️ chat order skipped: missing required data (bot=${botId}, channel=${channel}, conv=${conversationId})`);
+    logger.warn('chat_order_create_skipped_missing_data', { botId, channel, conversationId });
     return null;
   }
 
@@ -332,12 +331,12 @@ async function createOrUpdateFromExtraction({
     history,
   });
 
-  console.info(`[${getTimestamp()}] 💾 chat order created bot=${botId} order=${chatOrder._id} status=${chatOrder.status}`);
+  logger.info('chat_order_created', { botId, orderId: chatOrder._id, status: chatOrder.status });
 
   try {
     const bot = await Bot.findById(botId).select('userId name');
     if (bot?.userId) {
-      console.info(`[${getTimestamp()}] 🔔 notify chat order (create) bot=${bot._id} user=${bot.userId} order=${chatOrder._id} status=${chatOrder.status}`);
+      logger.info('chat_order_notify_create', { botId: bot._id, userId: bot.userId, orderId: chatOrder._id, status: chatOrder.status });
       await notifyChatOrder(bot.userId, {
         botName: bot.name,
         orderId: chatOrder._id,
@@ -350,10 +349,10 @@ async function createOrUpdateFromExtraction({
         currency: (normalizedItems[0] && normalizedItems[0].currency) || 'EGP',
       }, botId);
     } else {
-      console.warn(`[${getTimestamp()}] ⚠️ chat order notify skipped: bot not found or missing owner (bot=${botId})`);
+      logger.warn('chat_order_notify_skipped_missing_bot', { botId });
     }
   } catch (notifyErr) {
-    console.warn(`[${getTimestamp()}] ⚠️ Telegram notifyChatOrder failed for order ${chatOrder?._id || 'unknown'}:`, notifyErr.message);
+    logger.warn('chat_order_notify_create_failed', { orderId: chatOrder?._id || 'unknown', err: notifyErr.message });
   }
 
   return chatOrder;

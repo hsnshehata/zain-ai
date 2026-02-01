@@ -3,6 +3,7 @@ const express = require('express');
 const multer = require('multer');
 const authenticate = require('../middleware/authenticate');
 const productController = require('../controllers/productController');
+const logger = require('../logger');
 
 const router = express.Router();
 
@@ -28,15 +29,15 @@ const upload = multer({
 
 // Middleware لتسجيل الطلبات
 router.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] 📡 Product Route: ${req.method} ${req.url}`);
+  logger.info(`📡 Product Route: ${req.method} ${req.url}`);
   if (req.file) {
-    console.log(`[${new Date().toISOString()}] 📸 File received:`, {
+    logger.info('📸 File received', {
       originalname: req.file.originalname,
       mimetype: req.file.mimetype,
       size: req.file.size
     });
   } else {
-    console.log(`[${new Date().toISOString()}] 📸 No file received`);
+    logger.info('📸 No file received');
   }
   next();
 });
