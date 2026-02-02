@@ -39,7 +39,8 @@
     "uuid": "^9.0.1",
     "whatsapp-web.js": "^1.26.0",
     "wwebjs-mongo": "^1.1.0",
-    "prom-client": "^15.1.2"
+    "prom-client": "^15.1.2",
+    "helmet": "^7.1.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.7",

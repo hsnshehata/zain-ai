@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const path = require('path');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const helmet = require('helmet');
 const facebookRoutes = require('./routes/facebook');
 const webhookRoutes = require('./routes/webhook');
 const authRoutes = require('./routes/auth');
@@ -44,7 +45,7 @@ const bcrypt = require('bcryptjs');
 const axios = require('axios');
 const logger = require('./logger');
 const promClient = require('prom-client');
-const { checkAutoStopBots, refreshInstagramTokens } = require('./cronJobs');
+const { checkAutoStopBots, refreshInstagramTokens, cleanupOldLogs } = require('./cronJobs');
 const authenticate = require('./middleware/authenticate');
 
 // إعداد cache لتخزين طلبات الـ API مؤقتاً (5 دقايق)
@@ -103,6 +104,12 @@ register.registerMetric(httpRequestDuration);
 // تفعيل trust proxy للتعامل مع X-Forwarded-For من Render
 app.set('trust proxy', 1);
 
+// تفعيل Helmet مع تعطيل سياسات قد تتعارض مع الإعدادات الحالية
+app.use(helmet({
+  crossOriginOpenerPolicy: false,
+  crossOriginResourcePolicy: false,
+}));
+
 // إضافة معرّف بسيط لكل طلب لتتبعه في اللوجز
 app.use((req, res, next) => {
   req.requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -156,6 +163,44 @@ app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/google', authLimiter);
 app.use('/api/auth/verify', authLimiter);
+
+// Rate limit معتمد على المستخدم للمسارات المحمية
+const accountLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 50,
+  keyGenerator: (req) => req.user?.userId || req.ip,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: 'تم تجاوز عدد الطلبات المسموح بها للحساب مؤقتاً، حاول لاحقاً',
+    error: 'AccountRateLimit',
+    retryAfter: 60 * 60,
+  },
+});
+
+const authenticatedPaths = [
+  '/api/bots',
+  '/api/users',
+  '/api/rules',
+  '/api/bot',
+  '/api/analytics',
+  '/api/messages',
+  '/api/notifications',
+  '/api/upload',
+  '/api/stores',
+  '/api/products',
+  '/api/categories',
+  '/api/customers',
+  '/api/suppliers',
+  '/api/sales',
+  '/api/orders',
+  '/api/expenses',
+  '/api/chat-orders',
+  '/api/chat-customers',
+  '/api/telegram',
+  '/api/chat-page',
+];
+app.use(authenticatedPaths, authenticate, accountLimiter);
 
 // Route لجلب GOOGLE_CLIENT_ID
 app.get('/api/config', (req, res) => {
@@ -522,6 +567,7 @@ connectDB()
 if (process.env.NODE_ENV !== 'test') {
   checkAutoStopBots();
   refreshInstagramTokens();
+  cleanupOldLogs();
 }
 
 const PORT = process.env.PORT || 5000;

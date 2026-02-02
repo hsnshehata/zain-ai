@@ -1,4 +1,6 @@
 const cron = require('node-cron');
+const fs = require('fs').promises;
+const path = require('path');
 const Bot = require('./models/Bot');
 const Notification = require('./models/Notification');
 const Product = require('./models/Product');
@@ -280,4 +282,30 @@ const checkLowStock = () => {
   });
 };
 
-module.exports = { checkAutoStopBots, refreshInstagramTokens, refreshFacebookTokens, checkLowStock };
+// تنظيف اللوجز الأقدم من 30 يومًا
+const cleanupOldLogs = () => {
+  cron.schedule('0 2 * * *', async () => {
+    try {
+      const logsDir = path.join(__dirname, 'logs');
+      const files = await fs.readdir(logsDir).catch(() => null);
+      if (!files || files.length === 0) return;
+
+      const now = Date.now();
+      const maxAgeMs = 30 * 24 * 60 * 60 * 1000;
+
+      for (const file of files) {
+        const filePath = path.join(logsDir, file);
+        const stats = await fs.stat(filePath).catch(() => null);
+        if (!stats) continue;
+        if (now - stats.mtimeMs > maxAgeMs) {
+          await fs.unlink(filePath).catch(() => null);
+          logger.info('old_log_deleted', { file });
+        }
+      }
+    } catch (err) {
+      logger.error('log_cleanup_error', { err: err.message });
+    }
+  }, { timezone: 'Africa/Cairo' });
+};
+
+module.exports = { checkAutoStopBots, refreshInstagramTokens, refreshFacebookTokens, checkLowStock, cleanupOldLogs };
