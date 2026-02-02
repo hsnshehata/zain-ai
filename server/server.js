@@ -250,14 +250,6 @@ app.get('/metrics', async (req, res, next) => {
   }
 });
 
-// مسار غير موجود
-app.use((req, res, next) => {
-  next(new AppError('المسار غير موجود', 404, 'NotFound'));
-});
-
-// معالج أخطاء مركزي
-app.use(errorHandler);
-
 // Route لصفحة المتجر
 app.get('/store/:storeLink', async (req, res) => {
   try {
@@ -550,6 +542,14 @@ app.get('/chat/:linkId', (req, res) => {
     res.status(500).json({ message: 'Something went wrong!' });
   }
 });
+
+// مسار غير موجود
+app.use((req, res, next) => {
+  next(new AppError('المسار غير موجود', 404, 'NotFound'));
+});
+
+// معالج أخطاء مركزي
+app.use(errorHandler);
 
 process.on('uncaughtException', (err) => {
   logger.error('uncaught_exception', { err: err.message, stack: err.stack });
