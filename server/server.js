@@ -182,11 +182,9 @@ const authenticatedPaths = [
   '/api/bots',
   '/api/users',
   '/api/rules',
-  '/api/bot',
   '/api/analytics',
   '/api/messages',
   '/api/notifications',
-  '/api/upload',
   '/api/stores',
   '/api/products',
   '/api/categories',
@@ -198,7 +196,6 @@ const authenticatedPaths = [
   '/api/chat-orders',
   '/api/chat-customers',
   '/api/telegram',
-  '/api/chat-page',
 ];
 app.use(authenticatedPaths, authenticate, accountLimiter);
 
