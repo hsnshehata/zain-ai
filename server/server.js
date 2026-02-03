@@ -115,7 +115,8 @@ app.use(helmet({
       scriptSrc: [
         "'self'",
         'https://cdn.jsdelivr.net',
-        'https://cdnjs.cloudflare.com'
+        'https://cdnjs.cloudflare.com',
+        'https://connect.facebook.net'
       ],
       styleSrc: [
         "'self'",
@@ -127,7 +128,8 @@ app.use(helmet({
         "'self'",
         'data:',
         'https://cdnjs.cloudflare.com',
-        'https://fonts.gstatic.com'
+        'https://fonts.gstatic.com',
+        'https://r2cdn.perplexity.ai'
       ],
       imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
       connectSrc: ["'self'", 'https:', 'wss:'],
