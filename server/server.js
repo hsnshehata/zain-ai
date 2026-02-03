@@ -104,10 +104,38 @@ register.registerMetric(httpRequestDuration);
 // تفعيل trust proxy للتعامل مع X-Forwarded-For من Render
 app.set('trust proxy', 1);
 
-// تفعيل Helmet مع تعطيل سياسات قد تتعارض مع الإعدادات الحالية
+// تفعيل Helmet مع ضبط سياسة الـ CSP للسماح بمصادر الواجهة الخارجية المستخدمة
 app.use(helmet({
   crossOriginOpenerPolicy: false,
   crossOriginResourcePolicy: false,
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        'https://cdn.jsdelivr.net',
+        'https://cdnjs.cloudflare.com'
+      ],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        'https://cdnjs.cloudflare.com',
+        'https://fonts.googleapis.com'
+      ],
+      fontSrc: [
+        "'self'",
+        'data:',
+        'https://cdnjs.cloudflare.com',
+        'https://fonts.gstatic.com'
+      ],
+      imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
+      connectSrc: ["'self'", 'https:', 'wss:'],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      frameAncestors: ["'self'"],
+    },
+  },
 }));
 
 // إضافة معرّف بسيط لكل طلب لتتبعه في اللوجز
