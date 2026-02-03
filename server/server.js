@@ -131,6 +131,12 @@ app.use(helmet({
       ],
       imgSrc: ["'self'", 'data:', 'blob:', 'https:'],
       connectSrc: ["'self'", 'https:', 'wss:'],
+      frameSrc: [
+        "'self'",
+        'https://www.youtube.com',
+        'https://www.youtube-nocookie.com',
+        'https://player.vimeo.com'
+      ],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       frameAncestors: ["'self'"],
