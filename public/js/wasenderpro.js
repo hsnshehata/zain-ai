@@ -86,7 +86,7 @@ async function loadWasenderProPage() {
       <h3>🎥 فيديو شرح Wasender Pro</h3>
       <p>اتفرج على الفيديو ده عشان تتعرف أكتر على إزاي تستخدم Wasender Pro وتستفيد من كل إمكانياته:</p>
       <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; max-width: 100%;">
-        <iframe src="https://www.youtube.com/embed/fkL9HozuajI" 
+        <iframe src="https://www.youtube.com/embed/19evcbL56Wc" 
                 style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;" 
                 frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                 allowfullscreen></iframe>
