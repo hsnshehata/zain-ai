@@ -75,7 +75,6 @@ const redeemSchema = new mongoose.Schema({
 
 // فهرس لتحسين البحث والأداء
 redeemSchema.index({ storeId: 1 });
-redeemSchema.index({ code: 1 });
 redeemSchema.index({ isActive: 1 });
 redeemSchema.index({ validFrom: 1, validUntil: 1 });
 
