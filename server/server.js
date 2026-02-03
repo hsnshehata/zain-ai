@@ -231,7 +231,6 @@ const authenticatedPaths = [
   '/api/expenses',
   '/api/chat-orders',
   '/api/chat-customers',
-  '/api/telegram',
 ];
 app.use(authenticatedPaths, authenticate, accountLimiter);
 
