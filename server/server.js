@@ -30,6 +30,7 @@ const expensesRoutes = require('./routes/expenses');
 const chatOrdersRoutes = require('./routes/chatOrders');
 const chatCustomersRoutes = require('./routes/chatCustomers');
 const telegramRoutes = require('./routes/telegram');
+const redeemRoutes = require('./routes/redeem');
 const AppError = require('./utils/appError');
 const errorHandler = require('./middleware/errorHandler');
 // removed waRoutes (local WA app)
@@ -231,6 +232,7 @@ const authenticatedPaths = [
   '/api/expenses',
   '/api/chat-orders',
   '/api/chat-customers',
+  '/api/redeems',
 ];
 app.use(authenticatedPaths, authenticate, accountLimiter);
 
@@ -265,6 +267,7 @@ app.use('/api/expenses', expensesRoutes);
 app.use('/api/chat-orders', chatOrdersRoutes);
 app.use('/api/chat-customers', chatCustomersRoutes);
 app.use('/api/telegram', telegramRoutes);
+app.use('/api/redeems', redeemRoutes);
 app.use('/', indexRoutes);
 
 // مسار المتركات (حماية اختيارية عبر METRICS_TOKEN)
