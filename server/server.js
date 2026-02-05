@@ -114,9 +114,11 @@ app.use(helmet({
       defaultSrc: ["'self'"],
       scriptSrc: [
         "'self'",
+        "'unsafe-inline'",
         'https://cdn.jsdelivr.net',
         'https://cdnjs.cloudflare.com',
-        'https://connect.facebook.net'
+        'https://connect.facebook.net',
+        'https://accounts.google.com'
       ],
       scriptSrcAttr: ["'unsafe-inline'"], // السماح بـ inline event handlers مثل onclick
       styleSrc: [
