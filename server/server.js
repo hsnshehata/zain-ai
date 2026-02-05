@@ -118,6 +118,7 @@ app.use(helmet({
         'https://cdnjs.cloudflare.com',
         'https://connect.facebook.net'
       ],
+      scriptSrcAttr: ["'unsafe-inline'"], // السماح بـ inline event handlers مثل onclick
       styleSrc: [
         "'self'",
         "'unsafe-inline'",
