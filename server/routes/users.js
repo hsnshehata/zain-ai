@@ -25,14 +25,18 @@ const updateUserSchema = Joi.object({
   username: usernameRule.optional(),
   password: Joi.string().pattern(/^(?=.*[A-Za-z])(?=.*\d).{8,}$/).optional()
     .messages({ 'string.pattern.base': 'كلمة المرور يجب أن تحتوي على حروف وأرقام وألا تقل عن 8 أحرف' }),
-  confirmPassword: Joi.any().valid(Joi.ref('password')).when('password', {
-    is: Joi.exist(),
-    then: Joi.required(),
-    otherwise: Joi.forbidden()
-  }).messages({ 'any.only': 'كلمات المرور غير متطابقة' }),
+  confirmPassword: Joi.optional(),
   role: Joi.string().valid('user', 'superadmin').optional(),
   email: Joi.string().email({ tlds: { allow: false } }).optional(),
   whatsapp: Joi.string().allow('', null).optional()
+}).custom((obj, helpers) => {
+  if (obj.password && !obj.confirmPassword) {
+    return helpers.error('any.invalid', { message: 'تأكيد كلمة المرور مطلوب' });
+  }
+  if (obj.password && obj.confirmPassword && obj.password !== obj.confirmPassword) {
+    return helpers.error('any.invalid', { message: 'كلمات المرور غير متطابقة' });
+  }
+  return obj;
 });
 
 // Get current user data
@@ -96,7 +100,7 @@ router.post('/', authenticate, validateBody(createUserSchema), async (req, res) 
 // Update a user (Superadmin can update any user, regular user can update themselves)
 router.put('/:id', authenticate, validateBody(updateUserSchema), async (req, res) => {
   const { id } = req.params;
-  const { username, password, role, email, whatsapp } = req.body;
+  const { username, password, confirmPassword, role, email, whatsapp } = req.body;
 
   if (req.user.role !== 'superadmin' && id !== req.user.userId) {
     return res.status(403).json({ message: 'غير مصرح لك' });
@@ -108,31 +112,52 @@ router.put('/:id', authenticate, validateBody(updateUserSchema), async (req, res
       return res.status(404).json({ message: 'المستخدم غير موجود' });
     }
 
-    const normalizedUsername = username ? username.toLowerCase() : user.username; // تحويل الـ username للحروف الصغيرة
-    const existingUser = await User.findOne({
-      $or: [
-        { username: normalizedUsername, _id: { $ne: id } },
-        { email: email || user.email, _id: { $ne: id } }
-      ]
-    });
-    if (existingUser) {
-      return res.status(400).json({ message: 'اسم المستخدم أو البريد الإلكتروني موجود بالفعل' });
+    // تحديث البيانات الأساسية بشكل آمن
+    if (username) {
+      const normalizedUsername = username.toLowerCase();
+      const existingUser = await User.findOne({
+        username: normalizedUsername,
+        _id: { $ne: id }
+      });
+      if (existingUser) {
+        return res.status(400).json({ message: 'اسم المستخدم موجود بالفعل' });
+      }
+      user.username = normalizedUsername;
     }
 
-    user.username = normalizedUsername;
-    user.email = email || user.email;
-    user.whatsapp = whatsapp || user.whatsapp;
+    if (email) {
+      const existingEmail = await User.findOne({
+        email: email,
+        _id: { $ne: id }
+      });
+      if (existingEmail) {
+        return res.status(400).json({ message: 'البريد الإلكتروني موجود بالفعل' });
+      }
+      user.email = email;
+    }
+
+    if (whatsapp !== undefined) {
+      user.whatsapp = whatsapp;
+    }
+
+    // تحديث كلمة المرور فقط إذا تم إرسالها والتحقق من تطابقها
     if (password) {
+      if (password !== confirmPassword) {
+        return res.status(400).json({ message: 'كلمات المرور غير متطابقة' });
+      }
       user.password = await bcrypt.hash(password, 10);
     }
-    if (req.user.role === 'superadmin') {
-      user.role = role || user.role;
+
+    // السماح لمدير عام فقط بتعديل الدور
+    if (req.user.role === 'superadmin' && role) {
+      user.role = role;
     }
 
     await user.save();
+    logger.info('user_updated_successfully', { userId: id, updatedFields: { username, email, whatsapp, password: password ? 'yes' : 'no' } });
     res.status(200).json({ message: 'تم تحديث المستخدم بنجاح' });
   } catch (err) {
-    logger.error('Error updating user', { err });
+    logger.error('error_updating_user', { userId: id, err: err.message, stack: err.stack });
     res.status(500).json({ message: 'خطأ في السيرفر' });
   }
 });
