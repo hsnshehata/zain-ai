@@ -115,7 +115,7 @@ body {
 
 /* Hero Section */
 .hero {
-  background: linear-gradient(rgba(26, 26, 46, 0.9), rgba(26, 26, 46, 0.7)), url("public/placeholder-bot.png") center/cover no-repeat;
+  background: linear-gradient(rgba(26, 26, 46, 0.9), rgba(26, 26, 46, 0.7)), url("../placeholder-bot.png") center/cover no-repeat;
   color: white;
   padding: 100px 0;
   text-align: center;
