@@ -687,6 +687,10 @@ function showEditUserForm(container, userId, currentUsername, currentRole, curre
           <input type="password" id="editPassword">
         </div>
         <div class="form-group">
+          <label for="editConfirmPassword">تأكيد كلمة المرور الجديدة</label>
+          <input type="password" id="editConfirmPassword">
+        </div>
+        <div class="form-group">
           <label for="editUserRole">الدور</label>
           <select id="editUserRole">
             <option value="user" ${currentRole === 'user' ? 'selected' : ''}>مستخدم</option>
@@ -721,6 +725,7 @@ function showEditUserForm(container, userId, currentUsername, currentRole, curre
     const email = document.getElementById("editEmail").value.trim();
     const whatsapp = document.getElementById("editWhatsapp").value.trim();
     const password = document.getElementById("editPassword").value;
+    const confirmPassword = document.getElementById("editConfirmPassword").value;
     const role = document.getElementById("editUserRole").value;
     const subscriptionType = document.getElementById("editSubscriptionType").value;
     const subscriptionEndDate = document.getElementById("editSubscriptionEndDate").value || null;
@@ -730,9 +735,17 @@ function showEditUserForm(container, userId, currentUsername, currentRole, curre
     // تحويل الـ username للحروف الصغيرة في الـ frontend
     username = username.toLowerCase();
 
+    // تحقق محلي لتطابق كلمة السر إذا تم إدخالها
+    if (password && password !== confirmPassword) {
+      errorEl.textContent = "كلمات المرور غير متطابقة";
+      errorEl.style.display = "block";
+      return;
+    }
+
     const updateData = { username, email, whatsapp, role, subscriptionType, subscriptionEndDate };
     if (password) {
       updateData.password = password;
+      updateData.confirmPassword = confirmPassword;
     }
 
     try {
