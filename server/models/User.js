@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema({
   subscriptionType: { type: String, enum: ['free', 'monthly', 'yearly'], default: 'free' },
   subscriptionEndDate: { type: Date },
   // تكامل تيليجرام
-  telegramUserId: { type: String, unique: true, sparse: true, default: '' },
+  telegramUserId: { type: String, unique: true, sparse: true, default: null },
   telegramUsername: { type: String, default: '' },
   telegramLinkCode: { type: String, default: '' },
   telegramLinkExpiresAt: { type: Date, default: null },
