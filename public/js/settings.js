@@ -149,13 +149,18 @@ async function loadSettingsPage() {
 
       try {
         console.log("Updating user data for userId:", userId);
+        const updateBody = { email, username, whatsapp };
+        if (password) {
+          updateBody.password = password;
+          updateBody.confirmPassword = confirmPassword;
+        }
         const response = await fetch(`/api/users/${userId}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ email, username, whatsapp, ...(password && { password }) })
+          body: JSON.stringify(updateBody)
         });
         const data = await response.json();
         if (response.ok) {
