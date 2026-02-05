@@ -202,15 +202,15 @@ app.use('/api/auth/verify', authLimiter);
 
 // Rate limit معتمد على المستخدم للمسارات المحمية
 const accountLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 50,
+  windowMs: 15 * 60 * 1000,
+  max: 300,
   keyGenerator: (req) => req.user?.userId || req.ip,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
     message: 'تم تجاوز عدد الطلبات المسموح بها للحساب مؤقتاً، حاول لاحقاً',
     error: 'AccountRateLimit',
-    retryAfter: 60 * 60,
+    retryAfter: 15 * 60,
   },
 });
 
