@@ -1,4 +1,5 @@
 const logger = require('../logger');
+const path = require('path');
 
 function normalizeError(err) {
   const normalized = { ...err };
@@ -37,6 +38,11 @@ module.exports = (err, req, res, next) => { // eslint-disable-line no-unused-var
     path: req.originalUrl,
     method: req.method,
   });
+
+  // إذا كان 404 ومش API request، أرسل صفحة 404.html
+  if (normalized.statusCode === 404 && !req.originalUrl.startsWith('/api/')) {
+    return res.status(404).sendFile(path.join(__dirname, '..', '..', 'public', '404.html'));
+  }
 
   res.status(normalized.statusCode).json(responsePayload);
 };
