@@ -144,7 +144,7 @@ app.use(helmet({
       ],
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
-      frameAncestors: ["'self'"],
+      frameAncestors: ["'self'", "*"],
     },
   },
 }));
