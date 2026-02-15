@@ -228,6 +228,15 @@ const STATUS_LABELS = {
 const statusText = (status) => STATUS_LABELS[status] || status || 'غير معروف';
 const isStatusInquiry = (text = '') => /(حالة|متابعة|وصل|الشحنة|الشحن|تتبع|اوردر|أوردر|طلبى|طلبي|رقم الطلب|order|tracking)/i.test(text);
 const isModifyIntent = (text = '') => /(تعديل|عدّل|عدل|غير|غيّر).*طلب/i.test(text) || /(عايز|حابب).*أعدل/i.test(text);
+// التمييز بين استفسار عن السعر/الشحن وبين تعديل فعلي للطلب
+const isPriceOrShippingQuery = (text = '') => /(سعر|شحن|تكلفة|قيمة|كام|كم|قيمة الشحن|تكاليف|مصاريف|الاسعار|الأسعار)/i.test(text);
+const isModifyIntentStrict = (text = '') => {
+  // تأكد أنها تعديل فعلي وليس سؤال عن السعر
+  const isModify = isModifyIntent(text);
+  const isPrice = isPriceOrShippingQuery(text);
+  // لو فيه كلمة "تعديل" لكن مع كلمات عن السعر/الشحن، ده استفسار وليس تعديل
+  return isModify && !isPrice;
+};
 const isCancelIntent = (text = '') => /(الغاء|إلغاء|cancel|الغى|الغي|عايز الغي|عايز ألغي|الغى الطلب|الغي الطلب)/i.test(text);
 const isNewOrderIntent = (text = '') => /(طلب جديد|طلب تاني|طلب ثاني|عايز اطلب تاني|عايز أطلب تاني|أعمل طلب تاني)/i.test(text);
 const isConfirmIntent = (text = '') => /(تأكيد|أكد|أكدت|تمام|اوكي|أوكي|موافق|ايوه|ايوا|أيوه|أه|اه|اكيد|اكد|اكده|أكيد)/i.test(text);
@@ -825,7 +834,7 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 1️⃣ إرسال رقم الموبايل علشان أبحث عن الطلبات
 2️⃣ أعطيني البيانات علشان نعمل طلب جديد (الاسم + الموبايل + العنوان + الاصناف)`;
       }
-    } else if (!isAssistantBotId && !isSimpleAcknowledgement(userMessageContent) && isModifyIntent(userMessageContent)) {
+    } else if (!isAssistantBotId && !isSimpleAcknowledgement(userMessageContent) && isModifyIntentStrict(userMessageContent)) {
       let latestOrder = await ChatOrder.findOne({ botId, sourceUserId: finalUserId }).sort({ createdAt: -1 }).lean();
       if (!latestOrder) {
         const phoneInMessage = extractPhoneFromText(userMessageContent);
