@@ -252,6 +252,18 @@ app.get('/api/config', (req, res) => {
   });
 });
 
+// Route لملف assetlinks.json (للتحقق من ملكية الموقع من جوجل)
+app.get('/.well-known/assetlinks.json', (req, res) => {
+  try {
+    const filePath = path.join(__dirname, '../public/.well-known/assetlinks.json');
+    res.setHeader('Content-Type', 'application/json');
+    res.sendFile(filePath);
+  } catch (err) {
+    logger.error('assetlinks_error', { err: err.message, stack: err.stack });
+    res.status(500).json({ message: 'Failed to load assetlinks.json' });
+  }
+});
+
 // Routes
 app.use('/api/webhook', webhookLimiter, webhookRoutes);
 app.use('/api/bots', facebookRoutes);
