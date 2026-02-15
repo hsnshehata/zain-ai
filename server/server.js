@@ -181,6 +181,14 @@ app.use((req, res, next) => {
   else if (req.path.match(/\.(png|jpg|jpeg|gif|ico|json)$/i)) {
     res.setHeader('Cache-Control', 'public, max-age=300');
   }
+  else if (req.path.match(/\.(css|js|woff|woff2|ttf)$/i)) {
+    // أصول ثابتة - تخزين مؤقت طويل الأجل
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  }
+  // إضافة headers لتحسين الأداء والأمان
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   logger.info('request', { method: req.method, url: req.url, ip: req.ip, ua: req.headers['user-agent'] });
   next();
 });
@@ -575,6 +583,31 @@ app.get('/chat/:linkId', (req, res) => {
   } catch (err) {
     logger.error('chat_route_error', { err: err.message, stack: err.stack });
     res.status(500).json({ message: 'Something went wrong!' });
+  }
+});
+
+// SEO Routes - مسارات تحسين محركات البحث
+app.get('/sitemap.xml', (req, res) => {
+  try {
+    const filePath = path.join(__dirname, '../public/sitemap.xml');
+    res.setHeader('Content-Type', 'application/xml');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // تخزين مؤقت لمدة 24 ساعة
+    res.sendFile(filePath);
+  } catch (err) {
+    logger.error('sitemap_error', { err: err.message, stack: err.stack });
+    res.status(500).json({ message: 'Sitemap not found' });
+  }
+});
+
+app.get('/robots.txt', (req, res) => {
+  try {
+    const filePath = path.join(__dirname, '../public/robots.txt');
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Cache-Control', 'public, max-age=86400'); // تخزين مؤقت لمدة 24 ساعة
+    res.sendFile(filePath);
+  } catch (err) {
+    logger.error('robots_error', { err: err.message, stack: err.stack });
+    res.status(500).json({ message: 'Robots.txt not found' });
   }
 });
 
