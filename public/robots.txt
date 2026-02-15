@@ -1,0 +1,31 @@
+# Robots.txt for Zain AI
+# السماح لمحركات البحث بالزحف إلى الموقع
+
+User-agent: *
+Allow: /
+Allow: /api/config
+Allow: /store/
+Allow: /chat/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /uploads/temp/
+Disallow: /server/
+Disallow: /node_modules/
+Disallow: /wazainbot/
+Disallow: /*.json$
+
+# تحديد موقع خريطة الموقع
+Sitemap: https://zaináitro.com/sitemap.xml
+
+# تحديد معدل الزحف
+Crawl-delay: 1
+
+# Google Bot - معدل زحف أكثر لطفاً
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Bing Bot
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
