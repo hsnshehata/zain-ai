@@ -33,7 +33,7 @@
     "node-fetch": "^3.3.2",
     "nodemailer": "^7.0.10",
     "openai": "^5.8.2",
-    "qrcode": "^1.5.13",
+    "qrcode": "^1.5.3",
     "sanitize-html": "^2.13.0",
     "winston": "^3.17.0",
     "uuid": "^10.0.0",
