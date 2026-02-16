@@ -755,7 +755,38 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
     });
 
     await conversation.save();
-  logger.info('💬 User message added to conversation', { userMessageContent });
+    logger.info('💬 User message added to conversation', { userMessageContent });
+
+    // استخراج بيانات الطلب من المحادثة الحالية وحفظها في قاعدة البيانات
+    try {
+      // بناء النسخة المحدثة من transcript بعد إضافة آخر رسالة
+      const updatedTranscript = conversation.messages
+        .filter((msg) => !isDataUrl(msg.content))
+        .map((msg) => ({
+          role: msg.role,
+          content: msg.content.length > 2000 ? `${msg.content.slice(0, 2000)}...` : msg.content,
+          timestamp: msg.timestamp,
+        }));
+      
+      const extractionResult = await extractChatOrderIntent({
+        bot,
+        channel: finalChannel,
+        userMessageContent,
+        conversationId: conversation._id,
+        sourceUserId: finalUserId,
+        sourceUsername: finalUsername,
+        messageId: messageId || `msg_${uuidv4()}`,
+        transcript: updatedTranscript,
+        conversation,
+      });
+
+      if (extractionResult?.chatOrder) {
+        logger.info('✅ Chat order auto-saved after message processing', { orderId: extractionResult.chatOrder._id });
+      }
+    } catch (e) {
+      logger.warn('⚠️ Failed to extract order during message processing:', { err: e });
+      // لا نرجع error هنا، نستمر في معالجة الرسالة
+    }
 
     const muteUntil = conversation.mutedUntil ? new Date(conversation.mutedUntil) : null;
     if (muteUntil && muteUntil > new Date()) {
