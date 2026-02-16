@@ -678,6 +678,21 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     logger.info('📝 System prompt prepared');
 
+    // إضافة بيانات الطلب الأخير للعميل في السياق (إن وجد)
+    if (latestOrderInfo) {
+      const itemsStr = (latestOrderInfo.items || [])
+        .map(it => `${Math.max(Number(it.quantity) || 1, 1)} × ${it.title}`)
+        .join(', ');
+      systemPrompt += `\nملاحظة حول آخر طلب للعميل:
+- رقم الطلب: ${latestOrderInfo.orderId}
+- الاسم: ${latestOrderInfo.customerName}
+- الموبايل: ${latestOrderInfo.customerPhone}
+- العناصر: ${itemsStr || '—'}
+- الحالة الحالية: ${statusText(latestOrderInfo.status)}
+- الإجمالي: ${latestOrderInfo.totalAmount || 0} جنيه
+إذا سأل العميل عن هذا الطلب، استخدم هذه المعلومات في ردك.\n`;
+    }
+
     let userMessageContent = message;
 
     // Normalize media content: avoid storing base64 in the conversation
@@ -722,42 +737,31 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
       return null;
     }
 
-    // محاولة استخراج طلب محادثة تلقائياً (مع تخطي المساعد الداخلي)
-    let extractionResult = null;
+    // حذف استدعاء extractChatOrderIntent - الآن AI يتولى كل الردود
+    // لو أردنا بيانات طلب قديمة، نظيفها ونضيفها لل system prompt فقط
+    let latestOrderInfo = null;
     if (!isAssistantBotId) {
       try {
-        extractionResult = await extractChatOrderIntent({
-          bot,
-          channel: finalChannel,
-          userMessageContent,
-          conversationId: conversation._id,
-          sourceUserId: finalUserId,
-          sourceUsername: conversation.username,
-          messageId: messageId || undefined,
-          transcript: conversation.messages,
-          conversation,
-        });
+        const latestOrder = await ChatOrder.findOne({ 
+          botId, 
+          $or: [{ sourceUserId: finalUserId }, { conversationId: conversation._id }] 
+        }).sort({ createdAt: -1 }).lean();
+        
+        if (latestOrder) {
+          latestOrderInfo = {
+            orderId: latestOrder._id,
+            customerName: latestOrder.customerName,
+            customerPhone: latestOrder.customerPhone,
+            items: latestOrder.items,
+            status: latestOrder.status,
+            totalAmount: latestOrder.totalAmount,
+            createdAt: latestOrder.createdAt
+          };
+          logger.info('📋 Latest order found for context', { orderId: latestOrder._id, status: latestOrder.status });
+        }
       } catch (e) {
-        logger.warn('⚠️ تعذر استخراج طلب المحادثة:', { err: e });
+        logger.warn('⚠️ Failed to fetch latest order info:', { err: e });
       }
-    }
-
-    // تخزين آخر رقم موبايل معروف ووقت الدرفت إن وجد
-    let conversationTouched = false;
-    if (extractionResult?.rememberPhone && extractionResult.rememberPhone !== conversation.lastKnownPhone) {
-      conversation.lastKnownPhone = extractionResult.rememberPhone;
-      conversation.lastKnownPhoneAt = new Date();
-      conversationTouched = true;
-    }
-    if (extractionResult?.pendingDraftAt) {
-      conversation.pendingDraftAt = extractionResult.pendingDraftAt;
-      conversationTouched = true;
-    } else if (extractionResult?.pendingDraftAt === null && conversation.pendingDraftAt) {
-      conversation.pendingDraftAt = undefined;
-      conversationTouched = true;
-    }
-    if (conversationTouched) {
-      await conversation.save();
     }
 
     const contextMessages = conversation.messages
@@ -773,133 +777,10 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
 
     let reply = '';
 
-    // ردود خاصة بالحالة أو التعارض قبل الذكاء الاصطناعي العام
-    if (extractionResult?.conflict) {
-      const existing = extractionResult.existingOrder || extractionResult.chatOrder;
-      const st = existing ? statusText(existing.status) : 'غير معروف';
-      reply = `في طلب جاري بنفس الرقم ${extractionResult.customerPhone} حالته ${st}.
-اختر:
-1) تعديل الطلب الحالي
-2) تسجيل طلب جديد بنفس الرقم`;
-    } else if (extractionResult?.alreadyConfirmed) {
-      reply = 'الطلب مسجل ومؤكد بالفعل خلال الدقائق الأخيرة. لو محتاج تعديل، قل لي التعديل المطلوب.';
-    } else if (extractionResult?.needFreshData) {
-      reply = 'البيانات القديمة انتهت صلاحيتها. ابعت العدد والاسم والعنوان ورقم الموبايل لتأكيد طلب جديد.';
-    } else if (extractionResult?.needConfirmation && extractionResult.draft) {
-      const itemsText = (extractionResult.draft.items || [])
-        .map((it) => `${Math.max(Number(it.quantity) || 1, 1)} × ${it.title}`)
-        .join('، ');
-      reply = `وصلت التفاصيل:
-الاسم: ${extractionResult.draft.customerName}
-العنوان: ${extractionResult.draft.customerAddress}
-الموبايل: ${extractionResult.draft.customerPhone}
-الاصناف: ${itemsText || '—'}
-أكد لي لو حابب نسجل الطلب الآن.`;
-    } else if (extractionResult?.cancelled) {
-      reply = 'تم إلغاء الطلب الحالي. لو حابب تعمل طلب جديد ابعت البيانات من جديد.';
-    } else if (extractionResult?.cancelBlocked) {
-      reply = 'الطلب تم شحنه بالفعل، لذلك لا يمكن إلغاؤه الآن. لو محتاج مساعدة إضافية، بلغني.';
-    } else if (!isAssistantBotId && !isSimpleAcknowledgement(userMessageContent) && isStatusInquiry(userMessageContent)) {
-      let latestOrder = await ChatOrder.findOne({ botId, sourceUserId: finalUserId }).sort({ createdAt: -1 }).lean();
+    // لا هوكات - الذكاء الاصطناعي يتولى كل الردود
+    // حتى استعلامات الحالة والتعديل ستمر عبر AI مع معلومات الطلب في system prompt
 
-      // حاول بنفس المحادثة لو ما لقيناش
-      if (!latestOrder) {
-        latestOrder = await ChatOrder.findOne({ botId, conversationId: conversation._id }).sort({ createdAt: -1 }).lean();
-      }
-
-      // حاول برقم الهاتف من الذاكرة أو الرسالة أو الترانسكربت
-      if (!latestOrder) {
-        const phoneInMessage = extractPhoneFromText(userMessageContent) || extractPhoneFromText(context.map((c) => c.content).join(' ')) || conversation.lastKnownPhone;
-        if (phoneInMessage) {
-          latestOrder = await ChatOrder.findOne({ botId, customerPhone: phoneInMessage }).sort({ createdAt: -1 }).lean();
-          if (latestOrder) {
-            conversation.lastKnownPhone = phoneInMessage;
-            await conversation.save();
-          }
-        }
-      }
-
-      if (latestOrder) {
-        const baseStatus = statusText(latestOrder.status);
-        if (['shipped', 'delivered'].includes(latestOrder.status)) {
-          reply = `حالة طلبك: ${baseStatus}. الإجمالي ${latestOrder.totalAmount || 0} جنيه. لو محتاج طلب جديد، ابعت التفاصيل.`;
-        } else if (latestOrder.status === 'cancelled') {
-          reply = `الطلب السابق متم الغاؤه. لو حابب طلب جديد، ابعت البيانات (الاسم + الموبايل + العنوان + الاصناف).`;
-        } else {
-          reply = `حالة طلبك الحالي: ${baseStatus}. لو حابب تعدل أي تفاصيل أو تسأل عن توقيت التسليم، قولّي.`;
-        }
-      } else {
-        reply = `معذرة، ما لقيتش طلبات باسمك في النظام حالياً.
-يمكنك:
-1️⃣ إرسال رقم الموبايل علشان أبحث عن الطلبات
-2️⃣ أعطيني البيانات علشان نعمل طلب جديد (الاسم + الموبايل + العنوان + الاصناف)`;
-      }
-    } else if (!isAssistantBotId && !isSimpleAcknowledgement(userMessageContent) && isModifyIntentStrict(userMessageContent)) {
-      let latestOrder = await ChatOrder.findOne({ botId, sourceUserId: finalUserId }).sort({ createdAt: -1 }).lean();
-      if (!latestOrder) {
-        const phoneInMessage = extractPhoneFromText(userMessageContent);
-        if (phoneInMessage) {
-          latestOrder = await ChatOrder.findOne({ botId, customerPhone: phoneInMessage }).sort({ createdAt: -1 }).lean();
-          if (latestOrder) {
-            conversation.lastKnownPhone = phoneInMessage;
-            await conversation.save();
-          }
-        }
-      }
-
-      if (latestOrder) {
-        const baseStatus = statusText(latestOrder.status);
-        if (['shipped', 'delivered'].includes(latestOrder.status)) {
-          reply = `الطلب حالته ${baseStatus} وبالتالي لا يمكن تعديله بعد الشحن. لو عايز طلب جديد، ابعت البيانات.`;
-        } else if (latestOrder.status === 'cancelled') {
-          reply = `الطلب السابق متم الغاؤه ولا يمكن تعديله. لو حابب طلب جديد، ابعت التفاصيل.`;
-        } else {
-          reply = `تمام، هنعدل على طلبك الحالي (حالته ${baseStatus}). ايه التعديل اللي تحب تعمله؟`;
-        }
-      } else {
-        reply = 'عشان أعدل، محتاج ألاقي الطلب. ابعت رقم الموبايل أو رقم الطلب.';
-      }
-    }
-
-    if (userMessageContent && !isImage && !isVoice && !reply) {
-      for (const rule of rules) {
-        if (rule.type === 'qa' && userMessageContent.toLowerCase().includes(rule.content.question.toLowerCase())) {
-          reply = rule.content.answer;
-          break;
-        } else if (rule.type === 'general' || rule.type === 'global') {
-          if (userMessageContent.toLowerCase().includes(rule.content.toLowerCase())) {
-            reply = rule.content;
-            break;
-          }
-        } else if (rule.type === 'products') {
-          if (userMessageContent.toLowerCase().includes(rule.content.product.toLowerCase())) {
-            reply = `المنتج: ${rule.content.product}، السعر: ${rule.content.price} ${rule.content.currency}`;
-            break;
-          }
-        } else if (rule.type === 'channels') {
-          if (userMessageContent.toLowerCase().includes(rule.content.platform.toLowerCase())) {
-            reply = `قناة التواصل: ${rule.content.platform}\nالوصف: ${rule.content.description}\nالرابط/الرقم: ${rule.content.value}`;
-            break;
-          }
-        }
-      }
-
-      // التحقق من محتويات المتجر إذا لم يتم العثور على رد من القواعد الأخرى
-      if (!reply && bot && bot.storeId) {
-        const { store, products } = await getStoreWithProductsCache(bot.storeId);
-        if (store && products) {
-          for (const product of products) {
-            if (userMessageContent.toLowerCase().includes(product.productName.toLowerCase())) {
-              reply = `المنتج: ${product.productName}، السعر: ${product.price} ${product.currency}، الرابط: zainbot.com/store/${store.storeLink}?productId=${product._id}، الصورة: ${product.imageUrl || 'غير متوفرة'}، الوصف: ${product.description || 'غير متوفر'}، المخزون: ${product.stock}.`;
-              break;
-            }
-          }
-        }
-      }
-    }
-
-    if (!reply) {
-      if (isImage) {
+    if (isImage) {
         if (!mediaUrl) {
           logger.error('❌ Missing mediaUrl for image');
           return 'عذرًا، لم أتمكن من تحليل الصورة بسبب رابط غير صالح.';
@@ -949,24 +830,28 @@ async function processMessage(botId, userId, message, isImage = false, isVoice =
           return 'عذرًا، لم أتمكن من تحليل الصورة. حاول مرة أخرى أو أرسل صورة أخرى.';
         }
       } else {
-        const messages = [
-          { role: 'system', content: systemPrompt },
-          ...context,
-          { role: 'user', content: userMessageContent },
-        ];
-        logger.info('📤 Sending to OpenAI for processing', { userMessageContent });
-        const response = await withTimeout(
-          openai.chat.completions.create({
-            model: 'gpt-4o-mini',
-            messages,
-            max_tokens: 2000,
-          }),
-          20000 // timeout 20 ثانية
-        );
-        reply = response.choices[0].message.content;
-        logger.info('💬 Assistant reply', { reply });
+        try {
+          const messages = [
+            { role: 'system', content: systemPrompt },
+            ...context,
+            { role: 'user', content: userMessageContent },
+          ];
+          logger.info('📤 Sending to OpenAI for processing', { userMessageContent });
+          const response = await withTimeout(
+            openai.chat.completions.create({
+              model: 'gpt-4o-mini',
+              messages,
+              max_tokens: 2000,
+            }),
+            20000 // timeout 20 ثانية
+          );
+          reply = response.choices[0].message.content;
+          logger.info('💬 Assistant reply', { reply });
+        } catch (err) {
+          logger.error('❌ Error calling OpenAI:', { err });
+          return 'عذرًا، حدث خطأ أثناء معالجة طلبك. حاول مرة أخرى.';
+        }
       }
-    }
 
     const responseMessageId = `response_${messageId || uuidv4()}`;
     conversation.messages.push({ 
