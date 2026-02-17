@@ -18,7 +18,8 @@
 /* Page Header */
 .page-header {
   display: flex;
-  flex-direction: column; /* Stack header elements vertically */
+  flex-direction: column;
+  /* Stack header elements vertically */
   align-items: flex-start;
   gap: 15px;
   margin-bottom: 20px;
@@ -45,7 +46,8 @@
 
 .header-actions {
   display: flex;
-  flex-direction: column; /* Stack action buttons vertically */
+  flex-direction: column;
+  /* Stack action buttons vertically */
   align-items: flex-start;
   gap: 10px;
   width: 100%;
@@ -100,7 +102,8 @@
 /* Settings Container */
 .settings-container {
   display: flex;
-  flex-direction: column; /* Stack all elements vertically */
+  flex-direction: column;
+  /* Stack all elements vertically */
   gap: 20px;
   width: 100%;
   max-width: 100%;
@@ -110,7 +113,8 @@
 .facebook-settings-grid,
 .instagram-settings-grid {
   display: flex;
-  flex-direction: column; /* Stack grid elements vertically */
+  flex-direction: column;
+  /* Stack grid elements vertically */
   gap: 20px;
   width: 100%;
   max-width: 100%;
@@ -125,7 +129,8 @@
   border: 1px solid var(--dark-border);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
   display: flex;
-  flex-direction: column; /* Ensure card content is vertical */
+  flex-direction: column;
+  /* Ensure card content is vertical */
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -159,7 +164,8 @@
 
 .card-body {
   display: flex;
-  flex-direction: column; /* Stack card body content vertically */
+  flex-direction: column;
+  /* Stack card body content vertically */
   gap: 15px;
   width: 100%;
   max-width: 100%;
@@ -168,7 +174,8 @@
 /* Toggles Grid */
 .toggles-grid {
   display: flex;
-  flex-direction: column; /* Stack toggles vertically */
+  flex-direction: column;
+  /* Stack toggles vertically */
   gap: 20px;
   width: 100%;
   max-width: 100%;
@@ -177,7 +184,8 @@
 
 .setting-item {
   display: flex;
-  flex-direction: column; /* Stack setting items vertically */
+  flex-direction: column;
+  /* Stack setting items vertically */
   gap: 10px;
   width: 100%;
   max-width: 100%;
@@ -185,7 +193,8 @@
 
 .toggle-item {
   display: flex;
-  flex-direction: column; /* Stack toggle items vertically */
+  flex-direction: column;
+  /* Stack toggle items vertically */
   align-items: flex-start;
   padding: 10px 0;
   width: 100%;
@@ -251,11 +260,11 @@
   border-radius: 50%;
 }
 
-input:checked + .slider {
+input:checked+.slider {
   background-color: var(--primary-color);
 }
 
-input:checked + .slider:before {
+input:checked+.slider:before {
   transform: translateX(26px);
 }
 
@@ -289,8 +298,13 @@ input:checked + .slider:before {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Responsive Adjustments */
@@ -344,4 +358,73 @@ input:checked + .slider:before {
   .setting-info p {
     font-size: 0.8em;
   }
+}
+
+/* Comment System New Styles */
+#commentsConfiguration {
+  border-color: var(--light-border);
+}
+
+.dark-mode #commentsConfiguration {
+  border-color: var(--dark-border);
+}
+
+/* Force override inline styles in dark mode using !important where necessary or specific selectors */
+.dark-mode #keywordModeSettings,
+.dark-mode #privateModeSettings {
+  background-color: var(--dark-bg) !important;
+  border-color: var(--dark-border) !important;
+  color: var(--dark-text) !important;
+}
+
+.dark-mode #keywordModeSettings label,
+.dark-mode #privateModeSettings label,
+.dark-mode .keyword-row label,
+.dark-mode .form-group label {
+  color: var(--dark-text) !important;
+}
+
+.keyword-row {
+  background-color: #ffffff;
+  border-color: var(--light-border);
+}
+
+.dark-mode .keyword-row {
+  background-color: var(--dark-card) !important;
+  border-color: var(--dark-border) !important;
+}
+
+/* Fix for Inputs and Selects in Dark Mode */
+.dark-mode .form-control,
+.dark-mode select.form-control,
+.dark-mode input.form-control,
+.dark-mode textarea.form-control {
+  background-color: var(--dark-bg) !important;
+  border-color: var(--dark-border) !important;
+  color: var(--dark-text) !important;
+}
+
+.dark-mode .form-control:focus,
+.dark-mode select.form-control:focus,
+.dark-mode input.form-control:focus {
+  background-color: var(--dark-bg) !important;
+  color: var(--dark-text) !important;
+  border-color: var(--primary-color) !important;
+}
+
+/* Fix for Select dropdown options */
+.dark-mode select option {
+  background-color: var(--dark-bg);
+  color: var(--dark-text);
+}
+
+/* Fix for specific messages/alerts */
+.dark-mode .alert-info {
+  background-color: rgba(0, 196, 180, 0.1);
+  color: var(--dark-text);
+  border-color: var(--primary-color);
+}
+
+.dark-mode .text-muted {
+  color: #aaa !important;
 }

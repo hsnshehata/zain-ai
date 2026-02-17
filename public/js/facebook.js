@@ -135,15 +135,57 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
               <span class="slider"></span>
             </label>
           </div>
-          <div class="setting-item toggle-item">
-            <div class="setting-info">
-              <h4>الرد على التعليقات (Comments)</h4>
-              <p>تسمح للبوت بالرد على تعليقات المستخدمين على بوستات الصفحة بنفس طريقة الرد على الرسايل.</p>
+          <div class="setting-item toggle-item" style="flex-wrap: wrap;">
+            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+              <div class="setting-info">
+                <h4>الرد على التعليقات (Comments)</h4>
+                <p>تسمح للبوت بالرد على تعليقات المستخدمين.</p>
+              </div>
+              <label class="switch">
+                <input type="checkbox" id="commentsRepliesToggle" data-setting-key="commentsRepliesEnabled">
+                <span class="slider"></span>
+              </label>
             </div>
-            <label class="switch">
-              <input type="checkbox" id="commentsRepliesToggle" data-setting-key="commentsRepliesEnabled">
-              <span class="slider"></span>
-            </label>
+            
+            <div id="commentsConfiguration" style="width: 100%; display: none; margin-top: 15px; border-top: 1px dashed #ccc; padding-top: 15px;">
+                <div class="form-group">
+                  <label for="commentReplyModeSelect"><b>نظام الرد:</b></label>
+                  <select id="commentReplyModeSelect" class="form-control" style="margin-bottom: 10px;">
+                    <option value="ai">🤖 الذكاء الاصطناعي (AI)</option>
+                    <option value="keyword">🔑 الكلمات المفتاحية (Keywords)</option>
+                    <option value="private">📩 الرد الخاص (Private Reply)</option>
+                  </select>
+                </div>
+
+                <!-- Keyword Mode Settings -->
+                <div id="keywordModeSettings" style="display: none; margin-top: 10px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">
+                    <label style="display:block; margin-bottom:10px;"><b>قواعد الكلمات المفتاحية:</b></label>
+                    <div id="keywordsContainer"></div>
+                    <button id="addKeywordRowBtn" class="btn btn-sm btn-outline-primary" style="margin-top: 10px;"><i class="fas fa-plus"></i> إضافة قاعدة جديدة</button>
+                    
+                    <div class="form-group" style="margin-top: 20px; border-top: 1px solid #dee2e6; padding-top: 15px;">
+                      <label><b>الرد الافتراضي (في حال عدم وجود تطابق):</b></label>
+                      <input type="text" id="commentDefaultReplyInput" class="form-control" placeholder="مثال: شكراً على تعليقك، سنتواصل معك قريباً.">
+                      <small class="text-muted">اترك هذا الحقل فارغاً إذا كنت لا تريد رداً افتراضياً.</small>
+                    </div>
+                </div>
+
+                <!-- Private Mode Settings -->
+                <div id="privateModeSettings" style="display: none; margin-top: 10px; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">
+                    <div class="alert alert-info" style="font-size: 0.9em; margin-bottom: 15px;">
+                      <i class="fas fa-info-circle"></i> في هذا الوضع، سيقوم البوت بالرد على التعليق برسالة عامة (أدناه)، ثم يأخذ سؤال العميل ويرسله للذكاء الاصطناعي ليقوم بالرد عليه في <b>رسالة خاصة (Messenger)</b>.
+                    </div>
+                    <div class="form-group">
+                      <label><b>رسالة الرد العام على التعليق:</b></label>
+                      <input type="text" id="privateReplyMessageInput" class="form-control" placeholder="تم إرسال التفاصيل على الخاص">
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; text-align: left;">
+                  <button id="saveCommentSettingsBtn" class="btn btn-success"><i class="fas fa-save"></i> حفظ إعدادات التعليقات</button>
+                </div>
+                <p id="commentSettingsMessage" class="message" style="display: none; margin-top: 10px;"></p>
+            </div>
           </div>
         </div>
         <p id="togglesError" class="error-message small-error" style="display: none;"></p>
@@ -184,6 +226,19 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
   const pauseDurationInput = document.getElementById("pauseDurationInput");
   const savePauseSettingsBtn = document.getElementById("savePauseSettingsBtn");
   const pauseSettingsError = document.getElementById("pauseSettingsError");
+
+  // Comment Settings Elements
+  const commentsConfiguration = document.getElementById("commentsConfiguration");
+  const commentReplyModeSelect = document.getElementById("commentReplyModeSelect");
+  const keywordModeSettings = document.getElementById("keywordModeSettings");
+  const privateModeSettings = document.getElementById("privateModeSettings");
+  const keywordsContainer = document.getElementById("keywordsContainer");
+  const addKeywordRowBtn = document.getElementById("addKeywordRowBtn");
+  const commentDefaultReplyInput = document.getElementById("commentDefaultReplyInput");
+  const privateReplyMessageInput = document.getElementById("privateReplyMessageInput");
+  const saveCommentSettingsBtn = document.getElementById("saveCommentSettingsBtn");
+  const commentSettingsMessage = document.getElementById("commentSettingsMessage");
+  const commentsRepliesToggle = document.getElementById("commentsRepliesToggle");
 
   const cacheKey = 'facebook-settings';
 
@@ -258,6 +313,10 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
       commentsRepliesEnabled: false,
       ownerPauseKeyword: '',
       ownerPauseDurationMinutes: 30,
+      commentReplyMode: 'ai',
+      commentKeywords: [],
+      commentDefaultReply: '',
+      privateReplyMessage: 'تم إرسال التفاصيل على الخاص'
     };
 
     try {
@@ -283,6 +342,15 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
 
         if (pauseKeywordInput) pauseKeywordInput.value = settings.ownerPauseKeyword || '';
         if (pauseDurationInput) pauseDurationInput.value = settings.ownerPauseDurationMinutes ?? defaultSettings.ownerPauseDurationMinutes;
+
+        // Populate Comment Settings
+        if (commentReplyModeSelect) commentReplyModeSelect.value = settings.commentReplyMode || 'ai';
+        if (commentDefaultReplyInput) commentDefaultReplyInput.value = settings.commentDefaultReply || '';
+        if (privateReplyMessageInput) privateReplyMessageInput.value = settings.privateReplyMessage || 'تم إرسال التفاصيل على الخاص';
+
+        renderKeywords(settings.commentKeywords || []);
+        updateCommentUIState();
+
 
         settingsContainer.style.display = "grid";
 
@@ -495,6 +563,124 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
     }
   }
 
+  async function saveCommentSettings(botId) {
+    commentSettingsMessage.style.display = 'none';
+    commentSettingsMessage.className = 'message'; // reset class
+
+    const mode = commentReplyModeSelect.value;
+    const defaultReply = commentDefaultReplyInput.value.trim(); // Allow empty
+    const privateMsg = privateReplyMessageInput.value.trim();
+
+    // Gather keywords
+    const keywordRows = keywordsContainer.querySelectorAll('.keyword-row');
+    const commentKeywords = [];
+
+    keywordRows.forEach(row => {
+      const keywordsInput = row.querySelector('.keywords-input').value;
+      const replyInput = row.querySelector('.reply-input').value;
+      const matchTypeSelect = row.querySelector('.match-type-select').value;
+
+      if (keywordsInput.trim() && replyInput.trim()) {
+        commentKeywords.push({
+          keywords: keywordsInput.split(',').map(k => k.trim()).filter(k => k),
+          reply: replyInput.trim(),
+          matchType: matchTypeSelect
+        });
+      }
+    });
+
+    const body = {
+      commentReplyMode: mode,
+      commentKeywords: commentKeywords,
+      commentDefaultReply: defaultReply,
+      privateReplyMessage: privateMsg
+    };
+
+    try {
+      const response = await handleApiRequest(`/api/bots/${botId}/settings`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      }, null, "فشل حفظ إعدادات التعليقات");
+
+      if (response.success) {
+        commentSettingsMessage.textContent = "تم حفظ إعدادات التعليقات بنجاح ✅";
+        commentSettingsMessage.className = 'message success-message';
+        commentSettingsMessage.style.color = 'green';
+        commentSettingsMessage.style.display = 'block';
+        setTimeout(() => { commentSettingsMessage.style.display = 'none'; }, 3000);
+      }
+    } catch (err) {
+      console.error('Save comment settings error:', err);
+      commentSettingsMessage.textContent = "حدث خطأ أثناء الحفظ: " + err.message;
+      commentSettingsMessage.className = 'message error-message';
+      commentSettingsMessage.style.color = 'red';
+      commentSettingsMessage.style.display = 'block';
+    }
+  }
+
+  function renderKeywords(keywordsData) {
+    keywordsContainer.innerHTML = '';
+    if (!keywordsData || keywordsData.length === 0) {
+      // Add one empty row if none exist
+      addKeywordRow();
+    } else {
+      keywordsData.forEach(k => addKeywordRow(k));
+    }
+  }
+
+  function addKeywordRow(data = null) {
+    const row = document.createElement('div');
+    row.className = 'keyword-row card';
+    row.style.marginBottom = '10px';
+    row.style.padding = '10px';
+    row.style.border = '1px solid #ddd';
+
+    const keywordsVal = data ? data.keywords.join(', ') : '';
+    const replyVal = data ? data.reply : '';
+    const matchType = data ? data.matchType : 'partial';
+
+    row.innerHTML = `
+      <div style="display: flex; gap: 10px; margin-bottom: 5px;">
+        <div style="flex: 2;">
+          <label style="font-size: 0.8em; font-weight: bold;">الكلمات المفتاحية (افصل بينها بفاصلة)</label>
+          <input type="text" class="form-control keywords-input" value="${keywordsVal}" placeholder="مثال: سعر, تكلفة, بكم">
+        </div>
+        <div style="flex: 1;">
+          <label style="font-size: 0.8em; font-weight: bold;">نوع التطابق</label>
+          <select class="form-control match-type-select">
+            <option value="partial" ${matchType === 'partial' ? 'selected' : ''}>جزئي (يحتوي على)</option>
+            <option value="exact" ${matchType === 'exact' ? 'selected' : ''}>تام (مطابق تماماً)</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="font-size: 0.8em; font-weight: bold;">الرد</label>
+        <textarea class="form-control reply-input" rows="2" placeholder="الرد الذي سيتم إرساله...">${replyVal}</textarea>
+      </div>
+      <div style="text-align: left; margin-top: 5px;">
+        <button type="button" class="btn btn-sm btn-danger remove-keyword-btn"><i class="fas fa-trash"></i> حذف</button>
+      </div>
+    `;
+
+    row.querySelector('.remove-keyword-btn').addEventListener('click', () => {
+      row.remove();
+    });
+
+    keywordsContainer.appendChild(row);
+  }
+
+  function updateCommentUIState() {
+    const isEnabled = commentsRepliesToggle.checked;
+    commentsConfiguration.style.display = isEnabled ? 'block' : 'none';
+
+    const mode = commentReplyModeSelect.value;
+    keywordModeSettings.style.display = mode === 'keyword' ? 'block' : 'none';
+    privateModeSettings.style.display = mode === 'private' ? 'block' : 'none';
+  }
   // Initialize Facebook SDK
   window.fbAsyncInit = function () {
     FB.init({
@@ -503,15 +689,17 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
       xfbml: true,
       version: 'v20.0'
     });
+    console.log('✅ Facebook SDK Initialized');
   };
 
   // Load Facebook SDK
-  const fbScript = document.createElement("script");
-  fbScript.src = "https://connect.facebook.net/en_US/sdk.js";
-  fbScript.async = true;
-  fbScript.defer = true;
-  fbScript.crossOrigin = "anonymous";
-  document.head.appendChild(fbScript);
+  (function (d, s, id) {
+    var js, fjs = d.getElementsByTagName(s)[0];
+    if (d.getElementById(id)) { return; }
+    js = d.createElement(s); js.id = id;
+    js.src = "https://connect.facebook.net/en_US/sdk.js";
+    fjs.parentNode.insertBefore(js, fjs);
+  }(document, 'script', 'facebook-jssdk'));
 
   function loginWithFacebook() {
     console.log('📡 جاري التحقق من حالة تسجيل الدخول في فيسبوك...');
@@ -754,6 +942,28 @@ async function loadFacebookPage(rootEl = document.getElementById("content")) {
       console.error("❌ A toggle element is not found in the DOM");
     }
   });
+
+  if (savePauseSettingsBtn) {
+    savePauseSettingsBtn.addEventListener("click", () => savePauseSettings(selectedBotId));
+  }
+
+  if (saveCommentSettingsBtn) {
+    saveCommentSettingsBtn.addEventListener("click", () => saveCommentSettings(selectedBotId));
+  }
+
+  if (addKeywordRowBtn) {
+    addKeywordRowBtn.addEventListener("click", () => addKeywordRow());
+  }
+
+  if (commentReplyModeSelect) {
+    commentReplyModeSelect.addEventListener("change", updateCommentUIState);
+  }
+
+  if (commentsRepliesToggle) {
+    commentsRepliesToggle.addEventListener("change", (e) => {
+      updateCommentUIState();
+    });
+  }
 
   // --- Initial Load ---
   await loadPageStatus(selectedBotId);
