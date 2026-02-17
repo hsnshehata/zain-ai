@@ -23,6 +23,21 @@ const botSchema = new mongoose.Schema({
   messageEditsEnabled: { type: Boolean, default: true },
   inboxLabelsEnabled: { type: Boolean, default: true },
   commentsRepliesEnabled: { type: Boolean, default: true },
+
+  // إعدادات الرد على التعليقات (جديد)
+  commentReplyMode: {
+    type: String,
+    enum: ['ai', 'keyword', 'private'],
+    default: 'ai'
+  },
+  commentKeywords: [{
+    keywords: [String], // مصفوفة كلمات مفتاحية
+    reply: String,      // الرد المرتبط بها
+    matchType: { type: String, enum: ['exact', 'partial'], default: 'partial' }
+  }],
+  commentDefaultReply: { type: String, trim: true }, // الرد الافتراضي في وضع الكلمات المفتاحية
+  privateReplyMessage: { type: String, trim: true, default: 'تم إرسال التفاصيل على الخاص' }, // الرد العام في وضع الرد الخاص
+
   // إعدادات إيقاف الردود بكلمة مفتاحية من المالك
   ownerPauseKeyword: { type: String, trim: true },
   ownerPauseDurationMinutes: { type: Number, default: 30 },

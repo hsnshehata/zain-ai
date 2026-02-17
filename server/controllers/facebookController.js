@@ -295,6 +295,61 @@ const handleMessage = async (req, res) => {
               await conversation.save();
             }
 
+            const mode = bot.commentReplyMode || 'ai';
+
+            if (mode === 'keyword') {
+              let reply = null;
+              const lowerMessage = message.toLowerCase();
+
+              if (bot.commentKeywords && bot.commentKeywords.length > 0) {
+                for (const kwSetting of bot.commentKeywords) {
+                  const match = kwSetting.keywords.some(k => {
+                    const lowerK = k.trim().toLowerCase();
+                    return kwSetting.matchType === 'exact' ? lowerMessage === lowerK : lowerMessage.includes(lowerK);
+                  });
+                  if (match) {
+                    reply = kwSetting.reply;
+                    break;
+                  }
+                }
+              }
+
+              if (!reply && bot.commentDefaultReply) {
+                reply = bot.commentDefaultReply;
+              }
+
+              if (reply) {
+                logger.info('fb_comment_keyword_reply', { commentId, reply });
+                await replyToComment(commentId, reply, bot.facebookApiKey);
+              } else {
+                logger.info('fb_comment_no_keyword_match', { commentId });
+              }
+              continue;
+            }
+
+            if (mode === 'private') {
+              logger.info('fb_comment_private_mode', { commentId });
+
+              // 1. Public Reply
+              if (bot.privateReplyMessage) {
+                await replyToComment(commentId, bot.privateReplyMessage, bot.facebookApiKey);
+              }
+
+              // 2. Private AI Reply
+              const responseText = await processMessage(bot._id, prefixedCommenterId, message, false, false, `comment_${commentId}`, 'facebook');
+
+              if (responseText) {
+                try {
+                  await sendPrivateReply(commentId, responseText, bot.facebookApiKey);
+                } catch (err) {
+                  logger.error('fb_private_reply_failed', { err: err.message });
+                  // Fallback or log?
+                }
+              }
+              continue;
+            }
+
+            // Default: 'ai' mode
             const responseText = await processMessage(bot._id, prefixedCommenterId, message, false, false, `comment_${commentId}`, 'facebook');
             if (responseText === null) {
               logger.info('fb_comment_muted', { userId: prefixedCommenterId });
@@ -362,4 +417,28 @@ const replyToComment = (commentId, responseText, facebookApiKey) => {
   });
 };
 
-module.exports = { handleMessage, sendMessage };
+const sendPrivateReply = (commentId, responseText, facebookApiKey) => {
+  return new Promise((resolve, reject) => {
+    logger.info('fb_send_private_reply_attempt', { commentId });
+    const requestBody = {
+      recipient: { comment_id: commentId },
+      message: { text: responseText },
+    };
+
+    axios.post(
+      `https://graph.facebook.com/v20.0/me/messages`,
+      requestBody,
+      {
+        params: { access_token: facebookApiKey },
+      }
+    ).then(response => {
+      logger.info('fb_send_private_reply_success', { commentId });
+      resolve(response.data);
+    }).catch(err => {
+      logger.error('fb_send_private_reply_error', { err: err.response?.data || err.message });
+      reject(err);
+    });
+  });
+};
+
+module.exports = { handleMessage, sendMessage, sendPrivateReply };

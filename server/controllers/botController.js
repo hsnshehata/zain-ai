@@ -31,7 +31,12 @@ exports.getSettings = async (req, res) => {
       inboxLabelsEnabled: bot.inboxLabelsEnabled,
       commentsRepliesEnabled: bot.commentsRepliesEnabled,
       ownerPauseKeyword: bot.ownerPauseKeyword || '',
+      ownerPauseKeyword: bot.ownerPauseKeyword || '',
       ownerPauseDurationMinutes: bot.ownerPauseDurationMinutes ?? 30,
+      commentReplyMode: bot.commentReplyMode || 'ai',
+      commentKeywords: bot.commentKeywords || [],
+      commentDefaultReply: bot.commentDefaultReply || '',
+      privateReplyMessage: bot.privateReplyMessage || 'تم إرسال التفاصيل على الخاص',
     };
 
     logger.info('✅ تم جلب إعدادات البوت بنجاح', { botId });
@@ -46,7 +51,7 @@ exports.getSettings = async (req, res) => {
 exports.updateSettings = async (req, res) => {
   try {
     const botId = req.params.id;
-    const { workingHours, messagingOptinsEnabled, messageReactionsEnabled, messagingReferralsEnabled, messageEditsEnabled, inboxLabelsEnabled, commentsRepliesEnabled, ownerPauseKeyword, ownerPauseDurationMinutes } = req.body;
+    const { workingHours, messagingOptinsEnabled, messageReactionsEnabled, messagingReferralsEnabled, messageEditsEnabled, inboxLabelsEnabled, commentsRepliesEnabled, ownerPauseKeyword, ownerPauseDurationMinutes, commentReplyMode, commentKeywords, commentDefaultReply, privateReplyMessage } = req.body;
     logger.info('📝 محاولة تحديث إعدادات البوت', { botId, bodyKeys: Object.keys(req.body || {}) });
 
     const bot = await Bot.findById(botId);
@@ -100,6 +105,32 @@ exports.updateSettings = async (req, res) => {
       hasChanges = true;
     }
 
+    if (commentReplyMode !== undefined) {
+      if (!['ai', 'keyword', 'private'].includes(commentReplyMode)) {
+        return res.status(400).json({ success: false, message: 'نظام الرد غير صحيح' });
+      }
+      bot.commentReplyMode = commentReplyMode;
+      hasChanges = true;
+    }
+
+    if (commentKeywords !== undefined) {
+      if (!Array.isArray(commentKeywords)) {
+        return res.status(400).json({ success: false, message: 'الكلمات المفتاحية يجب أن تكون مصفوفة' });
+      }
+      bot.commentKeywords = commentKeywords;
+      hasChanges = true;
+    }
+
+    if (commentDefaultReply !== undefined) {
+      bot.commentDefaultReply = commentDefaultReply ? commentDefaultReply.trim() : '';
+      hasChanges = true;
+    }
+
+    if (privateReplyMessage !== undefined) {
+      bot.privateReplyMessage = privateReplyMessage ? privateReplyMessage.trim() : 'تم إرسال التفاصيل على الخاص';
+      hasChanges = true;
+    }
+
     if (ownerPauseDurationMinutes !== undefined) {
       const durationNumber = Number(ownerPauseDurationMinutes);
       if (Number.isNaN(durationNumber) || durationNumber < 0 || durationNumber > 10080) {
@@ -126,7 +157,12 @@ exports.updateSettings = async (req, res) => {
       inboxLabelsEnabled: bot.inboxLabelsEnabled,
       commentsRepliesEnabled: bot.commentsRepliesEnabled,
       ownerPauseKeyword: bot.ownerPauseKeyword || '',
+      ownerPauseKeyword: bot.ownerPauseKeyword || '',
       ownerPauseDurationMinutes: bot.ownerPauseDurationMinutes ?? 30,
+      commentReplyMode: bot.commentReplyMode || 'ai',
+      commentKeywords: bot.commentKeywords || [],
+      commentDefaultReply: bot.commentDefaultReply || '',
+      privateReplyMessage: bot.privateReplyMessage || 'تم إرسال التفاصيل على الخاص',
     };
 
     res.status(200).json({ success: true, data: updatedSettings });
